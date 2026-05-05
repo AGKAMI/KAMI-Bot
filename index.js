@@ -204,13 +204,13 @@ async function startBot() {
   const sessionFolder = `./${config.sessionName}`;
   const sessionFile = path.join(sessionFolder, 'creds.json');
 
-  // Check if sessionID is provided and process KAMI! format session
-  if (config.sessionID && config.sessionID.startsWith('KAMI!')) {
+  // Check if sessionID is provided and process KAMI! or KnightBot! format session
+  if (config.sessionID && (config.sessionID.startsWith('KAMI!') || config.sessionID.startsWith('KnightBot!'))) {
     try {
       const [header, b64data] = config.sessionID.split('!');
 
-      if (header !== 'KAMI' || !b64data) {
-        throw new Error("❌ Invalid session format. Expected 'KAMI!.....'");
+      if (!b64data) {
+        throw new Error("❌ Invalid session format. Expected 'KAMI!.....' or 'KnightBot!.....'");
       }
 
       const cleanB64 = b64data.replace('...', '');
@@ -224,10 +224,10 @@ async function startBot() {
 
       // Write decompressed session data to creds.json
       fs.writeFileSync(sessionFile, decompressedData, 'utf8');
-      console.log('📡 Session : 🔑 Retrieved from KAMI Session');
+      console.log('📡 Session : 🔑 Retrieved from session');
 
     } catch (e) {
-      console.error('📡 Session : ❌ Error processing KAMI session:', e.message);
+      console.error('📡 Session : ❌ Error processing session:', e.message);
       // Continue with normal QR flow if session processing fails
     }
   }
