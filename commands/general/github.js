@@ -18,8 +18,8 @@ module.exports = {
             const chatId = extra.from;
             
             // GitHub repository URL
-            const repoUrl = 'https://github.com/mruniquehacker/KAMI-Bot';
-            const apiUrl = 'https://api.github.com/repos/mruniquehacker/KAMI-Bot';
+            const repoUrl = 'https://github.com/AGKAMI/KAMI-Bot';
+            const apiUrl = 'https://api.github.com/repos/AGKAMI/KAMI-Bot';
             
             // Send loading message
             const loadingMsg = await extra.reply('🔍 Fetching GitHub repository information...');
@@ -69,7 +69,7 @@ module.exports = {
                 let fallbackMessage = `╭━━『 *GitHub Repository* 』━━╮\n\n`;
                 fallbackMessage += `🤖 *Bot Name:* ${config.botName}\n`;
                 fallbackMessage += `🔗 *Repository:* KAMI-Bot\n`;
-                fallbackMessage += `👨‍💻 *Owner:* mruniquehacker\n`;
+                fallbackMessage += `👨‍💻 *Owner:* AGKAMI\n`;
                 fallbackMessage += `🌐 *URL:* ${repoUrl}\n\n`;
                 fallbackMessage += `⚠️ *Note:* Unable to fetch real-time statistics.\n`;
                 fallbackMessage += `Please visit the repository directly for latest stats.\n\n`;

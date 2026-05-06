@@ -11,7 +11,6 @@ const GROUPS_DB = path.join(DB_PATH, 'groups.json');
 const USERS_DB = path.join(DB_PATH, 'users.json');
 const WARNINGS_DB = path.join(DB_PATH, 'warnings.json');
 const MODS_DB = path.join(DB_PATH, 'mods.json');
-const GLOBAL_DB = path.join(DB_PATH, 'global.json');
 
 // Initialize database directory
 if (!fs.existsSync(DB_PATH)) {
@@ -29,7 +28,6 @@ initDB(GROUPS_DB, {});
 initDB(USERS_DB, {});
 initDB(WARNINGS_DB, {});
 initDB(MODS_DB, { moderators: [] });
-initDB(GLOBAL_DB, { selfMode: true }); // Default: private mode enabled
 
 // Read database
 const readDB = (filePath) => {
@@ -164,18 +162,6 @@ const isModerator = (userId) => {
   return mods.includes(userId);
 };
 
-// Global Settings (like selfMode)
-const getGlobalSettings = () => {
-  const global = readDB(GLOBAL_DB);
-  return global || { selfMode: true };
-};
-
-const updateGlobalSettings = (data) => {
-  const global = readDB(GLOBAL_DB);
-  const updated = { ...global, ...data };
-  return writeDB(GLOBAL_DB, updated);
-};
-
 module.exports = {
   getGroupSettings,
   updateGroupSettings,
@@ -188,7 +174,5 @@ module.exports = {
   getModerators,
   addModerator,
   removeModerator,
-  isModerator,
-  getGlobalSettings,
-  updateGlobalSettings
+  isModerator
 };

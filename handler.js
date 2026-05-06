@@ -7,7 +7,6 @@ const database = require('./database');
 const { loadCommands } = require('./utils/commandLoader');
 const { addMessage } = require('./utils/groupstats');
 const { jidDecode, jidEncode } = require('@whiskeysockets/baileys');
-const { createWelcomeImage, createGoodbyeImage } = require('./utils/welcomeImage');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
@@ -126,16 +125,34 @@ const getGroupMetadata = getCachedGroupMetadata;
 const isOwner = (sender) => {
   if (!sender) return false;
   
-  // Normalize sender JID to handle LID
+  // Extract raw number from sender (handle LID, PN, etc)
+  let senderNumber = sender.split('@')[0];
+  if (senderNumber.includes(':')) {
+    senderNumber = senderNumber.split(':')[0];
+  }
+  
+  // Also try normalized version
   const normalizedSender = normalizeJidWithLid(sender);
-  const senderNumber = normalizeJid(normalizedSender);
+  const normalizedSenderNumber = normalizeJid(normalizedSender);
   
   // Check against owner numbers
-  return config.ownerNumber.some(owner => {
-    const normalizedOwner = normalizeJidWithLid(owner.includes('@') ? owner : `${owner}@s.whatsapp.net`);
-    const ownerNumber = normalizeJid(normalizedOwner);
-    return ownerNumber === senderNumber;
+  const isOwnerResult = config.ownerNumber.some(owner => {
+    const ownerNum = owner.replace(/\D/g, ''); // Remove any non-digits
+    const senderNum = senderNumber.replace(/\D/g, '');
+    const normalizedSenderNum = normalizedSenderNumber ? normalizedSenderNumber.replace(/\D/g, '') : '';
+    
+    // Check direct match, normalized match, or raw number match
+    return owner === senderNumber || 
+           owner === normalizedSenderNumber ||
+           ownerNum === senderNum ||
+           ownerNum === normalizedSenderNum;
   });
+  
+  if (isOwnerResult) {
+    console.log(`Owner verified: ${senderNumber} matched`);
+  }
+  
+  return isOwnerResult;
 };
 
 const isMod = (sender) => {
@@ -386,49 +403,6 @@ const handleMessage = async (sock, msg) => {
       return; // Silently ignore system messages
     }
     
-    // Auto Block System - Block unknown numbers in private chat
-    // Check if selfMode is enabled and this is a private message
-    // Load config and database to get fresh values
-    const globalSettings = database.getGlobalSettings();
-    delete require.cache[require.resolve('./config')];
-    const config = require('./config');
-    
-    const isPrivateChat = from.endsWith('@s.whatsapp.net') && !from.endsWith('@g.us');
-    const isFromMe = msg.key.fromMe;
-    
-    if (isPrivateChat && !isFromMe && globalSettings.selfMode) {
-      // Get sender number
-      const senderNum = from.split('@')[0].replace(/[^0-9]/g, '');
-      
-      // Normalize whitelist numbers (remove all non-digits)
-      const whitelist = (config.whitelist || []).map(n => n.replace(/[^0-9]/g, ''));
-      
-      // Check if sender is whitelisted
-      const isWhitelisted = whitelist.includes(senderNum);
-      
-      if (!isWhitelisted) {
-        // Block the user
-        try {
-          await sock.updateBlockStatus(from, 'block');
-        } catch (e) {
-          console.error('Failed to block user:', e.message);
-        }
-        
-        // Send block message
-        const blockMsg = `╭━━━『 🚫 ACCESS DENIED 🚫 』━━━╮\n\n`;
-        blockMsg += `❌ Sorry! You are not allowed to use this bot.\n\n`;
-        blockMsg += `📱 This bot is private.\n\n`;
-        blockMsg += `💼 If you were looking for AG KAMI,\n`;
-        blockMsg += `   contact: ${config.ownerContact || '+27 84 082 0712'}\n\n`;
-        blockMsg += `⚠️ You will be blocked after this message!\n\n`;
-        blockMsg += `╰━━━━━━━━━━━━━━━━━━━━━━━╯`;
-        
-        await sock.sendMessage(from, { text: blockMsg });
-        
-        // Don't process the message further
-        return;
-      }
-    }
     // Auto-React System
     try {
       // Clear cache to get fresh config values
@@ -652,7 +626,7 @@ const handleMessage = async (sock, msg) => {
                   try {
                     await sock.sendMessage(from, { delete: msg.key });
                     await sock.sendMessage(from, { 
-                      text: '⚠️ *Tagall Detected!*',
+                      text: `⚠️ *KAMI SECURITY*\n\n🚫 TAGALL DETECTED!\n\n@${sender.split('@')[0]} has triggered anti-tagall protection.\n\nThis is an automated action.`,
                       mentions: [sender]
                     }, { quoted: msg });
                   } catch (e) {
@@ -674,7 +648,7 @@ const handleMessage = async (sock, msg) => {
                     }
                     const usernames = [`@${sender.split('@')[0]}`];
                     await sock.sendMessage(from, {
-                      text: `🚫 *Antitag Detected!*\n\n${usernames.join(', ')} has been kicked for tagging all members.`,
+                      text: `🚫 *KAMI SECURITY - AUTOMATED ACTION*\n\n❌ ${usernames.join(', ')} HAS BEEN REMOVED\n\nReason: Mass tagging all members\n\nViolations will not be tolerated.`,
                       mentions: [sender],
                     }, { quoted: msg });
                   }
@@ -1028,95 +1002,28 @@ const handleGroupUpdate = async (sock, update) => {
             hour12: true 
           });
           
-          // Get date in DD|MM|YYYY format
-          const dateStr = now.toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          }).split('/').join('|');
+          // Create formatted welcome message - KAMI STYLE
+          const welcomeMsg = `╭━━━≪ KAMI BOT ≫━━━╮\n\n👋 *NEW MEMBER ALERT*\n\n┌─ ✦\n│ 👤 Welcome, @${displayName}!\n│ 💀 Member #${groupMetadata.participants.length}\n│ ⏰ ${timeString}\n└───────────────────────\n\n📜 *${groupName}*\n${groupDesc || 'No description'}\n\n⚠️ *RULES*\n│ • No spam\n│ • No illegal content\n│ • No toxic behavior\n\n> *Powered by KAMI Bot*`;
           
-          // Get member's display name or fallback to number (convert +27 to 0)
-          let memberName = displayName;
-          if (memberName === participantNumber || !memberName) {
-            // Convert +27xxx to 0xxx format
-            memberName = participantNumber.startsWith('+27') 
-              ? '0' + participantNumber.slice(3) 
-              : participantNumber;
-          }
+          // Construct API URL for welcome image
+          const apiUrl = `https://api.some-random-api.com/welcome/img/7/gaming4?type=join&textcolor=white&username=${encodeURIComponent(displayName)}&guildName=${encodeURIComponent(groupName)}&memberCount=${groupMetadata.participants.length}&avatar=${encodeURIComponent(profilePicUrl)}`;
           
-          // Get group creator's name (first admin or owner)
-          let creatorName = 'the admin';
-          try {
-            const owner = groupMetadata.participants.find(p => p.admin === 'superadmin' || p.admin === 'owner');
-            if (owner) {
-              const ownerId = owner.id || owner.jid || owner.participant;
-              const ownerNum = ownerId.split('@')[0];
-              creatorName = ownerNum.startsWith('+27') ? '0' + ownerNum.slice(3) : ownerNum;
-            }
-          } catch (e) {}
+          // Download the welcome image
+          const imageResponse = await axios.get(apiUrl, { responseType: 'arraybuffer' });
+          const imageBuffer = Buffer.from(imageResponse.data);
           
-// Create custom welcome message
-          const welcomeMsg = `Welcome ${memberName} to ${creatorName}'s ${groupName} group!\n\n📅 ${dateStr}\n\nHey ${memberName}! Welcome to our family. Hope you enjoy being here! 🎉\n\n📝 ${groupDesc}`;
-          
-          // Generate custom welcome image
-          let imageBuffer = null;
-          try {
-            imageBuffer = await createWelcomeImage({
-              memberName: displayName,
-              memberPic: profilePicUrl,
-              groupName: groupName,
-              groupPic: groupPicUrl || '',
-              memberCount: groupMetadata.participants.length,
-              creatorName: creatorName,
-              dateStr: dateStr,
-              groupDesc: groupDesc
-            });
-          } catch (imgError) {
-            console.error('Custom image error:', imgError.message);
-          }
-          
-          // Send the welcome image or fallback to text
-          if (imageBuffer) {
-            await sock.sendMessage(id, { 
-              image: imageBuffer,
-              caption: welcomeMsg,
-              mentions: [participantJid] 
-            });
-          } else {
-            await sock.sendMessage(id, { 
-              text: welcomeMsg, 
-              mentions: [participantJid] 
-            });
-          }
+          // Send the welcome image with formatted caption
+          await sock.sendMessage(id, { 
+            image: imageBuffer,
+            caption: welcomeMsg,
+            mentions: [participantJid] 
+          });
         } catch (welcomeError) {
           // Fallback to text message if image generation fails
-          console.error('Welcome error:', welcomeError);
-          
-          // Get date for fallback
-          const now = new Date();
-          const dateStr = now.toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          }).split('/').join('|');
-          
-          let memberName = participantNumber.startsWith('+27') 
-            ? '0' + participantNumber.slice(3) 
-            : participantNumber;
-          
-          let creatorName = 'the admin';
-          try {
-            const owner = groupMetadata.participants.find(p => p.admin === 'superadmin' || p.admin === 'owner');
-            if (owner) {
-              const ownerId = owner.id || owner.jid || owner.participant;
-              const ownerNum = ownerId.split('@')[0];
-              creatorName = ownerNum.startsWith('+27') ? '0' + ownerNum.slice(3) : ownerNum;
-            }
-          } catch (e) {}
-          
-          const groupDesc = groupMetadata.desc || 'No description set';
-          
-          let message = `Welcome ${memberName} to ${creatorName}'s ${groupMetadata.subject || 'the group'} group!\n\n📅 ${dateStr}\n\nHey ${memberName}! Welcome to our family. Hope you enjoy being here!\n\n📝 ${groupDesc}`;
+          console.error('Welcome image error:', welcomeError);
+          let message = groupSettings.welcomeMessage || 'Welcome @user to @group! 👋\nEnjoy your stay!';
+          message = message.replace('@user', `@${participantNumber}`);
+          message = message.replace('@group', groupMetadata.subject || 'the group');
           
           await sock.sendMessage(id, { 
             text: message, 
@@ -1221,57 +1128,26 @@ const handleGroupUpdate = async (sock, update) => {
             hour12: true 
           });
           
-          // Get member's display name or fallback to number (convert +27 to 0)
-          let memberName = displayName;
-          if (memberName === participantNumber || !memberName) {
-            memberName = participantNumber.startsWith('+27') 
-              ? '0' + participantNumber.slice(3) 
-              : participantNumber;
-          }
+          // Create simple goodbye message
+          const goodbyeMsg = `Goodbye @${displayName} 👋 We will never miss you!`;
           
-          // Get current member count after member left
-          const currentCount = groupMetadata.participants.length;
+          // Construct API URL for goodbye image (using leave type)
+          const apiUrl = `https://api.some-random-api.com/welcome/img/7/gaming4?type=leave&textcolor=white&username=${encodeURIComponent(displayName)}&guildName=${encodeURIComponent(groupName)}&memberCount=${groupMetadata.participants.length}&avatar=${encodeURIComponent(profilePicUrl)}`;
           
-// Create custom goodbye message
-          const goodbyeMsg = `Bye ${memberName}! Member count: ${currentCount}\n\nCatch ya when we do 👋`;
+          // Download the goodbye image
+          const imageResponse = await axios.get(apiUrl, { responseType: 'arraybuffer' });
+          const imageBuffer = Buffer.from(imageResponse.data);
           
-          // Generate custom goodbye image
-          let goodbyeImageBuffer = null;
-          try {
-            goodbyeImageBuffer = await createGoodbyeImage({
-              memberName: displayName,
-              memberPic: profilePicUrl,
-              groupName: groupName,
-              groupPic: groupPicUrl || '',
-              memberCount: currentCount
-            });
-          } catch (imgError) {
-            console.error('Custom goodbye image error:', imgError.message);
-          }
-          
-          // Send the goodbye image or fallback to text
-          if (goodbyeImageBuffer) {
-            await sock.sendMessage(id, { 
-              image: goodbyeImageBuffer,
-              caption: goodbyeMsg,
-              mentions: [participantJid] 
-});
-          } else {
-            await sock.sendMessage(id, { 
-              text: goodbyeMsg, 
-              mentions: [participantJid] 
-            });
-          }
+          // Send the goodbye image with caption
+          await sock.sendMessage(id, { 
+            image: imageBuffer,
+            caption: goodbyeMsg,
+            mentions: [participantJid] 
+          });
         } catch (goodbyeError) {
           // Fallback to simple goodbye message
           console.error('Goodbye error:', goodbyeError);
-          
-          let memberName = participantNumber.startsWith('+27') 
-            ? '0' + participantNumber.slice(3) 
-            : participantNumber;
-          
-          const currentCount = groupMetadata.participants.length;
-          const goodbyeMsg = `Bye ${memberName}! Member count: ${currentCount}\n\nCatch ya when we do 👋`;
+          const goodbyeMsg = `Goodbye @${participantNumber} 👋 We will never miss you! 💀`;
           
           await sock.sendMessage(id, { 
             text: goodbyeMsg, 
@@ -1308,114 +1184,30 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
     const groupSettings = database.getGroupSettings(from);
     if (!groupSettings.antilink) return;
     
-    // Get message text from all possible sources
-    let body = '';
+    const body = msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.message?.imageMessage?.caption || 
+                  msg.message?.videoMessage?.caption || '';
     
-    // Check all possible message types
-    if (msg.message) {
-      const msgData = msg.message;
+    // Comprehensive link detection - matches links with or without protocols
+    // Matches: https://t.me/..., http://wa.me/..., t.me/..., wa.me/..., google.com, telegram.com, etc.
+    // Pattern breakdown:
+    // 1. (https?:\/\/)? - Optional http:// or https://
+    // 2. ([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,} - Domain pattern (e.g., google.com, t.me)
+    // 3. (\/[^\s]*)? - Optional path after domain
+    const linkPattern = /(https?:\/\/)?([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}(\/[^\s]*)?/i;
+    
+    // Check for any links (with or without protocol)
+    if (linkPattern.test(body)) {
+              const senderIsAdmin = await isAdmin(sock, sender, from, groupMetadata);
+      const senderIsOwner = isOwner(sender);
       
-      body = msgData.conversation || 
-             msgData.extendedTextMessage?.text ||
-             msgData.extendedTextMessage?.message?.conversation ||
-             msgData.imageMessage?.caption ||
-             msgData.videoMessage?.caption ||
-             msgData.documentMessage?.caption ||
-             msgData.audioMessage?.caption ||
-             msgData.stickerMessage?.caption ||
-             '';
-    }
-    
-    console.log('[ANTILINK] Checking message:', body.substring(0, 50));
-    console.log('[ANTILINK] Action:', groupSettings.antilinkAction);
-    
-    if (!body) {
-      console.log('[ANTILINK] No text content found, checking quoted message...');
-      // Also check quoted message if any
-      const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-      if (quoted) {
-        body = quoted.conversation || 
-              quoted.extendedTextMessage?.text ||
-              quoted.imageMessage?.caption ||
-              '';
-      }
-      if (!body) {
-        console.log('[ANTILINK] No text content found anywhere');
-        return;
-      }
-    }
-    
-    console.log('[ANTILINK] Body to check:', body);
-    
-    // Comprehensive link detection - more robust pattern
-    // Matches: https://..., http://..., www...., t.me, wa.me, google.com, etc.
-    const linkPatterns = [
-      /https?:\/\/[^\s/$.?#].[^\s]*/gi,           // HTTP/HTTPS URLs
-      /www\.[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}[^\s]*/gi,  // www URLs
-      /[a-zA-Z0-9][a-zA-Z0-9-]*\.(com|org|net|io|co|tv|me|wa|gg|ly|tk|ml|ga|cf|gq|xyz|online|site|live|chat)[^\s]*/gi,  // Popular TLDs
-      /t\.me\/[a-zA-Z0-9_]+/gi,                   // t.me shorthand
-      /wa\.me\/[a-zA-Z0-9?=&]+/gi,               // wa.me shorthand
-      /bit\.ly\/[a-zA-Z0-9]+/gi,                // bit.ly
-      /goo\.gl\/[a-zA-Z0-9]+/gi,                 // goo.gl
-    ];
-    
-    let linkFound = false;
-    for (const pattern of linkPatterns) {
-      if (pattern.test(body)) {
-        linkFound = true;
-        console.log('[ANTILINK] Link detected by pattern:', pattern);
-        break;
-      }
-    }
-    
-    if (!linkFound) {
-      console.log('[ANTILINK] No link found');
-      return;
-    }
-    
-    const senderIsOwner = isOwner(sender);
-    const senderIsAdmin = await isAdmin(sock, sender, from, groupMetadata);
-    
-    if (senderIsAdmin || senderIsOwner) return;
-    
-    const botIsAdmin = await isBotAdmin(sock, from, groupMetadata);
-    const action = (groupSettings.antilinkAction || 'warn').toLowerCase();
-    
-    if (action === 'warn') {
-        // Add warning for antilink
-        const warnings = database.addWarning(from, sender, 'Posted a link in the group');
-        const maxWarnings = config.maxWarnings || 3;
-        
-        try {
-          await sock.sendMessage(from, { delete: msg.key });
-        } catch (e) {}
-        
-        if (warnings.count >= maxWarnings) {
-          // Kick user after max warnings
-          if (botIsAdmin) {
-            try {
-              await sock.groupParticipantsUpdate(from, [sender], 'remove');
-              await sock.sendMessage(from, { 
-                text: `🔗 @${sender.split('@')[0]} was kicked from the group.\n📝 Reason: Posted ${maxWarnings} links in the group\n\nStrike 3 - You're out! 🚪`,
-                mentions: [sender]
-              });
-              database.clearWarnings(from, sender);
-            } catch (e) {
-              console.error('Failed to kick for antilink:', e);
-            }
-          }
-        } else if (warnings.count === 1) {
-          await sock.sendMessage(from, { 
-            text: `⚠️ @${sender.split('@')[0]} has been warned for posting a link.\n\n🟨 Warning 1 of ${maxWarnings}\n🔜 2 warnings left until kick\n\n❌ Links are not allowed in this group!`,
-            mentions: [sender]
-          });
-        } else if (warnings.count === 2) {
-          await sock.sendMessage(from, { 
-            text: `⚠️ @${sender.split('@')[0]} has been warned for posting a link.\n\n🟧 Warning 2 of ${maxWarnings}\n🔜 1 more warning = kick from group\n\n❌ This is your final warning!`,
-            mentions: [sender]
-          });
-        }
-      } else if (action === 'kick' && botIsAdmin) {
+      if (senderIsAdmin || senderIsOwner) return;
+      
+      const botIsAdmin = await isBotAdmin(sock, from, groupMetadata);
+      const action = (groupSettings.antilinkAction || 'delete').toLowerCase();
+      
+      if (action === 'kick' && botIsAdmin) {
         try {
           await sock.sendMessage(from, { delete: msg.key });
           await sock.groupParticipantsUpdate(from, [sender], 'remove');
@@ -1425,6 +1217,36 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
           }, { quoted: msg });
         } catch (e) {
           console.error('Failed to kick for antilink:', e);
+        }
+      } else if (action === 'warn' && botIsAdmin) {
+        // Warn action: warn user, kick after 3 warnings
+        try {
+          await sock.sendMessage(from, { delete: msg.key });
+          
+          // Add warning using existing database function
+          const warningData = database.addWarning(from, sender, 'Posted a link (Anti-link)');
+          const warnCount = warningData.count;
+          const maxWarnings = config.maxWarnings || 3;
+          
+          if (warnCount >= maxWarnings) {
+            // Max warnings reached - kick user
+            await sock.groupParticipantsUpdate(from, [sender], 'remove');
+            await sock.sendMessage(from, { 
+              text: `🚫 *ANTI-LINK AUTOMATED ACTION*\n\n❌ @${sender.split('@')[0]} HAS BEEN REMOVED\n\nReason: 3 violations for posting links\n\nThis is your final warning. Do not rejoin.`,
+              mentions: [sender]
+            }, { quoted: msg });
+            // Clear warnings after kick
+            database.clearWarnings(from, sender);
+          } else {
+            // Send warning message
+            const remaining = maxWarnings - warnCount;
+            await sock.sendMessage(from, { 
+              text: `🚫 *ANTI-LINK WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} - LINKS ARE PROHIBITED!\n\nViolation recorded. ${remaining} more and you're out.`,
+              mentions: [sender]
+            }, { quoted: msg });
+          }
+        } catch (e) {
+          console.error('Failed to warn for antilink:', e);
         }
       } else {
         // Default: delete message
@@ -1438,7 +1260,8 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
           console.error('Failed to delete message for antilink:', e);
         }
       }
-    } catch (error) {
+    }
+  } catch (error) {
     console.error('Error in antilink handler:', error);
   }
 };
@@ -1549,57 +1372,61 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
       if (senderIsAdmin || senderIsOwner) return;
       
       const botIsAdmin = await isBotAdmin(sock, from, groupMetadata);
-      const action = (groupSettings.antigroupmentionAction || 'warn').toLowerCase();
+      const action = (groupSettings.antigroupmentionAction || 'delete').toLowerCase();
       
-      if (action === 'warn') {
-        // Add warning for status mention
-        const warnings = database.addWarning(from, sender, 'Mentioned the group in status');
-        const maxWarnings = config.maxWarnings || 3;
-        
+      if (groupSettings.antigroupmention) {
+        // Debug log removed
+      }
+      
+      if (action === 'kick' && botIsAdmin) {
         try {
-          await sock.sendMessage(from, { delete: msg.key });
-        } catch (e) {}
-        
-        if (warnings.count >= maxWarnings) {
-          // Kick user after max warnings
-          if (botIsAdmin) {
-            try {
-              await sock.groupParticipantsUpdate(from, [sender], 'remove');
-              await sock.sendMessage(from, { 
-                text: `📌 @${sender.split('@')[0]} was kicked from the group.\n📝 Reason: Mentioned the group ${maxWarnings} times in status\n\nStrike 3 - You're out! 🚪`,
-                mentions: [sender]
-              });
-              database.clearWarnings(from, sender);
-            } catch (e) {
-              console.error('Failed to kick for antigroupmention:', e);
-            }
+          if (groupSettings.antigroupmention) {
+            // Delete and kick user
           }
-        } else if (warnings.count === 1) {
-          await sock.sendMessage(from, { 
-            text: `⚠️ @${sender.split('@')[0]} has been warned for mentioning the group in status.\n\n🟨 Warning 1 of ${maxWarnings}\n🔜 2 warnings left until kick\n\n❌ Don't mention this group in your status!`,
-            mentions: [sender]
-          });
-        } else if (warnings.count === 2) {
-          await sock.sendMessage(from, { 
-            text: `⚠️ @${sender.split('@')[0]} has been warned for mentioning the group in status.\n\n🟧 Warning 2 of ${maxWarnings}\n🔜 1 more warning = kick from group\n\n❌ This is your final warning!`,
-            mentions: [sender]
-          });
-        }
-      } else if (action === 'kick' && botIsAdmin) {
-        try {
           await sock.sendMessage(from, { delete: msg.key });
           await sock.groupParticipantsUpdate(from, [sender], 'remove');
-          await sock.sendMessage(from, { 
-            text: `📌 @${sender.split('@')[0]} was removed for mentioning the group in status.`,
-            mentions: [sender]
-          });
+          // Silent removal
         } catch (e) {
           console.error('Failed to kick for antigroupmention:', e);
         }
-      } else {
-        // Default: delete message only
+      } else if (action === 'warn' && botIsAdmin) {
+        // Warn action: warn user, kick after 3 warnings
         try {
           await sock.sendMessage(from, { delete: msg.key });
+          
+          // Add warning using existing database function
+          const warningData = database.addWarning(from, sender, 'Group mention (Anti-group mention)');
+          const warnCount = warningData.count;
+          const maxWarnings = config.maxWarnings || 3;
+          
+          if (warnCount >= maxWarnings) {
+            // Max warnings reached - kick user
+            await sock.groupParticipantsUpdate(from, [sender], 'remove');
+            await sock.sendMessage(from, { 
+              text: `🚫 *ANTI-GROUP MENTION AUTOMATED ACTION*\n\n❌ @${sender.split('@')[0]} HAS BEEN REMOVED\n\nReason: 3 violations for group mentions\n\nThis is your final warning. Do not rejoin.`,
+              mentions: [sender]
+            }, { quoted: msg });
+            // Clear warnings after kick
+            database.clearWarnings(from, sender);
+          } else {
+            // Send warning message
+            const remaining = maxWarnings - warnCount;
+            await sock.sendMessage(from, { 
+              text: `🚫 *ANTI-GROUP MENTION WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} - GROUP MENTIONS ARE PROHIBITED!\n\nViolation recorded. ${remaining} more and you're out.`,
+              mentions: [sender]
+            }, { quoted: msg });
+          }
+        } catch (e) {
+          console.error('Failed to warn for antigroupmention:', e);
+        }
+      } else {
+        // Default: delete message
+        try {
+          if (groupSettings.antigroupmention) {
+            // Delete message
+          }
+          await sock.sendMessage(from, { delete: msg.key });
+          // Silent deletion
         } catch (e) {
           console.error('Failed to delete message for antigroupmention:', e);
         }

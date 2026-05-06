@@ -25,45 +25,17 @@ const APIs = {
     }
   },
   
-  // AI Chat - Multiple API fallback
+  // AI Chat - Shizo API
   chatAI: async (text) => {
-    const apis = [
-      {
-        name: 'Shizo',
-        url: `https://api.shizo.top/ai/gpt?apikey=shizo&query=${encodeURIComponent(text)}`,
-      },
-      {
-        name: 'Siputzx',
-        url: `https://api.siputzx.my.id/api/ai/gpt4free?q=${encodeURIComponent(text)}`,
-      },
-      {
-        name: 'Vreden',
-        url: `https://api.vreden.my.id/api/chatgpt?q=${encodeURIComponent(text)}`,
+    try {
+      const response = await api.get(`https://api.shizo.top/ai/gpt?apikey=shizo&query=${encodeURIComponent(text)}`);
+      if (response.data && response.data.msg) {
+        return { msg: response.data.msg };
       }
-    ];
-    
-    for (const api of apis) {
-      try {
-        const response = await axios.get(api.url, { timeout: 30000 });
-        
-        // Try different response structures
-        let answer = null;
-        if (response.data?.msg) answer = response.data.msg;
-        else if (response.data?.response) answer = response.data.response;
-        else if (response.data?.answer) answer = response.data.answer;
-        else if (response.data?.data?.msg) answer = response.data.data.msg;
-        else if (response.data?.data?.response) answer = response.data.data.response;
-        else if (typeof response.data === 'string') answer = response.data;
-        
-        if (answer) {
-          return { msg: answer };
-        }
-      } catch (error) {
-        console.error(`${api.name} AI API failed:`, error.message);
-        continue;
-      }
+      return response.data;
+    } catch (error) {
+      throw new Error('Failed to get AI response');
     }
-    throw new Error('All AI APIs failed');
   },
   
   // YouTube Download
@@ -452,77 +424,40 @@ const APIs = {
   
   // TikTok Download API
   getTikTokDownload: async (url) => {
-    const apis = [
-      {
-        name: 'SLBJS',
-        url: `https://tdownv4.sl-bjs.workers.dev/?down=${encodeURIComponent(url)}`,
-      },
-      {
-        name: 'Siputzx',
-        url: `https://api.siputzx.my.id/api/d/tiktok?url=${encodeURIComponent(url)}`,
-      },
-      {
-        name: 'Vevioz',
-        url: `https://api.vevioz.com/apis/button/mp4?url=${encodeURIComponent(url)}`,
-      }
-    ];
-    
-    for (const api of apis) {
-      try {
-        const response = await axios.get(api.url, { 
-          timeout: 20000,
-          headers: {
-            'Accept': '*/*',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-          }
-        });
-        
-        const data = response.data;
-        
+    const apiUrl = `https://api.siputzx.my.id/api/d/tiktok?url=${encodeURIComponent(url)}`;
+    try {
+      const response = await axios.get(apiUrl, { 
+        timeout: 15000,
+        headers: {
+          'accept': '*/*',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      if (response.data && response.data.status && response.data.data) {
         let videoUrl = null;
         let title = null;
-        let audioUrl = null;
-        let thumbnail = null;
         
-        if (api.name === 'SLBJS') {
-          if (data?.url) {
-            videoUrl = data.url;
-            title = data.title || data.desc || 'TikTok Video';
-            thumbnail = data.cover || data.thumbnail;
-            audioUrl = data.music || data.audio;
-          }
-        } else if (api.name === 'Siputzx') {
-          if (data?.status && data?.data) {
-            if (data.data.urls && Array.isArray(data.data.urls) && data.data.urls.length > 0) {
-              videoUrl = data.data.urls[0];
-              title = data.data.metadata?.title || 'TikTok Video';
-              thumbnail = data.data.metadata?.thumbnail;
-            } else if (data.data.video_url) {
-              videoUrl = data.data.video_url;
-              title = data.data.metadata?.title || 'TikTok Video';
-            } else if (data.data.url) {
-              videoUrl = data.data.url;
-              title = data.data.metadata?.title || 'TikTok Video';
-            } else if (data.data.download_url) {
-              videoUrl = data.data.download_url;
-              title = data.data.metadata?.title || 'TikTok Video';
-            }
-          }
-        } else if (data) {
-          videoUrl = data.url || data.download_url || data.video_url || data.mp4 || data.video || data;
-          title = data.title || data.metadata?.title || 'TikTok Video';
+        if (response.data.data.urls && Array.isArray(response.data.data.urls) && response.data.data.urls.length > 0) {
+          videoUrl = response.data.data.urls[0];
+          title = response.data.data.metadata?.title || 'TikTok Video';
+        } else if (response.data.data.video_url) {
+          videoUrl = response.data.data.video_url;
+          title = response.data.data.metadata?.title || 'TikTok Video';
+        } else if (response.data.data.url) {
+          videoUrl = response.data.data.url;
+          title = response.data.data.metadata?.title || 'TikTok Video';
+        } else if (response.data.data.download_url) {
+          videoUrl = response.data.data.download_url;
+          title = response.data.data.metadata?.title || 'TikTok Video';
         }
         
-        if (videoUrl && (videoUrl.startsWith('http://') || videoUrl.startsWith('https://'))) {
-          return { videoUrl, title, audioUrl, thumbnail };
-        }
-      } catch (error) {
-        console.error(`${api.name} TikTok API failed:`, error.message);
-        continue;
+        return { videoUrl, title };
       }
+      throw new Error('Invalid API response');
+    } catch (error) {
+      throw new Error('TikTok download failed');
     }
-    
-    throw new Error('All TikTok APIs failed');
   },
   
   // Screenshot Website API

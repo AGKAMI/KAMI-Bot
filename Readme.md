@@ -1,22 +1,21 @@
 <div align="center">
 
-## Knight Bot Mini
+## KAMI Bot Mini
 
 [![Made with Baileys](https://img.shields.io/badge/Made%20with-Baileys-00bcd4?style=for-the-badge)](https://github.com/WhiskeySockets/Baileys)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-<img src="utils/bot_image.jpg" alt="Knight Bot Mini" width="260">
+<img src="utils/bot_image.jpg" alt="KAMI Bot Mini" width="260">
 
 </div>
 
-Knight Bot Mini is a WhatsApp MD bot built on top of the **Baileys** library.  
-It’s designed to be fast, lightweight, and easy to customize without touching the core code.  
+KAMI Bot Mini is a WhatsApp MD bot built on top of the **Baileys** library.  
+It's designed to be fast, lightweight, and easy to customize without touching the core code.  
 This project is **fully open source** — you can modify it, rebrand it, and make your **own bot** from this codebase **free of cost**, without needing any permission from our side.  
 All commands and the overall structure are written in a way that makes customization (bot image, prefix, name, features, etc.) as easy as possible.
 
 ---
-
 
 ## ✨ Features
 
@@ -32,13 +31,13 @@ All commands and the overall structure are written in a way that makes customiza
 
 <div align="center">
 
-<a href="https://github.com/mruniquehacker/Knightbot-Mini/fork" target="_blank">
+<a href="https://github.com/AGKAMI/KAMI-Bot/fork" target="_blank">
   <img src="https://img.shields.io/badge/Fork%20Repository-GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="Fork on GitHub">
 </a>
 
 </div>
 
-> This creates your own copy of `Knightbot-Mini` under your GitHub account.
+> This creates your own copy of `KAMI-Bot` under your GitHub account.
 
 ---
 
@@ -48,7 +47,7 @@ Deploy a small helper to generate a **pair code** and obtain your session string
 
 <div align="center">
 
-<a href="https://knight-bot-paircode.onrender.com/" target="_blank">
+<a href="https://kami-bot-paircode.onrender.com/" target="_blank">
   <img src="https://img.shields.io/badge/Generate-Pair%20Code-blueviolet?style=for-the-badge" alt="Generate Pair Code">
 </a>
 
@@ -57,13 +56,13 @@ Deploy a small helper to generate a **pair code** and obtain your session string
 After scanning, you will receive a **session string** starting with:
 
 ```text
-KnightBot!H4....
+KAMI!H4....
 ```
 
 Copy that full string and paste it into `config.js`:
 
 ```js
-sessionID: 'KnightBot!H4.....'
+sessionID: 'KAMI!H4.....'
 ```
 
 Or set it via the `SESSION_ID` environment variable when hosting.
@@ -84,7 +83,7 @@ For a full step‑by‑step deployment tutorial (panels / VPS / Heroku), add or 
 
 <div align="center">
   <a href="https://youtu.be/4PQcn-qqrcE">
-    <img src="https://img.shields.io/badge/Deploy Tutorial-dc3545?style=for-the-badge&logo=youtube" alt="YouTube Link"/>
+    <img src="https://img.shields.io/badge/Deploy%20Tutorial-dc3545?style=for-the-badge&logo=youtube" alt="YouTube Link"/>
   </a>
 </div>
 
@@ -95,8 +94,8 @@ For a full step‑by‑step deployment tutorial (panels / VPS / Heroku), add or 
 ### 1️⃣ Clone the repository
 
 ```bash
-git clone https://github.com/mruniquehacker/Knightbot-Mini.git
-cd Knightbot-Mini
+git clone https://github.com/AGKAMI/KAMI-Bot.git
+cd KAMI-Bot
 ```
 
 ### 2️⃣ Install dependencies
@@ -112,7 +111,7 @@ Edit `config.js`:
 - **Option A: Use session string**
 
   ```js
-  sessionID: 'KnightBot!H4.....'
+  sessionID: 'KAMI!H4.....'
   ```
 
 - **Option B: Scan QR**
@@ -136,15 +135,11 @@ When the bot starts:
 
 ---
 
-## 🌐 Community
+## 🌐 Channel
 
 <div align="center">
 
-<a href="https://t.me/+3QhFUZHx-nhhZmY1" target="_blank">
-  <img src="https://img.shields.io/badge/Join-Telegram-0088cc?style=for-the-badge&logo=telegram&logoColor=white" alt="Join Telegram">
-</a>
-
-<a href="https://whatsapp.com/channel/0029Va90zAnIHphOuO8Msp3A" target="_blank">
+<a href="https://whatsapp.com/channel/0029VbAHHdPElah0PDVXGq3n" target="_blank">
   <img src="https://img.shields.io/badge/Join-WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Join WhatsApp Channel">
 </a>
 
@@ -154,38 +149,17 @@ When the bot starts:
 
 ## 🙏 Credits
 
-- **Mr Unique Hacker** – Main developer & maintainer  
+- **AG KAMI** – Main developer & maintainer  
 - **Baileys** – WhatsApp Web API library (`@whiskeysockets/baileys`)  
 - Other open‑source libraries listed in `package.json`
 
 ---
 
-## ☕ Support Me
-
-<div align="center">
-
-<a href="https://buymeacoffee.com/mruniquehacker" target="_blank">
-  <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support%20Developer-FF813F?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white" alt="Buy Me a Coffee">
-</a>
-
-</div>
-
-If you find this project helpful and want to support the developer, consider buying me a coffee! Your support helps maintain and improve this open-source project.
-
-<div align="center">
-
-<img src="utils/bmc_qr.png" alt="Buy Me a Coffee QR Code" width="200">
-
-</div>
-
----
-
-
 ## ⚠️ Important Warning
 
 - This bot is created **for educational purposes only**.  
 - This is **NOT** an official WhatsApp bot.  
-- Using third‑party bots **may violate WhatsApp’s Terms of Service** and can lead to your account being **banned**.
+- Using third‑party bots **may violate WhatsApp's Terms of Service** and can lead to your account being **banned**.
 
 > You use this bot **at your own risk**.  
 > The developers are **not responsible** for any bans, issues, or damages resulting from its use.
@@ -217,11 +191,10 @@ You must:
 
 ## 📜 Copyright Notice
 
-Copyright (c) **2026 Professor**.  
+Copyright (c) **2026 AG KAMI**.  
 All rights reserved.
 
 This project contains code from various open‑source projects and AI tools, including but not limited to:
 
 - **Baileys** – MIT License  
 - Other libraries as listed in `package.json`
-

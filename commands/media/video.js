@@ -1,11 +1,10 @@
 /**
- * Video Downloader - Download video from YouTube using ytdl-core
+ * Video Downloader - Download video from YouTube
  */
 
 const yts = require('yt-search');
-const ytdl = require('ytdl-core');
-const fs = require('fs');
-const path = require('path');
+const APIs = require('../../utils/api');
+const config = require('../../config');
 
 module.exports = {
   name: 'ytvideo',
@@ -16,72 +15,87 @@ module.exports = {
 
   async execute(sock, msg, args) {
     try {
+      // Get instance-specific config
+      const instanceConfig = config.getConfigFromSocket(sock);
+
       const text = args.join(' ');
       const chatId = msg.key.remoteJid;
 
-      if (!text) {
+      const searchQuery = text.trim();
+
+      if (!searchQuery) {
         return await sock.sendMessage(chatId, {
           text: 'What video do you want to download?'
         }, { quoted: msg });
       }
 
-      let videoUrl;
-      let videoTitle;
-      let videoThumbnail;
+      // Determine if input is a YouTube link
+      let videoUrl = '';
+      let videoTitle = '';
+      let videoThumbnail = '';
 
-      if (text.includes('youtube.com') || text.includes('youtu.be')) {
-        videoUrl = text;
-        const info = await ytdl.getInfo(text);
-        videoTitle = info.videoDetails.title;
-        videoThumbnail = info.videoDetails.thumbnails?.[0]?.url || info.videoDetails.thumbnails?.[info.videoDetails.thumbnails.length - 1]?.url;
+      if (searchQuery.startsWith('http://') || searchQuery.startsWith('https://')) {
+        videoUrl = searchQuery;
       } else {
-        const search = await yts(text);
-        if (!search.videos.length) {
+        // Search YouTube for the video
+        const { videos } = await yts(searchQuery);
+        if (!videos || videos.length === 0) {
           return await sock.sendMessage(chatId, {
             text: 'No videos found!'
           }, { quoted: msg });
         }
-        const video = search.videos[0];
-        videoUrl = video.url;
-        videoTitle = video.title;
-        videoThumbnail = video.thumbnail;
+        videoUrl = videos[0].url;
+        videoTitle = videos[0].title;
+        videoThumbnail = videos[0].thumbnail;
       }
 
+      // Send thumbnail immediately
+      try {
+        const ytId = (videoUrl.match(/(?:youtu\.be\/|v=)([a-zA-Z0-9_-]{11})/) || [])[1];
+        const thumb = videoThumbnail || (ytId ? `https://i.ytimg.com/vi/${ytId}/sddefault.jpg` : undefined);
+        const captionTitle = videoTitle || searchQuery;
+        if (thumb) {
+          await sock.sendMessage(chatId, {
+            image: { url: thumb },
+            caption: `*${captionTitle}*\nDownloading...`
+          }, { quoted: msg });
+        }
+      } catch (e) {
+        console.error('[VIDEO] thumb error:', e?.message || e);
+      }
+
+      // Validate YouTube URL
+      let urls = videoUrl.match(/(?:https?:\/\/)?(?:youtu\.be\/|(?:www\.|m\.)?youtube\.com\/(?:watch\?v=|v\/|embed\/|shorts\/|playlist\?list=)?)([a-zA-Z0-9_-]{11})/gi);
+      if (!urls) {
+        return await sock.sendMessage(chatId, {
+          text: 'This is not a valid YouTube link!'
+        }, { quoted: msg });
+      }
+
+      // Get video: try EliteProTech first, then Yupra, then Okatsu fallback
+      let videoData;
+      try {
+        videoData = await APIs.getEliteProTechVideoByUrl(videoUrl);
+      } catch (e1) {
+        try {
+          videoData = await APIs.getYupraVideoByUrl(videoUrl);
+        } catch (e2) {
+          videoData = await APIs.getOkatsuVideoByUrl(videoUrl);
+        }
+      }
+
+      // Send video directly using the download URL
       await sock.sendMessage(chatId, {
-        image: { url: videoThumbnail },
-        caption: `📥 Downloading: *${videoTitle}*...`
-      }, { quoted: msg });
-
-      const tempPath = path.join(__dirname, `../../temp/${Date.now()}.mp4`);
-
-      await new Promise((resolve, reject) => {
-        const stream = ytdl(videoUrl, { 
-          filter: 'videoandaudio',
-          quality: 'highestvideo'
-        });
-        
-        const writer = fs.createWriteStream(tempPath);
-        stream.pipe(writer);
-        
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-        stream.on('error', reject);
-      });
-
-      const videoBuffer = fs.readFileSync(tempPath);
-      fs.unlinkSync(tempPath);
-
-      await sock.sendMessage(chatId, {
-        video: videoBuffer,
+        video: { url: videoData.download },
         mimetype: 'video/mp4',
-        fileName: `${videoTitle.replace(/[^\w\s-]/g, '')}.mp4`,
-        caption: `*${videoTitle}*\n\n> *ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ ʙʏ KAMI Bot*`
+        fileName: `${(videoData.title || videoTitle || 'video').replace(/[^\w\s-]/g, '')}.mp4`,
+        caption: `*${videoData.title || videoTitle || 'Video'}*\n\n> *_Downloaded by ${instanceConfig.botName}_*`
       }, { quoted: msg });
 
     } catch (error) {
-      console.error('[VIDEO] Command Error:', error.message);
+      console.error('[VIDEO] Command Error:', error?.message || error);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: '❌ Failed to download video. Please try again.'
+        text: 'Download failed: ' + (error?.message || 'Unknown error')
       }, { quoted: msg });
     }
   }

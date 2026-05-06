@@ -12,18 +12,22 @@ module.exports = {
     async execute(sock, msg, args, extra) {
       try {
         const start = Date.now();
-        const sent = await extra.reply('🏓 Pinging...');
+        const sent = await extra.reply('💀 KAMI checking...');
         const end = Date.now();
         
         const responseTime = end - start;
         
+        let status = '🟢';
+        if (responseTime > 200) status = '🟡';
+        if (responseTime > 500) status = '🔴';
+        
         await sock.sendMessage(extra.from, {
-          text: `🏓 *Pong!*\n⚡ Response Time: ${responseTime}ms`,
+          text: `╭━━━≪ KAMI BOT ≫━━━╮\n\n💀 *KAMI ONLINE*\n\n${status} Pong: ${responseTime}ms\n\n> KAMI Bot`,
           edit: sent.key
         });
         
       } catch (error) {
-        await extra.reply(`❌ Error: ${error.message}`);
+        await extra.reply(`❌ KAMI Error: ${error.message}`);
       }
     }
   };

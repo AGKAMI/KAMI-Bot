@@ -4,8 +4,8 @@
     "description": "WhatsApp MD-Style Multi-Command Bot with Baileys",
     "main": "index.js",
     "type": "commonjs",
-    "scripts": {
-        "start": "node index.js",
+"scripts": {
+        "start": "echo '=== Git Pull Info ===' && git pull 2>&1 || echo 'No git pull (first run or error)' && echo '=== Latest Commit ===' && git log -1 --pretty=format:'%h - %s (%ci)' 2>/dev/null || echo 'No commits' && echo '======================' && echo '' && node index.js",
         "dev": "nodemon index.js",
         "rebuild": "npm rebuild sharp && npm rebuild canvas",
         "postinstall": "npm rebuild sharp && npm rebuild canvas",
@@ -18,6 +18,11 @@
         "baileys",
         "md"
     ],
+=======
+        "postinstall": "npm rebuild sharp && npm rebuild canvas"
+    },
+    "keywords": ["whatsapp bot", "KAMI Bot", "bot", "baileys", "md"],
+>>>>>>> 8fe4757572d94f4109728650a93358bb51d0459b
     "author": "AG KAMI",
     "license": "MIT",
     "dependencies": {

@@ -57,7 +57,7 @@ function downloadFile(url, dest, visited = new Set()) {
       const client = url.startsWith('https://') ? https : http;
       const req = client.get(url, {
         headers: {
-          'User-Agent': 'KAMIBot-Updater/1.0',
+          'User-Agent': 'KAMI-Bot-Updater/1.0',
           'Accept': '*/*'
         }
       }, res => {

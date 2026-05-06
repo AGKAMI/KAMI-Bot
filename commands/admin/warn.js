@@ -47,8 +47,7 @@ module.exports = {
       text += `⚠️ Warnings: ${warnings.count}/${config.maxWarnings}\n\n`;
       
       if (warnings.count >= config.maxWarnings) {
-        text += `❌ User has reached ${config.maxWarnings} warnings and has been kicked!\n`;
-        text += `📝 Reason: ${reason}`;
+        text += `❌ User has reached maximum warnings and will be removed!`;
         
         await sock.sendMessage(extra.from, {
           text,
@@ -57,10 +56,6 @@ module.exports = {
         
         if (extra.isBotAdmin) {
           await sock.groupParticipantsUpdate(extra.from, [target], 'remove');
-          await sock.sendMessage(extra.from, {
-            text: `❌ @${target.split('@')[0]} was kicked from the group.\n📝 Reason: ${reason}`,
-            mentions: [target]
-          });
           database.clearWarnings(extra.from, target);
         }
       } else {

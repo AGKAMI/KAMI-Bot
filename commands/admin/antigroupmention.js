@@ -1,16 +1,15 @@
 /**
- * Anti-Group Mention Command - Toggle antigroupmention protection with delete/kick/warn options
+ * Anti-Group Mention Command - Toggle antigroupmention protection with delete/kick options
  */
 
 const database = require('../../database');
-const config = require('../../config');
 
 module.exports = {
   name: 'antigroupmention',
   aliases: ['agm'],
   category: 'admin',
   description: 'Configure antigroupmention protection (delete/kick/warn)',
-  usage: '.antigroupmention <on/off/get/set warn/delete/kick>',
+  usage: '.antigroupmention <on/off/set delete|kick|warn/get>',
   groupOnly: true,
   adminOnly: true,
   botAdminNeeded: true,
@@ -20,75 +19,57 @@ module.exports = {
       if (!args[0]) {
         const settings = database.getGroupSettings(extra.from);
         const status = settings.antigroupmention ? 'ON' : 'OFF';
-        const action = settings.antigroupmentionAction || 'warn';
-        
-        let text = `📌 *Antigroupmention Configuration*\n\n`;
-        text += `Status: *${status}*\n`;
-        text += `Action: *${action}*\n`;
-        
-        if (action === 'warn') {
-          text += `\n⚠️ Max Warnings: ${config.maxWarnings}\n`;
-          text += `🔨 User will be kicked after ${config.maxWarnings} warnings (status mentions)`;
-        }
-        
-        text += `\n\n*Usage:*\n`;
-        text += `  .antigroupmention on/off\n`;
-        text += `  .antigroupmention set warn | delete | kick\n`;
-        text += `  .antigroupmention get`;
-        
-        return extra.reply(text);
+        const action = settings.antigroupmentionAction || 'delete';
+        return extra.reply(
+          `📌 *Antigroupmention Status*\n\n` +
+          `Status: *${status}*\n` +
+          `Action: *${action}*\n\n` +
+          `Usage:\n` +
+          `  .antigroupmention on\n` +
+          `  .antigroupmention off\n` +
+          `  .antigroupmention set delete | kick | warn\n` +
+          `  .antigroupmention get\n\n` +
+          `*Note:* warn = warn 3 times then auto-kick`
+        );
       }
       
       const opt = args[0].toLowerCase();
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antigroupmention) {
-          return extra.reply('⚠️ *Antigroupmention is already ON*');
+          return extra.reply('*Antigroupmention is already on*');
         }
         database.updateGroupSettings(extra.from, { antigroupmention: true });
-        return extra.reply('⚠️ *Antigroupmention has been turned ON*\n\nStatus mentions will be handled.');
+        return extra.reply('*Antigroupmention has been turned ON*');
       }
       
       if (opt === 'off') {
         database.updateGroupSettings(extra.from, { antigroupmention: false });
-        return extra.reply('✅ *Antigroupmention has been turned OFF*');
+        return extra.reply('*Antigroupmention has been turned OFF*');
       }
       
-      if (opt === 'set' && args[1]) {
+      if (opt === 'set') {
+        if (args.length < 2) {
+          return extra.reply('*Please specify an action: .antigroupmention set delete | kick | warn*');
+        }
+        
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick', 'warn'].includes(setAction)) {
-          return extra.reply('❌ *Invalid action.*\nChoose: delete, kick, or warn');
+          return extra.reply('*Invalid action. Choose delete, kick, or warn.*');
         }
         
         database.updateGroupSettings(extra.from, { 
           antigroupmentionAction: setAction,
-          antigroupmention: true
+          antigroupmention: true // Auto-enable when setting action
         });
-        
-        const actionText = setAction === 'warn' 
-          ? `${setAction} (user will be kicked after ${config.maxWarnings} warnings)`
-          : setAction;
-        return extra.reply(`⚠️ *Antigroupmention action set to ${actionText}*`);
+        return extra.reply(`*Antigroupmention action set to ${setAction}*`);
       }
       
       if (opt === 'get') {
         const settings = database.getGroupSettings(extra.from);
         const status = settings.antigroupmention ? 'ON' : 'OFF';
-        const action = settings.antigroupmentionAction || 'warn';
+        const action = settings.antigroupmentionAction || 'delete';
         return extra.reply(`*Antigroupmention Configuration:*\nStatus: ${status}\nAction: ${action}`);
-      }
-      
-      // Handle direct action: .antigroupmention warn, .antigroupmention delete, .antigroupmention kick
-      if (['delete', 'kick', 'warn'].includes(opt)) {
-        database.updateGroupSettings(extra.from, { 
-          antigroupmentionAction: opt,
-          antigroupmention: true
-        });
-        
-        const actionText = opt === 'warn' 
-          ? `${opt} (user will be kicked after ${config.maxWarnings} warnings)`
-          : opt;
-        return extra.reply(`⚠️ *Antigroupmention action set to ${actionText}*`);
       }
       
       return extra.reply('*Use .antigroupmention for usage.*');
