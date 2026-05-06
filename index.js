@@ -2,19 +2,6 @@
  * KAMI Bot - WhatsApp MD Bot
  */
 
-const { execSync } = require('child_process');
-try {
-  console.log('\n📦 Git Pull Info:');
-  const pullOutput = execSync('git pull 2>&1', { cwd: __dirname, encoding: 'utf8' });
-  console.log(pullOutput);
-  console.log('📝 Latest Commit:');
-  const commitInfo = execSync('git log -1 --pretty=format:"%h - %s (%ci)" 2>/dev/null', { cwd: __dirname, encoding: 'utf8' });
-  console.log(commitInfo);
-} catch (e) {
-  console.log('⚠️ Git info unavailable (first run or not a git repo)');
-}
-console.log('');
-
 console.log(`
 ╔═══════════════════════════════════════╗
 ║                                       ║
