@@ -1,0 +1,8 @@
+node_modules/
+session/
+*.json
+!package.json
+temp/
+tmp/
+*.log
+.DS_Store
