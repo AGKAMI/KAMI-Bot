@@ -65,7 +65,9 @@ module.exports = {
         { name: 'EliteProTech', method: () => APIs.getEliteProTechDownloadByUrl(video.url) },
         { name: 'Yupra', method: () => APIs.getYupraDownloadByUrl(video.url) },
         { name: 'Okatsu', method: () => APIs.getOkatsuDownloadByUrl(video.url) },
-        { name: 'Izumi', method: () => APIs.getIzumiDownloadByUrl(video.url) }
+        { name: 'Izumi', method: () => APIs.getIzumiDownloadByUrl(video.url) },
+        { name: 'Akuari', method: () => APIs.getAkuariDownloadByUrl(video.url) },
+        { name: 'Ryzendesu', method: () => APIs.getRyzendesuDownloadByUrl(video.url) }
       ];
       
       // Try each API until we successfully download audio

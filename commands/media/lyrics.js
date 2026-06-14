@@ -56,6 +56,41 @@ module.exports = {
         }
       }
       
+      // API 3: Ryzendesu
+      if (!lyricsData) {
+        try {
+          const response = await axios.get(`https://api.ryzendesu.vip/api/tools/lyrics?query=${encodeURIComponent(query)}`);
+          if (response.data && (response.data.result || response.data.data)) {
+            const d = response.data.result || response.data.data;
+            lyricsData = {
+              title: d.title || query,
+              artist: d.artist || 'Unknown',
+              lyrics: d.lyrics || d.text || response.data.lyrics || '',
+              thumbnail: d.thumbnail || d.image || null
+            };
+          }
+        } catch (err) {
+          console.log('Ryzendesu API failed');
+        }
+      }
+      
+      // API 4: Agatz
+      if (!lyricsData) {
+        try {
+          const response = await axios.get(`https://api.agatz.xyz/api/lirik?judul=${encodeURIComponent(query)}`);
+          if (response.data && response.data.data) {
+            lyricsData = {
+              title: response.data.data.title || query,
+              artist: response.data.data.artist || 'Unknown',
+              lyrics: response.data.data.lyrics || response.data.data.lirik || '',
+              thumbnail: response.data.data.thumbnail || null
+            };
+          }
+        } catch (err) {
+          console.log('Agatz API failed');
+        }
+      }
+      
       if (!lyricsData) {
         return await sock.sendMessage(msg.key.remoteJid, { 
           text: '❌ Could not find lyrics for this song!' 

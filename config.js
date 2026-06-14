@@ -74,7 +74,7 @@ welcome: false,
     },
     
     // Timezone
-    timezone: 'Asia/Kolkata',
+    timezone: 'Africa/Johannesburg',
     
     // Limits
     maxWarnings: 3,

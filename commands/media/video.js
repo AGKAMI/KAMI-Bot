@@ -16,7 +16,6 @@ module.exports = {
 
   async execute(sock, msg, args) {
     try {
-      const instanceConfig = config.getConfigFromSocket(sock);
       const text = args.join(' ');
       const chatId = msg.key.remoteJid;
       const searchQuery = text.trim();
@@ -126,7 +125,22 @@ module.exports = {
               finalTitle = videoData.title || finalTitle;
               methodUsed = 'okatsu';
             } catch (e3) {
-              console.log('[VIDEO] API fallbacks all failed');
+              console.log('[VIDEO] okatsu failed');
+              try {
+                const videoData = await APIs.getAkuariVideoByUrl(videoUrl);
+                downloadUrl = videoData.download;
+                finalTitle = videoData.title || finalTitle;
+                methodUsed = 'akuari';
+              } catch (e4) {
+                try {
+                  const videoData = await APIs.getRyzendesuVideoByUrl(videoUrl);
+                  downloadUrl = videoData.download;
+                  finalTitle = videoData.title || finalTitle;
+                  methodUsed = 'ryzendesu';
+                } catch (e5) {
+                  console.log('[VIDEO] API fallbacks all failed');
+                }
+              }
             }
           }
         }
@@ -176,7 +190,7 @@ module.exports = {
         video: { url: downloadUrl },
         mimetype: 'video/mp4',
         fileName: `${finalTitle.replace(/[^\w\s-]/g, '')}.mp4`,
-        caption: `*${finalTitle}*\n\n> *_Downloaded by ${instanceConfig.botName}_*`
+        caption: `*${finalTitle}*\n\n> *_Downloaded by ${config.botName}_*`
       }, { quoted: msg });
 
     } catch (error) {

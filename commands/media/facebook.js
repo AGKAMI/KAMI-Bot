@@ -46,6 +46,33 @@ const fbAPIs = [
       return { url: response.data.data.url, title: response.data.data.title };
     }
     throw new Error('Siputzx failed');
+  },
+  // API 5: Ryzendesu
+  async (url) => {
+    const response = await axios.get(`https://api.ryzendesu.vip/api/downloader/fb?url=${encodeURIComponent(url)}`, { timeout: 20000 });
+    if (response.data && (response.data.result?.url || response.data.url || response.data.data?.url)) {
+      console.log('Ryzendesu got URL');
+      return { url: response.data.result?.url || response.data.url || response.data.data?.url, title: response.data.result?.title || response.data.title || 'Facebook Video' };
+    }
+    throw new Error('Ryzendesu failed');
+  },
+  // API 6: Akuari
+  async (url) => {
+    const response = await axios.get(`https://api.akuari.my.id/downloader/facebook?url=${encodeURIComponent(url)}`, { timeout: 20000 });
+    if (response.data && (response.data.result?.url || response.data.url || response.data.data?.url)) {
+      console.log('Akuari got URL');
+      return { url: response.data.result?.url || response.data.url || response.data.data?.url, title: response.data.result?.title || response.data.title || 'Facebook Video' };
+    }
+    throw new Error('Akuari failed');
+  },
+  // API 7: Agatz
+  async (url) => {
+    const response = await axios.get(`https://api.agatz.xyz/api/facebook?url=${encodeURIComponent(url)}`, { timeout: 20000 });
+    if (response.data && (response.data.data?.url || response.data.url || response.data.result?.url)) {
+      console.log('Agatz got URL');
+      return { url: response.data.data?.url || response.data.url || response.data.result?.url, title: response.data.data?.title || response.data.title || 'Facebook Video' };
+    }
+    throw new Error('Agatz failed');
   }
 ];
 
