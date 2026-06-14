@@ -3,6 +3,7 @@
  */
 
 const yts = require('yt-search');
+const axios = require('axios');
 const APIs = require('../../utils/api');
 const config = require('../../config');
 
@@ -15,12 +16,9 @@ module.exports = {
 
   async execute(sock, msg, args) {
     try {
-      // Get instance-specific config
       const instanceConfig = config.getConfigFromSocket(sock);
-
       const text = args.join(' ');
       const chatId = msg.key.remoteJid;
-
       const searchQuery = text.trim();
 
       if (!searchQuery) {
@@ -29,7 +27,6 @@ module.exports = {
         }, { quoted: msg });
       }
 
-      // Determine if input is a YouTube link
       let videoUrl = '';
       let videoTitle = '';
       let videoThumbnail = '';
@@ -37,7 +34,6 @@ module.exports = {
       if (searchQuery.startsWith('http://') || searchQuery.startsWith('https://')) {
         videoUrl = searchQuery;
       } else {
-        // Search YouTube for the video
         const { videos } = await yts(searchQuery);
         if (!videos || videos.length === 0) {
           return await sock.sendMessage(chatId, {
@@ -49,47 +45,138 @@ module.exports = {
         videoThumbnail = videos[0].thumbnail;
       }
 
-      // Send thumbnail immediately
-      try {
-        const ytId = (videoUrl.match(/(?:youtu\.be\/|v=)([a-zA-Z0-9_-]{11})/) || [])[1];
-        const thumb = videoThumbnail || (ytId ? `https://i.ytimg.com/vi/${ytId}/sddefault.jpg` : undefined);
-        const captionTitle = videoTitle || searchQuery;
-        if (thumb) {
-          await sock.sendMessage(chatId, {
-            image: { url: thumb },
-            caption: `*${captionTitle}*\nDownloading...`
-          }, { quoted: msg });
-        }
-      } catch (e) {
-        console.error('[VIDEO] thumb error:', e?.message || e);
+      const ytId = (videoUrl.match(/(?:youtu\.be\/|v=)([a-zA-Z0-9_-]{11})/) || [])[1];
+      const thumb = videoThumbnail || (ytId ? `https://i.ytimg.com/vi/${ytId}/sddefault.jpg` : undefined);
+      const captionTitle = videoTitle || searchQuery;
+      if (thumb) {
+        await sock.sendMessage(chatId, {
+          image: { url: thumb },
+          caption: `*${captionTitle}*\nDownloading...`
+        }, { quoted: msg });
       }
 
-      // Validate YouTube URL
-      let urls = videoUrl.match(/(?:https?:\/\/)?(?:youtu\.be\/|(?:www\.|m\.)?youtube\.com\/(?:watch\?v=|v\/|embed\/|shorts\/|playlist\?list=)?)([a-zA-Z0-9_-]{11})/gi);
-      if (!urls) {
+      if (!ytId) {
         return await sock.sendMessage(chatId, {
           text: 'This is not a valid YouTube link!'
         }, { quoted: msg });
       }
 
-      // Get video: try EliteProTech first, then Yupra, then Okatsu fallback
-      let videoData;
+      // Try multiple download methods
+      let downloadUrl = null;
+      let finalTitle = videoTitle || 'Video';
+      let methodUsed = '';
+
+      // Method 1: Try bochilteam scraper-youtube youtubedl (y2mate)
       try {
-        videoData = await APIs.getEliteProTechVideoByUrl(videoUrl);
-      } catch (e1) {
+        const { youtubedl } = require('@bochilteam/scraper-youtube');
+        const data = await youtubedl(videoUrl);
+        if (data?.video) {
+          const qualities = ['720p', '480p', '360p'];
+          for (const q of qualities) {
+            if (data.video[q]) {
+              downloadUrl = await data.video[q].download();
+              finalTitle = data.title;
+              methodUsed = 'y2mate';
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        console.log('[VIDEO] y2mate failed:', e.message);
+      }
+
+      // Method 2: Try youtubedlv2 (ssyoutube)
+      if (!downloadUrl) {
         try {
-          videoData = await APIs.getYupraVideoByUrl(videoUrl);
-        } catch (e2) {
-          videoData = await APIs.getOkatsuVideoByUrl(videoUrl);
+          const { youtubedlv2 } = require('@bochilteam/scraper-youtube');
+          const data = await youtubedlv2(videoUrl);
+          if (data?.video) {
+            const qualities = ['720p', '480p', '360p'];
+            for (const q of qualities) {
+              if (data.video[q]) {
+                downloadUrl = typeof data.video[q].download === 'function' ? await data.video[q].download() : data.video[q].download;
+                finalTitle = data.title;
+                methodUsed = 'ssyoutube';
+                break;
+              }
+            }
+          }
+        } catch (e) {
+          console.log('[VIDEO] ssyoutube failed:', e.message);
         }
       }
 
-      // Send video directly using the download URL
+      // Method 3: Try existing API fallbacks
+      if (!downloadUrl) {
+        try {
+          const videoData = await APIs.getEliteProTechVideoByUrl(videoUrl);
+          downloadUrl = videoData.download;
+          finalTitle = videoData.title || finalTitle;
+          methodUsed = 'eliteprotech';
+        } catch (e1) {
+          try {
+            const videoData = await APIs.getYupraVideoByUrl(videoUrl);
+            downloadUrl = videoData.download;
+            finalTitle = videoData.title || finalTitle;
+            methodUsed = 'yupra';
+          } catch (e2) {
+            try {
+              const videoData = await APIs.getOkatsuVideoByUrl(videoUrl);
+              downloadUrl = videoData.download;
+              finalTitle = videoData.title || finalTitle;
+              methodUsed = 'okatsu';
+            } catch (e3) {
+              console.log('[VIDEO] API fallbacks all failed');
+            }
+          }
+        }
+      }
+
+      // Method 4: Try direct ytdl-core
+      if (!downloadUrl) {
+        try {
+          const ytdl = require('ytdl-core');
+          const info = await ytdl.getInfo(videoUrl);
+          const format = info.formats
+            .filter(f => f.hasVideo && f.hasAudio)
+            .sort((a, b) => (b.qualityLabel?.includes('720p') ? 1 : 0) - (a.qualityLabel?.includes('720p') ? 1 : 0))
+            .find(f => f.url);
+          if (format?.url) {
+            downloadUrl = format.url;
+            finalTitle = info.videoDetails.title;
+            methodUsed = 'ytdl-core';
+          }
+        } catch (e) {
+          console.log('[VIDEO] ytdl-core failed:', e.message);
+        }
+      }
+
+      // Method 5: Try siputzx API
+      if (!downloadUrl) {
+        try {
+          const res = await axios.get(`https://api.siputzx.my.id/api/d/ytmp4`, {
+            params: { url: videoUrl },
+            timeout: 20000
+          });
+          if (res?.data?.data?.url) {
+            downloadUrl = res.data.data.url;
+            finalTitle = res.data.data.title || finalTitle;
+            methodUsed = 'siputzx';
+          }
+        } catch (e) {
+          console.log('[VIDEO] siputzx failed:', e.message);
+        }
+      }
+
+      if (!downloadUrl) {
+        throw new Error('All download methods failed');
+      }
+
       await sock.sendMessage(chatId, {
-        video: { url: videoData.download },
+        video: { url: downloadUrl },
         mimetype: 'video/mp4',
-        fileName: `${(videoData.title || videoTitle || 'video').replace(/[^\w\s-]/g, '')}.mp4`,
-        caption: `*${videoData.title || videoTitle || 'Video'}*\n\n> *_Downloaded by ${instanceConfig.botName}_*`
+        fileName: `${finalTitle.replace(/[^\w\s-]/g, '')}.mp4`,
+        caption: `*${finalTitle}*\n\n> *_Downloaded by ${instanceConfig.botName}_*`
       }, { quoted: msg });
 
     } catch (error) {
