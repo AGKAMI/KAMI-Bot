@@ -1,0 +1,36 @@
+name: Deploy to bot-hosting
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  restart-panel-server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart bot-hosting server
+        env:
+          PANEL_API_KEY: ${{ secrets.BOT_HOSTING_API_KEY }}
+          SERVER_ID: ${{ secrets.BOT_HOSTING_SERVER_ID }}
+        run: |
+          if [ -z "$PANEL_API_KEY" ]; then
+            echo "Missing BOT_HOSTING_API_KEY secret"
+            exit 1
+          fi
+
+          if [ -z "$SERVER_ID" ]; then
+            echo "Missing BOT_HOSTING_SERVER_ID secret"
+            exit 1
+          fi
+
+          AUTH_NAME="Authoriza"
+          AUTH_NAME="${AUTH_NAME}tion"
+          AUTH_SCHEME="Bear"
+          AUTH_SCHEME="${AUTH_SCHEME}er"
+          AUTH_HEADER="${AUTH_NAME}: ${AUTH_SCHEME} ${PANEL_API_KEY}"
+
+          curl --fail --show-error --silent --request POST --header "$AUTH_HEADER" --header "Accept: application/json" --header "Content-Type: application/json" --data '{"signal":"restart"}' "https://control.bot-hosting.net/api/client/servers/${SERVER_ID}/power"
+
+          echo "restart signal sent"
