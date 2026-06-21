@@ -5,6 +5,9 @@
 /* eslint-disable */
 
 const axios = require('axios');
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
 const config = require('../../config');
 
 const processedMessages = new Set();
@@ -106,6 +109,24 @@ const fbAPIs = [
 ];
 
 module.exports = {
+/**
+ * Fallback: use yt-dlp to get Facebook video URL
+ */
+async function fetchWithYtDlp(url) {
+  try {
+    // Get direct URL
+    const { stdout } = await execPromise(`yt-dlp -g -f best "${url}"`);
+    const videoUrl = stdout.trim();
+    if (!videoUrl) throw new Error('yt-dlp returned empty URL');
+    // Get title
+    const { stdout: titleOut } = await execPromise(`yt-dlp --get-title "${url}"`);
+    const title = titleOut.trim() || 'Facebook Video';
+    return { url: videoUrl, title };
+  } catch (err) {
+    console.log('yt-dlp failed:', err.message);
+    throw err;
+  }
+}
   name: 'facebook',
   aliases: ['fb', 'fbdl', 'facebookdl'],
   category: 'media',
@@ -209,8 +230,22 @@ module.exports = {
       }
 
       if (!videoData || !videoData.url) {
-        console.log('All FB APIs failed, last error:', lastError?.message);
-        return await extra.reply('❌ Could not get video link.\n\nAll download sources failed.\n\nTry using a direct video link instead.');
+        console.log('All FB APIs failed, trying yt-dlp...');
+        try {
+          videoData = await fetchWithYtDlp(url);
+          if (videoData && videoData.url) {
+            console.log('✅ yt-dlp succeeded!');
+          } else {
+            throw new Error('yt-dlp returned no data');
+          }
+        } catch (ytErr) {
+          console.log('yt-dlp also failed:', ytErr.message);
+          return await extra.reply('❌ Could not get video link.
+
+All download sources failed.
+
+Try using a direct video link instead.');
+        }
       }
 
       console.log('Got video URL, attempting to send...');
