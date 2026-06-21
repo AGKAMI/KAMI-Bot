@@ -57,7 +57,12 @@ module.exports = {
       const sectionBox = (title, cmds, col = 2) => {
         const width = 28;
         const titleLine = `  ${title}  `;
-        const top = `    ╱╲${titleLine.center(width - 6)}╱╲\n      ╱${'─'.repeat(width - 2)}╲`;
+        const targetWidth = width - 6;
+        const padLen = targetWidth - titleLine.length;
+        const leftPad = ' '.repeat(Math.max(0, Math.floor(padLen / 2)));
+        const rightPad = ' '.repeat(Math.max(0, padLen - Math.floor(padLen / 2)));
+        const centered = leftPad + titleLine + rightPad;
+        const top = `    ╱╲${centered}╱╲\n      ╱${'─'.repeat(width - 2)}╲`;
 
         const rows = [];
         for (let i = 0; i < cmds.length; i += col) {
