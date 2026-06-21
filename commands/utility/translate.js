@@ -2,7 +2,7 @@
  * Translate Command - Translate text to different languages
  */
 
-const fetch = require('node-fetch');
+const axios = require('axios');
 
 module.exports = {
   name: 'translate',
@@ -73,8 +73,8 @@ module.exports = {
       
       // Try API 1 (Google Translate API)
       try {
-        const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(textToTranslate)}`);
-        if (response.ok) {
+        const response = axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(textToTranslate)}`);
+        if (response.status === 200) {
           const data = await response.json();
           if (data && data[0] && data[0][0] && data[0][0][0]) {
             translatedText = data[0][0][0];
@@ -87,8 +87,8 @@ module.exports = {
       // If API 1 fails, try API 2
       if (!translatedText) {
         try {
-          const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=auto|${lang}`);
-          if (response.ok) {
+          const response = axios.get(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=auto|${lang}`);
+          if (response.status === 200) {
             const data = await response.json();
             if (data && data.responseData && data.responseData.translatedText) {
               translatedText = data.responseData.translatedText;
@@ -102,8 +102,8 @@ module.exports = {
       // If API 2 fails, try API 3
       if (!translatedText) {
         try {
-          const response = await fetch(`https://api.dreaded.site/api/translate?text=${encodeURIComponent(textToTranslate)}&lang=${lang}`);
-          if (response.ok) {
+          const response = axios.get(`https://api.dreaded.site/api/translate?text=${encodeURIComponent(textToTranslate)}&lang=${lang}`);
+          if (response.status === 200) {
             const data = await response.json();
             if (data && data.translated) {
               translatedText = data.translated;

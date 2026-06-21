@@ -4,7 +4,7 @@
 
 const axios = require('axios');
 
-const BASE = 'https://api.shizo.top/pies';
+const BASE = 'https://api.waifu.pics/sfw/waifu';
 const VALID_COUNTRIES = ['india','malaysia', 'thailand', 'china', 'indonesia', 'japan', 'korea', 'vietnam'];
 
 module.exports = {

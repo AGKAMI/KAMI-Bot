@@ -2,8 +2,6 @@
  * Flirt - Get a random flirty message from API
  */
 
-const axios = require('axios');
-
 module.exports = {
     name: 'flirt',
     aliases: ['pickup', 'pickupline'],
@@ -13,13 +11,13 @@ module.exports = {
     execute: async (sock, msg, args, extra) => {
       try {
         // Fetch flirt message from API
-        const response = await axios.get('https://api.shizo.top/quote/flirt?apikey=shizo');
-        
-        if (!response.data || !response.data.status || !response.data.result) {
-          throw new Error('Invalid API response');
-        }
-        
-        const flirtText = response.data.result;
+        const flirtText = [
+      'Your hand looks heavy — can I hold it for you? 💫',
+      'If you were a vegetable, you’d be a cute-cumber.',
+      'I was wondering if you had an extra heart. Mine seems to have been stolen.',
+      'Do you believe in love at first swipe?',
+      'You’re the reason my code keeps throwing “happy” exceptions.',
+    ][Math.floor(Math.random() * 5)];
         
         const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
         

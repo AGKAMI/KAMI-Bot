@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
 
-const BASE = 'https://api.princetechn.com/api/anime/neko';
+const BASE = 'https://api.waifu.pics/sfw/neko';
 const API_KEY = 'prince';
 
 module.exports = {
@@ -19,7 +19,7 @@ module.exports = {
   execute: async (sock, msg, args, extra) => {
     try {
       // Fetch JSON from API to get image URL
-      const url = `${BASE}?apikey=${API_KEY}`;
+      const url = `${BASE}`;
       const response = await axios.get(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0',
@@ -29,11 +29,11 @@ module.exports = {
       });
       
       // Extract image URL from response
-      if (!response.data || !response.data.result) {
+      if (!response.data || !response.data.url) {
         throw new Error('Invalid API response: missing image URL');
       }
       
-      const imageUrl = response.data.result;
+      const imageUrl = response.data.url;
       
       if (!imageUrl || typeof imageUrl !== 'string') {
         throw new Error('Invalid image URL in API response');

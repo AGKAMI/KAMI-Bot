@@ -9,7 +9,7 @@ const { exec } = require('child_process');
 const ffmpegPath = require('ffmpeg-static');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
 
-const BASE = 'https://api.shizo.top/tools/meme-search';
+const BASE = 'https://meme-api.com/gimme';
 
 module.exports = {
   name: 'memesearch',

@@ -15,7 +15,7 @@ const processedMessages = new Set();
 const fbAPIs = [
   // API 1: FBDown
   async (url) => {
-    const response = await axios.get(`https://fbdown.vercel.app/api/get?url=${encodeURIComponent(url)}`, { timeout: 30000 });
+    const response = await axios.get(`https://api.example.com/deprecated/api/get?url=${encodeURIComponent(url)}`, { timeout: 30000 });
     if (response.data && (response.data.hd || response.data.sd)) {
       console.log('FBDown got URL:', response.data.hd ? 'HD' : 'SD');
       return { 
@@ -27,7 +27,7 @@ const fbAPIs = [
   },
   // API 2: GetMyIP (FB Downloader)
   async (url) => {
-    const response = await axios.get(`https://api.getmyip.co.id/api/v1/fb?url=${encodeURIComponent(url)}`, { timeout: 30000 });
+    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
     if (response.data && response.data.data && response.data.data.url) {
       console.log('GetMyIP got URL');
       return { url: response.data.data.url, title: response.data.data.title || 'Facebook Video' };
@@ -36,7 +36,7 @@ const fbAPIs = [
   },
   // API 3: Savemedia
   async (url) => {
-    const response = await axios.get(`https://save-media.xyz/fb?url=${encodeURIComponent(url)}`, { timeout: 30000 });
+    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
     if (response.data && response.data.url) {
       console.log('Savemedia got URL');
       return { url: response.data.url, title: response.data.title || 'Facebook Video' };
@@ -45,7 +45,7 @@ const fbAPIs = [
   },
   // API 4: Siputzx
   async (url) => {
-    const response = await axios.get(`https://api.siputzx.my.id/api/d/fb?url=${encodeURIComponent(url)}`, { timeout: 30000 });
+    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
     if (response.data && response.data.status && response.data.data) {
       console.log('Siputzx got URL');
       return { url: response.data.data.url, title: response.data.data.title };
@@ -54,7 +54,7 @@ const fbAPIs = [
   },
   // API 5: Ryzendesu
   async (url) => {
-    const response = await axios.get(`https://api.ryzendesu.vip/api/downloader/fb?url=${encodeURIComponent(url)}`, { timeout: 30000 });
+    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
     if (response.data && (response.data.result?.url || response.data.url || response.data.data?.url)) {
       console.log('Ryzendesu got URL');
       return { url: response.data.result?.url || response.data.url || response.data.data?.url, title: response.data.result?.title || response.data.title || 'Facebook Video' };
@@ -63,7 +63,7 @@ const fbAPIs = [
   },
   // API 6: Akuari
   async (url) => {
-    const response = await axios.get(`https://api.akuari.my.id/downloader/facebook?url=${encodeURIComponent(url)}`, { timeout: 30000 });
+    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
     if (response.data && (response.data.result?.url || response.data.url || response.data.data?.url)) {
       console.log('Akuari got URL');
       return { url: response.data.result?.url || response.data.url || response.data.data?.url, title: response.data.result?.title || response.data.title || 'Facebook Video' };
@@ -72,7 +72,7 @@ const fbAPIs = [
   },
   // API 7: Agatz
   async (url) => {
-    const response = await axios.get(`https://api.agatz.xyz/api/facebook?url=${encodeURIComponent(url)}`, { timeout: 30000 });
+    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
     if (response.data && (response.data.data?.url || response.data.url || response.data.result?.url)) {
       console.log('Agatz got URL');
       return { url: response.data.data?.url || response.data.url || response.data.result?.url, title: response.data.data?.title || response.data.title || 'Facebook Video' };
@@ -81,7 +81,7 @@ const fbAPIs = [
   },
   // API 8: FBDownloader.net
   async (url) => {
-    const response = await axios.get(`https://fbdownloader.net/api?url=${encodeURIComponent(url)}`, { timeout: 30000 });
+    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
     if (response.data && response.data.video) {
       console.log('FBDownloader.net got URL');
       return { url: response.data.video, title: response.data.title || 'Facebook Video' };
@@ -90,7 +90,7 @@ const fbAPIs = [
   },
   // API 9: FDown.net
   async (url) => {
-    const response = await axios.get(`https://fdown.net/api?url=${encodeURIComponent(url)}`, { timeout: 30000 });
+    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
     if (response.data && response.data.download) {
       console.log('FDown.net got URL');
       return { url: response.data.download, title: response.data.title || 'Facebook Video' };
@@ -99,7 +99,7 @@ const fbAPIs = [
   },
   // API 10: SaveFrom.net helper (via savefrom.net)
   async (url) => {
-    const response = await axios.get(`https://api.savefrom.net/rest/v1?url=${encodeURIComponent(url)}&format=json`, { timeout: 30000 });
+    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}&format=json`, { timeout: 30000 });
     if (response.data && response.data.items && response.data.items[0] && response.data.items[0].url) {
       console.log('SaveFrom.net got URL');
       return { url: response.data.items[0].url, title: response.data.title || 'Facebook Video' };
