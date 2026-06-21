@@ -70,7 +70,7 @@ module.exports = {
           for (let j = i; j < i + col && j < cmds.length; j++) {
             row.push(pad(cmds[j], 10));
           }
-          rows.push('      ' + row.join('').rstrip());
+          rows.push('      ' + row.join('').trimEnd());
         }
 
         const bottom = `      ╲${'─'.repeat(width - 2)}╱`;
