@@ -1,5 +1,6 @@
 /**
  * Menu Command - Display all available commands
+ * Style: Newspaper headline
  */
 
 const config = require('../../config');
@@ -29,54 +30,59 @@ module.exports = {
       const ownerNames = Array.isArray(config.ownerName) ? config.ownerName : [config.ownerName];
       const displayOwner = ownerNames[0] || config.ownerName || 'Bot Owner';
 
-      let prefix = config.prefix || '.';
-        let total = commands.size;
-        let width = 34;
-        let box = '┏' + '━'.repeat(width) + '┓\n';
-        box += '┃' + ' '.repeat(width) + '┃\n';
-        box += '┃  👋 hey, @' + extra.sender.split('@')[0] + '\n';
-        box += '┃  ⚡ prefix: ' + prefix + '\n';
-        box += '┃  📦 commands: ' + total + '\n';
-        box += '┃  👑 owner: ' + displayOwner + '\n';
-        box += '┃' + ' '.repeat(width) + '┃\n';
-        box += '┗' + '━'.repeat(width) + '┛\n\n';
-        let menuText = box;
+      const prefix = config.prefix || '.';
+      const total = commands.size;
 
-      const order = ['general', 'ai', 'group', 'admin', 'owner', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker'];
-      const injected = [];
+      const pad = (text, len = 28) => {
+        const clean = String(text);
+        return clean.length >= len ? clean : clean + ' '.repeat(len - clean.length);
+      };
 
-      order.forEach((cat, index) => {
+      const categoryMeta = {
+        general:   { emoji: '🎙️', label: 'GENERAL NEWS' },
+        ai:        { emoji: '🤖', label: 'AI INTELLIGENCE' },
+        group:     { emoji: '👥', label: 'GROUP UPDATES' },
+        admin:     { emoji: '🛡️', label: 'ADMIN COMMAND CENTER' },
+        owner:     { emoji: '👑', label: 'OWNER EDITION' },
+        media:     { emoji: '🎬', label: 'MEDIA WIRE' },
+        fun:       { emoji: '🎮', label: 'FUN & GAMES' },
+        games:     { emoji: '🎲', label: 'GAMES DESK' },
+        utility:   { emoji: '🔧', label: 'UTILITY TOOLS' },
+        anime:     { emoji: '👾', label: 'ANIME WAVE' },
+        textmaker: { emoji: '🖋️', label: 'TEXT FACTORY' },
+      };
+
+      const order = Object.keys(categoryMeta);
+
+      let menuText = '';
+      menuText += '╭──────────────────────────╮\n';
+      menuText += '│   🗞️  KAMI BOT PRESS  🗞️   │\n';
+      menuText += '╰──────────────────────────╯\n\n';
+      menuText += `EDITION: ${prefix === '.' ? '1.0.0' : prefix === '!' ? '2.0.0' : '1.0.0'}\n`;
+      menuText += `SIZE: ${total} COMMANDS\n`;
+      menuText += `PUBLISHER: ${displayOwner}\n\n`;
+
+      order.forEach((cat) => {
         const list = categories[cat];
         if (!list || list.length === 0) return;
 
-        const head =
-          cat === 'general'  ? '👤  general' :
-          cat === 'ai'       ? '🤖  ai' :
-          cat === 'group'    ? '👥  group' :
-          cat === 'admin'    ? '🛡️  admin' :
-          cat === 'owner'    ? '👑  owner' :
-          cat === 'media'    ? '🎬  media' :
-          cat === 'fun'      ? '🎮  fun' :
-          cat === 'games'    ? '🎲  games' :
-          cat === 'utility'  ? '🔧  utility' :
-          cat === 'anime'    ? '👾  anime' :
-          cat === 'textmaker'? '🖋️  textmaker' :
-          '📁 ' + cat;
-
-        menuText += head + '\n';
-
+        const meta = categoryMeta[cat] || { emoji: '📁', label: cat.toUpperCase() };
         const rows = list
-          .filter(item => item.name)
+          .filter((item) => item.name)
           .sort((a, b) => a.name.localeCompare(b.name));
 
-        rows.forEach(item => {
-          menuText += '  ' + config.prefix + item.name + '\n';
+        menuText += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+        menuText += `${meta.emoji} ${meta.label}\n`;
+        menuText += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+
+        rows.forEach((item) => {
+          menuText += `  ${pad(prefix + item.name, 34)}\n`;
         });
 
         menuText += '\n';
       });
 
-      menuText += '✦ powered by kami bot\n\n';
+      menuText += '─── END OF TRANSMISSION ───\n';
 
       await sock.sendMessage(extra.from, {
         text: menuText,
