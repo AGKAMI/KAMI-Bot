@@ -159,13 +159,14 @@ module.exports = {
         /https?:\/\/(?:www\.|m\.|web\.)?fb\.watch\//,
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/watch/,
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/.*\/videos\//,
+        /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/reel\//,
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/share\//
       ];
 
       const isValidUrl = facebookPatterns.some(pattern => pattern.test(url));
 
       if (!isValidUrl) {
-        return await extra.reply('❌ Invalid Facebook link.\\n\\nUse: .fb <facebook video link>\\n\\nSupported: facebook.com, fb.com, fb.watch, share links, watch links');
+        return await extra.reply('❌ Invalid Facebook link.\n\nUse: .fb <facebook video link>\n\nSupported: facebook.com, fb.com, fb.watch, share links, watch links');
       }
 
       await sock.sendMessage(extra.from, {
@@ -209,7 +210,7 @@ module.exports = {
 
       if (!videoData || !videoData.url) {
         console.log('All FB APIs failed, last error:', lastError?.message);
-        return await extra.reply('❌ Could not get video link.\\n\\nAll download sources failed.\\n\\nTry using a direct video link instead.');
+        return await extra.reply('❌ Could not get video link.\n\nAll download sources failed.\n\nTry using a direct video link instead.');
       }
 
       console.log('Got video URL, attempting to send...');
@@ -275,7 +276,7 @@ module.exports = {
       }
 
       if (!sendSuccess) {
-        return await extra.reply('❌ Network issue.\\n\\nCould not download from Facebook servers.\\n\\nTry:\\n• Using a VPN\\n• A different internet connection\\n• Using browser to download manually');
+        return await extra.reply('❌ Network issue.\n\nCould not download from Facebook servers.\n\nTry:\n• Using a VPN\n• A different internet connection\n• Using browser to download manually');
       }
 
     } catch (error) {
