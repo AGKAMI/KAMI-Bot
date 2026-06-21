@@ -1,6 +1,6 @@
 /**
  * Menu Command - Display all available commands
- * Style: Neon terminal / signal core
+ * Style: ASCII-safe for mobile clients
  */
 
 const config = require('../../config');
@@ -34,67 +34,40 @@ module.exports = {
       const total = commands.size;
 
       // ── HEADER ──
-      const HEADER = `\
-██╗  ██╗ █████╗ ███╗   ███╗██╗
-██║ ██╔╝██╔══██╗████╗ ████║██║
-█████╔╝ ███████║██╔████╔██║██║
-██╔═██╗ ██╔══██║██║╚██╔╝██║██║
-██║  ██╗██║  ██║██║ ╚═╝ ██║██║
-╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
+      const header = `
++------------------------------+
+|   🗞️  KAMI BOT PRESS  🗞️    |
++------------------------------+
 
-           KAMI BOT`;
+EDITION: 1.0.0
+SIZE: ${total} COMMANDS
+PUBLISHER: ${displayOwner}
 
-      // ── FOOTER ──
-      const FOOTER = `╚════════════════════════════════════════════╝
-        KAMI BOT • SIGNAL CORE ACTIVE`;
+`;
 
       // ── HELPERS ──
-      const pad = (text, len = 10) => {
+      const pad = (text, len = 16) => {
         const clean = String(text);
         return clean.length >= len ? clean : clean + ' '.repeat(len - clean.length);
       };
 
-      const sectionBox = (title, cmds, col = 2) => {
-        const width = 28;
-        const titleLine = `  ${title}  `;
-        const targetWidth = width - 6;
-        const padLen = targetWidth - titleLine.length;
-        const leftPad = ' '.repeat(Math.max(0, Math.floor(padLen / 2)));
-        const rightPad = ' '.repeat(Math.max(0, padLen - Math.floor(padLen / 2)));
-        const centered = leftPad + titleLine + rightPad;
-        const top = `    ╱╲${centered}╱╲\n      ╱${'─'.repeat(width - 2)}╲`;
-
-        const rows = [];
-        for (let i = 0; i < cmds.length; i += col) {
+      const section = (title, cmds, cols = 3) => {
+        const lines = [];
+        for (let i = 0; i < cmds.length; i += cols) {
           const row = [];
-          for (let j = i; j < i + col && j < cmds.length; j++) {
-            row.push(pad(cmds[j], 10));
+          for (let j = i; j < i + cols && j < cmds.length; j++) {
+            row.push(pad(prefix + cmds[j].name, 16));
           }
-          rows.push('      ' + row.join('').trimEnd());
+          lines.push('  ' + row.join('').trimEnd());
         }
-
-        const bottom = `      ╲${'─'.repeat(width - 2)}╱`;
-        return `\n${top}\n${rows.join('\n')}\n${bottom}`;
-      };
-
-      const statusBlock = () => {
-        const items = [
-          ['ONLINE', '●', '🟢'],
-          ['STABLE', '●', '🟡'],
-          ['ACTIVE', '', '✅'],
-          ['COMMANDS LOADED:', total.toString(), '📦'],
-        ];
-        const lines = items.map(([label, value, emoji]) => {
-          return emoji ? `      ${label}  ${emoji} ${value}` : `      ${label}  ${value}`;
-        }).join('\n');
-        return `\n        ◈ SYSTEM STATUS ◈\n      ╱${'─'.repeat(26)}╲\n${lines}\n      ╲${'─'.repeat(26)}╱`;
+        return `\n${title}\n${'-'.repeat(28)}\n${lines.join('\n')}\n`;
       };
 
       // ── SECTION MAP ──
       const categoryMeta = {
-        general:   { emoji: '🎙️',  label: 'GENERAL NODE' },
-        ai:        { emoji: '🤖',  label: 'AI CORE' },
-        admin:     { emoji: '🛡️',  label: 'ADMIN GRID' },
+        general:   { emoji: '🎙️',  label: 'GENERAL NEWS' },
+        ai:        { emoji: '🤖',  label: 'AI INTELLIGENCE' },
+        admin:     { emoji: '🛡️',  label: 'ADMIN COMMAND CENTER' },
         owner:     { emoji: '👑',  label: 'OWNER EDITION' },
         media:     { emoji: '🎬',  label: 'MEDIA WIRE' },
         fun:       { emoji: '🎮',  label: 'FUN & GAMES' },
@@ -107,25 +80,22 @@ module.exports = {
       const order = Object.keys(categoryMeta);
 
       // ── BUILD MENU ──
-      let menuText = '';
-      menuText += HEADER + '\n\n';
+      let menuText = header;
 
       order.forEach((cat) => {
         const list = categories[cat];
         if (!list || list.length === 0) return;
 
-        const meta = categoryMeta[cat] || { emoji: '📁', label: cat.toUpperCase() };
+        const meta = categoryMeta[cat];
         const rows = list
           .filter((item) => item.name)
           .sort((a, b) => a.name.localeCompare(b.name))
-          .map((item) => prefix + item.name);
+          .map((item) => item.name);
 
-        menuText += sectionBox(meta.label, rows);
+        menuText += section(`${meta.emoji} ${meta.label}`, rows);
       });
 
-      menuText += statusBlock();
-      menuText += '\n\n';
-      menuText += FOOTER + '\n';
+      menuText += `\n─── END OF TRANSMISSION ───\n`;
 
       await sock.sendMessage(extra.from, {
         text: menuText,
