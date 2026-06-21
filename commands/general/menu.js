@@ -1,6 +1,6 @@
 /**
  * Menu Command - Display all available commands
- * Style: Big KAMI header + ASCII-safe sections for mobile
+ * Style: Smaller KAMI header + ASCII-safe sections for mobile
  */
 
 const config = require('../../config');
@@ -33,14 +33,11 @@ module.exports = {
       const prefix = config.prefix || '.';
       const total = commands.size;
 
-      // ── BIG KAMI HEADER (as user liked) ──
+      // ── SMALLER KAMI HEADER ──
       const header = `
 ██╗  ██╗ █████╗ ███╗   ███╗██╗
 ██║ ██╔╝██╔══██╗████╗ ████║██║
 █████╔╝ ███████║██╔████╔██║██║
-██╔═██╗ ██╔══██║██║╚██╔╝██║██║
-██║  ██╗██║  ██║██║ ╚═╝ ██║██║
-╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
 
            KAMI BOT`;
 
