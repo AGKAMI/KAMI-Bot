@@ -1,6 +1,6 @@
 /**
  * Menu Command - Display all available commands
- * Style: ASCII-safe for mobile clients
+ * Style: Big KAMI header + ASCII-safe sections for mobile
  */
 
 const config = require('../../config');
@@ -33,17 +33,19 @@ module.exports = {
       const prefix = config.prefix || '.';
       const total = commands.size;
 
-      // ── HEADER ──
+      // ── BIG KAMI HEADER (as user liked) ──
       const header = `
-+------------------------------+
-|   🗞️  KAMI BOT PRESS  🗞️    |
-+------------------------------+
+██╗  ██╗ █████╗ ███╗   ███╗██╗
+██║ ██╔╝██╔══██╗████╗ ████║██║
+█████╔╝ ███████║██╔████╔██║██║
+██╔═██╗ ██╔══██║██║╚██╔╝██║██║
+██║  ██╗██║  ██║██║ ╚═╝ ██║██║
+╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
 
-EDITION: 1.0.0
-SIZE: ${total} COMMANDS
-PUBLISHER: ${displayOwner}
+           KAMI BOT`;
 
-`;
+      // ── META ──
+      const meta = `\nEDITION: 1.0.0\nSIZE: ${total} COMMANDS\nPUBLISHER: ${displayOwner}\n`;
 
       // ── HELPERS ──
       const pad = (text, len = 16) => {
@@ -80,7 +82,7 @@ PUBLISHER: ${displayOwner}
       const order = Object.keys(categoryMeta);
 
       // ── BUILD MENU ──
-      let menuText = header;
+      let menuText = header + meta;
 
       order.forEach((cat) => {
         const list = categories[cat];
