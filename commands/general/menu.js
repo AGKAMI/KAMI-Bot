@@ -1,6 +1,6 @@
 /**
  * Menu Command - Display all available commands
- * Style: Newspaper headline
+ * Style: Neon terminal / signal core
  */
 
 const config = require('../../config');
@@ -33,34 +33,77 @@ module.exports = {
       const prefix = config.prefix || '.';
       const total = commands.size;
 
-      const pad = (text, len = 28) => {
+      // ── HEADER ──
+      const HEADER = `\
+██╗  ██╗ █████╗ ███╗   ███╗██╗
+██║ ██╔╝██╔══██╗████╗ ████║██║
+█████╔╝ ███████║██╔████╔██║██║
+██╔═██╗ ██╔══██║██║╚██╔╝██║██║
+██║  ██╗██║  ██║██║ ╚═╝ ██║██║
+╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
+
+           KAMI BOT`;
+
+      // ── FOOTER ──
+      const FOOTER = `╚════════════════════════════════════════════╝
+        KAMI BOT • SIGNAL CORE ACTIVE`;
+
+      // ── HELPERS ──
+      const pad = (text, len = 10) => {
         const clean = String(text);
         return clean.length >= len ? clean : clean + ' '.repeat(len - clean.length);
       };
 
+      const sectionBox = (title, cmds, col = 2) => {
+        const width = 28;
+        const titleLine = `  ${title}  `;
+        const top = `    ╱╲${titleLine.center(width - 6)}╱╲\n      ╱${'─'.repeat(width - 2)}╲`;
+
+        const rows = [];
+        for (let i = 0; i < cmds.length; i += col) {
+          const row = [];
+          for (let j = i; j < i + col && j < cmds.length; j++) {
+            row.push(pad(cmds[j], 10));
+          }
+          rows.push('      ' + row.join('').rstrip());
+        }
+
+        const bottom = `      ╲${'─'.repeat(width - 2)}╱`;
+        return `\n${top}\n${rows.join('\n')}\n${bottom}`;
+      };
+
+      const statusBlock = () => {
+        const items = [
+          ['ONLINE', '●', '🟢'],
+          ['STABLE', '●', '🟡'],
+          ['ACTIVE', '', '✅'],
+          ['COMMANDS LOADED:', total.toString(), '📦'],
+        ];
+        const lines = items.map(([label, value, emoji]) => {
+          return emoji ? `      ${label}  ${emoji} ${value}` : `      ${label}  ${value}`;
+        }).join('\n');
+        return `\n        ◈ SYSTEM STATUS ◈\n      ╱${'─'.repeat(26)}╲\n${lines}\n      ╲${'─'.repeat(26)}╱`;
+      };
+
+      // ── SECTION MAP ──
       const categoryMeta = {
-        general:   { emoji: '🎙️', label: 'GENERAL NEWS' },
-        ai:        { emoji: '🤖', label: 'AI INTELLIGENCE' },
-        group:     { emoji: '👥', label: 'GROUP UPDATES' },
-        admin:     { emoji: '🛡️', label: 'ADMIN COMMAND CENTER' },
-        owner:     { emoji: '👑', label: 'OWNER EDITION' },
-        media:     { emoji: '🎬', label: 'MEDIA WIRE' },
-        fun:       { emoji: '🎮', label: 'FUN & GAMES' },
-        games:     { emoji: '🎲', label: 'GAMES DESK' },
-        utility:   { emoji: '🔧', label: 'UTILITY TOOLS' },
-        anime:     { emoji: '👾', label: 'ANIME WAVE' },
-        textmaker: { emoji: '🖋️', label: 'TEXT FACTORY' },
+        general:   { emoji: '🎙️',  label: 'GENERAL NODE' },
+        ai:        { emoji: '🤖',  label: 'AI CORE' },
+        admin:     { emoji: '🛡️',  label: 'ADMIN GRID' },
+        owner:     { emoji: '👑',  label: 'OWNER EDITION' },
+        media:     { emoji: '🎬',  label: 'MEDIA WIRE' },
+        fun:       { emoji: '🎮',  label: 'FUN & GAMES' },
+        games:     { emoji: '🎲',  label: 'GAMES DESK' },
+        utility:   { emoji: '🔧',  label: 'UTILITY TOOLS' },
+        anime:     { emoji: '👾',  label: 'ANIME WAVE' },
+        textmaker: { emoji: '🖋️',  label: 'TEXT FACTORY' },
       };
 
       const order = Object.keys(categoryMeta);
 
+      // ── BUILD MENU ──
       let menuText = '';
-      menuText += '╭──────────────────────────╮\n';
-      menuText += '│   🗞️  KAMI BOT PRESS  🗞️   │\n';
-      menuText += '╰──────────────────────────╯\n\n';
-      menuText += `EDITION: ${prefix === '.' ? '1.0.0' : prefix === '!' ? '2.0.0' : '1.0.0'}\n`;
-      menuText += `SIZE: ${total} COMMANDS\n`;
-      menuText += `PUBLISHER: ${displayOwner}\n\n`;
+      menuText += HEADER + '\n\n';
 
       order.forEach((cat) => {
         const list = categories[cat];
@@ -69,20 +112,15 @@ module.exports = {
         const meta = categoryMeta[cat] || { emoji: '📁', label: cat.toUpperCase() };
         const rows = list
           .filter((item) => item.name)
-          .sort((a, b) => a.name.localeCompare(b.name));
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((item) => prefix + item.name);
 
-        menuText += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-        menuText += `${meta.emoji} ${meta.label}\n`;
-        menuText += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-
-        rows.forEach((item) => {
-          menuText += `  ${pad(prefix + item.name, 34)}\n`;
-        });
-
-        menuText += '\n';
+        menuText += sectionBox(meta.label, rows);
       });
 
-      menuText += '─── END OF TRANSMISSION ───\n';
+      menuText += statusBlock();
+      menuText += '\n\n';
+      menuText += FOOTER + '\n';
 
       await sock.sendMessage(extra.from, {
         text: menuText,
