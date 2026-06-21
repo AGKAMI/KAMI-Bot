@@ -29,14 +29,18 @@ module.exports = {
       const ownerNames = Array.isArray(config.ownerName) ? config.ownerName : [config.ownerName];
       const displayOwner = ownerNames[0] || config.ownerName || 'Bot Owner';
 
-      let menuText = '┏━━━━━━━━━━━━━━━━━━━━━━━━━ KAMI BOT ━━━━━━━━━━━━━━━━━━━━┓\n';
-      menuText += '┃                                                      ┃\n';
-      menuText += '┃  👋  hey, @' + extra.sender.split('@')[0] + '\n';
-      menuText += '┃  ⚡  prefix: ' + config.prefix + '\n';
-      menuText += '┃  📦  commands: ' + commands.size + '\n';
-      menuText += '┃  👑  owner: ' + displayOwner + '\n';
-      menuText += '┃                                                      ┃\n';
-      menuText += '┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n';
+      let prefix = config.prefix || '.';
+        let total = commands.size;
+        let width = 34;
+        let box = '┏' + '━'.repeat(width) + '┓\n';
+        box += '┃' + ' '.repeat(width) + '┃\n';
+        box += '┃  👋 hey, @' + extra.sender.split('@')[0] + '\n';
+        box += '┃  ⚡ prefix: ' + prefix + '\n';
+        box += '┃  📦 commands: ' + total + '\n';
+        box += '┃  👑 owner: ' + displayOwner + '\n';
+        box += '┃' + ' '.repeat(width) + '┃\n';
+        box += '┗' + '━'.repeat(width) + '┛\n\n';
+        let menuText = box;
 
       const order = ['general', 'ai', 'group', 'admin', 'owner', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker'];
       const injected = [];
