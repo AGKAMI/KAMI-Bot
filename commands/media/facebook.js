@@ -12,121 +12,48 @@ const config = require('../../config');
 
 const processedMessages = new Set();
 
-const fbAPIs = [
-  // API 1: FBDown
-  async (url) => {
-    const response = await axios.get(`https://api.example.com/deprecated/api/get?url=${encodeURIComponent(url)}`, { timeout: 30000 });
-    if (response.data && (response.data.hd || response.data.sd)) {
-      console.log('FBDown got URL:', response.data.hd ? 'HD' : 'SD');
-      return { 
-        url: response.data.hd || response.data.sd, 
-        title: response.data.title || 'Facebook Video'
-      };
-    }
-    throw new Error('FBDown returned no video');
-  },
-  // API 2: GetMyIP (FB Downloader)
-  async (url) => {
-    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
-    if (response.data && response.data.data && response.data.data.url) {
-      console.log('GetMyIP got URL');
-      return { url: response.data.data.url, title: response.data.data.title || 'Facebook Video' };
-    }
-    throw new Error('GetMyIP failed');
-  },
-  // API 3: Savemedia
-  async (url) => {
-    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
-    if (response.data && response.data.url) {
-      console.log('Savemedia got URL');
-      return { url: response.data.url, title: response.data.title || 'Facebook Video' };
-    }
-    throw new Error('Savemedia failed');
-  },
-  // API 4: Siputzx
-  async (url) => {
-    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
-    if (response.data && response.data.status && response.data.data) {
-      console.log('Siputzx got URL');
-      return { url: response.data.data.url, title: response.data.data.title };
-    }
-    throw new Error('Siputzx failed');
-  },
-  // API 5: Ryzendesu
-  async (url) => {
-    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
-    if (response.data && (response.data.result?.url || response.data.url || response.data.data?.url)) {
-      console.log('Ryzendesu got URL');
-      return { url: response.data.result?.url || response.data.url || response.data.data?.url, title: response.data.result?.title || response.data.title || 'Facebook Video' };
-    }
-    throw new Error('Ryzendesu failed');
-  },
-  // API 6: Akuari
-  async (url) => {
-    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
-    if (response.data && (response.data.result?.url || response.data.url || response.data.data?.url)) {
-      console.log('Akuari got URL');
-      return { url: response.data.result?.url || response.data.url || response.data.data?.url, title: response.data.result?.title || response.data.title || 'Facebook Video' };
-    }
-    throw new Error('Akuari failed');
-  },
-  // API 7: Agatz
-  async (url) => {
-    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
-    if (response.data && (response.data.data?.url || response.data.url || response.data.result?.url)) {
-      console.log('Agatz got URL');
-      return { url: response.data.data?.url || response.data.url || response.data.result?.url, title: response.data.data?.title || response.data.title || 'Facebook Video' };
-    }
-    throw new Error('Agatz failed');
-  },
-  // API 8: FBDownloader.net
-  async (url) => {
-    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
-    if (response.data && response.data.video) {
-      console.log('FBDownloader.net got URL');
-      return { url: response.data.video, title: response.data.title || 'Facebook Video' };
-    }
-    throw new Error('FBDownloader.net failed');
-  },
-  // API 9: FDown.net
-  async (url) => {
-    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}`, { timeout: 30000 });
-    if (response.data && response.data.download) {
-      console.log('FDown.net got URL');
-      return { url: response.data.download, title: response.data.title || 'Facebook Video' };
-    }
-    throw new Error('FDown.net failed');
-  },
-  // API 10: SaveFrom.net helper (via savefrom.net)
-  async (url) => {
-    const response = await axios.get(`https://api.example.com/deprecated?url=${encodeURIComponent(url)}&format=json`, { timeout: 30000 });
-    if (response.data && response.data.items && response.data.items[0] && response.data.items[0].url) {
-      console.log('SaveFrom.net got URL');
-      return { url: response.data.items[0].url, title: response.data.title || 'Facebook Video' };
-    }
-    throw new Error('SaveFrom.net failed');
-  }
-];
-
-module.exports = {
-/**
- * Fallback: use yt-dlp to get Facebook video URL
- */
 async function fetchWithYtDlp(url) {
   try {
-    // Get direct URL
-    const { stdout } = await execPromise(`yt-dlp -g -f best "${url}"`);
-    const videoUrl = stdout.trim();
+    const { stdout } = await execPromise(`"C:\Users\ojuni\AppData\Local\hermes\hermes-agent\venv\Scripts\yt-dlp.exe" -g -f best "${url}"`, {
+      maxBuffer: 5 * 1024 * 1024,
+      timeout: 60000,
+    });
+    const videoUrl = stdout.trim().split('\n').pop();
     if (!videoUrl) throw new Error('yt-dlp returned empty URL');
-    // Get title
-    const { stdout: titleOut } = await execPromise(`yt-dlp --get-title "${url}"`);
-    const title = titleOut.trim() || 'Facebook Video';
-    return { url: videoUrl, title };
+    const { stdout: titleOut } = await execPromise(`"C:\Users\ojuni\AppData\Local\hermes\hermes-agent\venv\Scripts\yt-dlp.exe" --get-title "${url}"`, {
+      maxBuffer: 1024 * 1024,
+      timeout: 30000,
+    });
+    return { url: videoUrl, title: titleOut.trim() || 'Facebook Video' };
   } catch (err) {
-    console.log('yt-dlp failed:', err.message);
-    throw err;
+    throw new Error('yt-dlp failed: ' + err.message);
   }
 }
+
+async function fetchFromApi(url) {
+  // primary public API: FBDown compatible endpoint
+  const endpoints = [
+    `https://fbdown.vercel.app/api/get?url=${encodeURIComponent(url)}`,
+  ];
+  const schemas = [
+    (d) => d.hd || d.sd,
+    (d) => d.result,
+  ];
+  for (let i = 0; i < endpoints.length; i++) {
+    const res = await axios.get(endpoints[i], { timeout: 30000 });
+    const getter = schemas[i] || (() => null);
+    const videoUrl = getter(res.data);
+    if (videoUrl) {
+      return {
+        url: typeof videoUrl === 'string' ? videoUrl : (videoUrl.url || videoUrl),
+        title: (res.data.title || 'Facebook Video'),
+      };
+    }
+  }
+  throw new Error('All APIs returned empty');
+}
+
+module.exports = {
   name: 'facebook',
   aliases: ['fb', 'fbdl', 'facebookdl'],
   category: 'media',
@@ -138,185 +65,108 @@ async function fetchWithYtDlp(url) {
       if (processedMessages.has(msg.key.id)) {
         return;
       }
-
       processedMessages.add(msg.key.id);
+      setTimeout(() => processedMessages.delete(msg.key.id), 5 * 60 * 1000);
 
-      setTimeout(() => {
-        processedMessages.delete(msg.key.id);
-      }, 5 * 60 * 1000);
-
-      const text = msg.message?.conversation || 
+      const text = msg.message?.conversation ||
                    msg.message?.extendedTextMessage?.text ||
                    args.join(' ');
-
-      if (!text) {
-        return await extra.reply('Please provide a Facebook link for the video.');
-      }
+      if (!text) return await extra.reply('Please provide a Facebook link.');
 
       const url = text.split(' ').slice(1).join(' ').trim();
+      if (!url) return await extra.reply('Please provide a Facebook link.');
 
-      if (!url) {
-        return await extra.reply('Please provide a Facebook link for the video.');
-      }
-
-      // Resolve redirect URL for share links
-      let resolvedUrl = url;
-      try {
-        const headResponse = await axios.head(url, { 
-          timeout: 15000,
-          maxRedirects: 10,
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
-        });
-        if (headResponse.request?.res?.responseUrl) {
-          resolvedUrl = headRequest.responseUrl;
-        }
-      } catch (e) {
-        console.log('URL redirect resolution failed, trying original');
-      }
-
-      const facebookPatterns = [
+      const patterns = [
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\//,
         /https?:\/\/(?:www\.|m\.|web\.)?fb\.com\//,
         /https?:\/\/(?:www\.|m\.|web\.)?fb\.watch\//,
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/watch/,
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/.*\/videos\//,
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/reel\//,
-        /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/share\//
+        /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/share\//,
+        /https?:\/\/(?:www\.|m\.|web\.)?fb\.watch\//,
       ];
-
-      const isValidUrl = facebookPatterns.some(pattern => pattern.test(url));
-
-      if (!isValidUrl) {
-        return await extra.reply('❌ Invalid Facebook link.\n\nUse: .fb <facebook video link>\n\nSupported: facebook.com, fb.com, fb.watch, share links, watch links');
+      if (!patterns.some((p) => p.test(url))) {
+        return await extra.reply('❌ Invalid Facebook link.\nUse: .fb <facebook video link>');
       }
 
-      await sock.sendMessage(extra.from, {
-        react: { text: '🔄', key: msg.key }
-      });
+      const reactOk = await sock.sendMessage(extra.from, {
+        react: { text: '🔄', key: msg.key },
+      }).catch(() => null);
 
       let videoData = null;
       let lastError = null;
 
-      // Try each API with resolved URL
-      console.log('Testing with resolved URL:', resolvedUrl);
-      for (let i = 0; i < fbAPIs.length; i++) {
+      // Try yt-dlp first
+      try {
+        console.log('.fb: trying yt-dlp...');
+        videoData = await fetchWithYtDlp(url);
+        console.log('.fb: yt-dlp ok');
+      } catch (err) {
+        lastError = err;
+        console.log('.fb: yt-dlp failed:', err.message);
+      }
+
+      // then public API
+      if (!videoData) {
         try {
-          console.log(`Trying FB API ${i + 1}...`);
-          videoData = await fbAPIs[i](resolvedUrl);
-          if (videoData && videoData.url) {
-            console.log(`✅ FB API ${i + 1} succeeded!`);
-            break;
-          }
+          console.log('.fb: trying API fallback...');
+          videoData = await fetchFromApi(url);
+          console.log('.fb: API fallback ok');
         } catch (err) {
           lastError = err;
-          console.log(`❌ FB API ${i + 1} failed:`, err.message);
-        }
-      }
-
-      // If APIs failed, try with original URL
-      if (!videoData || !videoData.url) {
-        console.log('Trying with original URL...');
-        for (let i = 0; i < fbAPIs.length; i++) {
-          try {
-            videoData = await fbAPIs[i](url);
-            if (videoData && videoData.url) {
-              console.log(`✅ FB API ${i + 1} worked with original URL`);
-              break;
-            }
-          } catch (err) {
-            console.log(`❌ FB API ${i + 1} failed:`, err.message);
-          }
+          console.log('.fb: API fallback failed:', err.message);
         }
       }
 
       if (!videoData || !videoData.url) {
-        console.log('All FB APIs failed, trying yt-dlp...');
-        try {
-          videoData = await fetchWithYtDlp(url);
-          if (videoData && videoData.url) {
-            console.log('✅ yt-dlp succeeded!');
-          } else {
-            throw new Error('yt-dlp returned no data');
-          }
-        } catch (ytErr) {
-          console.log('yt-dlp also failed:', ytErr.message);
-          return await extra.reply('❌ Could not get video link.
-
-All download sources failed.
-
-Try using a direct video link instead.');
-        }
+        return await extra.reply(
+          '❌ Could not get video link.\n\nAll download sources failed.\nTry using a direct video link instead.'
+        );
       }
 
-      console.log('Got video URL, attempting to send...');
-      const caption = `*DOWNLOADED BY KAMI BOT*\\n\\n${videoData.title ? '📝 ' + videoData.title : ''}`;
-
-      // Try multiple send methods
+      const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}`;
       let sendSuccess = false;
 
-      // Method 1: Direct URL (often works best)
+      // Method 1: direct URL
       try {
-        console.log('Method 1: Direct URL send');
+        console.log('.fb: Method 1 direct URL');
         await sock.sendMessage(extra.from, {
           video: { url: videoData.url },
-          caption: caption
+          caption,
         }, { quoted: msg });
-        console.log('✅ Method 1 worked!');
         sendSuccess = true;
       } catch (e1) {
-        console.log('Method 1 failed:', e1.message);
-
-        // Method 2: Download via API proxy
+        console.log('.fb: Method 1 failed:', e1.message);
+        // Method 2: download buffer
         try {
-          console.log('Method 2: Trying via allorigins proxy');
-          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(videoData.url)}`;
-          const response = await axios.get(proxyUrl, {
+          console.log('.fb: Method 2 buffer');
+          const videoResponse = await axios.get(videoData.url, {
             responseType: 'arraybuffer',
-            timeout: 120000
+            timeout: 90000,
+            maxContentLength: 100 * 1024 * 1024,
+            proxy: false,
           });
-          const buffer = Buffer.from(response.data);
-
+          const buffer = Buffer.from(videoResponse.data);
           await sock.sendMessage(extra.from, {
             video: buffer,
             mimetype: 'video/mp4',
-            caption: caption
+            caption,
           }, { quoted: msg });
-          console.log('✅ Method 2 worked!');
           sendSuccess = true;
         } catch (e2) {
-          console.log('Method 2 failed:', e2.message);
-
-          // Method 3: Direct buffer with different timeout
-          try {
-            console.log('Method 3: Direct buffer download');
-            const videoResponse = await axios.get(videoData.url, {
-              responseType: 'arraybuffer',
-              timeout: 90000,
-              maxContentLength: 100 * 1024 * 1024,
-              proxy: false
-            });
-
-            const buffer = Buffer.from(videoResponse.data);
-            await sock.sendMessage(extra.from, {
-              video: buffer,
-              mimetype: 'video/mp4',
-              caption: caption
-            }, { quoted: msg });
-            console.log('✅ Method 3 worked!');
-            sendSuccess = true;
-          } catch (e3) {
-            console.log('Method 3 failed:', e3.message);
-          }
+          console.log('.fb: Method 2 failed:', e2.message);
         }
       }
 
       if (!sendSuccess) {
-        return await extra.reply('❌ Network issue.\n\nCould not download from Facebook servers.\n\nTry:\n• Using a VPN\n• A different internet connection\n• Using browser to download manually');
+        return await extra.reply(
+          '❌ Network issue.\n\nCould not download from Facebook servers.\n\nTry:\n• Using a VPN\n• A different internet connection\n• Using browser to download manually'
+        );
       }
-
     } catch (error) {
-      console.error('Error in Facebook command:', error.message || error);
+      console.error('.fb Error:', error.message || error);
       await extra.reply('❌ Error: ' + (error.message || 'Please try again later.'));
     }
-  }
+  },
 };
