@@ -1255,164 +1255,112 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
     
     const groupSettings = database.getGroupSettings(from);
     
-    // Debug logging to confirm handler is being called
-    if (groupSettings.antigroupmention) {
-      // Debug log removed
-      // Log simplified message info instead of full structure to avoid huge logs
-      // Debug log removed
-    }
-    
     if (!groupSettings.antigroupmention) return;
     
+    // Unwrap message containers first
+    const content = getMessageContent(msg);
+    const messageType = content ? Object.keys(content).find(key => !['protocolMessage', 'senderKeyDistributionMessage', 'messageContextInfo'].includes(key)) : null;
+    
     // Check if this is a forwarded status message that mentions the group
-    // Comprehensive detection for various status mention message types
     let isForwardedStatus = false;
     
-    if (msg.message) {
+    const rawMsg = content || msg.message;
+    if (rawMsg) {
       // Direct checks for known status mention message types
-      isForwardedStatus = isForwardedStatus || !!msg.message.groupStatusMentionMessage;
+      isForwardedStatus = isForwardedStatus || !!rawMsg.groupStatusMentionMessage;
       isForwardedStatus = isForwardedStatus || 
-        (msg.message.protocolMessage && msg.message.protocolMessage.type === 25); // STATUS_MENTION_MESSAGE
+        (rawMsg.protocolMessage && rawMsg.protocolMessage.type === 25); // STATUS_MENTION_MESSAGE
       
       // Check for forwarded newsletter info in various message types
-      isForwardedStatus = isForwardedStatus || 
-        (msg.message.extendedTextMessage && msg.message.extendedTextMessage.contextInfo && 
-         msg.message.extendedTextMessage.contextInfo.forwardedNewsletterMessageInfo);
-      isForwardedStatus = isForwardedStatus || 
-        (msg.message.conversation && msg.message.contextInfo && 
-         msg.message.contextInfo.forwardedNewsletterMessageInfo);
-      isForwardedStatus = isForwardedStatus || 
-        (msg.message.imageMessage && msg.message.imageMessage.contextInfo && 
-         msg.message.imageMessage.contextInfo.forwardedNewsletterMessageInfo);
-      isForwardedStatus = isForwardedStatus || 
-        (msg.message.videoMessage && msg.message.videoMessage.contextInfo && 
-         msg.message.videoMessage.contextInfo.forwardedNewsletterMessageInfo);
-      isForwardedStatus = isForwardedStatus || 
-        (msg.message.contextInfo && msg.message.contextInfo.forwardedNewsletterMessageInfo);
+      const ctx = rawMsg.extendedTextMessage?.contextInfo || rawMsg.contextInfo;
+      if (ctx?.forwardedNewsletterMessageInfo) {
+        isForwardedStatus = true;
+      }
       
-      // Generic check for any forwarded message
-      if (msg.message.contextInfo) {
-        const ctx = msg.message.contextInfo;
+      // Check image/video captions for newsletter info
+      if (rawMsg.imageMessage?.contextInfo?.forwardedNewsletterMessageInfo) {
+        isForwardedStatus = true;
+      }
+      if (rawMsg.videoMessage?.contextInfo?.forwardedNewsletterMessageInfo) {
+        isForwardedStatus = true;
+      }
+      
+      // Generic forwarded checks
+      if (ctx) {
         isForwardedStatus = isForwardedStatus || !!ctx.isForwarded;
         isForwardedStatus = isForwardedStatus || !!ctx.forwardingScore;
-        // Additional check for forwarded status specifically
         isForwardedStatus = isForwardedStatus || !!ctx.quotedMessageTimestamp;
       }
-      
-      // Additional checks for forwarded messages
-      if (msg.message.extendedTextMessage && msg.message.extendedTextMessage.contextInfo) {
-        const extCtx = msg.message.extendedTextMessage.contextInfo;
-        isForwardedStatus = isForwardedStatus || !!extCtx.isForwarded;
-        isForwardedStatus = isForwardedStatus || !!extCtx.forwardingScore;
-      }
     }
     
-    // Additional debug logging for detection
-    if (groupSettings.antigroupmention) {
-      // Debug log removed
-    }
+    if (!isForwardedStatus) return;
     
-    // Additional debug logging to help identify message structure
-    if (groupSettings.antigroupmention) {
-      // Debug log removed
-      // Debug log removed
-      if (msg.message) {
-        // Debug log removed
-        // Log specific message types that might indicate a forwarded status
-        if (msg.message.protocolMessage) {
-          // Debug log removed
-        }
-        if (msg.message.contextInfo) {
-          // Debug log removed
-        }
-        if (msg.message.extendedTextMessage && msg.message.extendedTextMessage.contextInfo) {
-          // Debug log removed
-        }
-      }
-    }
+    const senderIsAdmin = await isAdmin(sock, sender, from, groupMetadata);
+    const senderIsOwner = isOwner(sender);
     
-    // Debug logging for detection
-    if (groupSettings.antigroupmention) {
-      // Debug log removed
-    }
+    if (senderIsAdmin || senderIsOwner) return;
     
-    if (isForwardedStatus) {
-      if (groupSettings.antigroupmention) {
-        // Process forwarded status message
+    const botIsAdmin = await isBotAdmin(sock, from, groupMetadata);
+    const action = (groupSettings.antigroupmentionAction || 'delete').toLowerCase();
+    
+    if (action === 'kick' && botIsAdmin) {
+      try {
+        if (!msg.key) throw new Error('No message key found');
+        await sock.sendMessage(from, { delete: msg.key });
+        await sock.groupParticipantsUpdate(from, [sender], 'remove');
+        await sock.sendMessage(from, { 
+          text: `📌 Group mention detected. User removed.`,
+          mentions: [sender]
+        });
+      } catch (e) {
+        console.error('Failed to kick for antigroupmention:', e);
+        await sock.sendMessage(from, { 
+          text: `⚠️ Failed to delete mention message: ${e.message}`,
+          mentions: [sender]
+        });
       }
-      
-      const senderIsAdmin = await isAdmin(sock, sender, from, groupMetadata);
-      const senderIsOwner = isOwner(sender);
-      
-      if (groupSettings.antigroupmention) {
-        // Debug log removed
-      }
-      
-      // Don't act on admins or owners
-      if (senderIsAdmin || senderIsOwner) return;
-      
-      const botIsAdmin = await isBotAdmin(sock, from, groupMetadata);
-      const action = (groupSettings.antigroupmentionAction || 'delete').toLowerCase();
-      
-      if (groupSettings.antigroupmention) {
-        // Debug log removed
-      }
-      
-      if (action === 'kick' && botIsAdmin) {
-        try {
-          if (groupSettings.antigroupmention) {
-            // Delete and kick user
-          }
-          await sock.sendMessage(from, { delete: msg.key });
+    } else if (action === 'warn' && botIsAdmin) {
+      try {
+        if (!msg.key) throw new Error('No message key found for delete');
+        const deleteResult = await sock.sendMessage(from, { delete: msg.key });
+        console.log('Delete result for status mention:', deleteResult);
+        
+        const warningData = database.addWarning(from, sender, 'Group mention (Anti-group mention)');
+        const warnCount = warningData.count;
+        const maxWarnings = config.maxWarnings || 3;
+        
+        if (warnCount >= maxWarnings) {
           await sock.groupParticipantsUpdate(from, [sender], 'remove');
-          // Silent removal
-        } catch (e) {
-          console.error('Failed to kick for antigroupmention:', e);
+          await sock.sendMessage(from, { 
+            text: `🚫 *ANTI-GROUP MENTION AUTOMATED ACTION*\n\n❌ @${sender.split('@')[0]} HAS BEEN REMOVED\n\nReason: 3 violations for group mentions\n\nThis is your final warning. Do not rejoin.`,
+            mentions: [sender]
+          });
+          database.clearWarnings(from, sender);
+        } else {
+          const remaining = maxWarnings - warnCount;
+          await sock.sendMessage(from, { 
+            text: `🚫 *ANTI-GROUP MENTION WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} - GROUP MENTIONS ARE PROHIBITED!\n\nViolation recorded. ${remaining} more and you're out.`,
+            mentions: [sender]
+          });
         }
-      } else if (action === 'warn' && botIsAdmin) {
-        // Warn action: warn user, kick after 3 warnings
-        try {
-          await sock.sendMessage(from, { delete: msg.key });
-          
-          // Add warning using existing database function
-          const warningData = database.addWarning(from, sender, 'Group mention (Anti-group mention)');
-          const warnCount = warningData.count;
-          const maxWarnings = config.maxWarnings || 3;
-          
-          if (warnCount >= maxWarnings) {
-            // Max warnings reached - kick user
-            await sock.groupParticipantsUpdate(from, [sender], 'remove');
-            await sock.sendMessage(from, { 
-              text: `🚫 *ANTI-GROUP MENTION AUTOMATED ACTION*\n\n❌ @${sender.split('@')[0]} HAS BEEN REMOVED\n\nReason: 3 violations for group mentions\n\nThis is your final warning. Do not rejoin.`,
-              mentions: [sender]
-            });
-            // Clear warnings after kick
-            database.clearWarnings(from, sender);
-          } else {
-            // Send warning message
-            const remaining = maxWarnings - warnCount;
-            await sock.sendMessage(from, { 
-              text: `🚫 *ANTI-GROUP MENTION WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} - GROUP MENTIONS ARE PROHIBITED!\n\nViolation recorded. ${remaining} more and you're out.`,
-              mentions: [sender]
-            });
-          }
-        } catch (e) {
-          console.error('Failed to warn for antigroupmention:', e);
-        }
-      } else {
-        // Default: delete message
-        try {
-          if (groupSettings.antigroupmention) {
-            // Delete message
-          }
-          await sock.sendMessage(from, { delete: msg.key });
-          // Silent deletion
-        } catch (e) {
-          console.error('Failed to delete message for antigroupmention:', e);
-        }
+      } catch (e) {
+        console.error('Failed to warn/delete for antigroupmention:', e);
+        await sock.sendMessage(from, { 
+          text: `⚠️ Anti-group mention triggered but delete failed: ${e.message}`,
+          mentions: [sender]
+        });
       }
-    } else if (groupSettings.antigroupmention) {
-      // Debug log removed
+    } else {
+      try {
+        if (!msg.key) throw new Error('No message key found');
+        await sock.sendMessage(from, { delete: msg.key });
+      } catch (e) {
+        console.error('Failed to delete message for antigroupmention:', e);
+        await sock.sendMessage(from, { 
+          text: `⚠️ Failed to delete mention message: ${e.message}`,
+          mentions: [sender]
+        });
+      }
     }
   } catch (error) {
     console.error('Error in antigroupmention handler:', error);
