@@ -663,20 +663,6 @@ const handleMessage = async (sock, msg) => {
       }
     }
     
-    // Anti-group mention protection (check BEFORE prefix check, as these are non-command messages)
-    if (isGroup) {
-      // Debug logging to confirm we're trying to call the handler
-      const groupSettings = database.getGroupSettings(from);
-      if (groupSettings.antigroupmention) {
-        // Debug log removed
-      }
-      try {
-        await handleAntigroupmention(sock, msg, groupMetadata);
-      } catch (error) {
-        console.error('Error in antigroupmention handler:', error);
-      }
-    }
-    
     // AutoSticker feature - convert images/videos to stickers automatically
     if (isGroup) { // Process all messages in groups (including bot's own messages)
       const groupSettings = database.getGroupSettings(from);
@@ -1184,81 +1170,75 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
     const groupSettings = database.getGroupSettings(from);
     if (!groupSettings.antilink) return;
     
-    const body = msg.message?.conversation || 
-                  msg.message?.extendedTextMessage?.text || 
-                  msg.message?.imageMessage?.caption || 
-                  msg.message?.videoMessage?.caption || '';
+    // Unwrap message containers (view once, ephemeral, document with caption, etc.)
+    const content = getMessageContent(msg);
+    if (!content) return;
+    
+    const body = content.conversation || 
+                 content.extendedTextMessage?.text || 
+                 content.imageMessage?.caption || 
+                 content.videoMessage?.caption || '';
+    
+    if (!body || !body.trim()) return;
     
     // Comprehensive link detection - matches links with or without protocols
-    // Matches: https://t.me/..., http://wa.me/..., t.me/..., wa.me/..., google.com, telegram.com, etc.
-    // Pattern breakdown:
-    // 1. (https?:\/\/)? - Optional http:// or https://
-    // 2. ([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,} - Domain pattern (e.g., google.com, t.me)
-    // 3. (\/[^\s]*)? - Optional path after domain
     const linkPattern = /(https?:\/\/)?([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}(\/[^\s]*)?/i;
     
-    // Check for any links (with or without protocol)
-    if (linkPattern.test(body)) {
-              const senderIsAdmin = await isAdmin(sock, sender, from, groupMetadata);
-      const senderIsOwner = isOwner(sender);
-      
-      if (senderIsAdmin || senderIsOwner) return;
-      
-      const botIsAdmin = await isBotAdmin(sock, from, groupMetadata);
-      const action = (groupSettings.antilinkAction || 'delete').toLowerCase();
-      
-      if (action === 'kick' && botIsAdmin) {
-        try {
-          await sock.sendMessage(from, { delete: msg.key });
+    if (!linkPattern.test(body)) return;
+    
+    const senderIsAdmin = await isAdmin(sock, sender, from, groupMetadata);
+    const senderIsOwner = isOwner(sender);
+    
+    if (senderIsAdmin || senderIsOwner) return;
+    
+    const botIsAdmin = await isBotAdmin(sock, from, groupMetadata);
+    const action = (groupSettings.antilinkAction || 'delete').toLowerCase();
+    
+    if (action === 'kick' && botIsAdmin) {
+      try {
+        await sock.sendMessage(from, { delete: msg.key });
+        await sock.groupParticipantsUpdate(from, [sender], 'remove');
+        await sock.sendMessage(from, { 
+          text: `🔗 Anti-link triggered. Link removed.`,
+          mentions: [sender]
+        });
+      } catch (e) {
+        console.error('Failed to kick for antilink:', e);
+      }
+    } else if (action === 'warn' && botIsAdmin) {
+      try {
+        await sock.sendMessage(from, { delete: msg.key });
+        
+        const warningData = database.addWarning(from, sender, 'Posted a link (Anti-link)');
+        const warnCount = warningData.count;
+        const maxWarnings = config.maxWarnings || 3;
+        
+        if (warnCount >= maxWarnings) {
           await sock.groupParticipantsUpdate(from, [sender], 'remove');
           await sock.sendMessage(from, { 
-            text: `🔗 Anti-link triggered. Link removed.`,
+            text: `🚫 *ANTI-LINK AUTOMATED ACTION*\n\n❌ @${sender.split('@')[0]} HAS BEEN REMOVED\n\nReason: 3 violations for posting links\n\nThis is your final warning. Do not rejoin.`,
             mentions: [sender]
-          }, { quoted: msg });
-        } catch (e) {
-          console.error('Failed to kick for antilink:', e);
-        }
-      } else if (action === 'warn' && botIsAdmin) {
-        // Warn action: warn user, kick after 3 warnings
-        try {
-          await sock.sendMessage(from, { delete: msg.key });
-          
-          // Add warning using existing database function
-          const warningData = database.addWarning(from, sender, 'Posted a link (Anti-link)');
-          const warnCount = warningData.count;
-          const maxWarnings = config.maxWarnings || 3;
-          
-          if (warnCount >= maxWarnings) {
-            // Max warnings reached - kick user
-            await sock.groupParticipantsUpdate(from, [sender], 'remove');
-            await sock.sendMessage(from, { 
-              text: `🚫 *ANTI-LINK AUTOMATED ACTION*\n\n❌ @${sender.split('@')[0]} HAS BEEN REMOVED\n\nReason: 3 violations for posting links\n\nThis is your final warning. Do not rejoin.`,
-              mentions: [sender]
-            }, { quoted: msg });
-            // Clear warnings after kick
-            database.clearWarnings(from, sender);
-          } else {
-            // Send warning message
-            const remaining = maxWarnings - warnCount;
-            await sock.sendMessage(from, { 
-              text: `🚫 *ANTI-LINK WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} - LINKS ARE PROHIBITED!\n\nViolation recorded. ${remaining} more and you're out.`,
-              mentions: [sender]
-            }, { quoted: msg });
-          }
-        } catch (e) {
-          console.error('Failed to warn for antilink:', e);
-        }
-      } else {
-        // Default: delete message
-        try {
-          await sock.sendMessage(from, { delete: msg.key });
+          });
+          database.clearWarnings(from, sender);
+        } else {
+          const remaining = maxWarnings - warnCount;
           await sock.sendMessage(from, { 
-            text: `🔗 Anti-link triggered. Link removed.`,
+            text: `🚫 *ANTI-LINK WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} - LINKS ARE PROHIBITED!\n\nViolation recorded. ${remaining} more and you're out.`,
             mentions: [sender]
-          }, { quoted: msg });
-        } catch (e) {
-          console.error('Failed to delete message for antilink:', e);
+          });
         }
+      } catch (e) {
+        console.error('Failed to warn for antilink:', e);
+      }
+    } else {
+      try {
+        await sock.sendMessage(from, { delete: msg.key });
+        await sock.sendMessage(from, { 
+          text: `🔗 Anti-link triggered. Link removed.`,
+          mentions: [sender]
+        });
+      } catch (e) {
+        console.error('Failed to delete message for antilink:', e);
       }
     }
   } catch (error) {
@@ -1405,7 +1385,7 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
             await sock.sendMessage(from, { 
               text: `🚫 *ANTI-GROUP MENTION AUTOMATED ACTION*\n\n❌ @${sender.split('@')[0]} HAS BEEN REMOVED\n\nReason: 3 violations for group mentions\n\nThis is your final warning. Do not rejoin.`,
               mentions: [sender]
-            }, { quoted: msg });
+            });
             // Clear warnings after kick
             database.clearWarnings(from, sender);
           } else {
@@ -1414,7 +1394,7 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
             await sock.sendMessage(from, { 
               text: `🚫 *ANTI-GROUP MENTION WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} - GROUP MENTIONS ARE PROHIBITED!\n\nViolation recorded. ${remaining} more and you're out.`,
               mentions: [sender]
-            }, { quoted: msg });
+            });
           }
         } catch (e) {
           console.error('Failed to warn for antigroupmention:', e);
