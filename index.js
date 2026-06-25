@@ -13,6 +13,34 @@ console.log(`
 ╚═══════════════════════════════════════╝
 `);
 
+// === PRE-BOOT DISK CLEANUP ===
+const _pbfs = require('fs');
+const _pbpath = require('path');
+const _pbDir = _pbpath.join(process.cwd(), 'temp');
+if (_pbfs.existsSync(_pbDir)) {
+  try {
+    const _pbFiles = _pbfs.readdirSync(_pbDir);
+    let _pbBytes = 0;
+    const _pbStats = [];
+    for (const _f of _pbFiles) {
+      const _fp = _pbpath.join(_pbDir, _f);
+      try {
+        const _st = _pbfs.statSync(_fp);
+        if (_st.isFile()) { _pbBytes += _st.size; _pbStats.push({ p: _fp, s: _st.size, t: _st.mtimeMs }); }
+      } catch(e) {}
+    }
+    const _mb = _pbBytes / (1024*1024);
+    if (_mb > 500) {
+      console.log('PRE-BOOT: Temp ' + _mb.toFixed(1) + 'MB, cleaning...');
+      _pbStats.sort((a,b) => a.t - b.t);
+      let _freed = 0;
+      for (const f of _pbStats) { if (_mb - (_freed/(1024*1024)) <= 300) break; try { _pbfs.unlinkSync(f.p); _freed += f.s; } catch(e){} }
+      console.log('PRE-BOOT: Freed ' + (_freed/(1024*1024)).toFixed(1) + 'MB');
+    }
+  } catch(e) {}
+}
+
+
 process.env.PUPPETEER_SKIP_DOWNLOAD = 'true';
 process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = 'true';
 process.env.PUPPETEER_CACHE_DIR = process.env.PUPPETEER_CACHE_DIR || '/tmp/puppeteer_cache_disabled';
