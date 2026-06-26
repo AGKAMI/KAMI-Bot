@@ -9,10 +9,10 @@ const { getTempDir } = require('./tempManager');
 const config = require('../config');
 
 // Cleanup interval: 10 minutes
-const CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 
 // File age threshold: 30 minutes
-const FILE_AGE_THRESHOLD_MS = 30 * 60 * 1000;
+const FILE_AGE_THRESHOLD_MS = 10 * 60 * 1000;
 
 // Session directory name (must NOT be cleaned)
 const SESSION_DIR_NAME = config.sessionName || 'session';
@@ -91,10 +91,12 @@ function startCleanup() {
   // Run cleanup immediately at startup
   console.log('🧹 Starting temp file cleanup system...');
   cleanupOldFiles();
+    cleanupBySize();
   
   // Set up periodic cleanup
   cleanupInterval = setInterval(() => {
     cleanupOldFiles();
+    cleanupBySize();
   }, CLEANUP_INTERVAL_MS);
   
   console.log(`✅ Cleanup system started (runs every ${CLEANUP_INTERVAL_MS / 1000 / 60} minutes)`);
@@ -128,3 +130,41 @@ module.exports = {
   stopCleanup
 };
 
+
+// === SIZE-BASED CLEANUP ===
+// If temp dir exceeds 300MB, delete oldest files until under 200MB
+const SIZE_LIMIT_BYTES = 300 * 1024 * 1024;
+const SIZE_TARGET_BYTES = 200 * 1024 * 1024;
+
+function cleanupBySize() {
+  try {
+    const tempDir = getTempDir();
+    if (!fs.existsSync(tempDir)) return;
+    
+    const files = fs.readdirSync(tempDir);
+    let totalBytes = 0;
+    const fileStats = [];
+    
+    for (const file of files) {
+      const filePath = path.join(tempDir, file);
+      try {
+        const stats = fs.statSync(filePath);
+        if (stats.isFile() && file !== SESSION_DIR_NAME) {
+          totalBytes += stats.size;
+          fileStats.push({ path: filePath, size: stats.size, mtime: stats.mtimeMs });
+        }
+      } catch(e) {}
+    }
+    
+    if (totalBytes > SIZE_LIMIT_BYTES) {
+      console.log('🧹 Size cleanup: temp at ' + (totalBytes/(1024*1024)).toFixed(1) + 'MB, trimming...');
+      fileStats.sort((a, b) => a.mtime - b.mtime);
+      let freed = 0;
+      for (const f of fileStats) {
+        if (totalBytes - freed <= SIZE_TARGET_BYTES) break;
+        try { fs.unlinkSync(f.path); freed += f.size; } catch(e) {}
+      }
+      console.log('🧹 Size cleanup: freed ' + (freed/(1024*1024)).toFixed(1) + 'MB');
+    }
+  } catch(e) {}
+}
