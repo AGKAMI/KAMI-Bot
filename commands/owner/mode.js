@@ -24,7 +24,7 @@ module.exports = {
           : 'Everyone can use commands';
         
         return extra.reply(
-          `🤖 *Bot Mode*\n\n` +
+          `🤖 *bot mode*\n\n` +
           `Current Mode: *${currentMode.toUpperCase()}*\n` +
           `Status: ${description}\n\n` +
           `Usage:\n` +
@@ -37,31 +37,31 @@ module.exports = {
       
       if (mode === 'private' || mode === 'priv') {
         if (config.selfMode) {
-          return extra.reply('🔒 Bot is already in *PRIVATE* mode.\nOnly owner can use commands.');
+          return extra.reply('🔒 bot already in private mode\nonly owner can use commands');
         }
         
         // Update config
         updateConfig('selfMode', true);
         config.selfMode = true; // Update runtime config
-        return extra.reply('🔒 Bot mode changed to *PRIVATE*\n\nOnly owner can use commands now.');
+        return extra.reply('🔒 bot mode changed to private\n\nonly owner can use commands now');
       }
       
       if (mode === 'public' || mode === 'pub') {
         if (!config.selfMode) {
-          return extra.reply('🌐 Bot is already in *PUBLIC* mode.\nEveryone can use commands.');
+          return extra.reply('🌐 bot already in *public* mode\nEveryone can use commands.');
         }
         
         // Update config
         updateConfig('selfMode', false);
         config.selfMode = false; // Update runtime config
-        return extra.reply('🌐 Bot mode changed to *PUBLIC*\n\nEveryone can use commands now.');
+        return extra.reply('🌐 bot mode changed to *public*\n\nEveryone can use commands now.');
       }
       
-      return extra.reply('❌ Invalid mode!\nUsage: .mode <private/public>');
+      return extra.reply('❌ invalid mode\nusage: .mode <private/public>');
       
     } catch (error) {
       console.error('Mode command error:', error);
-      await extra.reply('❌ Error changing bot mode.');
+      await extra.reply("❌ couldn't change bot mode");
     }
   }
 };

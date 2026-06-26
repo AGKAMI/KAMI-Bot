@@ -44,7 +44,7 @@ module.exports = {
         database.updateGlobalSettings({ selfMode: true });
         
         return await sock.sendMessage(chatId, {
-          text: `✅ *DM Blocker turned ON*\n\n` +
+          text: `✅ dm blocker turned on\n\n` +
                `Only whitelisted numbers can now use this bot.\n` +
                `Others will be blocked.`
         }, { quoted: msg });
@@ -60,13 +60,13 @@ module.exports = {
         database.updateGlobalSettings({ selfMode: false });
         
         return await sock.sendMessage(chatId, {
-          text: `✅ *DM Blocker turned OFF*\n\n` +
+          text: `✅ dm blocker turned off\n\n` +
                `Anyone can now use this bot.`
         }, { quoted: msg });
       }
       
       return await sock.sendMessage(chatId, {
-        text: `❌ Invalid option. Use:\n` +
+        text: `❌ invalid option. Use:\n` +
              `  .dmblocker on\n` +
              `  .dmblocker off\n` +
              `  .dmblocker status`
@@ -75,7 +75,7 @@ module.exports = {
     } catch (error) {
       console.error('DM Blocker Error:', error);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ Error: ${error.message}`
+        text: `❌ error: ${error.message}`
       }, { quoted: msg });
     }
   }

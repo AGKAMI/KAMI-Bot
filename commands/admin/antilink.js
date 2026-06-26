@@ -37,45 +37,45 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antilink) {
-          return extra.reply('*Antilink is already on*');
+          return extra.reply('*ag, antilink is already on*');
         }
         database.updateGroupSettings(extra.from, { antilink: true });
-        return extra.reply('*Antilink has been turned ON*');
+        return extra.reply('*antilink turned ON*');
       }
       
       if (opt === 'off') {
         database.updateGroupSettings(extra.from, { antilink: false });
-        return extra.reply('*Antilink has been turned OFF*');
+        return extra.reply('*antilink turned OFF*');
       }
       
       if (opt === 'set') {
         if (args.length < 2) {
-          return extra.reply('*Please specify an action: .antilink set delete | kick | warn*');
+          return extra.reply('*specify an action: .antilink set delete | kick | warn*');
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick', 'warn'].includes(setAction)) {
-          return extra.reply('*Invalid action. Choose delete, kick, or warn.*');
+          return extra.reply('*invalid action — choose delete, kick, or warn*');
         }
         
         database.updateGroupSettings(extra.from, { 
           antilinkAction: setAction,
           antilink: true // Auto-enable when setting action
         });
-        return extra.reply(`*Antilink action set to ${setAction}*`);
+        return extra.reply(`*antilink action set to ${setAction}*`);
       }
       
       if (opt === 'get') {
         const settings = database.getGroupSettings(extra.from);
         const status = settings.antilink ? 'ON' : 'OFF';
         const action = settings.antilinkAction || 'delete';
-        return extra.reply(`*Antilink Configuration:*\nStatus: ${status}\nAction: ${action}`);
+        return extra.reply(`*antilink config:*\nStatus: ${status}\nAction: ${action}`);
       }
       
-      return extra.reply('*Use .antilink for usage.*');
+      return extra.reply('*use .antilink for usage*');
       
     } catch (error) {
-      await extra.reply(`❌ Error: ${error.message}`);
+      await extra.reply(`❌ error: ${error.message}`);
     }
   }
 };

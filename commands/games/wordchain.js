@@ -8,11 +8,11 @@ module.exports = {
     const sub = (args[0] || '').toLowerCase();
     if (sub === 'start' || sub === 'new') {
       chains.set(ctx.from, { last: null, count: 0 });
-      return ctx.reply('🔁 Word Chain started!\n.word <word> to play. Last letter = next first letter.');
+      return ctx.reply('🔁 word chain started!\n.word <word> to play. Last letter = next first letter.');
     }
     if (sub === 'stop') {
       chains.delete(ctx.from);
-      return ctx.reply('Word chain stopped.');
+      return ctx.reply('word chain stopped');
     }
     if (sub === 'score') {
       const g = chains.get(ctx.from);
@@ -24,7 +24,7 @@ module.exports = {
     const g = chains.get(ctx.from);
     if (!g) return ctx.reply('No active game. Use .chain start');
     if (g.last && !word.toLowerCase().startsWith(g.last)) {
-      return ctx.reply('Word must start with "' + g.last + '"!');
+      return ctx.reply('word must start with "' + g.last + '"!');
     }
     g.last = word.toLowerCase().slice(-1);
     g.count++;

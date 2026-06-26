@@ -17,12 +17,12 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply(`❌ Please provide text!\n\nExample: ${extra.prefix || '.'}attp Hello World`);
+        return extra.reply(`❌ give me some text hey\n\nExample: ${extra.prefix || '.'}attp Hello World`);
       }
       
       const text = args.join(' ');
       if (text.length > 50) {
-        return extra.reply('❌ Text is too long! Maximum 50 characters.');
+        return extra.reply("❌ that's too long — max 50 characters");
       }
       
       try {
@@ -31,11 +31,11 @@ module.exports = {
         await sock.sendMessage(extra.from, { sticker: webpBuffer }, { quoted: msg });
       } catch (error) {
         console.error('Error generating attp sticker:', error);
-        await extra.reply('❌ Failed to generate the sticker.');
+        await extra.reply("❌ couldn't make the sticker");
       }
     } catch (error) {
       console.error('ATTP command error:', error);
-      await extra.reply('❌ An error occurred while creating animated sticker!');
+      await extra.reply('❌ animated sticker failed hey');
     }
   }
 };

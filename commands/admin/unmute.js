@@ -15,10 +15,10 @@ module.exports = {
     async execute(sock, msg, args, extra) {
       try {
         await sock.groupSettingUpdate(extra.from, 'not_announcement');
-        await extra.reply('🔓 Group has been opened!\n\nAll members can send messages now.');
+        await extra.reply('🔓 group opened hey\n\neveryone can talk now');
         
       } catch (error) {
-        await extra.reply(`❌ Error: ${error.message}`);
+        await extra.reply(`❌ error: ${error.message}`);
       }
     }
   };

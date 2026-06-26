@@ -11,13 +11,13 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
     if (!args[0]) {
-      return extra.reply('Usage: .anticall on/off');
+      return extra.reply('usage: .anticall on/off');
     }
 
     const option = args[0].toLowerCase();
 
     if (!['on', 'off'].includes(option)) {
-      return extra.reply('Usage: .anticall on/off');
+      return extra.reply('usage: .anticall on/off');
     }
 
     const enabled = option === 'on';
@@ -51,7 +51,7 @@ module.exports = {
       );
     } catch (err) {
       console.error('[anticall cmd] error:', err);
-      extra.reply('❌ Error updating anti-call setting.');
+      extra.reply('❌ couldn\'t update anti-call setting');
     }
   }
 };

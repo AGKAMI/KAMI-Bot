@@ -45,7 +45,7 @@ module.exports = {
       if (!hasViewOnce) {
         return await sock.sendMessage(
           chatId,
-          { text: '❌ This is not a view-once message!' },
+          { text: '❌ this isn\'t a view-once message' },
           { quoted: msg }
         );
       }
@@ -83,7 +83,7 @@ module.exports = {
       if (!actualMsg || !mtype) {
         return await sock.sendMessage(
           chatId,
-          { text: '❌ Unsupported view-once message type.' },
+          { text: '❌ unsupported view-once message type' },
           { quoted: msg }
         );
       }

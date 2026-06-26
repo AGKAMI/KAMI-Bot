@@ -42,7 +42,7 @@ module.exports = {
       } catch (error) {
         console.error('Dare Error:', error);
         await sock.sendMessage(msg.key.remoteJid, {
-          text: `❌ Error: ${error.message}`
+          text: `❌ error: ${error.message}`
         }, { quoted: msg });
       }
     }

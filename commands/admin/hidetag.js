@@ -103,7 +103,7 @@ module.exports = {
       }
     } catch (error) {
       console.error('HideTag command error:', error);
-      await extra.reply('❌ Failed to tag members.');
+      await extra.reply("❌ couldn't tag everyone hey");
     }
   },
 };

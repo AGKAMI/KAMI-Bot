@@ -12,12 +12,12 @@ module.exports = {
     }
     if (sub === 'stop') {
       games.delete(ctx.from);
-      return ctx.reply('Group guess ended.');
+      return ctx.reply('group guess ended');
     }
     const n = parseInt(args[0]);
     if (isNaN(n)) return ctx.reply('Usage: .gguess start | .gguess <number> | .gguess stop');
     const g = games.get(ctx.from);
-    if (!g) return ctx.reply('No active game. .gguess start');
+    if (!g) return ctx.reply('no active game — .gguess start');
     if (n === g.target) {
       const winner = ctx.sender.split('@')[0];
       games.delete(ctx.from);

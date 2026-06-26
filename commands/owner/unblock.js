@@ -22,7 +22,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply('❌ Please mention or reply to a user to unblock!');
+        return extra.reply('❌ tag or reply to the oke you wanna unblock');
       }
       
       await sock.updateBlockStatus(target, 'unblock');
@@ -33,7 +33,7 @@ module.exports = {
       }, { quoted: msg });
       
     } catch (error) {
-      await extra.reply(`❌ Error: ${error.message}`);
+      await extra.reply(`❌ error: ${error.message}`);
     }
   }
 };

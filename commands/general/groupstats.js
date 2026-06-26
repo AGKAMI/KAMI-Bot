@@ -16,7 +16,7 @@ module.exports = {
             const stats = getStats(from);
 
             if (!stats)
-                return extra.reply('📊 No activity recorded today.');
+                return extra.reply('📊 nothing happening today hey');
 
             const { total, users } = stats;
 
@@ -30,7 +30,7 @@ module.exports = {
                 : 'No active users yet.';
 
             const text = `
-📊 *Group Stats — Today*
+📊 *group stats — today*
 
 📌 *Total Messages:* ${total}
 
@@ -47,7 +47,7 @@ Type .myactivity to see your stats.
 
         } catch (err) {
             console.error('[groupstats cmd] error:', err);
-            extra.reply('❌ Error loading stats.');
+            extra.reply('❌ couldn\'t load stats hey');
         }
     }
 };

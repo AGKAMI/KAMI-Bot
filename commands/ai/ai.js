@@ -14,7 +14,7 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply('❌ Usage: .ai <question>\n\nExample: .ai What is the capital of France?');
+        return extra.reply('❌ usage: .ai <question>\n\nexample: .ai what is the capital of france?');
       }
       
       const question = args.join(' ');
@@ -26,7 +26,7 @@ module.exports = {
       await extra.reply(answer);
       
     } catch (error) {
-      await extra.reply(`❌ AI Error: ${error.message}`);
+      await extra.reply(`❌ ai error: ${error.message}`);
     }
   }
 };

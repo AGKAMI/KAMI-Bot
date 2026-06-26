@@ -71,10 +71,10 @@ module.exports = {
       const text = msg.message?.conversation ||
                    msg.message?.extendedTextMessage?.text ||
                    args.join(' ');
-      if (!text) return await extra.reply('Please provide a Facebook link.');
+      if (!text) return await extra.reply('send me a facebook link hey');
 
       const url = text.split(' ').slice(1).join(' ').trim();
-      if (!url) return await extra.reply('Please provide a Facebook link.');
+      if (!url) return await extra.reply('send me a facebook link hey');
 
       const patterns = [
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\//,
@@ -87,7 +87,7 @@ module.exports = {
         /https?:\/\/(?:www\.|m\.|web\.)?fb\.watch\//,
       ];
       if (!patterns.some((p) => p.test(url))) {
-        return await extra.reply('❌ Invalid Facebook link.\nUse: .fb <facebook video link>');
+        return await extra.reply('❌ invalid facebook link\nuse: .fb <facebook video link>');
       }
 
       const reactOk = await sock.sendMessage(extra.from, {
@@ -121,7 +121,7 @@ module.exports = {
 
       if (!videoData || !videoData.url) {
         return await extra.reply(
-          '❌ Could not get video link.\n\nAll download sources failed.\nTry using a direct video link instead.'
+          "❌ couldn't get the video link\n\nAll download sources failed.\nTry using a direct video link instead."
         );
       }
 
@@ -161,12 +161,12 @@ module.exports = {
 
       if (!sendSuccess) {
         return await extra.reply(
-          '❌ Network issue.\n\nCould not download from Facebook servers.\n\nTry:\n• Using a VPN\n• A different internet connection\n• Using browser to download manually'
+          '❌ network issue hey\n\nCould not download from Facebook servers.\n\nTry:\n• Using a VPN\n• A different internet connection\n• Using browser to download manually'
         );
       }
     } catch (error) {
       console.error('.fb Error:', error.message || error);
-      await extra.reply('❌ Error: ' + (error.message || 'Please try again later.'));
+      await extra.reply('❌ Error: ' + (error.message || 'try again later'));
     }
   },
 };

@@ -22,7 +22,7 @@ module.exports = {
         const groupSettings = db.getGroupSettings(groupId);
         const status = groupSettings.goodbye ? '✅ Enabled' : '❌ Disabled';
         return await sock.sendMessage(groupId, {
-          text: `👋 *Goodbye Messages*\n\nStatus: ${status}\nMessage: ${groupSettings.goodbyeMessage}\n\nUsage: .goodbye on/off\n\nTo customize: .setgoodbye <message>`
+          text: `👋 *goodbye messages*\n\nStatus: ${status}\nMessage: ${groupSettings.goodbyeMessage}\n\nUsage: .goodbye on/off\n\nTo customize: .setgoodbye <message>`
         }, { quoted: msg });
       }
       
@@ -30,13 +30,13 @@ module.exports = {
       db.updateGroupSettings(groupId, { goodbye: enable });
       
       await sock.sendMessage(groupId, {
-        text: `✅ Goodbye messages ${enable ? 'enabled' : 'disabled'}!${enable ? '\n\nLeaving members will now receive goodbye messages.' : ''}`
+        text: `✅ goodbye messages ${enable ? 'enabled' : 'disabled'}${enable ? '\\n\\nleaving members will get a goodbye now' : ''}`
       }, { quoted: msg });
       
     } catch (error) {
       console.error('Goodbye Error:', error);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ Error: ${error.message}`
+        text: `❌ error: ${error.message}`
       }, { quoted: msg });
     }
   }

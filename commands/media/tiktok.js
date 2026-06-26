@@ -38,7 +38,7 @@ module.exports = {
       
       if (!text) {
         return await sock.sendMessage(msg.key.remoteJid, { 
-          text: 'Please provide a TikTok link for the video.' 
+          text: 'send me a tiktok link for the video' 
         }, { quoted: msg });
       }
       
@@ -47,7 +47,7 @@ module.exports = {
       
       if (!url) {
         return await sock.sendMessage(msg.key.remoteJid, { 
-          text: 'Please provide a TikTok link for the video.' 
+          text: 'send me a tiktok link for the video' 
         }, { quoted: msg });
       }
       
@@ -64,7 +64,7 @@ module.exports = {
       
       if (!isValidUrl) {
         return await sock.sendMessage(msg.key.remoteJid, { 
-          text: 'That is not a valid TikTok link. Please provide a valid TikTok video link.' 
+          text: 'that\'s not a valid tiktok link — need a proper video link' 
         }, { quoted: msg });
       }
       
@@ -171,19 +171,19 @@ module.exports = {
         
         // If we reach here, no method worked
         return await sock.sendMessage(msg.key.remoteJid, { 
-          text: '❌ Failed to download TikTok video. All download methods failed. Please try again with a different link.' 
+          text: '❌ couldn\'t download the tiktok video all download methods failed — try a different link' 
         }, { quoted: msg });
         
       } catch (error) {
         console.error('Error in TikTok download:', error);
         await sock.sendMessage(msg.key.remoteJid, { 
-          text: 'Failed to download the TikTok video. Please try again with a different link.' 
+          text: 'couldn\'t download — try a different link' 
         }, { quoted: msg });
       }
     } catch (error) {
       console.error('Error in TikTok command:', error);
       await sock.sendMessage(msg.key.remoteJid, { 
-        text: 'An error occurred while processing the request. Please try again later.' 
+        text: 'An error occurred while processing the request. try again later' 
       }, { quoted: msg });
     }
   }

@@ -22,7 +22,7 @@ module.exports = {
         
       } catch (error) {
         console.error('Truth Error:', error);
-        await extra.reply(`❌ Error: ${error.message}`);
+        await extra.reply(`❌ error: ${error.message}`);
       }
     }
   };

@@ -46,7 +46,7 @@ module.exports = {
       );
       
       if (!stickerBuffer) {
-        return await extra.reply('❌ Failed to download sticker. Please try again.');
+        return await extra.reply("❌ couldn't download the sticker — try again");
       }
       
       // Check if sticker is animated
@@ -85,7 +85,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Error in simage command:', error);
-      await extra.reply(`❌ Failed to convert sticker to image.\n\nError: ${error.message}`);
+      await extra.reply(`❌ couldn't convert sticker to image\n\nerror: ${error.message}`);
     }
   }
 };

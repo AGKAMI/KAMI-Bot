@@ -26,7 +26,7 @@ module.exports = {
     if (win > 0) {
       text += '🏆 Win: ' + win + ' points!';
     } else {
-      text += '😢 No match. Try again!';
+      text += '😢 no match — try again!';
     }
     await ctx.reply(text);
   }

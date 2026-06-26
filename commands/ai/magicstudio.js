@@ -57,15 +57,15 @@ module.exports = {
       
       // Handle specific error cases
       if (error.response?.status === 429) {
-        await extra.reply('❌ Rate limit exceeded. Please try again later.');
+        await extra.reply('❌ rate limit — try again later');
       } else if (error.response?.status === 400) {
-        await extra.reply('❌ Invalid prompt. Please try a different prompt.');
+        await extra.reply('❌ invalid prompt — try something else');
       } else if (error.response?.status === 500) {
-        await extra.reply('❌ Server error. Please try again later.');
+        await extra.reply('❌ server error — try again later');
       } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-        await extra.reply('❌ Request timed out. The image generation is taking too long. Please try again.');
+        await extra.reply('❌ timed out — try again');
       } else {
-        await extra.reply(`❌ Failed to generate image: ${error.message}`);
+        await extra.reply(`❌ couldn't generate image: ${error.message}`);
       }
     }
   }

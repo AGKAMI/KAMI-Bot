@@ -19,7 +19,7 @@ module.exports = {
       
       if (!text) {
         return await sock.sendMessage(chatId, { 
-          text: 'Please provide text to generate\nExample: .purple Nick' 
+          text: 'give me text to generate\nExample: .purple Nick' 
         }, { quoted: msg });
       }
       

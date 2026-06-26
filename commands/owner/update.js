@@ -152,11 +152,11 @@ module.exports = {
     const zipUrl = (args[0] || config.updateZipUrl || process.env.UPDATE_ZIP_URL || '').trim();
 
     if (!zipUrl) {
-      return extra.reply('❌ No update URL configured. Set updateZipUrl in config.js or pass a URL: `.update <zip_url>`');
+      return extra.reply('❌ no update url set — configure in config or pass a url');
     }
 
     try {
-      await extra.reply('🔄 Updating the bot, please wait…');
+      await extra.reply('🔄 updating the bot, wait a sec...');
 
       const { copiedFiles } = await updateViaZip(zipUrl);
 
@@ -175,7 +175,7 @@ module.exports = {
       setTimeout(() => process.exit(0), 500);
     } catch (error) {
       console.error('Update failed:', error);
-      await sock.sendMessage(chatId, { text: `❌ Update failed:\n${String(error.message || error)}` }, { quoted: msg });
+      await sock.sendMessage(chatId, { text: `❌ update failed:\n${String(error.message || error)}` }, { quoted: msg });
     }
   }
 };

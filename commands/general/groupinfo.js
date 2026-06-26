@@ -17,7 +17,7 @@ module.exports = {
         const admins = metadata.participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
         const members = metadata.participants.filter(p => !p.admin);
         
-        let text = `╭━━━≪ KAMI BOT ≫━━━╮\n\n📋 *GROUP INFO*\n\n`;
+        let text = `╭━━━≪ KAMI BOT ≫━━━╮\n\n📋 *group info*\n\n`;
         text += `┌─ ✦\n`;
         text += `│ 🏷️ Name: ${metadata.subject}\n`;
         text += `│ 👥 Members: ${metadata.participants.length}\n`;
@@ -43,7 +43,7 @@ module.exports = {
         }, { quoted: msg });
         
       } catch (error) {
-        await extra.reply(`❌ Error: ${error.message}`);
+        await extra.reply(`❌ error: ${error.message}`);
       }
     }
   };

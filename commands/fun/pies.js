@@ -38,7 +38,7 @@ module.exports = {
       
       if (!country) {
         return await extra.reply(
-          `Usage: .pies <country>\n\nCountries: ${VALID_COUNTRIES.join(', ')}`
+          `usage: .pies <country>\n\nCountries: ${VALID_COUNTRIES.join(', ')}`
         );
       }
       

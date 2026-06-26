@@ -14,7 +14,7 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply('❌ Usage: .qr <text>\n\nExample: .qr https://google.com');
+        return extra.reply('❌ usage: .qr <text>\n\nexample: .qr https://google.com');
       }
       
       const text = args.join(' ');
@@ -31,7 +31,7 @@ module.exports = {
       }, { quoted: msg });
       
     } catch (error) {
-      await extra.reply(`❌ Error: ${error.message}`);
+      await extra.reply(`❌ error: ${error.message}`);
     }
   }
 };

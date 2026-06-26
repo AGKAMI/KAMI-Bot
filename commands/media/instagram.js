@@ -65,7 +65,7 @@ module.exports = {
                    args.join(' ');
       
       if (!text) {
-        return extra.reply('Please provide an Instagram link for the video.');
+        return extra.reply('send me an instagram link for the video');
       }
       
       // Check for various Instagram URL formats
@@ -80,7 +80,7 @@ module.exports = {
       const isValidUrl = instagramPatterns.some(pattern => pattern.test(text));
       
       if (!isValidUrl) {
-        return extra.reply('That is not a valid Instagram link. Please provide a valid Instagram post, reel, or video link.');
+        return extra.reply("that's not a valid instagram link — need a post, reel, or video link");
       }
       
       await sock.sendMessage(chatId, {
@@ -90,7 +90,7 @@ module.exports = {
       const downloadData = await igdl(text);
       
       if (!downloadData || !downloadData.data || downloadData.data.length === 0) {
-        return extra.reply('❌ No media found at the provided link. The post might be private or the link is invalid.');
+        return extra.reply('❌ no media found — might be private');
       }
       
       const mediaData = downloadData.data;
@@ -102,7 +102,7 @@ module.exports = {
       const mediaToDownload = uniqueMedia.slice(0, 20);
       
       if (mediaToDownload.length === 0) {
-        return extra.reply('❌ No valid media found to download. This might be a private post or the scraper failed.');
+        return extra.reply('❌ no media to download — might be private');
       }
       
       // Download all media silently without status messages
@@ -142,7 +142,7 @@ module.exports = {
       }
     } catch (error) {
       console.error('Error in Instagram command:', error);
-      await extra.reply('❌ An error occurred while processing the Instagram request. Please try again.');
+      await extra.reply('❌ instagram error — try again');
     }
   }
 };

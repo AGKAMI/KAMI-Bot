@@ -53,7 +53,7 @@ module.exports = {
         
         // If we still don't have a newsletter JID, show error
         if (!newsletterJid) {
-          return extra.reply('❌ The replied message is not from a newsletter!\n\nPlease reply to a newsletter message or provide a newsletter JID directly.');
+          return extra.reply("❌ that's not a newsletter message\n\nreply to a newsletter message or provide a newsletter jid");
         }
       } else if (args[0]) {
         // Get JID from command arguments
@@ -62,7 +62,7 @@ module.exports = {
         // Show current status
         const currentJid = config.newsletterJid || 'Not set';
         return extra.reply(
-          `📰 *Newsletter Configuration*\n\n` +
+          `📰 *newsletter config*\n\n` +
           `Current Newsletter JID: \`${currentJid}\`\n` +
           `Newsletter Name: ${config.botName}\n\n` +
           `Usage:\n` +
@@ -74,7 +74,7 @@ module.exports = {
       
       // Validate JID format (should end with @newsletter)
       if (!newsletterJid.endsWith('@newsletter')) {
-        return extra.reply('❌ Invalid newsletter JID format!\n\nNewsletter JID must end with `@newsletter`\nExample: `120363161513685998@newsletter`');
+        return extra.reply('❌ invalid newsletter jid format\n\nnewsletter jid must end with @newsletter\nexample: 120363161513685998@newsletter');
       }
       
       // Update config.js
@@ -103,7 +103,7 @@ module.exports = {
       config.newsletterJid = newsletterJid;
       
       await extra.reply(
-        `✅ Newsletter JID updated successfully!\n\n` +
+        `✅ newsletter JID updated\n\n` +
         `📰 Newsletter JID: \`${newsletterJid}\`\n` +
         `📛 Newsletter Name: ${config.botName}\n\n` +
         `The menu will now forward from this newsletter.`
@@ -111,7 +111,7 @@ module.exports = {
       
     } catch (error) {
       console.error('SetNewsletter command error:', error);
-      await extra.reply(`❌ Failed to set newsletter JID: ${error.message}`);
+      await extra.reply(`❌ couldn't set newsletter jid: ${error.message}`);
     }
   }
 };

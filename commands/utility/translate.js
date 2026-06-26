@@ -58,13 +58,13 @@ module.exports = {
       
       if (!textToTranslate) {
         return await sock.sendMessage(chatId, { 
-          text: '❌ No text found to translate. Please provide text or reply to a message.' 
+          text: '❌ no text to translate — reply to a message or add text' 
         }, { quoted: msg });
       }
       
       if (!lang) {
         return await sock.sendMessage(chatId, { 
-          text: '❌ Please specify a language code.\n\nExample: .translate hello fr' 
+          text: '❌ specify a language code\n\nexample: .translate hello fr' 
         }, { quoted: msg });
       }
       
@@ -116,7 +116,7 @@ module.exports = {
       
       if (!translatedText) {
         return await sock.sendMessage(chatId, { 
-          text: '❌ Failed to translate text. Please try again later.' 
+          text: '❌ translation failed — try again later' 
         }, { quoted: msg });
       }
       
@@ -128,7 +128,7 @@ module.exports = {
     } catch (error) {
       console.error('❌ Error in translate command:', error);
       await sock.sendMessage(msg.key.remoteJid, { 
-        text: '❌ Failed to translate text. Please try again later.' 
+        text: '❌ translation failed — try again later' 
       }, { quoted: msg });
     }
   }

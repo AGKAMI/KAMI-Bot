@@ -20,7 +20,7 @@ module.exports = {
       await extra.reply(text);
       
     } catch (error) {
-      await extra.reply(`❌ Error: ${error.message}`);
+      await extra.reply(`❌ error: ${error.message}`);
     }
   }
 };

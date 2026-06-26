@@ -32,7 +32,7 @@ module.exports = {
         
       } catch (error) {
         console.error('Flirt Error:', error);
-        await extra.reply(`❌ Error: ${error.message}`);
+        await extra.reply(`❌ error: ${error.message}`);
       }
     }
   };

@@ -37,45 +37,45 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antigroupmention) {
-          return extra.reply('*Antigroupmention is already on*');
+          return extra.reply('*ag, antigroupmention is already on*');
         }
         database.updateGroupSettings(extra.from, { antigroupmention: true });
-        return extra.reply('*Antigroupmention has been turned ON*');
+        return extra.reply('*antigroupmention turned ON*');
       }
       
       if (opt === 'off') {
         database.updateGroupSettings(extra.from, { antigroupmention: false });
-        return extra.reply('*Antigroupmention has been turned OFF*');
+        return extra.reply('*antigroupmention turned OFF*');
       }
       
       if (opt === 'set') {
         if (args.length < 2) {
-          return extra.reply('*Please specify an action: .antigroupmention set delete | kick | warn*');
+          return extra.reply('*specify an action: .antigroupmention set delete | kick | warn*');
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick', 'warn'].includes(setAction)) {
-          return extra.reply('*Invalid action. Choose delete, kick, or warn.*');
+          return extra.reply('*invalid action — choose delete, kick, or warn*');
         }
         
         database.updateGroupSettings(extra.from, { 
           antigroupmentionAction: setAction,
           antigroupmention: true // Auto-enable when setting action
         });
-        return extra.reply(`*Antigroupmention action set to ${setAction}*`);
+        return extra.reply(`*antigroupmention action set to ${setAction}*`);
       }
       
       if (opt === 'get') {
         const settings = database.getGroupSettings(extra.from);
         const status = settings.antigroupmention ? 'ON' : 'OFF';
         const action = settings.antigroupmentionAction || 'delete';
-        return extra.reply(`*Antigroupmention Configuration:*\nStatus: ${status}\nAction: ${action}`);
+        return extra.reply(`*antigroupmention config:*\\nstatus: ${status}\\naction: ${action}`);
       }
       
-      return extra.reply('*Use .antigroupmention for usage.*');
+      return extra.reply('*use .antigroupmention for usage*');
       
     } catch (error) {
-      await extra.reply(`❌ Error: ${error.message}`);
+      await extra.reply(`❌ error: ${error.message}`);
     }
   }
 };

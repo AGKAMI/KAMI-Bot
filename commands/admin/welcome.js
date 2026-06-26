@@ -22,7 +22,7 @@ module.exports = {
         const groupSettings = db.getGroupSettings(groupId);
         const status = groupSettings.welcome ? '✅ Enabled' : '❌ Disabled';
         return await sock.sendMessage(groupId, {
-          text: `👋 *Welcome Messages*\n\nStatus: ${status}\nMessage: ${groupSettings.welcomeMessage}\n\nUsage: .welcome on/off\n\nTo customize: .setwelcome <message>`
+          text: `👋 *welcome messages*\n\nStatus: ${status}\nMessage: ${groupSettings.welcomeMessage}\n\nUsage: .welcome on/off\n\nTo customize: .setwelcome <message>`
         }, { quoted: msg });
       }
       
@@ -30,13 +30,13 @@ module.exports = {
       db.updateGroupSettings(groupId, { welcome: enable });
       
       await sock.sendMessage(groupId, {
-        text: `✅ Welcome messages ${enable ? 'enabled' : 'disabled'}!${enable ? '\n\nNew members will now receive welcome messages.' : ''}`
+        text: `✅ welcome messages ${enable ? 'enabled' : 'disabled'}${enable ? '\\n\\nnew members will get a welcome now' : ''}`
       }, { quoted: msg });
       
     } catch (error) {
       console.error('Welcome Error:', error);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ Error: ${error.message}`
+        text: `❌ error: ${error.message}`
       }, { quoted: msg });
     }
   }

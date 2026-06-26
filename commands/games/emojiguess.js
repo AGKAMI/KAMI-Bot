@@ -17,13 +17,13 @@ module.exports = {
     const sub = (args[0] || '').toLowerCase();
     if (sub === 'answer' || sub === 'skip') {
       const g = active.get(ctx.from);
-      if (!g) return ctx.reply('No active game.');
+      if (!g) return ctx.reply('no active game hey');
       active.delete(ctx.from);
       return ctx.reply('Answer was: ' + g.answer);
     }
     if (sub === 'stop') {
       active.delete(ctx.from);
-      return ctx.reply('Emoji guess stopped.');
+      return ctx.reply('emoji guess stopped');
     }
     const guess = args.join(' ').toLowerCase();
     const g = active.get(ctx.from);
@@ -33,10 +33,10 @@ module.exports = {
         active.delete(ctx.from);
         return ctx.reply('🎉 ' + winner + ' guessed it! ' + g.answer);
       }
-      return ctx.reply('❌ Wrong! Hint: ' + g.answer.split(' ').join(' / '));
+      return ctx.reply('❌ wrong! hint: ' + g.answer.split(' ').join(' / '));
     }
     const r = rounds[Math.floor(Math.random() * rounds.length)];
     active.set(ctx.from, { answer: r.answer, emojis: r.emojis });
-    return ctx.reply('🎯 Guess the phrase!\n\n' + r.emojis + '\n\nUse .emoji <answer>');
+    return ctx.reply('🎯 guess the phrase!\n\n' + r.emojis + '\n\nUse .emoji <answer>');
   }
 };

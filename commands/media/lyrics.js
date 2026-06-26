@@ -16,7 +16,7 @@ module.exports = {
     try {
       if (args.length === 0) {
         return await sock.sendMessage(msg.key.remoteJid, { 
-          text: `❌ Please provide a song name!\n\nExample: ${config.prefix}lyrics Despacito` 
+          text: `❌ give me a song name hey\n\nExample: ${config.prefix}lyrics Despacito` 
         });
       }
       

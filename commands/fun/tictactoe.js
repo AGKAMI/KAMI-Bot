@@ -28,7 +28,7 @@ module.exports = {
       );
       
       if (existingRoom && existingRoom.state === 'PLAYING') {
-        await extra.reply('❌ You are still in a game. Type *surrender* to quit.');
+        await extra.reply("❌ you're still in a game — type *surrender* to quit");
         return;
       }
       
@@ -101,7 +101,7 @@ ${arr.slice(6).join('')}
       
     } catch (error) {
       console.error('Error in tictactoe command:', error);
-      await extra.reply('❌ Error starting game. Please try again.');
+      await extra.reply("❌ couldn't start the game — try again");
     }
   },
 };
@@ -131,7 +131,7 @@ async function handleTicTacToeMove(sock, msg, extra) {
     // Allow surrender at any time, not just during player's turn
     if (sender !== room.game.currentTurn && !isSurrender) {
       await sock.sendMessage(from, { 
-        text: '❌ Not your turn!' 
+        text: '❌ not your turn hey' 
       });
       return true;
     }
@@ -143,7 +143,7 @@ async function handleTicTacToeMove(sock, msg, extra) {
     
     if (!ok) {
       await sock.sendMessage(from, { 
-        text: '❌ Invalid move! That position is already taken.' 
+        text: '❌ invalid move — that spot is taken' 
       });
       return true;
     }

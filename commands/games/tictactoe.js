@@ -18,12 +18,12 @@ module.exports = {
         turn: 'X',
         players: { X: null, O: null },
       });
-      return ctx.reply('❌ Tic Tac Toe!\nFirst person to play is X.\nUse .ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9');
+      return ctx.reply('❌ tic tac toe!\nFirst person to play is X.\nUse .ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9');
     }
 
     if (['stop', 'end'].includes(sub)) {
       games.ttt.delete(boardKey);
-      return ctx.reply('Tic Tac Toe stopped.');
+      return ctx.reply('tic tac toe stopped');
     }
 
     if (!/^\d$/.test(sub)) {
@@ -35,7 +35,7 @@ module.exports = {
 
     const pos = parseInt(sub) - 1;
     if (pos < 0 || pos > 8) return ctx.reply('Use a number from 1-9');
-    if (g.board[pos] !== ' ') return ctx.reply('Spot taken! Choose another.');
+    if (g.board[pos] !== ' ') return ctx.reply('spot taken — pick another');
 
     const sender = ctx.sender;
     const token = g.turn;
@@ -44,7 +44,7 @@ module.exports = {
     if (!expectedPlayer) {
       g.players[token] = sender;
     } else if (expectedPlayer !== sender) {
-      return ctx.reply('Not your turn! Waiting for @' + expectedPlayer.split('@')[0]);
+      return ctx.reply('not your turn — waiting for @' + expectedPlayer.split('@')[0]);
     }
 
     g.board[pos] = token;
@@ -63,7 +63,7 @@ module.exports = {
     }
     if (full) {
       games.ttt.delete(boardKey);
-      return ctx.reply('🤝 Draw!\n\n' + formatBoard(g.board));
+      return ctx.reply('🤝 draw!\n\n' + formatBoard(g.board));
     }
 
     g.turn = token === 'X' ? 'O' : 'X';

@@ -39,10 +39,10 @@ module.exports = {
             a = shuffled[0];
             b = shuffled[1];
           } else {
-            return extra.reply('❌ Not enough members to ship!');
+            return extra.reply('❌ not enough people to ship hey');
           }
         } else {
-          return extra.reply('❌ This command works only in groups!');
+          return extra.reply('❌ ag, this only works in groups hey');
         }
       }
 
@@ -67,7 +67,7 @@ module.exports = {
       await sock.sendMessage(extra.from, { text: out, mentions: [a, b] }, { quoted: msg });
     } catch (error) {
       console.error('[ship] ERROR:', error);
-      await extra.reply('❌ Something went wrong while shipping.');
+      await extra.reply('❌ something went wrong with the ship');
     }
   }
 };

@@ -25,7 +25,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply('❌ Please mention or reply to the user to demote!\n\nExample: .demote @user');
+        return extra.reply('❌ tag or reply to the person you wanna demote\n\nexample: .demote @user');
       }
       
       // Fetch FRESH group metadata to avoid stale cache
@@ -35,12 +35,12 @@ module.exports = {
       const foundParticipant = findParticipant(freshMetadata.participants, target);
       
       if (!foundParticipant) {
-        return extra.reply('❌ User not found in group!');
+        return extra.reply('❌ couldn\'t find this oke in the group');
       }
       
       // Check if user is admin using fresh data
       if (foundParticipant.admin !== 'admin' && foundParticipant.admin !== 'superadmin') {
-        return extra.reply('❌ This user is not an admin!');
+        return extra.reply("❌ this oke isn't an admin");
       }
       
       await sock.groupParticipantsUpdate(extra.from, [target], 'demote');
@@ -51,7 +51,7 @@ module.exports = {
       }, { quoted: msg });
       
     } catch (error) {
-      await extra.reply(`❌ Error: ${error.message}`);
+      await extra.reply(`❌ error: ${error.message}`);
     }
   }
 };

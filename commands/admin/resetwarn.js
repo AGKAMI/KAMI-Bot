@@ -25,7 +25,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply('❌ Please mention or reply to the user to reset warnings!\n\nExample: .resetwarn @user');
+        return extra.reply('❌ tag or reply to the person you wanna reset warnings\n\nexample: .resetwarn @user');
       }
       
       // Get current warnings before clearing
@@ -39,13 +39,13 @@ module.exports = {
       database.clearWarnings(extra.from, target);
       
       await sock.sendMessage(extra.from, {
-        text: `✅ *Warnings Reset*\n\n👤 User: @${target.split('@')[0]}\n⚠️ Previous warnings: ${currentWarnings.count}\n\nAll warnings have been cleared.`,
+        text: `✅ *warnings reset*\\n\\n👤 @${target.split('@')[0]}\\n⚠️ previous warnings: ${currentWarnings.count}\\n\\nall warnings cleared, you're good`,
         mentions: [target]
       }, { quoted: msg });
       
     } catch (error) {
       console.error('ResetWarn command error:', error);
-      await extra.reply(`❌ Error: ${error.message}`);
+      await extra.reply(`❌ error: ${error.message}`);
     }
   }
 };

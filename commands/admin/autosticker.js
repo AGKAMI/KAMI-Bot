@@ -33,24 +33,24 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).autosticker) {
-          return extra.reply('*AutoSticker is already ON*');
+          return extra.reply('*ag, autosticker is already on*');
         }
         database.updateGroupSettings(extra.from, { autosticker: true });
-        return extra.reply('✅ *AutoSticker has been turned ON*\n\nAll images and videos will now automatically be converted to stickers!');
+        return extra.reply('✅ *autosticker turned ON*\n\nevery image and video goes straight to sticker now');
       }
       
       if (opt === 'off') {
         if (!database.getGroupSettings(extra.from).autosticker) {
-          return extra.reply('*AutoSticker is already OFF*');
+          return extra.reply('*autosticker is off already*');
         }
         database.updateGroupSettings(extra.from, { autosticker: false });
-        return extra.reply('❌ *AutoSticker has been turned OFF*');
+        return extra.reply('❌ *autosticker turned off*');
       }
       
-      return extra.reply('❌ Invalid option!\nUsage: .autosticker <on/off>');
+      return extra.reply('❌ invalid option\nusage: .autosticker <on/off>');
     } catch (error) {
       console.error('[AutoSticker Command Error]:', error);
-      return extra.reply('❌ Error updating autosticker setting.');
+      return extra.reply("❌ couldn't update autosticker setting");
     }
   }
 };

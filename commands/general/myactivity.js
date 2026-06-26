@@ -31,7 +31,7 @@ module.exports = {
             const rank = sortedUsers.findIndex(([id]) => id === sender) + 1;
 
             const text = `
-📊 *Your Activity Today*
+📊 *your activity today*
 
 👤 *User:* @${sender.split('@')[0]}
 📝 *Messages Sent:* ${userCount}
@@ -48,7 +48,7 @@ Keep chatting! 💬
 
         } catch (err) {
             console.error('[myactivity cmd] error:', err);
-            extra.reply('❌ Error loading your activity stats.');
+            extra.reply('❌ couldn\'t load your activity hey');
         }
     }
 };

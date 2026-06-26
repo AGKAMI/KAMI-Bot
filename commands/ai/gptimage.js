@@ -22,8 +22,8 @@ module.exports = {
       const ctxInfo = msg.message?.extendedTextMessage?.contextInfo;
       if (!ctxInfo?.quotedMessage) {
         return await extra.reply(
-          '📷 *GPT Image Editor*\n\n' +
-          'Reply to an *image* or *sticker* with a prompt to edit it.\n\n' +
+          '📷 *gpt image editor*\n\n' +
+          'reply to an image or sticker with a prompt to edit it\n\n' +
           `Usage: ${extra.prefix || '.'}gptimage <your prompt>\n\n` +
           'Example: Reply to an image with:\n' +
           `${extra.prefix || '.'}gptimage change the background to a beach`
@@ -34,7 +34,7 @@ module.exports = {
       const prompt = args.join(' ').trim();
       if (!prompt) {
         return await extra.reply(
-          '❌ Please provide a prompt!\n\n' +
+          '❌ give me a prompt hey\n\n' +
           `Usage: ${extra.prefix || '.'}gptimage <your prompt>\n\n` +
           'Example: change the background to a beach'
         );
@@ -55,7 +55,7 @@ module.exports = {
       const isSticker = !!quotedMsg.stickerMessage;
       
       if (!isImage && !isSticker) {
-        return await extra.reply('❌ Please reply to an *image* or *sticker*!');
+        return await extra.reply('❌ reply to an image or sticker');
       }
       
       // Download media
@@ -67,7 +67,7 @@ module.exports = {
       );
       
       if (!mediaBuffer) {
-        return await extra.reply('❌ Failed to download image. Please try again.');
+        return await extra.reply("❌ couldn't download the image — try again");
       }
       
       // Convert sticker to image if needed
@@ -77,7 +77,7 @@ module.exports = {
         const isAnimated = stickerMessage.isAnimated || stickerMessage.mimetype?.includes('animated');
         
         if (isAnimated) {
-          return await extra.reply('❌ Animated stickers are not supported. Please use a static image or sticker.');
+          return await extra.reply("❌ animated stickers don't work — use a static image");
         }
         
         // Convert webp sticker to PNG
@@ -85,7 +85,7 @@ module.exports = {
           imageBuffer = await webp2png(mediaBuffer);
         } catch (error) {
           console.error('Error converting sticker to PNG:', error);
-          return await extra.reply('❌ Failed to convert sticker to image. Please try with a regular image.');
+          return await extra.reply("❌ couldn't convert sticker — try with a regular image");
         }
       }
       
@@ -128,14 +128,14 @@ module.exports = {
       });
       
       if (!response.data) {
-        return await extra.reply('❌ No image received from API. Please try again.');
+        return await extra.reply('❌ no image came back — try again');
       }
       
       const resultImageBuffer = Buffer.from(response.data);
       
       // Validate buffer
       if (!resultImageBuffer || resultImageBuffer.length === 0) {
-        return await extra.reply('❌ Empty image received from API. Please try again.');
+        return await extra.reply('❌ empty image returned — try again');
       }
       
       // Check file size (WhatsApp image limit is 5MB)
@@ -160,19 +160,19 @@ module.exports = {
         // API error
         const status = error.response.status;
         if (status === 400) {
-          return await extra.reply('❌ Bad Request: Invalid parameters. Please check your prompt and image.');
+          return await extra.reply('❌ bad request — check your prompt and image');
         } else if (status === 429) {
-          return await extra.reply('❌ Rate limit exceeded. Please try again later.');
+          return await extra.reply('❌ rate limit hit — try again later');
         } else if (status === 500) {
-          return await extra.reply('❌ Server error. Please try again later.');
+          return await extra.reply('❌ server error — try again later');
         }
       }
       
       if (error.code === 'ECONNABORTED') {
-        return await extra.reply('❌ Request timeout. The image processing took too long. Please try again.');
+        return await extra.reply('❌ request timed out — try again');
       }
       
-      return await extra.reply(`❌ Error: ${error.message || 'Unknown error occurred'}`);
+      return await extra.reply(`❌ error: ${error.message || 'something went wrong'}`);
     }
   },
 };

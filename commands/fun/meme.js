@@ -24,7 +24,7 @@ module.exports = {
       }, { quoted: msg });
       
     } catch (error) {
-      await extra.reply(`❌ Error: ${error.message}`);
+      await extra.reply(`❌ error: ${error.message}`);
     }
   }
 };

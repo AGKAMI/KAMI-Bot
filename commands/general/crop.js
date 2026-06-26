@@ -72,14 +72,14 @@ module.exports = {
       const mediaInfo = resolveMedia(targetMessage);
       
       if (!mediaInfo) {
-        return extra.reply('✂️ Reply to a *sticker*, *image*, or *video* that you want to crop.');
+        return extra.reply('✂️ reply to a sticker, image, or video you wanna crop');
       }
 
       const { type, media } = mediaInfo;
       const mediaMessage = media;
 
       if (!mediaMessage) {
-        return extra.reply('✂️ Please reply to an image/video/sticker with .crop, or send an image/video/sticker with .crop as the caption.');
+        return extra.reply('✂️ reply to an image/video/sticker with .crop, or send media with .crop as caption');
       }
 
       // Download media
@@ -91,12 +91,12 @@ module.exports = {
       );
 
       if (!mediaBuffer) {
-        return extra.reply('❌ Failed to download media. Please try again.');
+        return extra.reply("❌ couldn't download that — try again");
       }
 
       // Check file size
       if (mediaBuffer.length > MAX_FILE_SIZE) {
-        return extra.reply(`❌ File too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+        return extra.reply(`❌ file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
       }
 
       // Write media to temp file
@@ -195,7 +195,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crop command error:', error);
-      await extra.reply('❌ Failed to crop sticker! Try with an image or video.');
+      await extra.reply("❌ couldn't crop the sticker — try with an image or video");
     } finally {
       // Always cleanup temp files
       tempFiles.forEach(file => deleteTempFile(file));

@@ -15,7 +15,7 @@ module.exports = {
     try {
       if (args.length === 0) {
         return await sock.sendMessage(msg.key.remoteJid, { 
-          text: '❌ Usage: .weather <city>\n\nExample: .weather London' 
+          text: '❌ usage: .weather <city>\n\nexample: .weather london' 
         }, { quoted: msg });
       }
       

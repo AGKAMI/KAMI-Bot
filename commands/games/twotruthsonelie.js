@@ -12,6 +12,6 @@ module.exports = {
   execute: async (sock, msg, args, ctx) => {
     const r = rounds[Math.floor(Math.random() * rounds.length)];
     const text = r.statements.map((s, i) => (i + 1) + '. ' + s).join('\n');
-    await ctx.reply('🤔 Two Truths and a Lie!\n\n' + text + '\n\nWhich is the lie?');
+    await ctx.reply('🤔 two truths and a lie!\n\n' + text + '\n\nWhich is the lie?');
   }
 };

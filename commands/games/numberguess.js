@@ -12,16 +12,16 @@ module.exports = {
     }
     if (sub === 'stop' || sub === 'end') {
       games.delete(ctx.from);
-      return ctx.reply('Game ended.');
+      return ctx.reply('game ended');
     }
     const n = parseInt(args[0]);
     if (isNaN(n)) return ctx.reply('Usage: .nguess start | .nguess <1-100> | .nguess stop');
     const g = games.get(ctx.from);
-    if (!g) return ctx.reply('No game running. Use .nguess start');
+    if (!g) return ctx.reply('no game running — .nguess start');
     g.attempts++;
     if (n === g.target) {
       games.delete(ctx.from);
-      return ctx.reply('🎉 Correct! ' + n + ' in ' + g.attempts + ' tries.');
+      return ctx.reply('🎉 correct! ' + n + ' in ' + g.attempts + ' tries.');
     }
     if (n < g.target) return ctx.reply('📈 Higher!');
     return ctx.reply('📉 Lower!');

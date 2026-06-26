@@ -40,11 +40,11 @@ END:VCARD
                 }
             });
 
-            await extra.reply('👑 Here is the contact of my *Owner*.');
+            await extra.reply('👑 here\'s my owner\'s contact');
 
         } catch (error) {
             console.error('Owner command error:', error);
-            await extra.reply(`❌ Error: ${error.message}`);
+            await extra.reply(`❌ error: ${error.message}`);
         }
     }
 };

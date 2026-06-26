@@ -71,7 +71,7 @@ module.exports = {
                    args.join(' ');
       
       if (!text || text.trim().length === 0) {
-        return extra.reply('❌ Please provide a WhatsApp channel link!\n\nExample: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL');
+        return extra.reply('❌ need a whatsapp channel link\n\nExample: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL');
       }
       
       // Extract link from text (remove command prefix if present)
@@ -79,14 +79,14 @@ module.exports = {
       
       // If no link provided, show error
       if (!link || link.length === 0) {
-        return extra.reply('❌ Please provide a WhatsApp channel link!\n\nExample: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL');
+        return extra.reply('❌ need a whatsapp channel link\n\nExample: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL');
       }
       
       // Try to extract invite code first (works with or without full URL)
       const inviteCode = getChannelInviteCode(link);
       
       if (!inviteCode) {
-        return extra.reply('❌ Could not extract invite code from the link!\n\nPlease provide a valid WhatsApp channel link.\nExample: https://whatsapp.com/channel/0029VaAbCdEfGhIJkL\n\nOr just the invite code: .newsletter 0029VaAbCdEfGhIJkL');
+        return extra.reply("❌ couldn't extract the invite code\n\nPlease provide a valid WhatsApp channel link.\nExample: https://whatsapp.com/channel/0029VaAbCdEfGhIJkL\n\nOr just the invite code: .newsletter 0029VaAbCdEfGhIJkL");
       }
       
       // Use the extracted invite code directly
@@ -139,19 +139,19 @@ module.exports = {
         console.error('Newsletter command error:', error);
         
         if (error.message.includes('Invalid channel link')) {
-          await extra.reply('❌ Invalid channel link format!\n\nPlease provide a valid WhatsApp channel link.\nExample: https://whatsapp.com/channel/0029VaAbCdEfGhIJkL');
+          await extra.reply('❌ invalid channel link format\n\nPlease provide a valid WhatsApp channel link.\nExample: https://whatsapp.com/channel/0029VaAbCdEfGhIJkL');
         } else if (error.message.includes('Newsletter not found')) {
-          await extra.reply('❌ Newsletter not found!\n\nThe channel link might be invalid or the newsletter might not exist.');
+          await extra.reply('❌ newsletter not found hey\n\nThe channel link might be invalid or the newsletter might not exist.');
         } else if (error.message.includes('newsletterMetadata')) {
-          await extra.reply('❌ Newsletter feature not available!\n\nMake sure you are using Baileys v7.0.0-rc or higher.');
+          await extra.reply('❌ newsletter feature not available\n\nMake sure you are using Baileys v7.0.0-rc or higher.');
         } else {
-          await extra.reply(`❌ Failed to get newsletter information: ${error.message}`);
+          await extra.reply(`❌ couldn't get newsletter info: ${error.message}`);
         }
       }
       
     } catch (error) {
       console.error('Newsletter command error:', error);
-      await extra.reply(`❌ An error occurred: ${error.message}`);
+      await extra.reply(`❌ error: ${error.message}`);
     }
   }
 };

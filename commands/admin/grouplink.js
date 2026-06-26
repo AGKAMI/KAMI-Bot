@@ -17,7 +17,7 @@ module.exports = {
         const code = await sock.groupInviteCode(extra.from);
         const link = `https://chat.whatsapp.com/${code}`;
         
-        let text = `🔗 *GROUP INVITE LINK*\n\n`;
+        let text = `🔗 *group invite link*\n\n`;
         text += `📱 Group: ${extra.groupMetadata.subject}\n`;
         text += `🔗 Link: ${link}\n\n`;
         text += `⚠️ Don't share this link publicly!`;
@@ -25,7 +25,7 @@ module.exports = {
         await extra.reply(text);
         
       } catch (error) {
-        await extra.reply(`❌ Error: ${error.message}`);
+        await extra.reply(`❌ error: ${error.message}`);
       }
     }
   };

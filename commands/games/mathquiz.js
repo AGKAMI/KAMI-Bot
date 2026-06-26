@@ -10,13 +10,13 @@ module.exports = {
       const ans = parseInt(arg0);
       if (ans === g.ans) {
         quiz.delete(ctx.from);
-        return ctx.reply('✅ Correct! ' + g.expr + ' = ' + g.ans);
+        return ctx.reply('✅ correct! ' + g.expr + ' = ' + g.ans);
       }
-      return ctx.reply('❌ Wrong, try again!');
+      return ctx.reply('❌ wrong — try again!');
     }
     if (arg0 === 'stop') {
       quiz.delete(ctx.from);
-      return ctx.reply('Quiz stopped');
+      return ctx.reply('quiz stopped');
     }
     const diff = arg0 || 'easy';
     let a, b, op, ans, expr;

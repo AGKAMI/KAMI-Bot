@@ -12,30 +12,30 @@ module.exports = {
     async execute(sock, msg, args, extra) {
       try {
         if (args.length === 0) {
-          return extra.reply('❌ Usage: .calc <expression>\n\nExample: .calc 5 + 3 * 2');
+          return extra.reply('❌ usage: .calc <expression>\n\nexample: .calc 5 + 3 * 2');
         }
         
         const expression = args.join(' ');
         
         // Basic safety check
         if (!/^[0-9+\-*/(). ]+$/.test(expression)) {
-          return extra.reply('❌ Invalid expression! Only numbers and operators (+, -, *, /, parentheses) allowed.');
+          return extra.reply('❌ invalid expression — only numbers and operators');
         }
         
         try {
           const result = eval(expression);
           
-          let text = `🧮 *Calculator*\n\n`;
+          let text = `🧮 *calculator*\n\n`;
           text += `📝 Expression: ${expression}\n`;
           text += `✅ Result: ${result}`;
           
           await extra.reply(text);
         } catch (evalError) {
-          await extra.reply('❌ Invalid mathematical expression!');
+          await extra.reply('❌ invalid math expression');
         }
         
       } catch (error) {
-        await extra.reply(`❌ Error: ${error.message}`);
+        await extra.reply(`❌ error: ${error.message}`);
       }
     }
   };

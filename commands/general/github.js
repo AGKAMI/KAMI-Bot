@@ -22,7 +22,7 @@ module.exports = {
             const apiUrl = 'https://api.github.com/repos/AGKAMI/KAMI-Bot';
             
             // Send loading message
-            const loadingMsg = await extra.reply('🔍 Fetching GitHub repository information...');
+            const loadingMsg = await extra.reply('🔍 pulling github info...');
             
             try {
                 // Fetch repository data from GitHub API
@@ -84,7 +84,7 @@ module.exports = {
             
         } catch (error) {
             console.error('GitHub command error:', error);
-            await extra.reply(`❌ Error: ${error.message}`);
+            await extra.reply(`❌ error: ${error.message}`);
         }
     }
 };

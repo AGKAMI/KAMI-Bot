@@ -14,13 +14,13 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length < 2) {
-        return extra.reply('❌ Usage: .translate <lang> <text>\n\nExample: .translate es Hello world');
+        return extra.reply('❌ usage: .translate <lang> <text>\n\nExample: .translate es Hello world');
       }
       
       const targetLang = args[0];
       const text = args.slice(1).join(' ');
       
-      await extra.reply('🔄 Translating...');
+      await extra.reply('🔄 translating...');
       
       const result = await APIs.translate(text, targetLang);
       
@@ -32,7 +32,7 @@ module.exports = {
       await extra.reply(replyText);
       
     } catch (error) {
-      await extra.reply(`❌ Translation failed!\n\nSupported codes: en, es, fr, de, it, pt, ru, ja, ko, zh\n\nError: ${error.message}`);
+      await extra.reply(`❌ translation failed hey\n\nsupported codes: en, es, fr, de, it, pt, ru, ja, ko, zh\n\nerror: ${error.message}`);
     }
   }
 };

@@ -36,7 +36,7 @@ module.exports = {
       
       if (!text) {
         return await extra.reply(
-          '📌 *Pinterest Downloader*\n\n' +
+          '📌 *pinterest downloader*\n\n' +
           'Download images or videos from Pinterest.\n\n' +
           `Usage: ${config.prefix}pinterest <Pinterest URL>\n\n` +
           'Example:\n' +
@@ -58,7 +58,7 @@ module.exports = {
       }
       
       if (!urlMatch) {
-        return await extra.reply('❌ Please provide a valid Pinterest pin URL!\n\nExamples:\n• https://in.pinterest.com/pin/1109363320773690068/\n• https://pin.it/dddddd\n• pin.it/dddddd');
+        return await extra.reply('❌ need a valid pinterest pin URL\n\nExamples:\n• https://in.pinterest.com/pin/1109363320773690068/\n• https://pin.it/dddddd\n• pin.it/dddddd');
       }
       
       const pinterestUrl = urlMatch[0];
@@ -83,18 +83,18 @@ module.exports = {
         if (error.response) {
           const status = error.response.status;
           if (status === 400) {
-            return await extra.reply('❌ Bad Request: Invalid Pinterest URL. Please check the link.');
+            return await extra.reply('❌ invalid pinterest link — check it hey');
           } else if (status === 429) {
-            return await extra.reply('❌ Rate limit exceeded. Please try again later.');
+            return await extra.reply('❌ rate limit — try again later');
           } else if (status === 500) {
-            return await extra.reply('❌ Server error. Please try again later.');
+            return await extra.reply('❌ server error — try again later');
           }
         }
-        return await extra.reply('❌ Failed to fetch Pinterest content. Please try again.');
+        return await extra.reply("❌ couldn't fetch pinterest content — try again");
       }
       
       if (!response.data || !response.data.status || !response.data.result) {
-        return await extra.reply('❌ Invalid response from API. The pin might not exist or be private.');
+        return await extra.reply('❌ invalid response — pin might not exist or be private');
       }
       
       const pinData = response.data.result;
@@ -121,7 +121,7 @@ module.exports = {
       // Debug: log the response structure if no media URL found
       if (!imageUrl) {
         console.error('Pinterest API response structure:', JSON.stringify(pinData, null, 2));
-        return await extra.reply('❌ No media URL found in API response. The pin might be a video or have a different format.');
+        return await extra.reply('❌ no media URL found — might be a video or different format');
       }
       
       // Build caption
@@ -166,7 +166,7 @@ module.exports = {
           }, { quoted: msg });
         } catch (videoError) {
           console.error('Video download/send error:', videoError.message);
-          return await extra.reply('❌ Failed to download or send video. The video might be expired or require authentication.');
+          return await extra.reply("❌ couldn't download video — might be expired or need auth");
         }
       } else {
         // For images, use the main image URL (not thumbnail)

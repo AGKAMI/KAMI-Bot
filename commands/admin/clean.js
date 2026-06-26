@@ -16,7 +16,7 @@ module.exports = {
     try {
       const count = parseInt(args[0]);
       if (!count || count < 1 || count > 100) {
-        return extra.reply('❌ Please enter a valid number (1-100).');
+        return extra.reply('❌ enter a number between 1 and 100');
       }
 
       const jid = extra.from;
@@ -28,7 +28,7 @@ module.exports = {
 
       const msgs = store.messages[jid];
       if (!msgs) {
-        return extra.reply('❌ No stored messages found.');
+        return extra.reply('❌ no stored messages found hey');
       }
 
       let messagesToDelete = [];
@@ -63,7 +63,7 @@ module.exports = {
       
     } catch (e) {
       console.error('[clean cmd] error:', e);
-      extra.reply('❌ Failed to clean messages.');
+      extra.reply("❌ couldn't clean the messages hey");
     }
   }
 };

@@ -111,11 +111,11 @@ module.exports = {
       
       // Handle specific error cases
       if (error.response?.status === 404) {
-        await extra.reply('❌ Image not found. Please try again.');
+        await extra.reply('❌ image not found — try again');
       } else if (error.response?.status === 429) {
-        await extra.reply('❌ Rate limit exceeded. Please try again later.');
+        await extra.reply('❌ rate limit — try again later');
       } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-        await extra.reply('❌ Request timed out. Please try again.');
+        await extra.reply('❌ timed out — try again');
       } else {
         await extra.reply(`❌ Failed to fetch waifu image: ${error.message}`);
       }

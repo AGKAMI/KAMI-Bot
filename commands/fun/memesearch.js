@@ -23,7 +23,7 @@ module.exports = {
       
       if (!query) {
         return await extra.reply(
-          'Usage: .memesearch <query>\n\nExample: .memesearch hello'
+          'usage: .memesearch <query>\n\nExample: .memesearch hello'
         );
       }
       

@@ -17,7 +17,7 @@ module.exports = {
       const text = args.join(' ');
 
       if (!text) {
-        return extra.reply('Please provide text to convert to speech.\nExample: .tts hi how are you');
+        return extra.reply('give me text to convert to speech\nExample: .tts hi how are you');
       }
 
       const audioUrl = await APIs.textToSpeech(text);
@@ -39,7 +39,7 @@ module.exports = {
 
     } catch (error) {
       console.error('TTS command error:', error);
-      await extra.reply(`❌ Failed to generate speech: ${error.message}`);
+      await extra.reply(`❌ couldn't generate speech: ${error.message}`);
     }
   }
 };

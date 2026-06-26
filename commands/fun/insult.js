@@ -29,7 +29,7 @@ module.exports = {
       await sock.sendMessage(extra.from, { text: `${line}`, mentions: [targetId] }, { quoted: msg });
     } catch (error) {
       console.error('[insult] ERROR:', error);
-      await extra.reply('❌ Something went wrong.');
+      await extra.reply('❌ something went wrong hey');
     }
   }
 };

@@ -29,7 +29,7 @@ module.exports = {
   execute: async (sock, msg, args, ctx) => {
     const choice = (args[0] || '').toLowerCase();
     if (!['truth', 'dare'].includes(choice)) {
-      return ctx.reply('Usage: .tod <truth|dare>');
+      return ctx.reply('usage: .tod <truth|dare>');
     }
     const pool = choice === 'truth' ? truths : dares;
     const pick = pool[Math.floor(Math.random() * pool.length)];

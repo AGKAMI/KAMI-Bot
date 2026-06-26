@@ -86,7 +86,7 @@ module.exports = {
       
     } catch (err) {
       console.error('list.js error:', err);
-      await extra.reply('❌ Failed to load commands list.');
+      await extra.reply("❌ couldn't load the commands list hey");
     }
   }
 };

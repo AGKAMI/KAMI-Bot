@@ -31,7 +31,7 @@ module.exports = {
       }
       
       if (usersToKick.length === 0) {
-        return extra.reply('👤 Mention or reply to the user you want to kick.');
+        return extra.reply('👤 tag or reply to the oke you wanna kick');
       }
       
       const botId = sock.user?.id || '';
@@ -93,7 +93,7 @@ module.exports = {
       });
       
       if (isTryingToKickBot) {
-        await extra.reply('❌ Cannot kick myself!');
+        await extra.reply("❌ ag no, can't kick myself bru");
         return;
       }
       
@@ -105,7 +105,7 @@ module.exports = {
       await sock.sendMessage(extra.from, { text, mentions: usersToKick }, { quoted: msg });
     } catch (error) {
       console.error('Kick command error:', error);
-      await extra.reply('❌ Failed to kick user(s). Make sure I am admin.');
+      await extra.reply("❌ couldn't kick — check if I'm admin hey");
     }
   },
 };

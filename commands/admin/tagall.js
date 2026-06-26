@@ -18,7 +18,7 @@ module.exports = {
         
         const participants = extra.groupMetadata.participants.map(p => p.id);
         
-        let text = `📢 *GROUP ANNOUNCEMENT*\n\n`;
+        let text = `📢 *group announcement*\n\n`;
         text += `${message}\n\n`;
         text += `👥 Tagged Members:\n`;
         
@@ -32,7 +32,7 @@ module.exports = {
         }, { quoted: msg });
         
       } catch (error) {
-        await extra.reply(`❌ Error: ${error.message}`);
+        await extra.reply(`❌ error: ${error.message}`);
       }
     }
   };

@@ -25,14 +25,14 @@ module.exports = {
       // Check if message is a reply
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       if (!ctx?.quotedMessage) {
-        return extra.reply('📷 Please reply to an *image* or *sticker* to set it as the menu image.');
+        return extra.reply('📷 reply to an image or sticker to set as menu image');
       }
       
       const quotedMsg = ctx.quotedMessage;
       const imageMsg = quotedMsg.imageMessage || quotedMsg.stickerMessage;
       
       if (!imageMsg) {
-        return extra.reply('❌ The replied message must be an *image* or *sticker*.');
+        return extra.reply('❌ need an image or sticker in the reply');
       }
       
       // Download the media
@@ -53,7 +53,7 @@ module.exports = {
       );
       
       if (!mediaBuffer) {
-        return extra.reply('❌ Failed to download the image. Please try again.');
+        return extra.reply("❌ couldn't download the image — try again");
       }
       
       // Convert to JPEG if it's a sticker (webp)
@@ -86,7 +86,7 @@ module.exports = {
       // Write new image
       fs.writeFileSync(imagePath, finalBuffer);
       
-      await extra.reply('✅ Menu image has been updated successfully!');
+      await extra.reply('✅ menu image updated, sharp');
       
     } catch (error) {
       console.error('SetMenuImage command error:', error);

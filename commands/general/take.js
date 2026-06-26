@@ -33,7 +33,7 @@ module.exports = {
     const stickerMsg = targetMessage.message?.stickerMessage;
     
     if (!stickerMsg) {
-      return extra.reply('🎭 Reply to a *sticker* with `.take` to steal it.');
+      return extra.reply('🎭 reply to a sticker with .take to steal it');
     }
     
     try {
@@ -44,7 +44,7 @@ module.exports = {
         { logger: undefined, reuploadRequest: sock.updateMediaMessage },
       );
       
-      if (!mediaBuffer) return extra.reply('❌ Failed to download sticker. Please try again.');
+      if (!mediaBuffer) return extra.reply("❌ couldn't download the sticker — try again");
       
       const userName = msg.pushName || extra.sender.split('@')[0];
       const packname = args.length ? args.join(' ') : userName;
@@ -75,7 +75,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Take command error:', error);
-      await extra.reply('❌ Failed to steal sticker. Please try again.');
+      await extra.reply("❌ couldn't steal the sticker — try again");
     }
   },
 };

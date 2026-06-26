@@ -19,7 +19,7 @@ module.exports = {
       // Check if message is a reply
       const quotedMessage = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
       if (!quotedMessage) {
-        return extra.reply('⚠️ Please reply to an image or sticker with the .setbotpp command!');
+        return extra.reply('⚠️ reply to an image or sticker with .setbotpp');
       }
 
       // Check if quoted message contains an image or sticker
@@ -27,7 +27,7 @@ module.exports = {
       const stickerMessage = quotedMessage.stickerMessage;
       
       if (!imageMessage && !stickerMessage) {
-        return extra.reply('❌ The replied message must contain an image or sticker!');
+        return extra.reply('❌ need an image or sticker in the reply');
       }
       
       // Use whichever message type is available
@@ -47,7 +47,7 @@ module.exports = {
 
         // Check file size
         if (buffer.length > MAX_FILE_SIZE) {
-          return extra.reply(`❌ File too large: ${(buffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+          return extra.reply(`❌ file too large: ${(buffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
         }
         
         // Save the image
@@ -56,17 +56,17 @@ module.exports = {
         // Set the profile picture
         await sock.updateProfilePicture(sock.user.id.split(':')[0] + '@s.whatsapp.net', { url: imagePath });
 
-        await extra.reply('✅ Successfully updated bot profile picture!');
+        await extra.reply('✅ bot profile pic updated, sharp');
       } catch (error) {
         console.error('setbotpp error:', error);
-        extra.reply('❌ Failed to update profile picture!');
+        extra.reply("❌ couldn't update profile pic");
       } finally {
         // Always cleanup temp file
         deleteTempFile(imagePath);
       }
     } catch (error) {
       console.error('setbotpp error:', error);
-      extra.reply('❌ Failed to update profile picture!');
+      extra.reply("❌ couldn't update profile pic");
     }
   }
 };

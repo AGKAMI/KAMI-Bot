@@ -27,7 +27,7 @@ module.exports = {
         });
         
       } catch (error) {
-        await extra.reply(`❌ KAMI Error: ${error.message}`);
+        await extra.reply(`❌ kami error: ${error.message}`);
       }
     }
   };

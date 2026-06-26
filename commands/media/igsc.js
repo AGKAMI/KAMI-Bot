@@ -441,14 +441,14 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
 
     const urlMatch = text.match(/https?:\/\/\S+/);
     if (!urlMatch) {
-      return extra.reply(`Send an Instagram post/reel link.\nUsage:\n.igs <url>\n.igsc <url>`);
+      return extra.reply(`send me an instagram post or reel link\nUsage:\n.igs <url>\n.igsc <url>`);
     }
 
     await sock.sendMessage(extra.from, { react: { text: '📥', key: msg.key } });
 
     const downloadData = await igdl(urlMatch[0]).catch(() => null);
     if (!downloadData || !downloadData.data) {
-      return extra.reply('❌ Failed to fetch media from Instagram link.');
+      return extra.reply("❌ couldn't fetch from that instagram link");
     }
 
     // Get all media items from scraper - process in order without URL deduplication
@@ -468,7 +468,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
     const mediaToDownload = rawItems.slice(0, 10);
 
     if (mediaToDownload.length === 0) {
-      return extra.reply('❌ No valid media found to download. This might be a private post or the scraper failed.');
+      return extra.reply('❌ no media found — might be private');
     }
 
     let successCount = 0;
@@ -593,7 +593,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
 
   } catch (err) {
     console.error('Error in igsc command:', err);
-    await extra.reply('❌ Failed to create sticker from Instagram link.');
+    await extra.reply("❌ couldn't make a sticker from that link");
   }
 }
 

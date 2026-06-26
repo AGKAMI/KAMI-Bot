@@ -25,7 +25,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply('❌ Please mention or reply to the user to warn!\n\nExample: .warn @user Breaking rules');
+        return extra.reply('❌ ag, tag or reply to the person you wanna warn\n\nexample: .warn @user breaking rules');
       }
       
       const reason = args.slice(mentioned.length > 0 ? 1 : 0).join(' ') || 'No reason specified';
@@ -36,18 +36,18 @@ module.exports = {
       );
       
       if (foundParticipant) {
-        return extra.reply('❌ Cannot warn an admin!');
+        return extra.reply("❌ eish no, can't warn an admin hey");
       }
       
       const warnings = database.addWarning(extra.from, target, reason);
       
-      let text = `⚠️ *USER WARNING*\n\n`;
-      text += `👤 User: @${target.split('@')[0]}\n`;
-      text += `📝 Reason: ${reason}\n`;
-      text += `⚠️ Warnings: ${warnings.count}/${config.maxWarnings}\n\n`;
+      let text = `⚠️ *WARNING*\n\n`;
+      text += `👤 @${target.split('@')[0]}\n`;
+      text += `📝 reason: ${reason}\n`;
+      text += `⚠️ warnings: ${warnings.count}/${config.maxWarnings}\n\n`;
       
       if (warnings.count >= config.maxWarnings) {
-        text += `❌ User has reached maximum warnings and will be removed!`;
+        text += `❌ aikona, max warnings hit — this oke is out`;
         
         await sock.sendMessage(extra.from, {
           text,
@@ -59,7 +59,7 @@ module.exports = {
           database.clearWarnings(extra.from, target);
         }
       } else {
-        text += `⚠️ Next warning will result in removal!`;
+        text += `⚠️ one more and you're gone bru`;
         
         await sock.sendMessage(extra.from, {
           text,
@@ -68,7 +68,7 @@ module.exports = {
       }
       
     } catch (error) {
-      await extra.reply(`❌ Error: ${error.message}`);
+      await extra.reply(`❌ error: ${error.message}`);
     }
   }
 };

@@ -36,7 +36,7 @@ module.exports = {
       // Validate
       if (!newBotName) {
         return extra.reply(
-          `📝 *Set Bot Name*\n\n` +
+          `📝 *set bot name*\n\n` +
           `Current bot name: *${config.botName}*\n\n` +
           `Usage:\n` +
           `  .setbotname <new name>\n` +
@@ -45,7 +45,7 @@ module.exports = {
       }
       
       if (newBotName.length > 50) {
-        return extra.reply('❌ Bot name must be 50 characters or less!');
+        return extra.reply('❌ bot name max 50 characters');
       }
       
       // Update runtime config
@@ -66,11 +66,11 @@ module.exports = {
       // Reload config module cache
       delete require.cache[require.resolve('../../config')];
       
-      await extra.reply(`✅ Bot name changed to: *${newBotName}*\n\nThe new name will be used in menus and other places.`);
+      await extra.reply(`✅ bot name changed to: *${newBotName}*\n\nnew name will show in menus`);
       
     } catch (error) {
       console.error('Setbotname command error:', error);
-      await extra.reply(`❌ Error: ${error.message}`);
+      await extra.reply(`❌ error: ${error.message}`);
     }
   }
 };

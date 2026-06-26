@@ -30,7 +30,7 @@ module.exports = {
         
         if (text.toLowerCase().trim() === 'suren' || text.toLowerCase().trim() === 'surrender') {
           const bombBox = game.array.find(v => v.emot === '💥');
-          await extra.reply(`*You surrendered!* 💣\n\nThe bomb was in box number ${bombBox.number}.`, { quoted: game.msg });
+          await extra.reply(`*you surrendered* 💣\n\nthe bomb was in box ${bombBox.number}`, { quoted: game.msg });
           clearTimeout(game.timeoutId);
           gameState.delete(sender);
           return;
@@ -141,7 +141,7 @@ module.exports = {
           const game = gameState.get(sender);
           const bombBox = game.array.find(v => v.emot === '💥');
           sock.sendMessage(extra.from, {
-            text: `*Time's up!* ⏰\n\nThe bomb was in box number ${bombBox.number}.`
+            text: `*Time's up!* ⏰\n\nthe bomb was in box ${bombBox.number}`
           }, { quoted: game.msg });
           gameState.delete(sender);
         }

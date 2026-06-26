@@ -17,7 +17,7 @@ module.exports = {
       const text = args.join(' ');
       if (!text) {
         return await sock.sendMessage(msg.key.remoteJid, { 
-          text: 'Please provide text to generate\nExample: .snow Nick' 
+          text: 'give me text to generate\nExample: .snow Nick' 
         }, { quoted: msg });
       }
       

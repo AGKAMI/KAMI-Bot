@@ -28,7 +28,7 @@ module.exports = {
       }
       
       if (!targetUser) {
-        return extra.reply('❌ Could not identify target user. Please reply to a message or tag a user.');
+        return extra.reply('❌ who are you looking for? reply to a message or tag someone');
       }
       
       try {
@@ -36,7 +36,7 @@ module.exports = {
         const ppUrl = await sock.profilePictureUrl(targetUser, 'image');
         
         if (!ppUrl) {
-          return extra.reply('❌ Profile picture not found for this user.');
+          return extra.reply('❌ no profile pic found for this oke');
         }
         
         // Download the profile picture
@@ -56,20 +56,20 @@ module.exports = {
             profileError.output?.statusCode === 404 || 
             profileError.output?.statusCode === 500 ||
             profileError.message?.includes('not found')) {
-          return extra.reply('❌ Profile picture not found for this user.');
+          return extra.reply('❌ no profile pic found for this oke');
         } else if (profileError.output?.statusCode === 401 || 
                    profileError.message?.includes('forbidden') || 
                    profileError.message?.includes('unauthorized')) {
           return extra.reply('❌ Profile picture not found. The user\'s profile picture is private or not available.');
         } else {
           // Don't show error in console for normal cases, just inform user
-          return extra.reply('❌ Profile picture not found for this user.');
+          return extra.reply('❌ no profile pic found for this oke');
         }
       }
       
     } catch (error) {
       // Don't show error in console, just inform user
-      extra.reply('❌ Profile picture not found for this user.');
+      extra.reply('❌ no profile pic found for this oke');
     }
   }
 };

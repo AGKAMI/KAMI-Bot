@@ -18,7 +18,7 @@ module.exports = {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       
       if (!ctx?.stanzaId || !ctx?.participant) {
-        return extra.reply('🗑️ Reply to the message you want to delete.');
+        return extra.reply('🗑️ reply to the message you wanna delete');
       }
       
       const deleteKey = { 
@@ -31,7 +31,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Delete command error:', error);
-      await extra.reply('❌ Failed to delete message.');
+      await extra.reply("❌ couldn't delete that message hey");
     }
   }
 };
