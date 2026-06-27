@@ -123,7 +123,7 @@ module.exports = {
             const videoResponse = await axios.get(videoUrl, {
               responseType: 'arraybuffer',
               timeout: 60000,
-              maxContentLength: 100 * 1024 * 1024, // 100MB limit
+              maxContentLength: 500 * 1024 * 1024, // 100MB limit
               headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'video/mp4,video/*,*/*;q=0.9',

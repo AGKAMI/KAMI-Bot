@@ -14,13 +14,15 @@ const processedMessages = new Set();
 
 async function fetchWithYtDlp(url) {
   try {
-    const { stdout } = await execPromise(`"C:\Users\ojuni\AppData\Local\hermes\hermes-agent\venv\Scripts\yt-dlp.exe" -g -f best "${url}"`, {
+    // Try system yt-dlp first, fall back to config path
+    const ytDlpCmd = config.ytDlpPath || 'yt-dlp';
+    const { stdout } = await execPromise(`${ytDlpCmd} -g -f best "${url}"`, {
       maxBuffer: 5 * 1024 * 1024,
       timeout: 60000,
     });
     const videoUrl = stdout.trim().split('\n').pop();
     if (!videoUrl) throw new Error('yt-dlp returned empty URL');
-    const { stdout: titleOut } = await execPromise(`"C:\Users\ojuni\AppData\Local\hermes\hermes-agent\venv\Scripts\yt-dlp.exe" --get-title "${url}"`, {
+    const { stdout: titleOut } = await execPromise(`${ytDlpCmd} --get-title "${url}"`, {
       maxBuffer: 1024 * 1024,
       timeout: 30000,
     });
@@ -31,7 +33,6 @@ async function fetchWithYtDlp(url) {
 }
 
 async function fetchFromApi(url) {
-  // primary public API: FBDown compatible endpoint
   const endpoints = [
     `https://fbdown.vercel.app/api/get?url=${encodeURIComponent(url)}`,
   ];
@@ -84,7 +85,6 @@ module.exports = {
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/.*\/videos\//,
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/reel\//,
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/share\//,
-        /https?:\/\/(?:www\.|m\.|web\.)?fb\.watch\//,
       ];
       if (!patterns.some((p) => p.test(url))) {
         return await extra.reply('❌ invalid facebook link\nuse: .fb <facebook video link>');
@@ -138,13 +138,13 @@ module.exports = {
         sendSuccess = true;
       } catch (e1) {
         console.log('.fb: Method 1 failed:', e1.message);
-        // Method 2: download buffer
+        // Method 2: download buffer (500MB limit)
         try {
           console.log('.fb: Method 2 buffer');
           const videoResponse = await axios.get(videoData.url, {
             responseType: 'arraybuffer',
-            timeout: 90000,
-            maxContentLength: 100 * 1024 * 1024,
+            timeout: 120000,
+            maxContentLength: 500 * 1024 * 1024,
             proxy: false,
           });
           const buffer = Buffer.from(videoResponse.data);
@@ -161,7 +161,7 @@ module.exports = {
 
       if (!sendSuccess) {
         return await extra.reply(
-          '❌ network issue hey\n\nCould not download from Facebook servers.\n\nTry:\n• Using a VPN\n• A different internet connection\n• Using browser to download manually'
+          '❌ could not download the video\n\nThe file might be too large for WhatsApp (>100MB).\nTry:\n• A shorter video\n• Using browser to download manually'
         );
       }
     } catch (error) {
