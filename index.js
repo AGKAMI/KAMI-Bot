@@ -252,6 +252,25 @@ async function startBot() {
     getMessage: async () => undefined // Don't load messages from store
   });
 
+  // === AUTO-CLEANUP WRAPPER ===
+  // Wrap sendMessage to delete temp files after every media send
+  const { cleanupTempFiles } = require('./utils/cleanup');
+  const originalSendMessage = sock.sendMessage.bind(sock);
+  sock.sendMessage = async (jid, content, options) => {
+    const hasMedia = content && (
+      content.image || content.video || content.audio ||
+      content.document || content.sticker || content.gif
+    );
+    try {
+      const result = await originalSendMessage(jid, content, options);
+      return result;
+    } finally {
+      if (hasMedia) {
+        setTimeout(() => cleanupTempFiles(), 500);
+      }
+    }
+  };
+
   // Bind store to socket
   store.bind(sock.ev);
 
