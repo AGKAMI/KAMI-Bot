@@ -73,7 +73,6 @@ const {
   Browsers,
   fetchLatestBaileysVersion
 } = require('@whiskeysockets/baileys');
-const qrcode = require('qrcode-terminal');
 const config = require('./config');
 const handler = require('./handler');
 const fs = require('fs');
@@ -308,8 +307,8 @@ async function startBot() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log('\n\n📱 Scan this QR code with WhatsApp:\n');
-      qrcode.generate(qr, { small: true });
+      console.log('\n⚠️ WhatsApp session needs re-pairing.');
+      console.log('   Contact KAMI to restart the bot.\n');
     }
 
     if (connection === 'close') {
