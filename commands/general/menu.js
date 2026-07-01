@@ -1,10 +1,11 @@
 /**
  * Menu Command - Display all available commands
- * Style: Clean KAMI header + categorized sections
+ * Style: Clean KAMI header + vertical list sections
  */
 
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
+const { getChannelInfo } = require('../../utils/channelInfo');
 
 module.exports = {
   name: 'menu',
@@ -47,18 +48,9 @@ module.exports = {
       const divider = '◢◤◢◤◢◤◢◤◢◤◢◤';
       const endDivider = '◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢';
 
-      // ── SECTION BUILDER ──
-      const section = (title, cmds, cols = 3) => {
-        const lines = [];
-        for (let i = 0; i < cmds.length; i += cols) {
-          const row = [];
-          for (let j = i; j < i + cols && j < cmds.length; j++) {
-            row.push(prefix + cmds[j]);
-          }
-          // Pad each command to align columns
-          const padded = row.map(c => c.padEnd(14)).join('');
-          lines.push('        ' + padded.trimEnd());
-        }
+      // ── SECTION BUILDER (Vertical List) ──
+      const section = (title, cmds) => {
+        const lines = cmds.map(cmd => `        ${prefix}${cmd}`);
         return `\n${divider}\n\n        ${title}\n\n${endDivider}\n\n${lines.join('\n')}\n`;
       };
 
@@ -96,9 +88,12 @@ module.exports = {
 
       menuText += `\n───────────────\n\n        ⟡ END OF TRANSMISSION ⟡\n`;
 
+      const channelInfo = getChannelInfo();
+      
       await sock.sendMessage(extra.from, {
         text: menuText,
-        mentions: [extra.sender]
+        mentions: [extra.sender],
+        ...channelInfo
       }, { quoted: msg });
     } catch (error) {
       await extra.reply('❌ error: ' + error.message);
