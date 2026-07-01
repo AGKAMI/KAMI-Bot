@@ -1,6 +1,6 @@
 /**
  * Menu Command - Display all available commands
- * Style: Original big KAMI header (Unicode block) + ASCII-safe sections for mobile
+ * Style: Clean KAMI header + categorized sections
  */
 
 const config = require('../../config');
@@ -33,50 +33,47 @@ module.exports = {
       const prefix = config.prefix || '.';
       const total = commands.size;
 
-      // ── ORIGINAL BIG KAMI HEADER (Unicode block) ──
-      const header = `\
-██╗  ██╗ █████╗ ███╗   ███╗██╗
-██║ ██╔╝██╔══██╗████╗ ████║██║
-█████╔╝ ███████║██╔████╔██║██║
-██╔═██╗ ██╔══██║██║╚██╔╝██║██║
-██║  ██╗██║  ██║██║ ╚═╝ ██║██║
-╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
+      // ── KAMI HEADER (Box Drawing) ──
+      const header = `╔═╗╔╦╗╔═╗╔═╗╔╦╗
+║ ║ ║ ║ ║ ║ ║║║
+╚═╝ ╩ ╚═╝╚═╝ ╩ ╩
 
-           KAMI BOT`;
+      KAMI BOT`;
 
       // ── META ──
       const meta = `\nEDITION: 1.0.0\nSIZE: ${total} COMMANDS\nPUBLISHER: ${displayOwner}\n`;
 
-      // ── HELPERS ──
-      const pad = (text, len = 16) => {
-        const clean = String(text);
-        return clean.length >= len ? clean : clean + ' '.repeat(len - clean.length);
-      };
+      // ── SECTION DIVIDER ──
+      const divider = '◢◤◢◤◢◤◢◤◢◤◢◤';
+      const endDivider = '◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢';
 
+      // ── SECTION BUILDER ──
       const section = (title, cmds, cols = 3) => {
         const lines = [];
         for (let i = 0; i < cmds.length; i += cols) {
           const row = [];
           for (let j = i; j < i + cols && j < cmds.length; j++) {
-            row.push(pad(prefix + cmds[j].name, 16));
+            row.push(prefix + cmds[j]);
           }
-          lines.push('  ' + row.join('').trimEnd());
+          // Pad each command to align columns
+          const padded = row.map(c => c.padEnd(14)).join('');
+          lines.push('        ' + padded.trimEnd());
         }
-        return `\n${title}\n${'-'.repeat(28)}\n${lines.join('\n')}\n`;
+        return `\n${divider}\n\n        ${title}\n\n${endDivider}\n\n${lines.join('\n')}\n`;
       };
 
       // ── SECTION MAP ──
       const categoryMeta = {
-        general:   { emoji: '🎙️',  label: 'GENERAL NEWS' },
-        ai:        { emoji: '🤖',  label: 'AI INTELLIGENCE' },
-        admin:     { emoji: '🛡️',  label: 'ADMIN COMMAND CENTER' },
-        owner:     { emoji: '👑',  label: 'OWNER EDITION' },
-        media:     { emoji: '🎬',  label: 'MEDIA WIRE' },
-        fun:       { emoji: '🎮',  label: 'FUN & GAMES' },
-        games:     { emoji: '🎲',  label: 'GAMES DESK' },
-        utility:   { emoji: '🔧',  label: 'UTILITY TOOLS' },
-        anime:     { emoji: '👾',  label: 'ANIME WAVE' },
-        textmaker: { emoji: '🖋️',  label: 'TEXT FACTORY' },
+        general:   { emoji: '⟡',  label: 'GENERAL' },
+        ai:        { emoji: '⟁',  label: 'AI CORE' },
+        admin:     { emoji: '✦',  label: 'ADMIN' },
+        owner:     { emoji: '♛',  label: 'OWNER' },
+        media:     { emoji: '◈',  label: 'MEDIA' },
+        fun:       { emoji: '⚙',  label: 'FUN' },
+        games:     { emoji: '🎲',  label: 'GAMES' },
+        utility:   { emoji: '⚙',  label: 'UTILITY' },
+        anime:     { emoji: '⟡',  label: 'ANIME' },
+        textmaker: { emoji: '✎',  label: 'TEXT MAKER' },
       };
 
       const order = Object.keys(categoryMeta);
@@ -94,10 +91,10 @@ module.exports = {
           .sort((a, b) => a.name.localeCompare(b.name))
           .map((item) => item.name);
 
-        menuText += section(`${meta.emoji} ${meta.label}`, rows);
+        menuText += section(`${meta.emoji} ${meta.label} ${meta.emoji}`, rows);
       });
 
-      menuText += `\n─── END OF TRANSMISSION ───\n`;
+      menuText += `\n───────────────\n\n        ⟡ END OF TRANSMISSION ⟡\n`;
 
       await sock.sendMessage(extra.from, {
         text: menuText,
