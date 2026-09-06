@@ -1,6 +1,7 @@
 /**
  * Menu Command - Display all available commands
  * Style: Clean KAMI header + vertical list sections
+ * Each command now shows its description alongside its name.
  */
 
 const config = require('../../config');
@@ -28,6 +29,12 @@ module.exports = {
         }
       });
 
+      // ── COMMAND DESCRIPTIONS MAP ──
+      const cmdDesc = {};
+      commands.forEach((cmd, name) => {
+        if (cmd.description) cmdDesc[name] = cmd.description;
+      });
+
       const ownerNames = Array.isArray(config.ownerName) ? config.ownerName : [config.ownerName];
       const displayOwner = ownerNames[0] || config.ownerName || 'Bot Owner';
 
@@ -50,7 +57,7 @@ module.exports = {
 
       // ── SECTION BUILDER (Vertical List) ──
       const section = (title, cmds) => {
-        const lines = cmds.map(cmd => `        ${prefix}${cmd}`);
+        const lines = cmds.map(line => `        ${line}`);
         return `\n${divider}\n\n        ${title}\n\n${endDivider}\n\n${lines.join('\n')}\n`;
       };
 
@@ -83,7 +90,10 @@ module.exports = {
           .sort((a, b) => a.name.localeCompare(b.name))
           .map((item) => item.name);
 
-        menuText += section(`${meta.emoji} ${meta.label} ${meta.emoji}`, rows);
+        menuText += section(`${meta.emoji} ${meta.label} ${meta.emoji}`, rows.map(cmd => {
+          const desc = cmdDesc[cmd];
+          return desc ? `${prefix}${cmd} — ${desc}` : `${prefix}${cmd}`;
+        }));
       });
 
       menuText += `\n───────────────\n\n        ⟡ END OF TRANSMISSION ⟡\n`;
