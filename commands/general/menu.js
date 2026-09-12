@@ -87,12 +87,16 @@ module.exports = {
         const meta = categoryMeta[cat];
         const rows = list
           .filter((item) => item.name)
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map((item) => item.name);
+          .sort((a, b) => a.name.localeCompare(b.name));
 
         menuText += section(`${meta.emoji} ${meta.label} ${meta.emoji}`, rows.map(cmd => {
-          const desc = cmdDesc[cmd];
-          return desc ? `${prefix}${cmd} — ${desc}` : `${prefix}${cmd}`;
+          const desc = cmdDesc[cmd.name];
+          const aliasList = cmd.aliases && cmd.aliases.length > 0
+            ? ` (${cmd.aliases.map(a => prefix + a).join(', ')})`
+            : '';
+          return desc
+            ? `${prefix}${cmd.name}${aliasList} — ${desc}`
+            : `${prefix}${cmd.name}${aliasList}`;
         }));
       });
 
