@@ -7,6 +7,7 @@ const rounds = [
 ];
 module.exports = {
   name: 'twotruthsonelie',
+  description: 'Guess which statement is the lie',
   category: 'games',
   aliases: ['ttol'],
   execute: async (sock, msg, args, ctx) => {

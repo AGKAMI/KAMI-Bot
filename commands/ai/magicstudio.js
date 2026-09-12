@@ -11,7 +11,7 @@ module.exports = {
   name: 'imagine',
   aliases: ['magic', 'magicai', 'aiimage', 'generate'],
   category: 'ai',
-  desc: 'Generate AI art from text prompt',
+  description: 'Generate AI art from text prompt',
   usage: 'magicstudio <prompt>',
   execute: async (sock, msg, args, extra) => {
     try {

@@ -14,7 +14,7 @@ module.exports = {
   name: 'random',
   aliases: ['animerandom', 'randomanime'],
   category: 'anime',
-  desc: 'Get random anime data',
+  description: 'Get random anime data',
   usage: 'random',
   execute: async (sock, msg, args, extra) => {
     try {

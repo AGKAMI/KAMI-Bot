@@ -1,6 +1,7 @@
 const games = new Map();
 module.exports = {
   name: 'numberguess',
+  description: 'Guess a number between 1-100',
   category: 'games',
   aliases: ['nguess', 'guess'],
   execute: async (sock, msg, args, ctx) => {

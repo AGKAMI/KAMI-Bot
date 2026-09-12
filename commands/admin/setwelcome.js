@@ -8,7 +8,7 @@ module.exports = {
   name: 'setwelcome',
   aliases: ['welcometext'],
   category: 'admin',
-  desc: 'Set custom welcome message',
+  description: 'Set custom welcome message',
   usage: 'setwelcome <message> (use @user for member mention)',
   groupOnly: true,
   adminOnly: true,

@@ -6,7 +6,7 @@ module.exports = {
     name: 'dare',
     aliases: [],
     category: 'fun',
-    desc: 'Get a random dare challenge',
+    description: 'Get a random dare challenge',
     usage: 'dare',
     execute: async (sock, msg, args) => {
       try {

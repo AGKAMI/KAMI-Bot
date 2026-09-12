@@ -14,7 +14,7 @@ module.exports = {
   name: 'megumin',
   aliases: ['meguminnsfw'],
   category: 'anime',
-  desc: 'Get random megumin NSFW anime images',
+  description: 'Get random megumin NSFW anime images',
   usage: 'megumin',
   execute: async (sock, msg, args, extra) => {
     try {

@@ -8,7 +8,7 @@ module.exports = {
   name: 'goodbye',
   aliases: ['goodbyeon', 'goodbyeoff'],
   category: 'admin',
-  desc: 'Enable/disable goodbye messages',
+  description: 'Enable/disable goodbye messages',
   usage: 'goodbye on/off',
   groupOnly: true,
   adminOnly: true,

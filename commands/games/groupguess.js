@@ -1,6 +1,7 @@
 const games = new Map();
 module.exports = {
   name: 'groupguess',
+  description: 'Group number guessing game — closest wins',
   category: 'games',
   aliases: ['gguess'],
   execute: async (sock, msg, args, ctx) => {

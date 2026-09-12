@@ -1,5 +1,6 @@
 module.exports = {
   name: 'rps',
+  description: 'Play rock paper scissors',
   category: 'games',
   aliases: ['rockpaperscissors'],
   execute: async (sock, msg, args, ctx) => {

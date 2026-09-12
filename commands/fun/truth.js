@@ -9,7 +9,7 @@ module.exports = {
     name: 'truth',
     aliases: [],
     category: 'fun',
-    desc: 'Get a random truth question',
+    description: 'Get a random truth question',
     usage: 'truth',
     execute: async (sock, msg, args, extra) => {
       try {

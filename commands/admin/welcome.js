@@ -8,7 +8,7 @@ module.exports = {
   name: 'welcome',
   aliases: ['welcomeon', 'welcomeoff'],
   category: 'admin',
-  desc: 'Enable/disable welcome messages',
+  description: 'Enable/disable welcome messages',
   usage: 'welcome on/off',
   groupOnly: true,
   adminOnly: true,

@@ -5,6 +5,7 @@ function mask(word, guessed) {
 const games = new Map();
 module.exports = {
   name: 'hangman',
+  description: 'Play hangman — guess the word letter by letter',
   category: 'games',
   aliases: ['hang'],
   execute: async (sock, msg, args, ctx) => {

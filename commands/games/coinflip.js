@@ -1,5 +1,6 @@
 module.exports = {
   name: 'coinflip',
+  description: 'Flip a coin and get heads or tails',
   aliases: ['flip', 'coin'],
   category: 'games',
   execute: async (sock, msg, args, ctx) => {

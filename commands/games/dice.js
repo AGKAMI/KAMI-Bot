@@ -1,5 +1,6 @@
 module.exports = {
   name: 'dice',
+  description: 'Roll a dice (default d6)',
   category: 'games',
   aliases: ['roll'],
   category: 'games',

@@ -1,6 +1,7 @@
 const chains = new Map();
 module.exports = {
   name: 'wordchain',
+  description: 'Word chain — each word starts with the last letter',
   category: 'games',
   aliases: ['chain', 'word'],
   groupOnly: true,

@@ -11,6 +11,7 @@ const rounds = [
 const active = new Map();
 module.exports = {
   name: 'emojiguess',
+  description: 'Guess the phrase from emojis',
   category: 'games',
   aliases: ['emoji', 'eg'],
   execute: async (sock, msg, args, ctx) => {

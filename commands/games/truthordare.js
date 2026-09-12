@@ -24,6 +24,7 @@ const dares = [
 ];
 module.exports = {
   name: 'truthordare',
+  description: 'Play truth or dare',
   aliases: ['tod'],
   category: 'games',
   execute: async (sock, msg, args, ctx) => {

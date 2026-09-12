@@ -12,6 +12,7 @@ const questions = [
 ];
 module.exports = {
   name: 'wouldyourather',
+  description: 'Would you rather — pick between two options',
   category: 'games',
   aliases: ['wyr'],
   execute: async (sock, msg, args, ctx) => {

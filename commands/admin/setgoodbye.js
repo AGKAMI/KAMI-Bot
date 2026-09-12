@@ -8,7 +8,7 @@ module.exports = {
   name: 'setgoodbye',
   aliases: ['goodbyetext'],
   category: 'admin',
-  desc: 'Set custom goodbye message',
+  description: 'Set custom goodbye message',
   usage: 'setgoodbye <message> (use @user for member mention)',
   groupOnly: true,
   adminOnly: true,

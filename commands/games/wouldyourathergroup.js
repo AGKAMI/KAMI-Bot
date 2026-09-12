@@ -12,6 +12,7 @@ const questions = [
 ];
 module.exports = {
   name: 'wouldyourathergroup',
+  description: 'Group would you rather game',
   category: 'games',
   aliases: ['wyrg'],
   groupOnly: true,

@@ -11,7 +11,7 @@ module.exports = {
   name: 'pies',
   aliases: ['pie', 'india', 'malaysia', 'thailand', 'china', 'indonesia', 'japan', 'korea', 'vietnam'],
   category: 'fun',
-  desc: 'Get random pies images by country',
+  description: 'Get random pies images by country',
   usage: 'pies <country>',
   execute: async (sock, msg, args, extra) => {
     try {

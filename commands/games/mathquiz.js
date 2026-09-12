@@ -1,6 +1,7 @@
 const quiz = new Map();
 module.exports = {
   name: 'mathquiz',
+  description: 'Solve random math problems',
   category: 'games',
   aliases: ['math', 'mq'],
   execute: async (sock, msg, args, ctx) => {

@@ -15,7 +15,7 @@ module.exports = {
   name: 'memesearch',
   aliases: ['memes', 'sm', 'smeme', 'gifsearch', 'gif'],
   category: 'fun',
-  desc: 'Search and get memes',
+  description: 'Search and get memes',
   usage: 'memesearch <query>',
   execute: async (sock, msg, args, extra) => {
     try {

@@ -1,5 +1,6 @@
 module.exports = {
   name: 'tictactoe',
+  description: 'Play tic tac toe in a group',
   aliases: ['ttt', 'xo'],
   category: 'games',
   groupOnly: true,

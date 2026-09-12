@@ -1,5 +1,6 @@
 module.exports = {
   name: 'poll',
+  description: 'Create a yes/no or custom poll',
   aliases: ['vote'],
   groupOnly: true,
   execute: async (sock, msg, args, ctx) => {

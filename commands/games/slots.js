@@ -12,6 +12,7 @@ const TWO_MATCH = 2;
 
 module.exports = {
   name: 'slots',
+  description: 'Spin the slot machine',
   aliases: ['slot', 'spin'],
   category: 'games',
   execute: async (sock, msg, args, ctx) => {
