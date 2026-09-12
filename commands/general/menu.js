@@ -7,6 +7,8 @@
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
 const { getChannelInfo } = require('../../utils/channelInfo');
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
   name: 'menu',
@@ -102,15 +104,27 @@ module.exports = {
 
       menuText += `\n───────────────\n\n        ⟡ END OF TRANSMISSION ⟡\n`;
 
-      const channelInfo = getChannelInfo();
-      
-      await sock.sendMessage(extra.from, {
-        text: menuText,
-        mentions: [extra.sender],
-        ...channelInfo
-      }, { quoted: msg });
-    } catch (error) {
-      await extra.reply('❌ error: ' + error.message);
-    }
-  }
-};
+            const channelInfo = getChannelInfo();
+
+            // Try to send with custom menu image if set
+            const imagePath = path.join(__dirname, '../../utils/bot_image.jpg');
+            if (fs.existsSync(imagePath)) {
+              const imageBuffer = fs.readFileSync(imagePath);
+              await sock.sendMessage(extra.from, {
+                image: imageBuffer,
+                caption: menuText,
+                mentions: [extra.sender],
+                ...channelInfo
+              }, { quoted: msg });
+            } else {
+              await sock.sendMessage(extra.from, {
+                text: menuText,
+                mentions: [extra.sender],
+                ...channelInfo
+              }, { quoted: msg });
+            }
+          } catch (error) {
+            await extra.reply('❌ error: ' + error.message);
+          }
+        }
+      };
