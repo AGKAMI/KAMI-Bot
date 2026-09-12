@@ -7,30 +7,60 @@ on:
   workflow_dispatch:
 
 jobs:
-  restart-panel-server:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Restart bot-hosting server
+      - name: Sync & restart bot-hosting server
         env:
           PANEL_API_KEY: ${{ secrets.BOT_HOSTING_API_KEY }}
           SERVER_ID: ${{ secrets.BOT_HOSTING_SERVER_ID }}
         run: |
           if [ -z "$PANEL_API_KEY" ]; then
-            echo "Missing BOT_HOSTING_API_KEY secret"
+            echo "::error::Missing BOT_HOSTING_API_KEY secret"
             exit 1
           fi
 
           if [ -z "$SERVER_ID" ]; then
-            echo "Missing BOT_HOSTING_SERVER_ID secret"
+            echo "::error::Missing BOT_HOSTING_SERVER_ID secret"
             exit 1
           fi
 
-          AUTH_NAME="Authoriza"
-          AUTH_NAME="${AUTH_NAME}tion"
-          AUTH_SCHEME="Bear"
-          AUTH_SCHEME="${AUTH_SCHEME}er"
-          AUTH_HEADER="${AUTH_NAME}: ${AUTH_SCHEME} ${PANEL_API_KEY}"
+          AUTH="Authorization: Bearer ${PANEL_API_KEY}"
+          API="https://control.bot-hosting.net/api/client/servers/${SERVER_ID}"
 
-          curl --fail --show-error --silent --request POST --header "$AUTH_HEADER" --header "Accept: application/json" --header "Content-Type: application/json" --data '{"signal":"restart"}' "https://control.bot-hosting.net/api/client/servers/${SERVER_ID}/power"
+          echo "Checking server status..."
+          STATUS=$(curl -s -w "\n%{http_code}" --request GET \
+            --header "$AUTH" \
+            --header "Accept: application/json" \
+            "${API}" | tail -1)
 
-          echo "restart signal sent"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Failed to reach server (HTTP $STATUS)"
+            exit 1
+          fi
+
+          echo "Sending restart signal (auto-update pulls from GitHub on boot)..."
+          RESP=$(curl -s -w "\n%{http_code}" --request POST \
+            --header "$AUTH" \
+            --header "Accept: application/json" \
+            --header "Content-Type: application/json" \
+            --data '{"signal":"restart"}' \
+            "${API}/power" | tail -1)
+
+          if [ "$RESP" = "204" ] || [ "$RESP" = "200" ]; then
+            echo "Restart signal sent successfully (HTTP $RESP)"
+          else
+            echo "::warning::Restart returned HTTP $RESP — server may need manual restart"
+          fi
+
+          echo "Waiting 10s for server to boot..."
+          sleep 10
+
+          echo "Checking server state..."
+          STATE=$(curl -s --request GET \
+            --header "$AUTH" \
+            --header "Accept: application/json" \
+            "${API}" | python3 -c "import sys,json; print(json.load(sys.stdin)['attributes'].get('status','unknown'))" 2>/dev/null || echo "unknown")
+
+          echo "Server state: $STATE"
+          echo "Deployment complete."
