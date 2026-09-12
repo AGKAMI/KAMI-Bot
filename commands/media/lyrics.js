@@ -1,5 +1,6 @@
 /**
  * Lyrics Finder
+ * Primary: lrclib.net | Fallback: lyrics.ovh
  */
 
 const axios = require('axios');
@@ -10,117 +11,113 @@ module.exports = {
   aliases: ['lyric', 'lirik'],
   category: 'media',
   description: 'Get lyrics of a song',
-  usage: '<song name>',
-  
+  usage: '.lyrics <song name>',
+
   async execute(sock, msg, args) {
     try {
       if (args.length === 0) {
-        return await sock.sendMessage(msg.key.remoteJid, { 
-          text: `❌ give me a song name hey\n\nExample: ${config.prefix}lyrics Despacito` 
+        return await sock.sendMessage(msg.key.remoteJid, {
+          text: `Give me a song name\n\nExample: ${config.prefix}lyrics Despacito`
         });
       }
-      
+
       const query = args.join(' ');
-      
       let lyricsData = null;
-      
-      // API 1: Vreden
+
+      // API 1: lrclib.net (free, reliable, synced lyrics)
       try {
-        const response = await axios.get(`https://api.vreden.my.id/api/lyrics?query=${encodeURIComponent(query)}`);
-        if (response.data && response.data.result) {
+        const response = await axios.get(`https://lrclib.net/api/get?track_name=${encodeURIComponent(query)}`, {
+          timeout: 10000
+        });
+        if (response.data && response.data.plainLyrics) {
           lyricsData = {
-            title: response.data.result.title,
-            artist: response.data.result.artist,
-            lyrics: response.data.result.lyrics,
-            thumbnail: response.data.result.thumbnail
+            title: response.data.trackName || query,
+            artist: response.data.artistName || 'Unknown',
+            album: response.data.albumName || '',
+            duration: response.data.duration || 0,
+            lyrics: response.data.plainLyrics,
+            syncedLyrics: response.data.syncedLyrics || null
           };
         }
       } catch (err) {
-        console.log('Vreden API failed, trying next...');
+        console.log('[lyrics] lrclib failed:', err.message);
       }
-      
-      // API 2: Siputzx (fallback)
+
+      // API 1b: lrclib search endpoint (if direct get fails)
       if (!lyricsData) {
         try {
-          const response = await axios.get(`https://api.siputzx.my.id/api/s/lyrics?query=${encodeURIComponent(query)}`);
-          if (response.data && response.data.status && response.data.data) {
+          const response = await axios.get(`https://lrclib.net/api/search?track_name=${encodeURIComponent(query)}`, {
+            timeout: 10000
+          });
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            const best = response.data[0];
+            if (best.plainLyrics) {
+              lyricsData = {
+                title: best.trackName || query,
+                artist: best.artistName || 'Unknown',
+                album: best.albumName || '',
+                duration: best.duration || 0,
+                lyrics: best.plainLyrics,
+                syncedLyrics: best.syncedLyrics || null
+              };
+            }
+          }
+        } catch (err) {
+          console.log('[lyrics] lrclib search failed:', err.message);
+        }
+      }
+
+      // API 2: lyrics.ovh (fallback)
+      if (!lyricsData) {
+        try {
+          const parts = query.split(' - ');
+          const artist = parts.length > 1 ? parts[0].trim() : '';
+          const track = parts.length > 1 ? parts.slice(1).join(' - ').trim() : query;
+
+          const url = artist
+            ? `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(track)}`
+            : `https://api.lyrics.ovh/v1/?${encodeURIComponent(query)}`;
+
+          const response = await axios.get(url, { timeout: 10000 });
+          if (response.data && response.data.lyrics) {
             lyricsData = {
-              title: response.data.data.title,
-              artist: response.data.data.artist,
-              lyrics: response.data.data.lyrics,
-              thumbnail: response.data.data.image
+              title: track,
+              artist: artist || 'Unknown',
+              album: '',
+              duration: 0,
+              lyrics: response.data.lyrics,
+              syncedLyrics: null
             };
           }
         } catch (err) {
-          console.log('Siputzx API failed');
+          console.log('[lyrics] lyrics.ovh failed:', err.message);
         }
       }
-      
-      // API 3: Ryzendesu
+
       if (!lyricsData) {
-        try {
-          const response = await axios.get(`https://api.ryzendesu.vip/api/tools/lyrics?query=${encodeURIComponent(query)}`);
-          if (response.data && (response.data.result || response.data.data)) {
-            const d = response.data.result || response.data.data;
-            lyricsData = {
-              title: d.title || query,
-              artist: d.artist || 'Unknown',
-              lyrics: d.lyrics || d.text || response.data.lyrics || '',
-              thumbnail: d.thumbnail || d.image || null
-            };
-          }
-        } catch (err) {
-          console.log('Ryzendesu API failed');
-        }
-      }
-      
-      // API 4: Agatz
-      if (!lyricsData) {
-        try {
-          const response = await axios.get(`https://api.agatz.xyz/api/lirik?judul=${encodeURIComponent(query)}`);
-          if (response.data && response.data.data) {
-            lyricsData = {
-              title: response.data.data.title || query,
-              artist: response.data.data.artist || 'Unknown',
-              lyrics: response.data.data.lyrics || response.data.data.lirik || '',
-              thumbnail: response.data.data.thumbnail || null
-            };
-          }
-        } catch (err) {
-          console.log('Agatz API failed');
-        }
-      }
-      
-      if (!lyricsData) {
-        return await sock.sendMessage(msg.key.remoteJid, { 
-          text: '❌ Could not find lyrics for this song!' 
+        return await sock.sendMessage(msg.key.remoteJid, {
+          text: `Could not find lyrics for "${query}"\n\nTip: Try "Artist - Title" format (e.g. ${config.prefix}lyrics Luis Fonsi - Despacito)`
         });
       }
-      
+
       // Format lyrics (limit to prevent message too long)
       let lyrics = lyricsData.lyrics;
       if (lyrics.length > 4000) {
         lyrics = lyrics.substring(0, 4000) + '...\n\n_Lyrics too long, showing first part only_';
       }
-      
-      const caption = `🎵 *${lyricsData.title}*\n` +
-                     `👤 *Artist:* ${lyricsData.artist}\n\n` +
-                     `📝 *Lyrics:*\n${lyrics}\n\n` +
-                     `_Fetched by ${config.botName}_`;
-      
-      if (lyricsData.thumbnail) {
-        await sock.sendMessage(msg.key.remoteJid, {
-          image: { url: lyricsData.thumbnail },
-          caption: caption
-        });
-      } else {
-        await sock.sendMessage(msg.key.remoteJid, { text: caption });
-      }
-      
+
+      const albumLine = lyricsData.album ? `\nAlbum: ${lyricsData.album}` : '';
+      const caption = `*${lyricsData.title}*\n` +
+                     `Artist: ${lyricsData.artist}${albumLine}\n\n` +
+                     `${lyrics}\n\n` +
+                     `_Powered by lrclib.net_`;
+
+      await sock.sendMessage(msg.key.remoteJid, { text: caption });
+
     } catch (error) {
-      console.error('Lyrics command error:', error);
-      await sock.sendMessage(msg.key.remoteJid, { 
-        text: '❌ An error occurred while fetching lyrics!' 
+      console.error('[lyrics] Error:', error.message);
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: 'An error occurred while fetching lyrics!'
       });
     }
   }
