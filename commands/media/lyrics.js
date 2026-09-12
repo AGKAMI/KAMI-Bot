@@ -1,9 +1,10 @@
 /**
  * Lyrics Finder
- * Primary: lrclib.net | Fallback: lyrics.ovh
+ * Primary: lrclib.net | Fallback: lyrics.ovh | Last resort: Genius scrape
  */
 
 const axios = require('axios');
+const cheerio = require('cheerio');
 const config = require('../../config');
 
 module.exports = {
@@ -94,6 +95,43 @@ module.exports = {
         }
       }
 
+      // API 3: Genius scrape (last resort - no API key needed)
+      if (!lyricsData) {
+        try {
+          const searchRes = await axios.get(`https://genius.com/api/search?q=${encodeURIComponent(query)}`, { timeout: 10000 });
+          const hits = searchRes.data?.response?.hits;
+          if (hits && hits.length > 0) {
+            const result = hits[0].result;
+            const pageRes = await axios.get(result.url, { timeout: 10000 });
+            const $ = cheerio.load(pageRes.data);
+            let lyricsHtml = '';
+            $('[data-lyrics-container="true"]').each((i, el) => {
+              lyricsHtml += $(el).html();
+            });
+            if (lyricsHtml) {
+              let lyrics = lyricsHtml.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+              lyrics = lyrics.replace(/&amp;/g, '&').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&#x60;/g, '`').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+              // Strip header junk (contributors, translations, etc.)
+              const lines = lyrics.split('\n');
+              const startIdx = lines.findIndex(l => l.trim().startsWith('[') || l.trim().length > 20);
+              lyrics = startIdx >= 0 ? lines.slice(startIdx).join('\n').trim() : lyrics.trim();
+              if (lyrics.length > 50) {
+                lyricsData = {
+                  title: result.songTitle || result.title || query,
+                  artist: result.primary_artist?.name || 'Unknown',
+                  album: '',
+                  duration: 0,
+                  lyrics: lyrics,
+                  syncedLyrics: null
+                };
+              }
+            }
+          }
+        } catch (err) {
+          console.log('[lyrics] Genius scrape failed:', err.message);
+        }
+      }
+
       if (!lyricsData) {
         return await sock.sendMessage(msg.key.remoteJid, {
           text: `Could not find lyrics for "${query}"\n\nTip: Try "Artist - Title" format (e.g. ${config.prefix}lyrics Luis Fonsi - Despacito)`
@@ -107,10 +145,11 @@ module.exports = {
       }
 
       const albumLine = lyricsData.album ? `\nAlbum: ${lyricsData.album}` : '';
+      const source = lyricsData.syncedLyrics ? 'lrclib.net' : (lyricsData.album ? 'lyrics.ovh' : 'Genius');
       const caption = `*${lyricsData.title}*\n` +
                      `Artist: ${lyricsData.artist}${albumLine}\n\n` +
                      `${lyrics}\n\n` +
-                     `_Powered by lrclib.net_`;
+                     `_Powered by ${source}_`;
 
       await sock.sendMessage(msg.key.remoteJid, { text: caption });
 
