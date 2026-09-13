@@ -67,7 +67,7 @@ const APIs = {
   
   // YouTube Download - uses loader.to
   ytDownload: async (url, type = 'audio') => {
-    const format = type === 'video' ? 'mp4' : 'mp3';
+    const format = type === 'video' ? '720' : 'mp3';
     const encodedUrl = encodeURIComponent(url);
     
     // Step 1: Start the download job with proper headers
