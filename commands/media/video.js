@@ -21,9 +21,7 @@ module.exports = {
       processedMessages.add(msg.key.id);
       setTimeout(() => processedMessages.delete(msg.key.id), 5 * 60 * 1000);
 
-      const text = (msg.message?.conversation ||
-        msg.message?.extendedTextMessage?.text ||
-        args.join(' ')).trim();
+      const text = args.join(' ').trim();
 
       if (!text) {
         return extra.reply('What video do you want to download?');
