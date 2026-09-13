@@ -1,6 +1,6 @@
 /**
  * Lyrics Finder
- * Primary: lrclib.net | Fallback: lyrics.ovh | Last resort: Genius scrape
+ * Primary: Genius scrape | Fallback: lrclib.net | Last resort: lyrics.ovh
  */
 
 const axios = require('axios');
@@ -25,32 +25,47 @@ module.exports = {
       const query = args.join(' ');
       let lyricsData = null;
 
-      // API 1: lrclib.net (free, reliable, synced lyrics)
+      // API 1: Genius scrape (best at understanding natural queries like "Despacito")
       try {
-        const response = await axios.get(`https://lrclib.net/api/get?track_name=${encodeURIComponent(query)}`, {
-          timeout: 10000
-        });
-        if (response.data && response.data.plainLyrics) {
-          lyricsData = {
-            title: response.data.trackName || query,
-            artist: response.data.artistName || 'Unknown',
-            album: response.data.albumName || '',
-            duration: response.data.duration || 0,
-            lyrics: response.data.plainLyrics,
-            syncedLyrics: response.data.syncedLyrics || null
-          };
+        const searchRes = await axios.get(`https://genius.com/api/search?q=${encodeURIComponent(query)}`, { timeout: 10000 });
+        const hits = searchRes.data?.response?.hits;
+        if (hits && hits.length > 0) {
+          const result = hits[0].result;
+          const pageRes = await axios.get(result.url, { timeout: 10000 });
+          const $ = cheerio.load(pageRes.data);
+          let lyricsHtml = '';
+          $('[data-lyrics-container="true"]').each((i, el) => {
+            lyricsHtml += $(el).html();
+          });
+          if (lyricsHtml) {
+            let lyrics = lyricsHtml.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+            lyrics = lyrics.replace(/&amp;/g, '&').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&#x60;/g, '`').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+            // Strip header junk (contributors, translations, etc.)
+            const lines = lyrics.split('\n');
+            const startIdx = lines.findIndex(l => l.trim().startsWith('[') || l.trim().length > 20);
+            lyrics = startIdx >= 0 ? lines.slice(startIdx).join('\n').trim() : lyrics.trim();
+            if (lyrics.length > 50) {
+              lyricsData = {
+                title: result.songTitle || result.title || query,
+                artist: result.primary_artist?.name || 'Unknown',
+                album: '',
+                duration: 0,
+                lyrics: lyrics,
+                source: 'Genius'
+              };
+            }
+          }
         }
       } catch (err) {
-        console.log('[lyrics] lrclib failed:', err.message);
+        console.log('[lyrics] Genius failed:', err.message);
       }
 
-      // API 1b: lrclib search endpoint (if direct get fails)
+      // API 2: lrclib.net search (good for exact matches)
       if (!lyricsData) {
         try {
-          const response = await axios.get(`https://lrclib.net/api/search?track_name=${encodeURIComponent(query)}`, {
-            timeout: 10000
-          });
+          const response = await axios.get(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`, { timeout: 10000 });
           if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            // Pick best match - prefer exact title match, then most popular
             const best = response.data[0];
             if (best.plainLyrics) {
               lyricsData = {
@@ -59,16 +74,16 @@ module.exports = {
                 album: best.albumName || '',
                 duration: best.duration || 0,
                 lyrics: best.plainLyrics,
-                syncedLyrics: best.syncedLyrics || null
+                source: 'lrclib.net'
               };
             }
           }
         } catch (err) {
-          console.log('[lyrics] lrclib search failed:', err.message);
+          console.log('[lyrics] lrclib failed:', err.message);
         }
       }
 
-      // API 2: lyrics.ovh (fallback)
+      // API 3: lyrics.ovh (last resort - needs artist separated by -)
       if (!lyricsData) {
         try {
           const parts = query.split(' - ');
@@ -87,7 +102,7 @@ module.exports = {
               album: '',
               duration: 0,
               lyrics: response.data.lyrics,
-              syncedLyrics: null
+              source: 'lyrics.ovh'
             };
           }
         } catch (err) {
@@ -95,46 +110,9 @@ module.exports = {
         }
       }
 
-      // API 3: Genius scrape (last resort - no API key needed)
-      if (!lyricsData) {
-        try {
-          const searchRes = await axios.get(`https://genius.com/api/search?q=${encodeURIComponent(query)}`, { timeout: 10000 });
-          const hits = searchRes.data?.response?.hits;
-          if (hits && hits.length > 0) {
-            const result = hits[0].result;
-            const pageRes = await axios.get(result.url, { timeout: 10000 });
-            const $ = cheerio.load(pageRes.data);
-            let lyricsHtml = '';
-            $('[data-lyrics-container="true"]').each((i, el) => {
-              lyricsHtml += $(el).html();
-            });
-            if (lyricsHtml) {
-              let lyrics = lyricsHtml.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
-              lyrics = lyrics.replace(/&amp;/g, '&').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&#x60;/g, '`').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-              // Strip header junk (contributors, translations, etc.)
-              const lines = lyrics.split('\n');
-              const startIdx = lines.findIndex(l => l.trim().startsWith('[') || l.trim().length > 20);
-              lyrics = startIdx >= 0 ? lines.slice(startIdx).join('\n').trim() : lyrics.trim();
-              if (lyrics.length > 50) {
-                lyricsData = {
-                  title: result.songTitle || result.title || query,
-                  artist: result.primary_artist?.name || 'Unknown',
-                  album: '',
-                  duration: 0,
-                  lyrics: lyrics,
-                  syncedLyrics: null
-                };
-              }
-            }
-          }
-        } catch (err) {
-          console.log('[lyrics] Genius scrape failed:', err.message);
-        }
-      }
-
       if (!lyricsData) {
         return await sock.sendMessage(msg.key.remoteJid, {
-          text: `Could not find lyrics for "${query}"\n\nTip: Try "Artist - Title" format (e.g. ${config.prefix}lyrics Luis Fonsi - Despacito)`
+          text: `Could not find lyrics for "${query}"\n\nJust type: ${config.prefix}lyrics songname artist`
         });
       }
 
@@ -145,11 +123,10 @@ module.exports = {
       }
 
       const albumLine = lyricsData.album ? `\nAlbum: ${lyricsData.album}` : '';
-      const source = lyricsData.syncedLyrics ? 'lrclib.net' : (lyricsData.album ? 'lyrics.ovh' : 'Genius');
       const caption = `*${lyricsData.title}*\n` +
                      `Artist: ${lyricsData.artist}${albumLine}\n\n` +
                      `${lyrics}\n\n` +
-                     `_Powered by ${source}_`;
+                     `_Powered by ${lyricsData.source}_`;
 
       await sock.sendMessage(msg.key.remoteJid, { text: caption });
 
