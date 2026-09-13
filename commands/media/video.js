@@ -103,36 +103,8 @@ module.exports = {
 
       await extra.react('🔄');
 
-      let videoData = null;
-      let lastError = null;
-
-      // Try yt-dlp first (primary)
-      try {
-        console.log('[VIDEO] trying yt-dlp...');
-        videoData = await fetchWithYtDlp(videoUrl);
-        console.log('[VIDEO] yt-dlp ok');
-      } catch (err) {
-        lastError = err;
-        console.log('[VIDEO] yt-dlp failed:', err.message);
-      }
-
-      // Fallback to public APIs
-      if (!videoData) {
-        try {
-          console.log('[VIDEO] trying API fallback...');
-          videoData = await fetchFromApi(videoUrl);
-          console.log('[VIDEO] API fallback ok');
-        } catch (err) {
-          lastError = err;
-          console.log('[VIDEO] API fallback failed:', err.message);
-        }
-      }
-
-      if (!videoData || !videoData.url) {
-        return extra.reply(
-          "❌ couldn't get the video link\n\nAll download sources failed.\nTry using a direct video link instead."
-        );
-      }
+      // YouTube video download is currently unavailable
+      return extra.reply('❌ YouTube video download is temporarily unavailable. No working API found. Try again later.');
 
       const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}`;
       let sendSuccess = false;
