@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Neko Command - Get random neko anime images
  */
 
@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
 
-const BASE = 'https://api.waifu.pics/sfw/neko';
+const BASE = 'https://nekos.life/api/v2/img/neko';
 const API_KEY = 'prince';
 
 module.exports = {

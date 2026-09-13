@@ -3,7 +3,6 @@ module.exports = {
   description: 'Roll a dice (default d6)',
   category: 'games',
   aliases: ['roll'],
-  category: 'games',
   execute: async (sock, msg, args, ctx) => {
     const sides = parseInt(args[0]) || 6;
     if (sides < 2) return ctx.reply('Min sides: 2');

@@ -9,7 +9,7 @@ module.exports = {
   name: 'impressive',
   aliases: [],
   category: 'textmaker',
-  description: 'Create impre  ssive text effect',
+  description: 'Create impressive text effect',
   usage: '.impressive <text>',
   
   async execute(sock, msg, args) {

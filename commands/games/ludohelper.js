@@ -2,6 +2,7 @@ const state = new Map();
 module.exports = {
   name: 'ludo',
   description: 'Ludo dice roller and score tracker',
+  category: 'games',
   aliases: ['ludodice'],
   execute: async (sock, msg, args, ctx) => {
     const sub = (args[0] || '').toLowerCase();

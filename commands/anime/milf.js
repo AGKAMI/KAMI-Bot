@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Milf Command - Get random milf anime images
  */
 
@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
 
-const BASE = 'https://api.waifu.pics/sfw/megumin';
+const BASE = 'https://nekos.life/api/v2/img/waifu';
 const API_KEY = 'prince';
 
 module.exports = {
