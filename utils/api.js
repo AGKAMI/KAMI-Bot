@@ -65,9 +65,65 @@ const APIs = {
     ]);
   },
   
-  // YouTube Download
+  // YouTube Download - uses loader.to
   ytDownload: async (url, type = 'audio') => {
-    throw new Error('YouTube download API is currently unavailable. Try again later.');
+    const format = type === 'video' ? 'mp4' : 'mp3';
+    const encodedUrl = encodeURIComponent(url);
+    
+    // Step 1: Start the download job
+    const startRes = await api.get(`https://loader.to/ajax/download.php?format=${format}&url=${encodedUrl}`, { timeout: 15000 });
+    if (!startRes.data || !startRes.data.success || !startRes.data.id) {
+      throw new Error('Failed to start download');
+    }
+    
+    const jobId = startRes.data.id;
+    const title = startRes.data.title || 'YouTube Download';
+    const thumbnail = startRes.data.thumbnail_url || startRes.data.info?.image;
+    const progressUrl = startRes.data.progress_url;
+    
+    if (!progressUrl) throw new Error('No progress URL');
+    
+    // Step 2: Poll progress until complete
+    const maxAttempts = 60; // 60 * 2 seconds = 2 minutes max
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      
+      try {
+        const progressRes = await api.get(progressUrl, { timeout: 10000 });
+        const progress = progressRes.data;
+        
+        if (progress.download_url) {
+          return {
+            download: progress.download_url,
+            title: progress.title || title,
+            thumbnail: progress.thumbnail_url || thumbnail,
+            format: format
+          };
+        }
+        
+        if (progress.progress === 1000 || progress.text === 'Finished') {
+          if (progress.download_url) {
+            return {
+              download: progress.download_url,
+              title: progress.title || title,
+              thumbnail: progress.thumbnail_url || thumbnail,
+              format: format
+            };
+          }
+          throw new Error('Progress finished but no download URL');
+        }
+        
+        // Check for errors
+        if (progress.success === 0 || progress.text?.includes('error')) {
+          throw new Error(progress.text || 'Download failed');
+        }
+      } catch (pollErr) {
+        if (pollErr.message === 'Download failed') throw pollErr;
+        // Continue polling on network errors
+      }
+    }
+    
+    throw new Error('Download timed out');
   },
   
   // Instagram Download

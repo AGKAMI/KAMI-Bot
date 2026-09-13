@@ -103,30 +103,38 @@ module.exports = {
 
       await extra.react('🔄');
 
-      // YouTube video download is currently unavailable
-      return extra.reply('❌ YouTube video download is temporarily unavailable. No working API found. Try again later.');
+      // Use loader.to API for video download
+      let videoData;
+      try {
+        const APIs = require('../../utils/api');
+        videoData = await APIs.ytDownload(videoUrl, 'video');
+      } catch (err) {
+        console.log('[VIDEO] download failed:', err.message);
+        return extra.reply(`❌ Download failed: ${err.message}`);
+      }
+
+      const videoDlUrl = videoData.download;
+      if (!videoDlUrl) {
+        return extra.reply('❌ No download URL received');
+      }
 
       const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}`;
       let sendSuccess = false;
 
       // Method 1: direct URL
       try {
-        console.log('[VIDEO] Method 1 direct URL');
         await sock.sendMessage(extra.from, {
-          video: { url: videoData.url },
+          video: { url: videoDlUrl },
           caption,
         }, { quoted: msg });
         sendSuccess = true;
       } catch (e1) {
-        console.log('[VIDEO] Method 1 failed:', e1.message);
-        // Method 2: download buffer (500MB limit)
+        // Method 2: download buffer
         try {
-          console.log('[VIDEO] Method 2 buffer');
-          const videoResponse = await axios.get(videoData.url, {
+          const videoResponse = await axios.get(videoDlUrl, {
             responseType: 'arraybuffer',
             timeout: 120000,
-            maxContentLength: 500 * 1024 * 1024,
-            proxy: false,
+            maxContentLength: 50 * 1024 * 1024,
           });
           const buffer = Buffer.from(videoResponse.data);
           await sock.sendMessage(extra.from, {
@@ -136,14 +144,12 @@ module.exports = {
           }, { quoted: msg });
           sendSuccess = true;
         } catch (e2) {
-          console.log('[VIDEO] Method 2 failed:', e2.message);
+          console.log('[VIDEO] buffer download failed:', e2.message);
         }
       }
 
       if (!sendSuccess) {
-        return extra.reply(
-          '❌ could not download the video\n\nThe file might be too large for WhatsApp (>100MB).\nTry:\n• A shorter video\n• Using browser to download manually'
-        );
+        return extra.reply('❌ Could not download the video. Try a shorter video.');
       }
 
       await extra.react('✅');
