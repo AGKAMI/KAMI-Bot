@@ -70,8 +70,17 @@ const APIs = {
     const format = type === 'video' ? 'mp4' : 'mp3';
     const encodedUrl = encodeURIComponent(url);
     
-    // Step 1: Start the download job
-    const startRes = await api.get(`https://loader.to/ajax/download.php?format=${format}&url=${encodedUrl}`, { timeout: 15000 });
+    // Step 1: Start the download job with proper headers
+    const startRes = await axios.get(`https://loader.to/ajax/download.php?format=${format}&url=${encodedUrl}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://loader.to/',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      timeout: 15000
+    });
+    
     if (!startRes.data || !startRes.data.success || !startRes.data.id) {
       throw new Error('Failed to start download');
     }
@@ -89,7 +98,7 @@ const APIs = {
       await new Promise(r => setTimeout(r, 2000));
       
       try {
-        const progressRes = await api.get(progressUrl, { timeout: 10000 });
+        const progressRes = await axios.get(progressUrl, { timeout: 10000 });
         const progress = progressRes.data;
         
         if (progress.download_url) {
@@ -126,14 +135,17 @@ const APIs = {
     throw new Error('Download timed out');
   },
   
-  // Instagram Download
+  // Instagram Download - uses FastSaver API
   igDownload: async (url) => {
     return firstSuccess([
       async () => {
-        const r = await api.get(`https://api.ryzendesu.vip/api/downloader/igdl`, { params: { url } });
-        if (r.data && (r.data.result || r.data.url || r.data.data)) {
-          const d = r.data.result || r.data.data || r.data;
-          if (d.url || d.download) return { url: d.url || d.download, type: d.type || 'video' };
+        const r = await api.get('https://api.fastsaver.io/v1/fetch', {
+          params: { url },
+          headers: { 'X-Api-Key': 'fs_sk_8n3p7x0j1y2w8d6n9t8e1t3s2i3i' },
+          timeout: 15000
+        });
+        if (r.data && r.data.ok && r.data.download_url) {
+          return { url: r.data.download_url, type: r.data.type || 'video' };
         }
         throw new Error('no download');
       }
