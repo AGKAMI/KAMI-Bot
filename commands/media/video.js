@@ -1,57 +1,12 @@
 /**
  * Video Downloader - Download video from YouTube
- * Primary: yt-dlp (system binary), Fallback: public APIs
  */
 
-const { exec } = require('child_process');
-const util = require('util');
-const execPromise = util.promisify(exec);
+const yts = require('yt-search');
 const axios = require('axios');
-const config = require('../../config');
+const APIs = require('../../utils/api');
 
 const processedMessages = new Set();
-
-async function fetchWithYtDlp(url) {
-  try {
-    const ytDlpCmd = config.ytDlpPath || 'yt-dlp';
-    const { stdout } = await execPromise(`${ytDlpCmd} -g -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" "${url}"`, {
-      maxBuffer: 5 * 1024 * 1024,
-      timeout: 60000,
-    });
-    const videoUrl = stdout.trim().split('\n').pop();
-    if (!videoUrl) throw new Error('yt-dlp returned empty URL');
-    const { stdout: titleOut } = await execPromise(`${ytDlpCmd} --get-title "${url}"`, {
-      maxBuffer: 1024 * 1024,
-      timeout: 30000,
-    });
-    return { url: videoUrl, title: titleOut.trim() || 'YouTube Video' };
-  } catch (err) {
-    throw new Error('yt-dlp failed: ' + err.message);
-  }
-}
-
-async function fetchFromApi(url) {
-  const endpoints = [
-    `https://api.siputzx.my.id/api/d/ytmp4?url=${encodeURIComponent(url)}`,
-    `https://api.ryzendesu.vip/api/downloader/youtube?url=${encodeURIComponent(url)}`,
-    `https://api.akuari.my.id/downloader/youtube?url=${encodeURIComponent(url)}`,
-  ];
-  for (const ep of endpoints) {
-    try {
-      const res = await axios.get(ep, { timeout: 30000 });
-      const d = res.data;
-      if (d?.data?.url || d?.result?.url || d?.url) {
-        return {
-          url: d.data?.url || d.result?.url || d.url,
-          title: d.data?.title || d.result?.title || d.title || 'YouTube Video',
-        };
-      }
-    } catch (e) {
-      continue;
-    }
-  }
-  throw new Error('All APIs returned empty');
-}
 
 module.exports = {
   name: 'ytvideo',
@@ -80,7 +35,6 @@ module.exports = {
       // If not a URL, search with yt-search
       if (!text.startsWith('http://') && !text.startsWith('https://')) {
         try {
-          const yts = require('yt-search');
           const { videos } = await yts(text);
           if (!videos || videos.length === 0) {
             return extra.reply('No videos found!');
