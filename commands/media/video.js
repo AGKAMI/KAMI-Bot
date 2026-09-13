@@ -1,203 +1,184 @@
 /**
  * Video Downloader - Download video from YouTube
+ * Primary: yt-dlp (system binary), Fallback: public APIs
  */
 
-const yts = require('yt-search');
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
 const axios = require('axios');
-const APIs = require('../../utils/api');
 const config = require('../../config');
+
+const processedMessages = new Set();
+
+async function fetchWithYtDlp(url) {
+  try {
+    const ytDlpCmd = config.ytDlpPath || 'yt-dlp';
+    const { stdout } = await execPromise(`${ytDlpCmd} -g -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" "${url}"`, {
+      maxBuffer: 5 * 1024 * 1024,
+      timeout: 60000,
+    });
+    const videoUrl = stdout.trim().split('\n').pop();
+    if (!videoUrl) throw new Error('yt-dlp returned empty URL');
+    const { stdout: titleOut } = await execPromise(`${ytDlpCmd} --get-title "${url}"`, {
+      maxBuffer: 1024 * 1024,
+      timeout: 30000,
+    });
+    return { url: videoUrl, title: titleOut.trim() || 'YouTube Video' };
+  } catch (err) {
+    throw new Error('yt-dlp failed: ' + err.message);
+  }
+}
+
+async function fetchFromApi(url) {
+  const endpoints = [
+    `https://api.siputzx.my.id/api/d/ytmp4?url=${encodeURIComponent(url)}`,
+    `https://api.ryzendesu.vip/api/downloader/youtube?url=${encodeURIComponent(url)}`,
+    `https://api.akuari.my.id/downloader/youtube?url=${encodeURIComponent(url)}`,
+  ];
+  for (const ep of endpoints) {
+    try {
+      const res = await axios.get(ep, { timeout: 30000 });
+      const d = res.data;
+      if (d?.data?.url || d?.result?.url || d?.url) {
+        return {
+          url: d.data?.url || d.result?.url || d.url,
+          title: d.data?.title || d.result?.title || d.title || 'YouTube Video',
+        };
+      }
+    } catch (e) {
+      continue;
+    }
+  }
+  throw new Error('All APIs returned empty');
+}
 
 module.exports = {
   name: 'ytvideo',
   aliases: ['ytv', 'ytmp4', 'ytvid', 'video'],
   category: 'media',
   description: 'Download video from YouTube',
-  usage: '.video <video name or URL>',
+  usage: '.video <YouTube URL or search>',
 
-  async execute(sock, msg, args) {
+  async execute(sock, msg, args, extra) {
     try {
-      const text = args.join(' ');
-      const chatId = msg.key.remoteJid;
-      const searchQuery = text.trim();
+      if (processedMessages.has(msg.key.id)) return;
+      processedMessages.add(msg.key.id);
+      setTimeout(() => processedMessages.delete(msg.key.id), 5 * 60 * 1000);
 
-      if (!searchQuery) {
-        return await sock.sendMessage(chatId, {
-          text: 'What video do you want to download?'
-        }, { quoted: msg });
+      const text = (msg.message?.conversation ||
+        msg.message?.extendedTextMessage?.text ||
+        args.join(' ')).trim();
+
+      if (!text) {
+        return extra.reply('What video do you want to download?');
       }
 
-      let videoUrl = '';
+      let videoUrl = text;
       let videoTitle = '';
-      let videoThumbnail = '';
 
-      if (searchQuery.startsWith('http://') || searchQuery.startsWith('https://')) {
-        videoUrl = searchQuery;
-      } else {
-        const { videos } = await yts(searchQuery);
-        if (!videos || videos.length === 0) {
-          return await sock.sendMessage(chatId, {
-            text: 'No videos found!'
-          }, { quoted: msg });
+      // If not a URL, search with yt-search
+      if (!text.startsWith('http://') && !text.startsWith('https://')) {
+        try {
+          const yts = require('yt-search');
+          const { videos } = await yts(text);
+          if (!videos || videos.length === 0) {
+            return extra.reply('No videos found!');
+          }
+          videoUrl = videos[0].url;
+          videoTitle = videos[0].title;
+        } catch (e) {
+          return extra.reply('Search failed: ' + e.message);
         }
-        videoUrl = videos[0].url;
-        videoTitle = videos[0].title;
-        videoThumbnail = videos[0].thumbnail;
       }
 
-      const ytId = (videoUrl.match(/(?:youtu\.be\/|v=)([a-zA-Z0-9_-]{11})/) || [])[1];
-      const thumb = videoThumbnail || (ytId ? `https://i.ytimg.com/vi/${ytId}/sddefault.jpg` : undefined);
-      const captionTitle = videoTitle || searchQuery;
-      if (thumb) {
-        await sock.sendMessage(chatId, {
-          image: { url: thumb },
-          caption: `*${captionTitle}*\nDownloading...`
-        }, { quoted: msg });
+      const patterns = [
+        /https?:\/\/(?:www\.)?youtube\.com\/watch\?v=/,
+        /https?:\/\/youtu\.be\//,
+        /https?:\/\/(?:www\.)?youtube\.com\/shorts\//,
+      ];
+      if (!patterns.some(p => p.test(videoUrl))) {
+        return extra.reply('❌ invalid youtube link\nuse: .video <youtube url or search>');
       }
 
-      if (!ytId) {
-        return await sock.sendMessage(chatId, {
-          text: 'This is not a valid YouTube link!'
-        }, { quoted: msg });
-      }
+      await extra.react('🔄');
 
-      // Try multiple download methods
-      let downloadUrl = null;
-      let finalTitle = videoTitle || 'Video';
-      let methodUsed = '';
+      let videoData = null;
+      let lastError = null;
 
-      // Method 1: Try bochilteam scraper-youtube youtubedl (y2mate)
+      // Try yt-dlp first (primary)
       try {
-        const { youtubedl } = require('@bochilteam/scraper-youtube');
-        const data = await youtubedl(videoUrl);
-        if (data?.video) {
-          const qualities = ['720p', '480p', '360p'];
-          for (const q of qualities) {
-            if (data.video[q]) {
-              downloadUrl = await data.video[q].download();
-              finalTitle = data.title;
-              methodUsed = 'y2mate';
-              break;
-            }
-          }
-        }
-      } catch (e) {
-        console.log('[VIDEO] y2mate failed:', e.message);
+        console.log('[VIDEO] trying yt-dlp...');
+        videoData = await fetchWithYtDlp(videoUrl);
+        console.log('[VIDEO] yt-dlp ok');
+      } catch (err) {
+        lastError = err;
+        console.log('[VIDEO] yt-dlp failed:', err.message);
       }
 
-      // Method 2: Try youtubedlv2 (ssyoutube)
-      if (!downloadUrl) {
+      // Fallback to public APIs
+      if (!videoData) {
         try {
-          const { youtubedlv2 } = require('@bochilteam/scraper-youtube');
-          const data = await youtubedlv2(videoUrl);
-          if (data?.video) {
-            const qualities = ['720p', '480p', '360p'];
-            for (const q of qualities) {
-              if (data.video[q]) {
-                downloadUrl = typeof data.video[q].download === 'function' ? await data.video[q].download() : data.video[q].download;
-                finalTitle = data.title;
-                methodUsed = 'ssyoutube';
-                break;
-              }
-            }
-          }
-        } catch (e) {
-          console.log('[VIDEO] ssyoutube failed:', e.message);
+          console.log('[VIDEO] trying API fallback...');
+          videoData = await fetchFromApi(videoUrl);
+          console.log('[VIDEO] API fallback ok');
+        } catch (err) {
+          lastError = err;
+          console.log('[VIDEO] API fallback failed:', err.message);
         }
       }
 
-      // Method 3: Try existing API fallbacks
-      if (!downloadUrl) {
-        try {
-          const videoData = await APIs.getEliteProTechVideoByUrl(videoUrl);
-          downloadUrl = videoData.download;
-          finalTitle = videoData.title || finalTitle;
-          methodUsed = 'eliteprotech';
-        } catch (e1) {
-          try {
-            const videoData = await APIs.getYupraVideoByUrl(videoUrl);
-            downloadUrl = videoData.download;
-            finalTitle = videoData.title || finalTitle;
-            methodUsed = 'yupra';
-          } catch (e2) {
-            try {
-              const videoData = await APIs.getOkatsuVideoByUrl(videoUrl);
-              downloadUrl = videoData.download;
-              finalTitle = videoData.title || finalTitle;
-              methodUsed = 'okatsu';
-            } catch (e3) {
-              console.log('[VIDEO] okatsu failed');
-              try {
-                const videoData = await APIs.getAkuariVideoByUrl(videoUrl);
-                downloadUrl = videoData.download;
-                finalTitle = videoData.title || finalTitle;
-                methodUsed = 'akuari';
-              } catch (e4) {
-                try {
-                  const videoData = await APIs.getRyzendesuVideoByUrl(videoUrl);
-                  downloadUrl = videoData.download;
-                  finalTitle = videoData.title || finalTitle;
-                  methodUsed = 'ryzendesu';
-                } catch (e5) {
-                  console.log('[VIDEO] API fallbacks all failed');
-                }
-              }
-            }
-          }
-        }
+      if (!videoData || !videoData.url) {
+        return extra.reply(
+          "❌ couldn't get the video link\n\nAll download sources failed.\nTry using a direct video link instead."
+        );
       }
 
-      // Method 4: Try direct ytdl-core
-      if (!downloadUrl) {
-        try {
-          const ytdl = require('ytdl-core');
-          const info = await ytdl.getInfo(videoUrl);
-          const format = info.formats
-            .filter(f => f.hasVideo && f.hasAudio)
-            .sort((a, b) => (b.qualityLabel?.includes('720p') ? 1 : 0) - (a.qualityLabel?.includes('720p') ? 1 : 0))
-            .find(f => f.url);
-          if (format?.url) {
-            downloadUrl = format.url;
-            finalTitle = info.videoDetails.title;
-            methodUsed = 'ytdl-core';
-          }
-        } catch (e) {
-          console.log('[VIDEO] ytdl-core failed:', e.message);
-        }
-      }
+      const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}`;
+      let sendSuccess = false;
 
-      // Method 5: Try siputzx API
-      if (!downloadUrl) {
+      // Method 1: direct URL
+      try {
+        console.log('[VIDEO] Method 1 direct URL');
+        await sock.sendMessage(extra.from, {
+          video: { url: videoData.url },
+          caption,
+        }, { quoted: msg });
+        sendSuccess = true;
+      } catch (e1) {
+        console.log('[VIDEO] Method 1 failed:', e1.message);
+        // Method 2: download buffer (500MB limit)
         try {
-          const res = await axios.get(`https://api.siputzx.my.id/api/d/ytmp4`, {
-            params: { url: videoUrl },
-            timeout: 20000
+          console.log('[VIDEO] Method 2 buffer');
+          const videoResponse = await axios.get(videoData.url, {
+            responseType: 'arraybuffer',
+            timeout: 120000,
+            maxContentLength: 500 * 1024 * 1024,
+            proxy: false,
           });
-          if (res?.data?.data?.url) {
-            downloadUrl = res.data.data.url;
-            finalTitle = res.data.data.title || finalTitle;
-            methodUsed = 'siputzx';
-          }
-        } catch (e) {
-          console.log('[VIDEO] siputzx failed:', e.message);
+          const buffer = Buffer.from(videoResponse.data);
+          await sock.sendMessage(extra.from, {
+            video: buffer,
+            mimetype: 'video/mp4',
+            caption,
+          }, { quoted: msg });
+          sendSuccess = true;
+        } catch (e2) {
+          console.log('[VIDEO] Method 2 failed:', e2.message);
         }
       }
 
-      if (!downloadUrl) {
-        throw new Error('All download methods failed');
+      if (!sendSuccess) {
+        return extra.reply(
+          '❌ could not download the video\n\nThe file might be too large for WhatsApp (>100MB).\nTry:\n• A shorter video\n• Using browser to download manually'
+        );
       }
 
-      await sock.sendMessage(chatId, {
-        video: { url: downloadUrl },
-        mimetype: 'video/mp4',
-        fileName: `${finalTitle.replace(/[^\w\s-]/g, '')}.mp4`,
-        caption: `*${finalTitle}*\n\n> *_Downloaded by ${config.botName}_*`
-      }, { quoted: msg });
-
+      await extra.react('✅');
     } catch (error) {
-      console.error('[VIDEO] Command Error:', error?.message || error);
-      await sock.sendMessage(msg.key.remoteJid, {
-        text: 'Download failed: ' + (error?.message || 'Unknown error')
-      }, { quoted: msg });
+      console.error('[VIDEO] Error:', error.message || error);
+      await extra.react('❌');
+      await extra.reply('❌ Error: ' + (error.message || 'try again later'));
     }
   }
 };
