@@ -45,16 +45,11 @@ const APIs = {
   generateImage: async (prompt) => {
     return firstSuccess([
       async () => {
-        const r = await api.get('https://api.siputzx.my.id/api/ai/stablediffusion', { params: { prompt } });
-        return r.data;
-      },
-      async () => {
-        const r = await api.get('https://api.ryzendesu.vip/api/ai/diffusion', { params: { prompt, style: 'anime' } });
-        return r.data;
-      },
-      async () => {
-        const r = await api.get('https://api.alyachan.my.id/api/ai/imagetoimage', { params: { text: prompt } });
-        return r.data;
+        const encoded = encodeURIComponent(prompt);
+        const url = `https://image.pollinations.ai/prompt/${encoded}?width=512&height=512&nologo=true`;
+        const r = await api.get(url, { timeout: 60000, responseType: 'arraybuffer' });
+        if (r.data && r.data.length > 1000) return { imageBuffer: Buffer.from(r.data) };
+        throw new Error('invalid image');
       }
     ]);
   },
@@ -66,63 +61,25 @@ const APIs = {
         const r = await api.get(`https://api.shizo.top/ai/gpt?apikey=shizo&query=${encodeURIComponent(text)}`);
         if (r.data && r.data.msg) return { msg: r.data.msg };
         return r.data;
-      },
-      async () => {
-        const r = await api.get(`https://api.ryzendesu.vip/api/ai/gpt?text=${encodeURIComponent(text)}`);
-        if (r.data && (r.data.answer || r.data.response || r.data.msg)) {
-          return { msg: r.data.answer || r.data.response || r.data.msg };
-        }
-        throw new Error('no response');
-      },
-      async () => {
-        const r = await api.get(`https://api.alyachan.my.id/api/gpt?q=${encodeURIComponent(text)}`);
-        if (r.data && (r.data.message || r.data.result || r.data.response || r.data.msg)) {
-          return { msg: r.data.message || r.data.result || r.data.response || r.data.msg };
-        }
-        throw new Error('no response');
-      },
-      async () => {
-        const r = await api.get(`https://api.agatz.xyz/api/chatgpt?message=${encodeURIComponent(text)}`);
-        if (r.data && (r.data.data || r.data.response || r.data.msg)) {
-          return { msg: r.data.data || r.data.response || r.data.msg };
-        }
-        throw new Error('no response');
       }
     ]);
   },
   
   // YouTube Download
   ytDownload: async (url, type = 'audio') => {
-    return firstSuccess([
-      async () => {
-        const r = await api.get('https://api.siputzx.my.id/api/d/ytmp3', { params: { url } });
-        return r.data;
-      },
-      async () => {
-        const r = await api.get('https://api.ryzendesu.vip/api/downloader/ytmp3', { params: { url } });
-        return r.data;
-      },
-      async () => {
-        const r = await api.get('https://api.akuari.my.id/downloader/ytmp3', { params: { url } });
-        return r.data;
-      }
-    ]);
+    throw new Error('YouTube download API is currently unavailable. Try again later.');
   },
   
   // Instagram Download
   igDownload: async (url) => {
     return firstSuccess([
       async () => {
-        const r = await api.get('https://api.siputzx.my.id/api/d/igdl', { params: { url } });
-        return r.data;
-      },
-      async () => {
-        const r = await api.get('https://api.ryzendesu.vip/api/downloader/igdl', { params: { url } });
-        return r.data;
-      },
-      async () => {
-        const r = await api.get('https://api.akuari.my.id/downloader/instagram', { params: { url } });
-        return r.data;
+        const r = await api.get(`https://api.ryzendesu.vip/api/downloader/igdl`, { params: { url } });
+        if (r.data && (r.data.result || r.data.url || r.data.data)) {
+          const d = r.data.result || r.data.data || r.data;
+          if (d.url || d.download) return { url: d.url || d.download, type: d.type || 'video' };
+        }
+        throw new Error('no download');
       }
     ]);
   },
@@ -183,10 +140,6 @@ const APIs = {
   getQuote: async () => {
     return firstSuccess([
       async () => {
-        const r = await api.get('https://api.quotable.io/random');
-        return r.data;
-      },
-      async () => {
         const r = await api.get('https://zenquotes.io/api/random');
         if (r.data && r.data[0]) return { content: r.data[0].q, author: r.data[0].a };
         throw new Error('no quote');
@@ -213,12 +166,19 @@ const APIs = {
   getWeather: async (city) => {
     return firstSuccess([
       async () => {
-        const r = await api.get('https://api.siputzx.my.id/api/tools/weather', { params: { city } });
-        return r.data;
-      },
-      async () => {
-        const r = await api.get('https://api.ryzendesu.vip/api/tools/weather', { params: { city } });
-        return r.data;
+        const r = await api.get(`https://wttr.in/${encodeURIComponent(city)}?format=j1`, { timeout: 10000 });
+        const data = r.data;
+        const current = data.current_condition?.[0];
+        if (!current) throw new Error('no data');
+        return {
+          city: city,
+          temp: current.temp_C,
+          feelsLike: current.FeelsLikeC,
+          humidity: current.humidity,
+          wind: current.windspeedKmph,
+          desc: current.weatherDesc?.[0]?.value || 'Unknown',
+          country: data.nearest_area?.[0]?.country?.[0]?.value || ''
+        };
       },
       async () => {
         const r = await api.get(`https://wttr.in/${encodeURIComponent(city)}?format=%C+%t+%w+%h`);
@@ -248,216 +208,59 @@ const APIs = {
     return r.data;
   },
   
-  // Song Download APIs
+  // Song Download APIs (all currently unavailable)
   getIzumiDownloadByUrl: async (youtubeUrl) => {
-    const apiUrl = `https://izumiiiiiiii.dpdns.org/downloader/youtube?url=${encodeURIComponent(youtubeUrl)}&format=mp3`;
-    const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-    if (res?.data?.result?.download) return res.data.result;
-    throw new Error('Izumi youtube?url returned no download');
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
   getIzumiDownloadByQuery: async (query) => {
-    const apiUrl = `https://izumiiiiiiii.dpdns.org/downloader/youtube-play?query=${encodeURIComponent(query)}`;
-    const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-    if (res?.data?.result?.download) return res.data.result;
-    throw new Error('Izumi youtube-play returned no download');
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
   getYupraDownloadByUrl: async (youtubeUrl) => {
-    return firstSuccess([
-      async () => {
-        const apiUrl = `https://api.yupra.my.id/api/downloader/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.success && res?.data?.data?.download_url) {
-          return { download: res.data.data.download_url, title: res.data.data.title, thumbnail: res.data.data.thumbnail };
-        }
-        throw new Error('Yupra returned no download');
-      },
-      async () => {
-        const apiUrl = `https://api.ryzendesu.vip/api/downloader/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.result?.download || res?.data?.download?.url) {
-          return { download: res.data.result?.download || res.data.download?.url, title: res.data.result?.title || res.data.title };
-        }
-        throw new Error('Ryzendesu ytmp3 returned no download');
-      }
-    ]);
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
   getOkatsuDownloadByUrl: async (youtubeUrl) => {
-    return firstSuccess([
-      async () => {
-        const apiUrl = `https://okatsu-rolezapiiz.vercel.app/downloader/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.dl) {
-          return { download: res.data.dl, title: res.data.title, thumbnail: res.data.thumb };
-        }
-        throw new Error('Okatsu ytmp3 returned no download');
-      },
-      async () => {
-        const apiUrl = `https://api.akuari.my.id/downloader/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.result?.url || res?.data?.url) {
-          return { download: res.data.result?.url || res.data.url, title: res.data.result?.title || res.data.title };
-        }
-        throw new Error('Akuari ytmp3 returned no download');
-      }
-    ]);
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
   getEliteProTechDownloadByUrl: async (youtubeUrl) => {
-    return firstSuccess([
-      async () => {
-        const apiUrl = `https://eliteprotech-apis.zone.id/ytdown?url=${encodeURIComponent(youtubeUrl)}&format=mp3`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.success && res?.data?.downloadURL) {
-          return { download: res.data.downloadURL, title: res.data.title };
-        }
-        throw new Error('EliteProTech ytdown returned no download');
-      },
-      async () => {
-        const apiUrl = `https://api.agatz.xyz/api/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.data?.url || res?.data?.url) {
-          return { download: res.data.data?.url || res.data.url, title: res.data.data?.title || res.data.title };
-        }
-        throw new Error('Agatz ytmp3 returned no download');
-      }
-    ]);
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
   getAkuariDownloadByUrl: async (youtubeUrl) => {
-    const apiUrl = `https://api.akuari.my.id/downloader/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-    const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-    if (res?.data?.result?.url || res?.data?.url) {
-      return { download: res.data.result?.url || res.data.url, title: res.data.result?.title || res.data.title };
-    }
-    throw new Error('Akuari ytmp3 returned no download');
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
   getRyzendesuDownloadByUrl: async (youtubeUrl) => {
-    const apiUrl = `https://api.ryzendesu.vip/api/downloader/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
-    const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-    if (res?.data?.result?.download || res?.data?.download?.url) {
-      return { download: res.data.result?.download || res.data.download?.url, title: res.data.result?.title || res.data.title };
-    }
-    throw new Error('Ryzendesu ytmp3 returned no download');
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
   getEliteProTechVideoByUrl: async (youtubeUrl) => {
-    return firstSuccess([
-      async () => {
-        const apiUrl = `https://eliteprotech-apis.zone.id/ytdown?url=${encodeURIComponent(youtubeUrl)}&format=mp4`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.success && res?.data?.downloadURL) {
-          return { download: res.data.downloadURL, title: res.data.title };
-        }
-        throw new Error('EliteProTech ytdown video returned no download');
-      },
-      async () => {
-        const apiUrl = `https://api.ryzendesu.vip/api/downloader/ytmp4?url=${encodeURIComponent(youtubeUrl)}`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.result?.url || res?.data?.download?.url) {
-          return { download: res.data.result?.url || res.data.download?.url, title: res.data.result?.title || res.data.title };
-        }
-        throw new Error('Ryzendesu ytmp4 returned no download');
-      }
-    ]);
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
-  // Video Download APIs
+  // Video Download APIs (all currently unavailable)
   getYupraVideoByUrl: async (youtubeUrl) => {
-    return firstSuccess([
-      async () => {
-        const apiUrl = `https://api.yupra.my.id/api/downloader/ytmp4?url=${encodeURIComponent(youtubeUrl)}`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.success && res?.data?.data?.download_url) {
-          return { download: res.data.data.download_url, title: res.data.data.title, thumbnail: res.data.data.thumbnail };
-        }
-        throw new Error('Yupra returned no download');
-      },
-      async () => {
-        const apiUrl = `https://api.akuari.my.id/downloader/ytmp4?url=${encodeURIComponent(youtubeUrl)}`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.result?.url || res?.data?.url) {
-          return { download: res.data.result?.url || res.data.url, title: res.data.result?.title || res.data.title };
-        }
-        throw new Error('Akuari ytmp4 returned no download');
-      }
-    ]);
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
   getAkuariVideoByUrl: async (youtubeUrl) => {
-    const apiUrl = `https://api.akuari.my.id/downloader/ytmp4?url=${encodeURIComponent(youtubeUrl)}`;
-    const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-    if (res?.data?.result?.url || res?.data?.url) {
-      return { download: res.data.result?.url || res.data.url, title: res.data.result?.title || res.data.title };
-    }
-    throw new Error('Akuari ytmp4 returned no download');
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
   getRyzendesuVideoByUrl: async (youtubeUrl) => {
-    const apiUrl = `https://api.ryzendesu.vip/api/downloader/ytmp4?url=${encodeURIComponent(youtubeUrl)}`;
-    const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-    if (res?.data?.result?.url || res?.data?.download?.url) {
-      return { download: res.data.result?.url || res.data.download?.url, title: res.data.result?.title || res.data.title };
-    }
-    throw new Error('Ryzendesu ytmp4 returned no download');
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
   getOkatsuVideoByUrl: async (youtubeUrl) => {
-    return firstSuccess([
-      async () => {
-        const apiUrl = `https://okatsu-rolezapiiz.vercel.app/downloader/ytmp4?url=${encodeURIComponent(youtubeUrl)}`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.result?.mp4) {
-          return { download: res.data.result.mp4, title: res.data.result.title };
-        }
-        throw new Error('Okatsu ytmp4 returned no mp4');
-      },
-      async () => {
-        const apiUrl = `https://api.agatz.xyz/api/ytmp4?url=${encodeURIComponent(youtubeUrl)}`;
-        const res = await tryReq(() => axios.get(apiUrl, AX_DEFAULTS));
-        if (res?.data?.data?.url || res?.data?.url) {
-          return { download: res.data.data?.url || res.data.url, title: res.data.data?.title || res.data.title };
-        }
-        throw new Error('Agatz ytmp4 returned no download');
-      }
-    ]);
+    throw new Error('YouTube download is temporarily unavailable');
   },
   
   // TikTok Download API (for commands that call this directly)
   getTikTokDownload: async (url) => {
-    return firstSuccess([
-      async () => {
-        const r = await api.get(`https://api.siputzx.my.id/api/d/tiktok?url=${encodeURIComponent(url)}`, { timeout: 15000 });
-        if (r.data && r.data.status && r.data.data) {
-          let videoUrl = null;
-          let title = null;
-          if (r.data.data.urls && Array.isArray(r.data.data.urls) && r.data.data.urls.length > 0) {
-            videoUrl = r.data.data.urls[0]; title = r.data.data.metadata?.title || 'TikTok Video';
-          } else if (r.data.data.video_url) { videoUrl = r.data.data.video_url; title = r.data.data.metadata?.title || 'TikTok Video'; }
-          else if (r.data.data.url) { videoUrl = r.data.data.url; title = r.data.data.metadata?.title || 'TikTok Video'; }
-          else if (r.data.data.download_url) { videoUrl = r.data.data.download_url; title = r.data.data.metadata?.title || 'TikTok Video'; }
-          if (videoUrl) return { videoUrl, title };
-        }
-        throw new Error('Invalid API response');
-      },
-      async () => {
-        const r = await api.get(`https://api.ryzendesu.vip/api/downloader/tiktok?url=${encodeURIComponent(url)}`, { timeout: 15000 });
-        if (r.data && (r.data.result?.url || r.data.url || r.data.video_url)) {
-          return { videoUrl: r.data.result?.url || r.data.url || r.data.video_url, title: r.data.result?.title || r.data.title || 'TikTok Video' };
-        }
-        throw new Error('Ryzendesu TikTok no url');
-      },
-      async () => {
-        const r = await api.get(`https://api.akuari.my.id/downloader/tiktok?url=${encodeURIComponent(url)}`, { timeout: 15000 });
-        if (r.data && (r.data.result?.url || r.data.url || r.data.download_url)) {
-          return { videoUrl: r.data.result?.url || r.data.url || r.data.download_url, title: r.data.result?.title || r.data.title || 'TikTok Video' };
-        }
-        throw new Error('Akuari TikTok no url');
-      }
-    ]);
+    throw new Error('TikTok download API is currently unavailable. Try again later.');
   },
   
   // Screenshot Website API
@@ -471,14 +274,6 @@ const APIs = {
           const data = JSON.parse(Buffer.from(r.data).toString());
           return data.url || data.data?.url || data.image || null;
         } catch (e) { return Buffer.from(r.data); }
-      },
-      async () => {
-        const r = await api.get(`https://api.ryzendesu.vip/api/tools/ssweb?url=${encodeURIComponent(url)}`, { timeout: 30000, responseType: 'arraybuffer' });
-        return Buffer.from(r.data);
-      },
-      async () => {
-        const r = await api.get(`https://api.akuari.my.id/tools/screenshot?url=${encodeURIComponent(url)}`, { timeout: 30000, responseType: 'arraybuffer' });
-        return Buffer.from(r.data);
       }
     ]);
   },
@@ -501,8 +296,12 @@ const APIs = {
         throw new Error('Invalid API response');
       },
       async () => {
-        const r = await api.get(`https://api.ryzendesu.vip/api/tools/tts?text=${encodeURIComponent(text)}`, { timeout: 30000, responseType: 'arraybuffer' });
-        return Buffer.from(r.data);
+        // Fallback: use Google Translate TTS
+        const encoded = encodeURIComponent(text.substring(0, 200));
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=en&client=tw-ob`;
+        const r = await api.get(url, { timeout: 15000, responseType: 'arraybuffer' });
+        if (r.data && r.data.length > 1000) return Buffer.from(r.data);
+        throw new Error('no audio');
       }
     ]);
   }
