@@ -13,6 +13,17 @@ const fs = require('fs')
 const path = require('path')
 const { spawn } = require('child_process')
 
+// Find ffmpeg binary - try static first, then system
+let ffmpegPath = 'ffmpeg'
+try {
+  const staticPath = require('ffmpeg-static')
+  if (staticPath && fs.existsSync(staticPath)) {
+    ffmpegPath = staticPath
+  }
+} catch (_) {
+  // ffmpeg-static not available, use system ffmpeg
+}
+
 function ffmpeg(buffer, args = [], ext = '', ext2 = '') {
   return new Promise(async (resolve, reject) => {
     try {
@@ -23,7 +34,7 @@ function ffmpeg(buffer, args = [], ext = '', ext2 = '') {
       let tmp = path.join(tempDir, Date.now() + '.' + ext)
       let out = tmp + '.' + ext2
       await fs.promises.writeFile(tmp, buffer)
-      spawn('ffmpeg', [
+      spawn(ffmpegPath, [
         '-y',
         '-i', tmp,
         ...args,
