@@ -5,6 +5,7 @@
 const yts = require('yt-search');
 const axios = require('axios');
 const APIs = require('../../utils/api');
+const { toVideo } = require('../../utils/converter');
 
 const processedMessages = new Set();
 
@@ -71,38 +72,39 @@ module.exports = {
       }
 
       const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}`;
-      let sendSuccess = false;
 
-      // Method 1: direct URL
+      // Always download buffer and re-encode for WhatsApp compatibility
+      let videoBuffer;
       try {
-        await sock.sendMessage(extra.from, {
-          video: { url: videoDlUrl },
-          caption,
-        }, { quoted: msg });
-        sendSuccess = true;
-      } catch (e1) {
-        // Method 2: download buffer
-        try {
-          const videoResponse = await axios.get(videoDlUrl, {
-            responseType: 'arraybuffer',
-            timeout: 120000,
-            maxContentLength: 50 * 1024 * 1024,
-          });
-          const buffer = Buffer.from(videoResponse.data);
-          await sock.sendMessage(extra.from, {
-            video: buffer,
-            mimetype: 'video/mp4',
-            caption,
-          }, { quoted: msg });
-          sendSuccess = true;
-        } catch (e2) {
-          console.log('[VIDEO] buffer download failed:', e2.message);
+        const videoResponse = await axios.get(videoDlUrl, {
+          responseType: 'arraybuffer',
+          timeout: 120000,
+          maxContentLength: 50 * 1024 * 1024,
+        });
+        videoBuffer = Buffer.from(videoResponse.data);
+        if (!videoBuffer || videoBuffer.length === 0) {
+          throw new Error('Empty video buffer');
         }
+      } catch (dlErr) {
+        console.log('[VIDEO] download failed:', dlErr.message);
+        return extra.reply(`❌ Download failed: ${dlErr.message}`);
       }
 
-      if (!sendSuccess) {
-        return extra.reply('❌ Could not download the video. Try a shorter video.');
+      // Re-encode to WhatsApp-compatible H.264/AAC MP4
+      let encodedBuffer;
+      try {
+        encodedBuffer = await toVideo(videoBuffer, 'mp4');
+      } catch (encErr) {
+        console.log('[VIDEO] encode failed, sending raw:', encErr);
+        encodedBuffer = videoBuffer;
       }
+
+      // Send the video
+      await sock.sendMessage(extra.from, {
+        video: encodedBuffer,
+        mimetype: 'video/mp4',
+        caption,
+      }, { quoted: msg });
 
       await extra.react('✅');
     } catch (error) {
