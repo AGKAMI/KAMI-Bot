@@ -17,6 +17,8 @@ const AXIOS_DEFAULTS = {
   }
 };
 
+let activeAudioDownloads = 0;
+
 module.exports = {
   name: 'song',
   aliases: ['play', 'music', 'yta'],
@@ -25,6 +27,12 @@ module.exports = {
   usage: '.song <song name or YouTube link>',
   
   async execute(sock, msg, args) {
+    if (activeAudioDownloads >= 2) {
+      return await sock.sendMessage(msg.key.remoteJid, {
+        text: 'Too many downloads. Try again in a few seconds.'
+      }, { quoted: msg });
+    }
+    activeAudioDownloads++;
     try {
       const text = args.join(' ');
       const chatId = msg.key.remoteJid;
@@ -109,6 +117,8 @@ module.exports = {
       await sock.sendMessage(msg.key.remoteJid, { 
         text: `❌ Download failed: ${err.message}` 
       }, { quoted: msg });
+    } finally {
+      activeAudioDownloads--;
     }
   }
 };
