@@ -3,4 +3,4 @@ services:
     name: kami-cloud-api
     runtime: node
     buildCommand: npm install
-    startCommand: cd cloud-api && node server.js
+    startCommand: node cloud-api/server.js

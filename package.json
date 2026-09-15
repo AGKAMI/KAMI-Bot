@@ -1,7 +1,11 @@
 {
-  "name": "kami-bot",
+  "name": "kami-bot-cloud-api",
   "version": "1.0.0",
   "scripts": {
-    "start": "cd cloud-api && npm install && node server.js"
+    "start": "node cloud-api/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.7.2"
   }
 }
