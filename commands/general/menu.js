@@ -1,9 +1,3 @@
-/**
- * Menu Command - Display all available commands
- * Style: Clean KAMI header + vertical list sections
- * Each command now shows its description alongside its name.
- */
-
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
 const { getChannelInfo } = require('../../utils/channelInfo');
@@ -24,107 +18,89 @@ module.exports = {
 
       commands.forEach((cmd, name) => {
         if (cmd.name === name) {
-          if (!categories[cmd.category]) {
-            categories[cmd.category] = [];
-          }
+          if (!categories[cmd.category]) categories[cmd.category] = [];
           categories[cmd.category].push(cmd);
         }
       });
 
-      // ── COMMAND DESCRIPTIONS MAP ──
-      const cmdDesc = {};
-      commands.forEach((cmd, name) => {
-        if (cmd.description) cmdDesc[name] = cmd.description;
-      });
-
-      const ownerNames = Array.isArray(config.ownerName) ? config.ownerName : [config.ownerName];
-      const displayOwner = ownerNames[0] || config.ownerName || 'Bot Owner';
-
       const prefix = config.prefix || '.';
       const total = commands.size;
 
-      // ── KAMI HEADER (Box Drawing) ──
-      const header = `╔═╗╔╦╗╔═╗╔═╗╔╦╗
-║ ║ ║ ║ ║ ║ ║║║
-╚═╝ ╩ ╚═╝╚═╝ ╩ ╩
-
-      KAMI BOT`;
-
-      // ── META ──
-      const meta = `\nEDITION: 1.0.0\nSIZE: ${total} COMMANDS\nPUBLISHER: ${displayOwner}\n`;
-
-      // ── SECTION DIVIDER ──
-      const divider = '◢◤◢◤◢◤◢◤◢◤◢◤';
-      const endDivider = '◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢';
-
-      // ── SECTION BUILDER (Vertical List) ──
-      const section = (title, cmds) => {
-        const lines = cmds.map(line => `        ${line}`);
-        return `\n${divider}\n\n        ${title}\n\n${endDivider}\n\n${lines.join('\n')}\n`;
-      };
-
-      // ── SECTION MAP ──
       const categoryMeta = {
-        general:   { emoji: '⟡',  label: 'GENERAL' },
-        ai:        { emoji: '⟁',  label: 'AI CORE' },
-        admin:     { emoji: '✦',  label: 'ADMIN' },
-        owner:     { emoji: '♛',  label: 'OWNER' },
-        media:     { emoji: '◈',  label: 'MEDIA' },
-        fun:       { emoji: '⚙',  label: 'FUN' },
-        games:     { emoji: '🎲',  label: 'GAMES' },
-        utility:   { emoji: '⚙',  label: 'UTILITY' },
-        anime:     { emoji: '⟡',  label: 'ANIME' },
-        textmaker: { emoji: '✎',  label: 'TEXT MAKER' },
+        general:   { emoji: '🏠', label: 'General', desc: 'Bot info & utilities' },
+        ai:        { emoji: '🤖', label: 'AI Core', desc: 'AI-powered features' },
+        admin:     { emoji: '🛡️', label: 'Admin', desc: 'Group management' },
+        owner:     { emoji: '👑', label: 'Owner', desc: 'Bot control panel' },
+        media:     { emoji: '🎬', label: 'Media', desc: 'Download & convert' },
+        fun:       { emoji: '🎉', label: 'Fun', desc: 'Entertainment' },
+        games:     { emoji: '🎮', label: 'Games', desc: 'Play games' },
+        utility:   { emoji: '🔧', label: 'Utility', desc: 'Tools & helpers' },
+        anime:     { emoji: '⛩️', label: 'Anime', desc: 'Anime content' },
+        textmaker: { emoji: '✨', label: 'Text Maker', desc: 'Stylish text' },
       };
 
-      const order = Object.keys(categoryMeta);
+      // Build overview text
+      let overview = `*KAMI BOT*\n`;
+      overview += `━━━━━━━━━━━━━━━━━━\n\n`;
+      overview += `👋 Hey ${extra.pushName || 'User'}!\n\n`;
+      overview += `📌 *${total} commands* available\n`;
+      overview += `⚡ Prefix: *${prefix}*\n\n`;
+      overview += `Select a category below to see commands:\n`;
 
-      // ── BUILD MENU ──
-      let menuText = header + meta;
+      // Build list sections
+      const sections = [];
+      const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'owner'];
 
-      order.forEach((cat) => {
+      for (const cat of order) {
         const list = categories[cat];
-        if (!list || list.length === 0) return;
+        if (!list || list.length === 0) continue;
 
         const meta = categoryMeta[cat];
         const rows = list
-          .filter((item) => item.name)
-          .sort((a, b) => a.name.localeCompare(b.name));
+          .filter(item => item.name)
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map(cmd => ({
+            title: `${prefix}${cmd.name}`,
+            description: cmd.description || 'No description',
+            rowId: `.help ${cmd.name}`
+          }));
 
-        menuText += section(`${meta.emoji} ${meta.label} ${meta.emoji}`, rows.map(cmd => {
-          const desc = cmdDesc[cmd.name];
-          const aliasList = cmd.aliases && cmd.aliases.length > 0
-            ? ` (${cmd.aliases.map(a => prefix + a).join(', ')})`
-            : '';
-          return desc
-            ? `${prefix}${cmd.name}${aliasList} — ${desc}`
-            : `${prefix}${cmd.name}${aliasList}`;
-        }));
-      });
+        sections.push({
+          title: `${meta.emoji} ${meta.label}`,
+          rows: rows
+        });
+      }
 
-      menuText += `\n───────────────\n\n        ⟡ END OF TRANSMISSION ⟡\n`;
-
-            const channelInfo = getChannelInfo();
-
-            // Try to send with custom menu image if set
-            const imagePath = path.join(__dirname, '../../utils/bot_image.jpg');
-            if (fs.existsSync(imagePath)) {
-              const imageBuffer = fs.readFileSync(imagePath);
-              await sock.sendMessage(extra.from, {
-                image: imageBuffer,
-                caption: menuText,
-                mentions: [extra.sender],
-                ...channelInfo
-              }, { quoted: msg });
-            } else {
-              await sock.sendMessage(extra.from, {
-                text: menuText,
-                mentions: [extra.sender],
-                ...channelInfo
-              }, { quoted: msg });
-            }
-          } catch (error) {
-            await extra.reply('❌ error: ' + error.message);
-          }
-        }
+      // Send interactive list message
+      const listMessage = {
+        title: 'KAMI BOT MENU',
+        description: overview,
+        buttonText: 'Browse Commands',
+        sections: sections,
+        mentions: [extra.sender]
       };
+
+      const channelInfo = getChannelInfo();
+
+      // Try to send with image
+      const imagePath = path.join(__dirname, '../../utils/bot_image.jpg');
+      if (fs.existsSync(imagePath)) {
+        const imageBuffer = fs.readFileSync(imagePath);
+        await sock.sendMessage(extra.from, {
+          image: imageBuffer,
+          caption: overview,
+          ...listMessage,
+          ...channelInfo
+        }, { quoted: msg });
+      } else {
+        await sock.sendMessage(extra.from, {
+          ...listMessage,
+          ...channelInfo
+        }, { quoted: msg });
+      }
+    } catch (error) {
+      console.error('[MENU] Error:', error);
+      await extra.reply('Error: ' + error.message);
+    }
+  }
+};
