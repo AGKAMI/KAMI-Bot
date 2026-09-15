@@ -2,12 +2,5 @@ services:
   - type: web
     name: kami-cloud-api
     runtime: node
-    buildCommand: cd cloud-api && npm install
+    buildCommand: npm install
     startCommand: cd cloud-api && node server.js
-    envVars:
-      - key: WHATSAPP_TOKEN
-        sync: false
-      - key: PHONE_NUMBER_ID
-        sync: false
-      - key: VERIFY_TOKEN
-        value: kami-cloud-api-verify
