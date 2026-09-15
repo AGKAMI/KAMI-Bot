@@ -1,0 +1,7 @@
+{
+  "name": "kami-bot",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd cloud-api && npm install && node server.js"
+  }
+}
