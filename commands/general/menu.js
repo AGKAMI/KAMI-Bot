@@ -39,14 +39,6 @@ module.exports = {
         textmaker: { emoji: '✨', label: 'Text Maker', desc: 'Stylish text' },
       };
 
-      // Build overview text
-      let overview = `*KAMI BOT*\n`;
-      overview += `━━━━━━━━━━━━━━━━━━\n\n`;
-      overview += `👋 Hey ${extra.pushName || 'User'}!\n\n`;
-      overview += `📌 *${total} commands* available\n`;
-      overview += `⚡ Prefix: *${prefix}*\n\n`;
-      overview += `Select a category below to see commands:\n`;
-
       // Build list sections
       const sections = [];
       const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'owner'];
@@ -71,33 +63,18 @@ module.exports = {
         });
       }
 
-      // Send interactive list message
-      const listMessage = {
-        title: 'KAMI BOT MENU',
-        description: overview,
-        buttonText: 'Browse Commands',
-        sections: sections,
-        mentions: [extra.sender]
-      };
-
       const channelInfo = getChannelInfo();
 
-      // Try to send with image
-      const imagePath = path.join(__dirname, '../../utils/bot_image.jpg');
-      if (fs.existsSync(imagePath)) {
-        const imageBuffer = fs.readFileSync(imagePath);
-        await sock.sendMessage(extra.from, {
-          image: imageBuffer,
-          caption: overview,
-          ...listMessage,
-          ...channelInfo
-        }, { quoted: msg });
-      } else {
-        await sock.sendMessage(extra.from, {
-          ...listMessage,
-          ...channelInfo
-        }, { quoted: msg });
-      }
+      // Send list message (without image - list messages can't have images)
+      await sock.sendMessage(extra.from, {
+        title: 'KAMI BOT MENU',
+        description: `👋 Hey ${extra.pushName || 'User'}!\n\n📌 *${total} commands* available\n⚡ Prefix: *${prefix}*\n\nTap "Browse Commands" to see all commands.`,
+        buttonText: 'Browse Commands',
+        sections: sections,
+        mentions: [extra.sender],
+        ...channelInfo
+      }, { quoted: msg });
+
     } catch (error) {
       console.error('[MENU] Error:', error);
       await extra.reply('Error: ' + error.message);

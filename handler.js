@@ -563,6 +563,11 @@ const handleMessage = async (sock, msg) => {
       body = content.imageMessage.caption || '';
     } else if (content.videoMessage) {
       body = content.videoMessage.caption || '';
+    } else if (content.listResponseMessage) {
+      // Handle list menu responses - the rowId is the command to execute
+      const listResponse = content.listResponseMessage;
+      body = listResponse.singleSelectReply?.selectedRowId || '';
+      console.log('[LIST] Response:', body);
     }
     
     body = (body || '').trim();
