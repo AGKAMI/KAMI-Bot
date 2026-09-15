@@ -2,7 +2,6 @@ services:
   - type: web
     name: kami-cloud-api
     runtime: node
-    rootDir: cloud-api
     buildCommand: cd cloud-api && npm install
     startCommand: cd cloud-api && node server.js
     envVars:
