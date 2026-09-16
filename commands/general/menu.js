@@ -1,6 +1,5 @@
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
-const { getChannelInfo } = require('../../utils/channelInfo');
 
 module.exports = {
   name: 'menu',
@@ -63,13 +62,7 @@ module.exports = {
       text += `│ for command info\n`;
       text += `╰━━━━━━━━━━━━━━━╯`;
 
-      const channelInfo = getChannelInfo();
-
-      await sock.sendMessage(extra.from, {
-        text,
-        mentions: [extra.sender],
-        ...channelInfo
-      }, { quoted: msg });
+      await sock.sendMessage(extra.from, { text: text }, { quoted: msg });
 
     } catch (error) {
       console.error('[MENU] Error:', error);
