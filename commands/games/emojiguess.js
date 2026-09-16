@@ -29,7 +29,7 @@ module.exports = {
     const guess = args.join(' ').toLowerCase();
     const g = active.get(ctx.from);
     if (g && guess) {
-      if (guess === g.answer || guess.includes(g.answer.split(' ')[0])) {
+      if (guess === g.answer) {
         const winner = ctx.sender.split('@')[0];
         active.delete(ctx.from);
         return ctx.reply('🎉 ' + winner + ' guessed it! ' + g.answer);

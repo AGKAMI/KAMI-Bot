@@ -13,7 +13,7 @@ const createStickerBuffer = async (media, options = {}) => {
   try {
     const sticker = new Sticker(media, {
       pack: options.pack || config.packname,
-      author: options.author || config.author,
+      author: options.author || config.packname,
       type: options.type || StickerTypes.FULL,
       categories: options.categories || ['🤖'],
       id: options.id || '',
@@ -33,7 +33,7 @@ const createCroppedSticker = async (media, options = {}) => {
   try {
     const sticker = new Sticker(media, {
       pack: options.pack || config.packname,
-      author: options.author || config.author,
+      author: options.author || config.packname,
       type: StickerTypes.CROPPED,
       categories: options.categories || ['🤖'],
       quality: options.quality || 50
@@ -52,7 +52,7 @@ const createCircleSticker = async (media, options = {}) => {
   try {
     const sticker = new Sticker(media, {
       pack: options.pack || config.packname,
-      author: options.author || config.author,
+      author: options.author || config.packname,
       type: StickerTypes.CIRCLE,
       categories: options.categories || ['🤖'],
       quality: options.quality || 50

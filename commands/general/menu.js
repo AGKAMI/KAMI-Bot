@@ -1,8 +1,6 @@
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
 const { getChannelInfo } = require('../../utils/channelInfo');
-const fs = require('fs');
-const path = require('path');
 
 module.exports = {
   name: 'menu',
@@ -27,50 +25,48 @@ module.exports = {
       const total = commands.size;
 
       const categoryMeta = {
-        general:   { emoji: '🏠', label: 'General', desc: 'Bot info & utilities' },
-        ai:        { emoji: '🤖', label: 'AI Core', desc: 'AI-powered features' },
-        admin:     { emoji: '🛡️', label: 'Admin', desc: 'Group management' },
-        owner:     { emoji: '👑', label: 'Owner', desc: 'Bot control panel' },
-        media:     { emoji: '🎬', label: 'Media', desc: 'Download & convert' },
-        fun:       { emoji: '🎉', label: 'Fun', desc: 'Entertainment' },
-        games:     { emoji: '🎮', label: 'Games', desc: 'Play games' },
-        utility:   { emoji: '🔧', label: 'Utility', desc: 'Tools & helpers' },
-        anime:     { emoji: '⛩️', label: 'Anime', desc: 'Anime content' },
-        textmaker: { emoji: '✨', label: 'Text Maker', desc: 'Stylish text' },
+        general:   { emoji: '🏠', label: 'General' },
+        ai:        { emoji: '🤖', label: 'AI' },
+        admin:     { emoji: '🛡️', label: 'Admin' },
+        owner:     { emoji: '👑', label: 'Owner' },
+        media:     { emoji: '🎬', label: 'Media' },
+        fun:       { emoji: '🎉', label: 'Fun' },
+        games:     { emoji: '🎮', label: 'Games' },
+        utility:   { emoji: '🔧', label: 'Utility' },
+        anime:     { emoji: '⛩️', label: 'Anime' },
+        textmaker: { emoji: '✨', label: 'Text Maker' },
       };
 
-      // Build list sections
-      const sections = [];
       const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'owner'];
+
+      let text = `╭━━━≪ *KAMI BOT* ≫━━━╮\n\n`;
+      text += `👋 Hey ${extra.pushName || 'User'}!\n`;
+      text += `📌 *${total} commands* available\n`;
+      text += `⚡ Prefix: *${prefix}*\n\n`;
 
       for (const cat of order) {
         const list = categories[cat];
         if (!list || list.length === 0) continue;
 
         const meta = categoryMeta[cat];
-        const rows = list
+        const cmds = list
           .filter(item => item.name)
           .sort((a, b) => a.name.localeCompare(b.name))
-          .map(cmd => ({
-            title: `${prefix}${cmd.name}`,
-            description: cmd.description || 'No description',
-            rowId: `.help ${cmd.name}`
-          }));
+          .map(cmd => `${prefix}${cmd.name}`)
+          .join(', ');
 
-        sections.push({
-          title: `${meta.emoji} ${meta.label}`,
-          rows: rows
-        });
+        text += `${meta.emoji} *${meta.label}*\n${cmds}\n\n`;
       }
+
+      text += `╭━━━━━━━━━━━━━━━╮\n`;
+      text += `│ Use ${prefix}help <cmd>\n`;
+      text += `│ for command info\n`;
+      text += `╰━━━━━━━━━━━━━━━╯`;
 
       const channelInfo = getChannelInfo();
 
-      // Send list message (without image - list messages can't have images)
       await sock.sendMessage(extra.from, {
-        title: 'KAMI BOT MENU',
-        description: `👋 Hey ${extra.pushName || 'User'}!\n\n📌 *${total} commands* available\n⚡ Prefix: *${prefix}*\n\nTap "Browse Commands" to see all commands.`,
-        buttonText: 'Browse Commands',
-        sections: sections,
+        text,
         mentions: [extra.sender],
         ...channelInfo
       }, { quoted: msg });
