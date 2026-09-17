@@ -1,3 +1,4 @@
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 module.exports = {
   name: 'tictactoe',
   description: 'Play tic tac toe in a group',
@@ -19,24 +20,24 @@ module.exports = {
         turn: 'X',
         players: { X: null, O: null },
       });
-      return ctx.reply('❌ tic tac toe!\nFirst person to play is X.\nUse .ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9');
+      return ctx.reply(`❌ ${pick(SLANG.error)} — tic tac toe!\nFirst person to play is X.\nUse .ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`);
     }
 
     if (['stop', 'end'].includes(sub)) {
       games.ttt.delete(boardKey);
-      return ctx.reply('tic tac toe stopped');
+      return ctx.reply(`${pick(SLANG.vibe)}, tic tac toe stopped!`);
     }
 
     if (!/^\d$/.test(sub)) {
-      return ctx.reply('Use: .ttt start | .ttt <1-9> | .ttt stop');
+      return ctx.reply(`❌ _${pick(SLANG.error)} — use: .ttt start | .ttt <1-9> | .ttt stop_`);
     }
 
     const g = games.ttt.get(boardKey);
-    if (!g) return ctx.reply('No active game. Use .ttt start');
+    if (!g) return ctx.reply(`❌ _no active game — use .ttt start_`);
 
     const pos = parseInt(sub) - 1;
-    if (pos < 0 || pos > 8) return ctx.reply('Use a number from 1-9');
-    if (g.board[pos] !== ' ') return ctx.reply('spot taken — pick another');
+    if (pos < 0 || pos > 8) return ctx.reply(`❌ _${pick(SLANG.error)} — use a number from 1-9_`);
+    if (g.board[pos] !== ' ') return ctx.reply(`❌ _spot taken — pick another, ${pick(SLANG.vibe)}_`);
 
     const sender = ctx.sender;
     const token = g.turn;
@@ -60,17 +61,17 @@ module.exports = {
 
     if (winner) {
       games.ttt.delete(boardKey);
-      return ctx.reply('🎉 @' + sender.split('@')[0] + ' wins with ' + token + '!\n\n' + formatBoard(g.board));
+      return ctx.reply(`🎉 @${sender.split('@')[0]} ${pick(SLANG.good)}! wins with ${token}!\n\n${formatBoard(g.board)}`);
     }
     if (full) {
       games.ttt.delete(boardKey);
-      return ctx.reply('🤝 draw!\n\n' + formatBoard(g.board));
+      return ctx.reply(`🤝 ${pick(SLANG.vibe)}, draw!\n\n${formatBoard(g.board)}`);
     }
 
     g.turn = token === 'X' ? 'O' : 'X';
     const next = g.players[g.turn];
     const nextMention = next ? '@' + next.split('@')[0] : 'next player';
-    return ctx.reply(nextMention + ' (' + g.turn + ') your turn\n\n' + formatBoard(g.board));
+    return ctx.reply(`${nextMention} (${g.turn}) your turn\n\n${formatBoard(g.board)}`);
   }
 };
 

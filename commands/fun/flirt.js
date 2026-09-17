@@ -2,6 +2,8 @@
  * Flirt - Get a random flirty message from API
  */
 
+const { bold, italic, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
     name: 'flirt',
     aliases: ['pickup', 'pickupline'],
@@ -32,7 +34,7 @@ module.exports = {
         
       } catch (error) {
         console.error('Flirt Error:', error);
-        await extra.reply(`❌ error: ${error.message}`);
+        await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
       }
     }
   };

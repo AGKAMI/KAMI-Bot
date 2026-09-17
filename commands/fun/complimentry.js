@@ -2,6 +2,8 @@
  * Compliment - Send a random compliment
  */
 
+const { bold, italic, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
     name: 'compliment',
     aliases: ['praise', 'compliment'],
@@ -50,7 +52,7 @@ module.exports = {
       } catch (error) {
         console.error('Compliment Error:', error);
         await sock.sendMessage(msg.key.remoteJid, {
-          text: `❌ error: ${error.message}`
+          text: `❌ _${pick(SLANG.error)} — ${error.message}_`
         }, { quoted: msg });
       }
     }

@@ -13,6 +13,7 @@ const webp = require('node-webpmux');
 const crypto = require('crypto');
 const config = require('../../config');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 // Function to extract unique media URLs (same as .ig command)
 function extractUniqueMedia(mediaData) {
@@ -441,14 +442,14 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
     
     const urlMatch = text.match(/https?:\/\/\S+/);
     if (!urlMatch) {
-      return extra.reply(`send me an instagram post or reel link\nUsage:\n.igs <url>\n.igsc <url>`);
+      return extra.reply(`📝 _${pick(SLANG.vibe)}, send me an instagram post or reel link_\n\n_Usage:_\n.igs <url>\n.igsc <url>`);
     }
 
     await sock.sendMessage(extra.from, { react: { text: '📥', key: msg.key } });
 
     const downloadData = await igdl(urlMatch[0]).catch(() => null);
     if (!downloadData || !downloadData.data) {
-      return extra.reply("❌ couldn't fetch from that instagram link");
+      return extra.reply(`❌ _${pick(SLANG.error)}, couldn't fetch from that instagram link_`);
     }
     
     // Get all media items from scraper - process in order without URL deduplication
@@ -460,7 +461,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
     const items = rawItems.slice(0, 10);
     
     if (items.length === 0) {
-      return extra.reply('❌ no media found at that link');
+      return extra.reply(`❌ _${pick(SLANG.error)}, no media found at that link_`);
     }
 
     const maxItems = items.length;

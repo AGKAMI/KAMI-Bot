@@ -1,3 +1,4 @@
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 module.exports = {
   name: 'coinflip',
   description: 'Flip a coin and get heads or tails',

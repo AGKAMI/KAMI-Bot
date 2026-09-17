@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'getpp',
@@ -28,7 +29,7 @@ module.exports = {
       }
       
       if (!targetUser) {
-        return extra.reply('❌ who are you looking for? reply to a message or tag someone');
+        return extra.reply(`${italic('who are you looking for? reply to a message or tag someone')}`);
       }
       
       try {
@@ -36,7 +37,7 @@ module.exports = {
         const ppUrl = await sock.profilePictureUrl(targetUser, 'image');
         
         if (!ppUrl) {
-          return extra.reply('❌ no profile pic found for this oke');
+          return extra.reply(`❌ _${pick(SLANG.error)} — no profile pic found for this oke_`);
         }
         
         // Download the profile picture
@@ -46,7 +47,7 @@ module.exports = {
         // Send the profile picture
         await sock.sendMessage(extra.from, { 
           image: buffer,
-          caption: `👤 Profile picture of @${targetUser.split('@')[0]}`,
+          caption: `${bold('Profile picture')} of @${targetUser.split('@')[0]}`,
           mentions: [targetUser]
         }, { quoted: msg });
         
@@ -56,20 +57,18 @@ module.exports = {
             profileError.output?.statusCode === 404 || 
             profileError.output?.statusCode === 500 ||
             profileError.message?.includes('not found')) {
-          return extra.reply('❌ no profile pic found for this oke');
+          return extra.reply(`❌ _${pick(SLANG.error)} — no profile pic found for this oke_`);
         } else if (profileError.output?.statusCode === 401 || 
                    profileError.message?.includes('forbidden') || 
                    profileError.message?.includes('unauthorized')) {
-          return extra.reply('❌ Profile picture not found. The user\'s profile picture is private or not available.');
+          return extra.reply(`❌ _${pick(SLANG.error)} — profile pic is private or not available_`);
         } else {
-          // Don't show error in console for normal cases, just inform user
-          return extra.reply('❌ no profile pic found for this oke');
+          return extra.reply(`❌ _${pick(SLANG.error)} — no profile pic found for this oke_`);
         }
       }
       
     } catch (error) {
-      // Don't show error in console, just inform user
-      extra.reply('❌ no profile pic found for this oke');
+      extra.reply(`❌ _${pick(SLANG.error)} — no profile pic found for this oke_`);
     }
   }
 };

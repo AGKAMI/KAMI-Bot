@@ -3,6 +3,7 @@
  */
 
 const config = require('../../config');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'owner',
@@ -40,11 +41,11 @@ END:VCARD
                 }
             });
 
-            await extra.reply('👑 here\'s my owner\'s contact');
+            await extra.reply(`👑 _here's my owner's contact, ${pick(SLANG.vibe)}_`);
 
         } catch (error) {
             console.error('Owner command error:', error);
-            await extra.reply(`❌ error: ${error.message}`);
+            await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
         }
     }
 };

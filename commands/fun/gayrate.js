@@ -1,4 +1,5 @@
 // commands/fun/gayrate.js
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 module.exports = {
   name: 'gayrate',
   aliases: ['gay'],
@@ -31,7 +32,7 @@ module.exports = {
       await sock.sendMessage(extra.from, { text: out, mentions: [targetId] }, { quoted: msg });
     } catch (error) {
       console.error('[gayrate] ERROR:', error);
-      await extra.reply('❌ something went wrong hey');
+      await extra.reply(`❌ _${pick(SLANG.error)} — something went stukkend hey_`);
     }
   }
 };

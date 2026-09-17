@@ -4,6 +4,7 @@
 
 const { igdl } = require('ruhend-scraper');
 const config = require('../../config');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 // Store processed message IDs to prevent duplicates
 const processedMessages = new Set();
@@ -65,7 +66,7 @@ module.exports = {
                    args.join(' ');
       
       if (!text) {
-        return extra.reply('send me an instagram link for the video');
+        return extra.reply(`📝 _${pick(SLANG.vibe)}, send me an instagram link for the video_`);
       }
       
       // Check for various Instagram URL formats
@@ -80,7 +81,7 @@ module.exports = {
       const isValidUrl = instagramPatterns.some(pattern => pattern.test(text));
       
       if (!isValidUrl) {
-        return extra.reply("that's not a valid instagram link — need a post, reel, or video link");
+        return extra.reply(`❌ _${pick(SLANG.error)}, that's not a valid instagram link — need a post, reel, or video link_`);
       }
       
       await sock.sendMessage(chatId, {
@@ -90,7 +91,7 @@ module.exports = {
       const downloadData = await igdl(text);
       
       if (!downloadData || !downloadData.data || downloadData.data.length === 0) {
-        return extra.reply('❌ no media found — might be private');
+        return extra.reply(`❌ _${pick(SLANG.error)}, no media found — might be private_`);
       }
       
       const mediaData = downloadData.data;
@@ -102,7 +103,7 @@ module.exports = {
       const mediaToDownload = uniqueMedia.slice(0, 20);
       
       if (mediaToDownload.length === 0) {
-        return extra.reply('❌ no media to download — might be private');
+        return extra.reply(`❌ _${pick(SLANG.error)}, no media to download — might be private_`);
       }
       
       // Download all media silently without status messages
@@ -121,12 +122,12 @@ module.exports = {
             await sock.sendMessage(chatId, {
               video: { url: mediaUrl },
               mimetype: 'video/mp4',
-              caption: `*DOWNLOADED BY ${config.botName.toUpperCase()}*`
+              caption: `*DOWNLOADED BY ${config.botName.toUpperCase()}*\n_${pick(SLANG.vibe)}, enjoy_`
             }, { quoted: msg });
           } else {
             await sock.sendMessage(chatId, {
               image: { url: mediaUrl },
-              caption: `*DOWNLOADED BY ${config.botName.toUpperCase()}*`
+              caption: `*DOWNLOADED BY ${config.botName.toUpperCase()}*\n_${pick(SLANG.vibe)}, enjoy_`
             }, { quoted: msg });
           }
           
@@ -142,7 +143,7 @@ module.exports = {
       }
     } catch (error) {
       console.error('Error in Instagram command:', error);
-      await extra.reply('❌ instagram error — try again');
+      await extra.reply(`❌ _${pick(SLANG.error)}, instagram error — try again_`);
     }
   }
 };

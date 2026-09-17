@@ -3,6 +3,7 @@
  */
 
 const { findParticipant } = require('../../utils/jidHelper');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'demote',
@@ -25,7 +26,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply('❌ tag or reply to the person you wanna demote\n\nexample: .demote @user');
+        return extra.reply('❌ _moegoe, tag or reply to the person you wanna demote_\n\nexample: .demote @user');
       }
       
       // Fetch FRESH group metadata to avoid stale cache
@@ -35,23 +36,23 @@ module.exports = {
       const foundParticipant = findParticipant(freshMetadata.participants, target);
       
       if (!foundParticipant) {
-        return extra.reply('❌ couldn\'t find this oke in the group');
+        return extra.reply('❌ _moegoe, couldn\'t find this oke in the group_');
       }
       
       // Check if user is admin using fresh data
       if (foundParticipant.admin !== 'admin' && foundParticipant.admin !== 'superadmin') {
-        return extra.reply("❌ this oke isn't an admin");
+        return extra.reply("❌ _moegoe, this oke isn't an admin_");
       }
       
       await sock.groupParticipantsUpdate(extra.from, [target], 'demote');
       
       await sock.sendMessage(extra.from, {
-        text: `✅ @${target.split('@')[0]} is no longer an admin!`,
+        text: `✅ @${target.split('@')[0]} _is no longer an admin, lekke_!`,
         mentions: [target]
       }, { quoted: msg });
       
     } catch (error) {
-      await extra.reply(`❌ error: ${error.message}`);
+      await extra.reply(`❌ _moegoe, ${error.message}_`);
     }
   }
 };

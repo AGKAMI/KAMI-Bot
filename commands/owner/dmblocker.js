@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'dmblocker',
@@ -23,8 +24,8 @@ module.exports = {
       
       if (!action || action === 'status') {
         return await sock.sendMessage(chatId, {
-          text: `🚫 *DM Blocker Configuration*\n\n` +
-               `Status: *${currentStatus}*\n\n` +
+          text: `🚫 ${bold('DM Blocker Configuration')}\n\n` +
+               `${bold('Status')}: *${currentStatus}*\n\n` +
                `When ON: Only whitelisted numbers can message the bot.\n` +
                `When OFF: Anyone can use the bot.\n\n` +
                `*Usage:*\n` +
@@ -37,14 +38,14 @@ module.exports = {
       if (action === 'on') {
         if (globalSettings.selfMode) {
           return await sock.sendMessage(chatId, {
-            text: `⚠️ DM Blocker is already *ON*`
+            text: `⚠️ _sho, DM Blocker is already *ON*_`
           }, { quoted: msg });
         }
         
         database.updateGlobalSettings({ selfMode: true });
         
         return await sock.sendMessage(chatId, {
-          text: `✅ dm blocker turned on\n\n` +
+          text: `✅ _lekke, dm blocker turned on_\n\n` +
                `Only whitelisted numbers can now use this bot.\n` +
                `Others will be blocked.`
         }, { quoted: msg });
@@ -53,20 +54,20 @@ module.exports = {
       if (action === 'off') {
         if (!globalSettings.selfMode) {
           return await sock.sendMessage(chatId, {
-            text: `⚠️ DM Blocker is already *OFF*`
+            text: `⚠️ _sho, DM Blocker is already *OFF*_`
           }, { quoted: msg });
         }
         
         database.updateGlobalSettings({ selfMode: false });
         
         return await sock.sendMessage(chatId, {
-          text: `✅ dm blocker turned off\n\n` +
+          text: `✅ _lekke, dm blocker turned off_\n\n` +
                `Anyone can now use this bot.`
         }, { quoted: msg });
       }
       
       return await sock.sendMessage(chatId, {
-        text: `❌ invalid option. Use:\n` +
+        text: `❌ _moegoe, invalid option. Use:\n` +
              `  .dmblocker on\n` +
              `  .dmblocker off\n` +
              `  .dmblocker status`

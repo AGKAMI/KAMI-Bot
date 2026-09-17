@@ -6,6 +6,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { writeExifVid } = require('../../utils/exif');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'attp',
@@ -17,12 +18,12 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply(`❌ give me some text hey\n\nExample: ${extra.prefix || '.'}attp Hello World`);
+        return extra.reply(`${italic('give me some text hey')}\n\nExample: ${bold(extra.prefix || '.' + 'attp Hello World')}`);
       }
       
       const text = args.join(' ');
       if (text.length > 50) {
-        return extra.reply("❌ that's too long — max 50 characters");
+        return extra.reply(`${italic("that's too long")} — max 50 characters`);
       }
       
       try {
@@ -31,11 +32,11 @@ module.exports = {
         await sock.sendMessage(extra.from, { sticker: webpBuffer }, { quoted: msg });
       } catch (error) {
         console.error('Error generating attp sticker:', error);
-        await extra.reply("❌ couldn't make the sticker");
+        await extra.reply(`❌ _${pick(SLANG.error)} — couldn't make the sticker_`);
       }
     } catch (error) {
       console.error('ATTP command error:', error);
-      await extra.reply('❌ animated sticker failed hey');
+      await extra.reply(`❌ _${pick(SLANG.error)} — animated sticker failed_`);
     }
   }
 };

@@ -4,6 +4,7 @@
 
 const axios = require('axios');
 const config = require('../../config');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 // Store processed message IDs to prevent duplicates
 const processedMessages = new Set();
@@ -36,10 +37,10 @@ module.exports = {
       
       if (!text) {
         return await extra.reply(
-          '📌 *pinterest downloader*\n\n' +
-          'Download images or videos from Pinterest.\n\n' +
-          `Usage: ${config.prefix}pinterest <Pinterest URL>\n\n` +
-          'Example:\n' +
+          `${bold('📌 Pinterest Downloader')}\n\n` +
+          `_Download images or videos from Pinterest._\n\n` +
+          `_Usage:_ ${config.prefix}pinterest <Pinterest URL>\n\n` +
+          `_Example:_\n` +
           `${config.prefix}pinterest https://in.pinterest.com/pin/1109363320773690068/`
         );
       }
@@ -58,7 +59,7 @@ module.exports = {
       }
       
       if (!urlMatch) {
-        return await extra.reply('❌ need a valid pinterest pin URL\n\nExamples:\n• https://in.pinterest.com/pin/1109363320773690068/\n• https://pin.it/dddddd\n• pin.it/dddddd');
+        return await extra.reply(`❌ _${pick(SLANG.error)}, need a valid pinterest pin URL_\n\n_Examples:_\n• _https://in.pinterest.com/pin/1109363320773690068/_\n• _https://pin.it/dddddd_\n• _pin.it/dddddd_`);
       }
       
       const pinterestUrl = urlMatch[0];
@@ -83,18 +84,18 @@ module.exports = {
         if (error.response) {
           const status = error.response.status;
           if (status === 400) {
-            return await extra.reply('❌ invalid pinterest link — check it hey');
+            return await extra.reply(`❌ _${pick(SLANG.error)}, invalid pinterest link — check it hey_`);
           } else if (status === 429) {
-            return await extra.reply('❌ rate limit — try again later');
+            return await extra.reply(`❌ _${pick(SLANG.error)}, rate limit — try again later_`);
           } else if (status === 500) {
-            return await extra.reply('❌ server error — try again later');
+            return await extra.reply(`❌ _${pick(SLANG.error)}, server error — try again later_`);
           }
         }
-        return await extra.reply("❌ couldn't fetch pinterest content — try again");
+        return await extra.reply(`❌ _${pick(SLANG.error)}, couldn't fetch pinterest content — try again_`);
       }
       
       if (!response.data || !response.data.status || !response.data.result) {
-        return await extra.reply('❌ invalid response — pin might not exist or be private');
+        return await extra.reply(`❌ _${pick(SLANG.error)}, invalid response — pin might not exist or be private_`);
       }
       
       const pinData = response.data.result;
@@ -121,7 +122,7 @@ module.exports = {
       // Debug: log the response structure if no media URL found
       if (!imageUrl) {
         console.error('Pinterest API response structure:', JSON.stringify(pinData, null, 2));
-        return await extra.reply('❌ no media URL found — might be a video or different format');
+        return await extra.reply(`❌ _${pick(SLANG.error)}, no media URL found — might be a video or different format_`);
       }
       
       // Build caption
@@ -129,7 +130,7 @@ module.exports = {
       if (author && author !== 'Unknown') {
         caption += `👤 Author: ${author}\n`;
       }
-      caption += `\n*Downloaded by ${config.botName}*`;
+      caption += `\n${bold('Downloaded by ' + config.botName)}\n_${pick(SLANG.vibe)}, enjoy_`;
       
       // Send only the main media (not thumbnail separately to avoid duplicates)
       if (isVideo) {
@@ -166,7 +167,7 @@ module.exports = {
           }, { quoted: msg });
         } catch (videoError) {
           console.error('Video download/send error:', videoError.message);
-          return await extra.reply("❌ couldn't download video — might be expired or need auth");
+          return await extra.reply(`❌ _${pick(SLANG.error)}, couldn't download video — might be expired or need auth_`);
         }
       } else {
         // For images, use the main image URL (not thumbnail)
@@ -178,7 +179,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Error in pinterest command:', error);
-      return await extra.reply(`❌ Error: ${error.message || 'Unknown error occurred'}`);
+      return await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message || 'Unknown error occurred'}_`);
     }
   },
 };

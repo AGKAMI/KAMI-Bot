@@ -4,6 +4,7 @@
 
 const axios = require('axios');
 const config = require('../../config');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'github',
@@ -35,7 +36,7 @@ module.exports = {
                 const repo = response.data;
                 
                 // Format the response with proper styling
-                let message = `╭━━『 *GitHub Repository* 』━━╮\n\n`;
+                let message = `----------\n*GITHUB REPOSITORY*\n----------\n\n`;
                 message += `🤖 *Bot Name:* ${config.botName}\n`;
                 message += `🔗 *Repository:* ${repo.name}\n`;
                 message += `👨‍💻 *Owner:* ${repo.owner.login}\n`;
@@ -53,7 +54,7 @@ module.exports = {
                 message += `🍴 Fork: ${repo.html_url}/fork\n`;
                 message += `📥 Clone: git clone ${repo.clone_url}\n\n`;
                 
-                message += `╰━━━━━━━━━━━━━━━╯\n\n`;
+                message += `----------\n\n`;
                 message += `> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ${config.botName}*`;
                 
                 // Edit the loading message with the actual data
@@ -66,14 +67,14 @@ module.exports = {
                 // Fallback message if API fails
                 console.error('GitHub API Error:', apiError.message);
                 
-                let fallbackMessage = `╭━━『 *GitHub Repository* 』━━╮\n\n`;
+                let fallbackMessage = `----------\n*GITHUB REPOSITORY*\n----------\n\n`;
                 fallbackMessage += `🤖 *Bot Name:* ${config.botName}\n`;
                 fallbackMessage += `🔗 *Repository:* KAMI-Bot\n`;
                 fallbackMessage += `👨‍💻 *Owner:* AGKAMI\n`;
                 fallbackMessage += `🌐 *URL:* ${repoUrl}\n\n`;
                 fallbackMessage += `⚠️ *Note:* Unable to fetch real-time statistics.\n`;
                 fallbackMessage += `Please visit the repository directly for latest stats.\n\n`;
-                fallbackMessage += `╰━━━━━━━━━━━━━━━╯\n\n`;
+                fallbackMessage += `----------\n\n`;
                 fallbackMessage += `> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ${config.botName}*`;
                 
                 await sock.sendMessage(chatId, {
@@ -84,7 +85,7 @@ module.exports = {
             
         } catch (error) {
             console.error('GitHub command error:', error);
-            await extra.reply(`❌ error: ${error.message}`);
+            await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
         }
     }
 };

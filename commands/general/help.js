@@ -1,5 +1,6 @@
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'help',
@@ -48,7 +49,7 @@ module.exports = {
 
       const text = [
         `*${prefix}${cmd.name}*`,
-        `━━━━━━━━━━━━━━━━━━`,
+        `----------`,
         ``,
         `📝 *Description:* ${cmd.description || 'No description'}`,
         `📂 *Category:* ${categoryMeta[cmd.category] || cmd.category}`,
@@ -61,7 +62,7 @@ module.exports = {
       await extra.reply(text);
     } catch (error) {
       console.error('[HELP] Error:', error);
-      await extra.reply('Error: ' + error.message);
+      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

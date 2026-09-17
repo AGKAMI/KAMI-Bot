@@ -4,6 +4,7 @@
 
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 const os = require('os');
 
 module.exports = {
@@ -26,7 +27,7 @@ module.exports = {
 
       const text = [
         `*KAMI BOT STATUS*`,
-        `━━━━━━━━━━━━━━━━━━`,
+        `----------`,
         ``,
         `⏱️ *Uptime:* ${hours}h ${minutes}m ${seconds}s`,
         `💾 *Memory:* ${memUsed}MB / ${memTotal}MB`,
@@ -37,14 +38,14 @@ module.exports = {
         `👑 *Owner:* ${config.ownerName || 'AG KAMI'}`,
         `⚡ *Prefix:* ${config.prefix || '.'}`,
         ``,
-        `━━━━━━━━━━━━━━━━━━`,
+        `----------`,
         `💡 _${config.prefix || '.'}menu for all commands_`
       ].join('\n');
 
       await extra.reply(text);
     } catch (error) {
       console.error('[STATUS] Error:', error);
-      await extra.reply('Error: ' + error.message);
+      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

@@ -1,3 +1,4 @@
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 const rounds = [
   { statements: ['The Eiffel Tower can grow by more than 6 inches in summer.', 'Octopuses have three hearts.', 'Bananas are berries, but strawberries are not.'], lie: 0 },
   { statements: ['Honey never spoils.', 'Tomatoes are vegetables.', 'Wombats have cube-shaped poop.'], lie: 1 },
@@ -13,6 +14,6 @@ module.exports = {
   execute: async (sock, msg, args, ctx) => {
     const r = rounds[Math.floor(Math.random() * rounds.length)];
     const text = r.statements.map((s, i) => (i + 1) + '. ' + s).join('\n');
-    await ctx.reply('🤔 two truths and a lie!\n\n' + text + '\n\nWhich is the lie?');
+    await ctx.reply(`🤔 two truths and a lie!\n\n${text}\n\nWhich is the lie, ${pick(SLANG.vibe)}?`);
   }
 };

@@ -9,6 +9,7 @@ const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
 const config = require('../../config');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 const processedMessages = new Set();
 
@@ -72,10 +73,10 @@ module.exports = {
       const text = msg.message?.conversation ||
                    msg.message?.extendedTextMessage?.text ||
                    args.join(' ');
-      if (!text) return await extra.reply('send me a facebook link hey');
+      if (!text) return await extra.reply(`📝 _${pick(SLANG.vibe)}, send me a Facebook link hey_`);
 
       const url = text.split(' ').slice(1).join(' ').trim();
-      if (!url) return await extra.reply('send me a facebook link hey');
+      if (!url) return await extra.reply(`📝 _${pick(SLANG.vibe)}, send me a Facebook link hey_`);
 
       const patterns = [
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\//,
@@ -87,7 +88,7 @@ module.exports = {
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/share\//,
       ];
       if (!patterns.some((p) => p.test(url))) {
-        return await extra.reply('❌ invalid facebook link\nuse: .fb <facebook video link>');
+        return await extra.reply(`❌ _${pick(SLANG.error)}, invalid Facebook link_\n_use:_ .fb <facebook video link>`);
       }
 
       const reactOk = await sock.sendMessage(extra.from, {
@@ -121,11 +122,11 @@ module.exports = {
 
       if (!videoData || !videoData.url) {
         return await extra.reply(
-          "❌ couldn't get the video link\n\nAll download sources failed.\nTry using a direct video link instead."
+          `❌ _${pick(SLANG.error)} — couldn't get the video link_\n\n_All download sources failed._\n_Try using a direct video link instead._`
         );
       }
 
-      const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}`;
+      const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}\n_${pick(SLANG.vibe)}, enjoy_`;
       let sendSuccess = false;
 
       // Method 1: direct URL
@@ -161,12 +162,12 @@ module.exports = {
 
       if (!sendSuccess) {
         return await extra.reply(
-          '❌ could not download the video\n\nThe file might be too large for WhatsApp (>100MB).\nTry:\n• A shorter video\n• Using browser to download manually'
+          `❌ _${pick(SLANG.error)} — could not download the video_\n\n_The file might be too large for WhatsApp (>100MB)._\n_Try:_\n• _A shorter video_\n• _Using browser to download manually_`
         );
       }
     } catch (error) {
       console.error('.fb Error:', error.message || error);
-      await extra.reply('❌ Error: ' + (error.message || 'try again later'));
+      await extra.reply(`❌ _${pick(SLANG.error)} — ${(error.message || 'try again later')}_`);
     }
   },
 };

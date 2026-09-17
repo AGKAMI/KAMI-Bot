@@ -4,6 +4,7 @@
 
 const APIs = require('../../utils/api');
 const axios = require('axios');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'meme',
@@ -20,11 +21,11 @@ module.exports = {
       
       await sock.sendMessage(extra.from, {
         image: Buffer.from(imageBuffer.data),
-        caption: `😂 *${meme.title}*\n\n📱 From: r/${meme.subreddit}\n👤 By: ${meme.author}\n⬆️ Upvotes: ${meme.ups}`
+        caption: `😂 *${meme.title}*\n\n_lekke, from_ r/${meme.subreddit}\n👤 By: ${meme.author}\n⬆️ Upvotes: ${meme.ups}`
       }, { quoted: msg });
       
     } catch (error) {
-      await extra.reply(`❌ error: ${error.message}`);
+      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

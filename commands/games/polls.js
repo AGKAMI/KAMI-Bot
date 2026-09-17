@@ -1,3 +1,4 @@
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 module.exports = {
   name: 'poll',
   description: 'Create a yes/no or custom poll',
@@ -6,7 +7,7 @@ module.exports = {
   groupOnly: true,
   execute: async (sock, msg, args, ctx) => {
     const question = args.join(' ');
-    if (!question) return ctx.reply('Usage: .poll <question>\nOr: .poll <q> | opt1 | opt2 | opt3');
+    if (!question) return ctx.reply(`❌ _${pick(SLANG.error)} — usage: .poll <question>\nOr: .poll <q> | opt1 | opt2 | opt3_`);
     const parts = question.split('|').map(s => s.trim());
     let text = '🗳️ poll\n\n';
     if (parts.length <= 1) {

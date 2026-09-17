@@ -3,6 +3,7 @@
  */
 
 const config = require('../../config');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 /**
  * Format time difference into human-readable string
@@ -55,17 +56,17 @@ const botName = config.botName || 'Bot';
 const botVersion = 'V1.0.2';
       
       // Build response message
-      let message = `╭━━『 *Bot Uptime* 』━━╮\n\n`;
+      let message = `----------\n*BOT UPTIME*\n----------\n\n`;
     message += `🤖 *Bot Name:* ${botName}\n`;
     message += `🧬 *Bot Version:* ${botVersion}\n`;
       message += `⏱️ *Uptime:* ${uptime}\n`;
-      message += `\n╰━━━━━━━━━━━━━━━╯`;
+      message += `\n----------`;
       
       await extra.reply(message);
       
     } catch (error) {
       console.error('Error in uptime command:', error);
-      await extra.reply("❌ couldn't get uptime info — try again later");
+      await extra.reply(`❌ _${pick(SLANG.error)}, couldn't get uptime info — try again later_`);
     }
   }
 };

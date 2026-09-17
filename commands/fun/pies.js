@@ -3,6 +3,7 @@
  */
 
 const axios = require('axios');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 const BASE = 'https://api.waifu.pics/sfw/waifu';
 const VALID_COUNTRIES = ['india','malaysia', 'thailand', 'china', 'indonesia', 'japan', 'korea', 'vietnam'];
@@ -38,13 +39,13 @@ module.exports = {
       
       if (!country) {
         return await extra.reply(
-          `usage: .pies <country>\n\nCountries: ${VALID_COUNTRIES.join(', ')}`
+          `❌ _${pick(SLANG.error)} — usage: .pies <country>_\n\n_Countries: ${VALID_COUNTRIES.join(', ')}_`
         );
       }
       
       if (!VALID_COUNTRIES.includes(country)) {
         return await extra.reply(
-          `❌ Unsupported country: ${country}\n\nTry one of: ${VALID_COUNTRIES.join(', ')}`
+          `❌ _${pick(SLANG.error)} — unsupported country: ${country}_\n\n_Try one of: ${VALID_COUNTRIES.join(', ')}_`
         );
       }
       
@@ -67,12 +68,12 @@ module.exports = {
       
       await sock.sendMessage(extra.from, {
         image: imageBuffer,
-        caption: `pies: ${country}`
+        caption: `_kiff, here's your ${country} pies, ${pick(SLANG.vibe)}_`
       }, { quoted: msg });
       
     } catch (error) {
       console.error('Error in pies command:', error);
-      await extra.reply(`❌ Failed to fetch image: ${error.message}`);
+      await extra.reply(`❌ _${pick(SLANG.error)} — failed to fetch image: ${error.message}_`);
     }
   }
 };

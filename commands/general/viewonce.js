@@ -3,6 +3,7 @@
  */
 
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'viewonce',
@@ -25,7 +26,7 @@ module.exports = {
       if (!ctx?.quotedMessage || !ctx?.stanzaId) {
         return await sock.sendMessage(
           chatId,
-          { text: '🗑️ Reply to a *view-once* message to reveal it.' },
+          { text: `🗑️ _${pick(SLANG.error)}, reply to a view-once message to reveal it_` },
           { quoted: msg }
         );
       }
@@ -45,7 +46,7 @@ module.exports = {
       if (!hasViewOnce) {
         return await sock.sendMessage(
           chatId,
-          { text: '❌ this isn\'t a view-once message' },
+          { text: `❌ _${pick(SLANG.error)}, this isn't a view-once message_` },
           { quoted: msg }
         );
       }
@@ -83,7 +84,7 @@ module.exports = {
       if (!actualMsg || !mtype) {
         return await sock.sendMessage(
           chatId,
-          { text: '❌ unsupported view-once message type' },
+          { text: `❌ _${pick(SLANG.error)}, unsupported view-once type_` },
           { quoted: msg }
         );
       }
@@ -144,8 +145,7 @@ module.exports = {
         msg.key.remoteJid,
         {
           text:
-            '❌ Error processing view-once message: ' +
-            (error.message || 'Unknown error')
+            `❌ _${pick(SLANG.error)}, couldn't process view-once — ${(error.message || 'Unknown error')}_`
         },
         { quoted: msg }
       );

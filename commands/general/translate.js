@@ -3,6 +3,7 @@
  */
 
 const APIs = require('../../utils/api');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'translate',
@@ -14,25 +15,25 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length < 2) {
-        return extra.reply('❌ usage: .translate <lang> <text>\n\nExample: .translate es Hello world');
+        return extra.reply(`❌ _${pick(SLANG.error)}, usage: .translate <lang> <text>\n\nExample: .translate es Hello world_`);
       }
       
       const targetLang = args[0];
       const text = args.slice(1).join(' ');
       
-      await extra.reply('🔄 translating...');
+      await extra.reply(`${italic('translating...')}`);
       
       const result = await APIs.translate(text, targetLang);
       
-      let replyText = `🌐 *Translation*\n\n`;
-      replyText += `📝 Original: ${text}\n`;
-      replyText += `🔤 Translated: ${result.translation || result}\n`;
-      replyText += `🌍 Language: ${targetLang.toUpperCase()}`;
+      let replyText = `${bold('Translation')}\n\n`;
+      replyText += `${bold('Original:')} ${text}\n`;
+      replyText += `${bold('Translated:')} ${result.translation || result}\n`;
+      replyText += `${bold('Language:')} ${targetLang.toUpperCase()}`;
       
       await extra.reply(replyText);
       
     } catch (error) {
-      await extra.reply(`❌ translation failed hey\n\nsupported codes: en, es, fr, de, it, pt, ru, ja, ko, zh\n\nerror: ${error.message}`);
+      await extra.reply(`❌ _${pick(SLANG.error)}, translation failed — ${error.message}_\n\nsupported codes: en, es, fr, de, it, pt, ru, ja, ko, zh`);
     }
   }
 };

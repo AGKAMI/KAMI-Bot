@@ -11,6 +11,7 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const webp = require('node-webpmux');
 const config = require('../../config');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 // Max file size: 50MB
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -72,14 +73,14 @@ module.exports = {
       const mediaInfo = resolveMedia(targetMessage);
       
       if (!mediaInfo) {
-        return extra.reply('✂️ reply to a sticker, image, or video you wanna crop');
+        return extra.reply(`${italic('reply to a sticker, image, or video you wanna crop')}`);
       }
 
       const { type, media } = mediaInfo;
       const mediaMessage = media;
 
       if (!mediaMessage) {
-        return extra.reply('✂️ reply to an image/video/sticker with .crop, or send media with .crop as caption');
+        return extra.reply(`${italic('reply to an image/video/sticker with .crop, or send media with .crop as caption')}`);
       }
 
       // Download media
@@ -91,12 +92,12 @@ module.exports = {
       );
 
       if (!mediaBuffer) {
-        return extra.reply("❌ couldn't download that — try again");
+        return extra.reply(`❌ _${pick(SLANG.error)} — couldn't download that, try again_`);
       }
 
       // Check file size
       if (mediaBuffer.length > MAX_FILE_SIZE) {
-        return extra.reply(`❌ file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+        return extra.reply(`❌ _${pick(SLANG.error)} — file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)_`);
       }
 
       // Write media to temp file
@@ -195,7 +196,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crop command error:', error);
-      await extra.reply("❌ couldn't crop the sticker — try with an image or video");
+      await extra.reply(`❌ _${pick(SLANG.error)} — couldn't crop the sticker, try with an image or video_`);
     } finally {
       // Always cleanup temp files
       tempFiles.forEach(file => deleteTempFile(file));

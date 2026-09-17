@@ -3,6 +3,7 @@
  */
 
 const { findParticipant } = require('../../utils/jidHelper');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'promote',
@@ -25,7 +26,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply('❌ tag or reply to the person you wanna promote\n\nexample: .promote @user');
+        return extra.reply('❌ _moegoe, tag or reply to the person you wanna promote_\n\nexample: .promote @user');
       }
       
       // Fetch FRESH group metadata to avoid stale cache
@@ -35,23 +36,23 @@ module.exports = {
       const foundParticipant = findParticipant(freshMetadata.participants, target);
       
       if (!foundParticipant) {
-        return extra.reply('❌ couldn\'t find this oke in the group');
+        return extra.reply('❌ _moegoe, couldn\'t find this oke in the group_');
       }
       
       // Check if already admin using fresh data
       if (foundParticipant.admin === 'admin' || foundParticipant.admin === 'superadmin') {
-        return extra.reply('❌ this oke is already an admin');
+        return extra.reply('❌ _sho, this oke is already an admin_');
       }
       
       await sock.groupParticipantsUpdate(extra.from, [target], 'promote');
       
       await sock.sendMessage(extra.from, {
-        text: `✅ @${target.split('@')[0]} is now an admin!`,
+        text: `✅ @${target.split('@')[0]} _is now an admin, lekke_!`,
         mentions: [target]
       }, { quoted: msg });
       
     } catch (error) {
-      await extra.reply(`❌ error: ${error.message}`);
+      await extra.reply(`❌ _moegoe, ${error.message}_`);
     }
   }
 };

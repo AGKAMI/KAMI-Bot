@@ -2,6 +2,8 @@
  * Dare - Get a random dare challenge
  */
 
+const { bold, italic, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
     name: 'dare',
     aliases: [],
@@ -42,7 +44,7 @@ module.exports = {
       } catch (error) {
         console.error('Dare Error:', error);
         await sock.sendMessage(msg.key.remoteJid, {
-          text: `❌ error: ${error.message}`
+          text: `❌ _${pick(SLANG.error)} — ${error.message}_`
         }, { quoted: msg });
       }
     }

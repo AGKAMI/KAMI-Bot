@@ -4,6 +4,7 @@
  */
 
 const axios = require('axios');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 const BASE = 'https://api.siputzx.my.id/api/ai/magicstudio';
 
@@ -19,7 +20,7 @@ module.exports = {
       
       if (!prompt) {
         return await extra.reply(
-          'Usage: .magicstudio <prompt>\n\nExample: .magicstudio a cyberpunk city'
+          `❌ _${pick(SLANG.error)} — usage: .magicstudio <prompt>_\n\n_Example: .magicstudio a cyberpunk city_`
         );
       }
       
@@ -57,15 +58,15 @@ module.exports = {
       
       // Handle specific error cases
       if (error.response?.status === 429) {
-        await extra.reply('❌ rate limit — try again later');
+        await extra.reply(`❌ _${pick(SLANG.error)} — rate limit — try again later_`);
       } else if (error.response?.status === 400) {
-        await extra.reply('❌ invalid prompt — try something else');
+        await extra.reply(`❌ _${pick(SLANG.error)} — invalid prompt — try something else_`);
       } else if (error.response?.status === 500) {
-        await extra.reply('❌ server error — try again later');
+        await extra.reply(`❌ _${pick(SLANG.error)} — server error — try again later_`);
       } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-        await extra.reply('❌ timed out — try again');
+        await extra.reply(`❌ _${pick(SLANG.error)} — timed out — try again_`);
       } else {
-        await extra.reply(`❌ couldn't generate image: ${error.message}`);
+        await extra.reply(`❌ _${pick(SLANG.error)} — couldn't generate image: ${error.message}_`);
       }
     }
   }

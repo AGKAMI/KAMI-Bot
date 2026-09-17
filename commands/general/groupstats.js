@@ -1,6 +1,7 @@
 // commands/admin/groupstats.js
 
 const { getStats } = require('../../utils/groupstats');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'groupstats',
@@ -16,7 +17,7 @@ module.exports = {
             const stats = getStats(from);
 
             if (!stats)
-                return extra.reply('📊 nothing happening today hey');
+                return extra.reply(`${italic('nothing happening today hey')}`);
 
             const { total, users } = stats;
 
@@ -37,7 +38,7 @@ module.exports = {
 👥 *Top Active Members:*
 ${topText}
 
-Type .myactivity to see your stats.
+${italic('Type .myactivity to see your stats.')}
 `.trim();
 
             await sock.sendMessage(from, {
@@ -47,7 +48,7 @@ Type .myactivity to see your stats.
 
         } catch (err) {
             console.error('[groupstats cmd] error:', err);
-            extra.reply('❌ couldn\'t load stats hey');
+            extra.reply(`❌ _${pick(SLANG.error)}, couldn't load stats_`);
         }
     }
 };

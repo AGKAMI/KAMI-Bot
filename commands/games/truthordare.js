@@ -1,3 +1,4 @@
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 const truths = [
   'What is your biggest fear?',
   'What is the most embarrassing thing you have done?',
@@ -30,10 +31,10 @@ module.exports = {
   execute: async (sock, msg, args, ctx) => {
     const choice = (args[0] || '').toLowerCase();
     if (!['truth', 'dare'].includes(choice)) {
-      return ctx.reply('usage: .tod <truth|dare>');
+      return ctx.reply(`❌ _${pick(SLANG.error)} — usage: .tod <truth|dare>_`);
     }
     const pool = choice === 'truth' ? truths : dares;
-    const pick = pool[Math.floor(Math.random() * pool.length)];
-    await ctx.reply((choice === 'truth' ? '🟦 TRUTH: ' : '🟥 DARE: ') + pick);
+    const p = pool[Math.floor(Math.random() * pool.length)];
+    await ctx.reply((choice === 'truth' ? '🟦 TRUTH: ' : '🟥 DARE: ') + p);
   }
 };

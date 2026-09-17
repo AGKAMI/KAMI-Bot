@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'resetwarn',
@@ -25,27 +26,27 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply('❌ tag or reply to the person you wanna reset warnings\n\nexample: .resetwarn @user');
+        return extra.reply('❌ _moegoe, tag or reply to the person you wanna reset warnings_\n\nexample: .resetwarn @user');
       }
       
       // Get current warnings before clearing
       const currentWarnings = database.getWarnings(extra.from, target);
       
       if (currentWarnings.count === 0) {
-        return extra.reply(`✅ @${target.split('@')[0]} has no warnings to reset.`, { mentions: [target] });
+        return extra.reply(`✅ _sho, @${target.split('@')[0]} has no warnings to reset._`, { mentions: [target] });
       }
       
       // Clear all warnings
       database.clearWarnings(extra.from, target);
       
       await sock.sendMessage(extra.from, {
-        text: `✅ *warnings reset*\\n\\n👤 @${target.split('@')[0]}\\n⚠️ previous warnings: ${currentWarnings.count}\\n\\nall warnings cleared, you're good`,
+        text: `✅ ${bold('warnings reset')}\n\n👤 @${target.split('@')[0]}\n⚠️ ${bold('previous warnings')}: ${currentWarnings.count}\n\n_lekke, all warnings cleared, you\'re good_`,
         mentions: [target]
       }, { quoted: msg });
       
     } catch (error) {
       console.error('ResetWarn command error:', error);
-      await extra.reply(`❌ error: ${error.message}`);
+      await extra.reply(`❌ _moegoe, ${error.message}_`);
     }
   }
 };

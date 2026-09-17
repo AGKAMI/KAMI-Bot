@@ -14,11 +14,12 @@ module.exports = {
     
     async execute(sock, msg, args, extra) {
       try {
+        const { bold, pick, SLANG } = require('../../utils/format');
         await sock.groupSettingUpdate(extra.from, 'not_announcement');
-        await extra.reply('🔓 group opened hey\n\neveryone can talk now');
+        await extra.reply(`🔓 _lekke, group opened hey_\n\neveryone can talk now`);
         
       } catch (error) {
-        await extra.reply(`❌ error: ${error.message}`);
+        await extra.reply(`❌ _moegoe, ${error.message}_`);
       }
     }
   };

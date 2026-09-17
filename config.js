@@ -41,9 +41,9 @@ module.exports = {
       antigroupmention: false, // Anti-group mention feature
       antigroupmentionAction: 'delete', // 'delete', 'kick', 'warn' (warn 3 times then kick)
 welcome: false,
-      welcomeMessage: '╭━━━≪ KAMI BOT ≫━━━╮\n\n👋 *NEW MEMBER JOINED*\n\n┌─ ✦\n│ 👤 Welcome, @user!\n│ 💀 You are member #memberCount\n│ ⏰ Time: time\n└───────────────────────\n\n📜 *GROUP RULES*\n│ • No spam\n│ • No illegal content\n│ • No toxic behavior\n│ • Follow admin instructions\n\n⚠️ Violators will be removed.\n\n> *Powered by KAMI Bot*',
+      welcomeMessage: '----------\n*KAMI BOT*\n----------\n\n👋 *HOWZIT @user!*\n\n- 💀 You\'re member #memberCount\n- ⏰ Time: time\n\n📜 *GROUP RULES*\n- No spam\n- No illegal content\n- No toxic behavior\n- Follow admin instructions\n\n⚠️ _Violators will be removed, moegoe._\n----------',
       goodbye: false,
-      goodbyeMessage: '╭━━━≪ KAMI BOT ≫━━━╮\n\n👋 *MEMBER LEFT*\n\n@user has left the group.\n\n💀 Member count: #memberCount\n\n> *Powered by KAMI Bot*',
+      goodbyeMessage: '----------\n*KAMI BOT*\n----------\n\n👋 *TOTSIENS @user!*\n\n- 💀 Member count: #memberCount\n\n_Go well, chommie._\n----------',
       antiSpam: false,
       antidelete: false,
       nsfw: false,
@@ -62,15 +62,15 @@ welcome: false,
     
     // Message Configuration
     messages: {
-      wait: '⏳ Please wait...',
-      success: '✅ Success!',
-      error: '❌ Error occurred!',
-      ownerOnly: '👑 This command is only for bot owner!',
-      adminOnly: '🛡️ This command is only for group admins!',
-      groupOnly: '👥 This command can only be used in groups!',
-      privateOnly: '💬 This command can only be used in private chat!',
-      botAdminNeeded: '🤖 Bot needs to be admin to execute this command!',
-      invalidCommand: '❓ Invalid command! Type .menu for help'
+      wait: '⏳ _Leka, loading..._',
+      success: '✅ _Done, lekke!_',
+      error: '❌ _Something went stukkend_',
+      ownerOnly: '👑 _This one\'s for the owner only, chommie_',
+      adminOnly: '🛡️ _Admins only — you need admin for this, shame_',
+      groupOnly: '👥 _Group only — this needs a group, lekke_',
+      privateOnly: '💬 _DM only — this one\'s private, yazi_',
+      botAdminNeeded: '🤖 _Bot needs to be admin for this, moegoe_',
+      invalidCommand: '❓ _Invalid command hey — try .menu for the list_'
     },
     
     // Timezone

@@ -3,6 +3,7 @@
  */
 
 const APIs = require('../../utils/api');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'joke',
@@ -20,7 +21,7 @@ module.exports = {
       await extra.reply(text);
       
     } catch (error) {
-      await extra.reply(`❌ error: ${error.message}`);
+      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

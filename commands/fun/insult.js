@@ -1,4 +1,5 @@
 // commands/fun/insult.js
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 module.exports = {
   name: 'insult',
   aliases: ['insultme','burn'],
@@ -29,7 +30,7 @@ module.exports = {
       await sock.sendMessage(extra.from, { text: `${line}`, mentions: [targetId] }, { quoted: msg });
     } catch (error) {
       console.error('[insult] ERROR:', error);
-      await extra.reply('❌ something went wrong hey');
+      await extra.reply(`❌ _${pick(SLANG.error)} — something went stukkend hey_`);
     }
   }
 };

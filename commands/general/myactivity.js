@@ -1,6 +1,7 @@
 // commands/general/myactivity.js
 
 const { getStats } = require('../../utils/groupstats');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'myactivity',
@@ -17,7 +18,7 @@ module.exports = {
             const stats = getStats(from);
 
             if (!stats || !stats.users || !stats.users[sender]) {
-                return extra.reply('📊 You haven\'t sent any messages today yet!');
+                return extra.reply(`${italic('you haven\'t sent any messages today yet')}`);
             }
 
             const userCount = stats.users[sender];
@@ -38,7 +39,7 @@ module.exports = {
 📈 *Your Share:* ${percentage}%
 🏆 *Rank:* #${rank} of ${sortedUsers.length}
 
-Keep chatting! 💬
+${italic('keep chatting!')} 💬
 `.trim();
 
             await sock.sendMessage(from, {
@@ -48,7 +49,7 @@ Keep chatting! 💬
 
         } catch (err) {
             console.error('[myactivity cmd] error:', err);
-            extra.reply('❌ couldn\'t load your activity hey');
+            extra.reply(`❌ _${pick(SLANG.error)}, couldn't load your activity_`);
         }
     }
 };

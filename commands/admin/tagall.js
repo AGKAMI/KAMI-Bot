@@ -14,11 +14,12 @@ module.exports = {
     
     async execute(sock, msg, args, extra) {
       try {
+        const { bold, pick, SLANG } = require('../../utils/format');
         const message = args.join(' ') || 'Everyone!';
         
         const participants = extra.groupMetadata.participants.map(p => p.id);
         
-        let text = `📢 *group announcement*\n\n`;
+        let text = `📢 ${bold('group announcement')}\n\n`;
         text += `${message}\n\n`;
         text += `👥 Tagged Members:\n`;
         
@@ -32,7 +33,7 @@ module.exports = {
         }, { quoted: msg });
         
       } catch (error) {
-        await extra.reply(`❌ error: ${error.message}`);
+        await extra.reply(`❌ _moegoe, ${error.message}_`);
       }
     }
   };

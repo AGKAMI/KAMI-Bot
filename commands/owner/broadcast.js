@@ -12,8 +12,9 @@ module.exports = {
     
     async execute(sock, msg, args, extra) {
       try {
+        const { bold, pick, SLANG } = require('../../utils/format');
         if (args.length === 0) {
-          return extra.reply('❌ usage: .broadcast <message>\n\nExample: .broadcast Hello everyone!');
+          return extra.reply('❌ _moegoe, usage: .broadcast <message>_\n\nExample: .broadcast Hello everyone!');
         }
         
         const message = args.join(' ');
@@ -27,7 +28,7 @@ module.exports = {
         for (const group of groups) {
           try {
             await sock.sendMessage(group.id, {
-              text: `📢 *broadcast*\n\n${message}\n\n_this is a broadcast from bot owner_`
+              text: `📢 ${bold('broadcast')}\n\n${message}\n\n_this is a broadcast from bot owner_`
             });
             success++;
           } catch (e) {
@@ -35,10 +36,10 @@ module.exports = {
           }
         }
         
-        await extra.reply(`✅ broadcast done\n\n✅ Success: ${success}\n❌ Failed: ${failed}`);
+        await extra.reply(`✅ _lekke, broadcast done_\n\n✅ Success: ${success}\n❌ Failed: ${failed}`);
         
       } catch (error) {
-        await extra.reply(`❌ error: ${error.message}`);
+        await extra.reply(`❌ _moegoe, ${error.message}_`);
       }
     }
   };

@@ -4,6 +4,7 @@
 
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { webp2png } = require('../../utils/webp2mp4');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'simage',
@@ -14,7 +15,7 @@ module.exports = {
   
   async execute(sock, msg, args, extra) {
     try {
-      const notStickerMessage = '📎 Reply to a sticker to convert it to image!';
+      const notStickerMessage = `${italic('reply to a sticker to convert it to image')}`;
       
       // Check if message is a reply
       const ctxInfo = msg.message?.extendedTextMessage?.contextInfo;
@@ -46,7 +47,7 @@ module.exports = {
       );
       
       if (!stickerBuffer) {
-        return await extra.reply("❌ couldn't download the sticker — try again");
+        return await extra.reply(`❌ _${pick(SLANG.error)} — couldn't download the sticker, try again_`);
       }
       
       // Check if sticker is animated
@@ -85,7 +86,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Error in simage command:', error);
-      await extra.reply(`❌ couldn't convert sticker to image\n\nerror: ${error.message}`);
+      await extra.reply(`❌ _${pick(SLANG.error)} — couldn't convert sticker to image_`);
     }
   }
 };

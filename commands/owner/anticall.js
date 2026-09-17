@@ -10,6 +10,7 @@ module.exports = {
   usage: '.anticall on/off',
 
   async execute(sock, msg, args, extra) {
+    const { bold, italic, pick, SLANG } = require('../../utils/format');
     if (!args[0]) {
       return extra.reply('usage: .anticall on/off');
     }
@@ -46,12 +47,12 @@ module.exports = {
       
       await extra.reply(
         enabled
-          ? '✅ Anti-call enabled. Calls will be auto-rejected & blocked.'
-          : '❌ Anti-call disabled.'
+          ? '✅ _lekke, Anti-call enabled. Calls will be auto-rejected & blocked._'
+          : '❌ _moegoe, Anti-call disabled._'
       );
     } catch (err) {
       console.error('[anticall cmd] error:', err);
-      extra.reply('❌ couldn\'t update anti-call setting');
+      extra.reply('❌ _moegoe, couldn\'t update anti-call setting_');
     }
   }
 };

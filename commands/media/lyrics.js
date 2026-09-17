@@ -6,6 +6,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const config = require('../../config');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'lyrics',
@@ -18,7 +19,7 @@ module.exports = {
     try {
       if (args.length === 0) {
         return await sock.sendMessage(msg.key.remoteJid, {
-          text: `Give me a song name\n\nExample: ${config.prefix}lyrics Despacito`
+          text: `📝 _${pick(SLANG.vibe)}, give me a song name_\n\n_Example:_ ${config.prefix}lyrics Despacito`
         });
       }
 
@@ -138,7 +139,7 @@ module.exports = {
 
       if (!lyricsData) {
         return await sock.sendMessage(msg.key.remoteJid, {
-          text: `Could not find lyrics for "${query}"\n\nJust type: ${config.prefix}lyrics songname artist`
+          text: `❌ _${pick(SLANG.error)}, could not find lyrics for "${query}"_\n\n_Just type:_ ${config.prefix}lyrics songname artist`
         });
       }
 
@@ -159,7 +160,7 @@ module.exports = {
     } catch (error) {
       console.error('[lyrics] Error:', error.message);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: 'An error occurred while fetching lyrics!'
+        text: `❌ _${pick(SLANG.error)} — error fetching lyrics hey_`
       });
     }
   }

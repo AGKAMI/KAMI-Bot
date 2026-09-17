@@ -1,5 +1,6 @@
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'menu',
@@ -38,10 +39,10 @@ module.exports = {
 
       const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'owner'];
 
-      let text = `╭━━━≪ *KAMI BOT* ≫━━━╮\n\n`;
-      text += `👋 Hey ${extra.pushName || 'User'}!\n`;
+      let text = `----------\n*KAMI BOT*\n----------\n\n`;
+      text += `${bold('HOWZIT')} ${extra.pushName || 'User'}! 👋\n`;
       text += `📌 *${total} commands* available\n`;
-      text += `⚡ Prefix: *${prefix}*\n\n`;
+      text += `⚡ Prefix: *${prefix}*\n----------\n\n`;
 
       for (const cat of order) {
         const list = categories[cat];
@@ -57,16 +58,13 @@ module.exports = {
         text += `${meta.emoji} *${meta.label}*\n${cmds}\n\n`;
       }
 
-      text += `╭━━━━━━━━━━━━━━━╮\n`;
-      text += `│ Use ${prefix}help <cmd>\n`;
-      text += `│ for command info\n`;
-      text += `╰━━━━━━━━━━━━━━━╯`;
+      text += `----------\n- Use ${prefix}help <cmd>\n  for command info\n----------`;
 
       await sock.sendMessage(extra.from, { text: text }, { quoted: msg });
 
     } catch (error) {
       console.error('[MENU] Error:', error);
-      await extra.reply('Error: ' + error.message);
+      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

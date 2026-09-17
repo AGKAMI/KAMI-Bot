@@ -6,6 +6,7 @@
 const axios = require('axios');
 const { ttdl } = require('ruhend-scraper');
 const config = require('../../config');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 const processedMessages = new Set();
 
@@ -35,8 +36,8 @@ async function sendVideo(sock, chatId, videoUrl, title, msg) {
 
     const botName = config.botName.toUpperCase();
     const caption = title
-      ? `*DOWNLOADED BY ${botName}*\n\n${title}`
-      : `*DOWNLOADED BY ${botName}*`;
+      ? `*DOWNLOADED BY ${botName}*\n\n${title}\n_${pick(SLANG.vibe)}, enjoy_`
+      : `*DOWNLOADED BY ${botName}*\n_${pick(SLANG.vibe)}, enjoy_`;
 
     await sock.sendMessage(chatId, {
       video: buf,
@@ -50,8 +51,8 @@ async function sendVideo(sock, chatId, videoUrl, title, msg) {
     try {
       const botName = config.botName.toUpperCase();
       const caption = title
-        ? `*DOWNLOADED BY ${botName}*\n\n${title}`
-        : `*DOWNLOADED BY ${botName}*`;
+        ? `*DOWNLOADED BY ${botName}*\n\n${title}\n_${pick(SLANG.vibe)}, enjoy_`
+        : `*DOWNLOADED BY ${botName}*\n_${pick(SLANG.vibe)}, enjoy_`;
 
       await sock.sendMessage(chatId, {
         video: { url: videoUrl },
@@ -121,7 +122,7 @@ module.exports = {
         : (args[0] || '').trim();
 
       if (!url || !TIKTOK_REGEX.test(url)) {
-        return extra.reply('send a tiktok link after the command\n\n*.tt <tiktok url>*');
+        return extra.reply(`📝 _${pick(SLANG.vibe)}, send a TikTok link after the command_\n\n*.tt <tiktok url>*`);
       }
 
       await extra.react('🔄');
@@ -154,14 +155,14 @@ module.exports = {
 
       if (!success) {
         await extra.react('❌');
-        return extra.reply('could not download the video — try a different link');
+        return extra.reply(`❌ _${pick(SLANG.error)} — could not download the video, try a different link_`);
       }
 
       await extra.react('✅');
     } catch (error) {
       console.error('[TT] command error:', error);
       await extra.react('❌');
-      await extra.reply('error processing request — try again');
+      await extra.reply(`❌ _${pick(SLANG.error)} — error processing request, try again_`);
     }
   }
 };

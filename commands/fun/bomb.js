@@ -3,6 +3,8 @@
  * Thanks To Kasan
  */
 
+const { bold, italic, pick, SLANG } = require('../../utils/format');
+
 // Store game state per user
 const gameState = new Map();
 
@@ -30,7 +32,7 @@ module.exports = {
         
         if (text.toLowerCase().trim() === 'suren' || text.toLowerCase().trim() === 'surrender') {
           const bombBox = game.array.find(v => v.emot === '💥');
-          await extra.reply(`*you surrendered* 💣\n\nthe bomb was in box ${bombBox.number}`, { quoted: game.msg });
+          await extra.reply(`*_${pick(SLANG.vibe)}, you surrendered_ * 💣\n\n_the bomb was in box ${bombBox.number}_`, { quoted: game.msg });
           clearTimeout(game.timeoutId);
           gameState.delete(sender);
           return;
@@ -55,9 +57,9 @@ module.exports = {
         if (selectedBox.emot === '💥') {
           // Game over - hit the bomb!
           let teks = `💥 *B O M B  E X P L O D E D!*\n\n`;
-          teks += `You selected box number ${selectedBox.number} and...\n\n`;
+          teks += `_${pick(SLANG.vibe)}, you selected box number ${selectedBox.number} and..._\n\n`;
           teks += `💣 *BOOM!* 💣\n\n`;
-          teks += `Game Over! Points deducted.\n\n`;
+          teks += `_${pick(SLANG.error)}, game over! Points deducted._\n\n`;
           teks += `*Final Result:*\n`;
           for (let i = 0; i < game.array.length; i += 3) {
             teks += game.array.slice(i, i + 3).map(v => v.emot).join('') + '\n';
@@ -163,7 +165,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Error in bomb command:', error);
-      return extra.reply('❌ Error: ' + (error.message || 'Unknown error occurred'));
+      return extra.reply(`❌ _${pick(SLANG.error)} — ${error.message || 'something went stukkend'}_`);
     }
   },
 };

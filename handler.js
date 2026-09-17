@@ -10,6 +10,7 @@ const { jidDecode, jidEncode } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG } = require('./utils/format');
 
 // Group metadata cache to prevent rate limiting
 const groupMetadataCache = new Map();
@@ -631,7 +632,7 @@ const handleMessage = async (sock, msg) => {
                   try {
                     await sock.sendMessage(from, { delete: msg.key });
                     await sock.sendMessage(from, { 
-                      text: `⚠️ *KAMI SECURITY*\n\n🚫 TAGALL DETECTED!\n\n@${sender.split('@')[0]} has triggered anti-tagall protection.\n\nThis is an automated action.`,
+                      text: `🚫 *KAMI SECURITY*\n\n${bold('TAGALL DETECTED!')}\n\n@${sender.split('@')[0]} triggered anti-tagall.\n\n_Automated action._`,
                       mentions: [sender]
                     }, { quoted: msg });
                   } catch (e) {
@@ -653,7 +654,7 @@ const handleMessage = async (sock, msg) => {
                     }
                     const usernames = [`@${sender.split('@')[0]}`];
                     await sock.sendMessage(from, {
-                      text: `🚫 *KAMI SECURITY - AUTOMATED ACTION*\n\n❌ ${usernames.join(', ')} HAS BEEN REMOVED\n\nReason: Mass tagging all members\n\nViolations will not be tolerated.`,
+                      text: `🚫 *KAMI SECURITY*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: mass tagging all members_\n\n_Violations won't be tolerated._`,
                       mentions: [sender],
                     }, { quoted: msg });
                   }
@@ -787,7 +788,7 @@ const handleMessage = async (sock, msg) => {
     }
     
     if (command.modOnly && !isMod(sender) && !isOwner(sender)) {
-      return sock.sendMessage(from, { text: '🔒 This command is only for moderators!' }, { quoted: msg });
+      return sock.sendMessage(from, { text: `${bold('Moderators only')} — this one's for the mods, ${pick(SLANG.friend)}` }, { quoted: msg });
     }
     
     if (command.groupOnly && !isGroup) {
@@ -841,7 +842,7 @@ const handleMessage = async (sock, msg) => {
     
     try {
       await sock.sendMessage(msg.key.remoteJid, { 
-        text: `${config.messages.error}\n\n${error.message}` 
+        text: `${config.messages.error}\n_${pick(SLANG.error)} — ${error.message}_`
       }, { quoted: msg });
     } catch (e) {
       // Don't log rate limit errors when sending error messages
@@ -993,8 +994,27 @@ const handleGroupUpdate = async (sock, update) => {
             hour12: true 
           });
           
-          // Create formatted welcome message - KAMI STYLE
-          const welcomeMsg = `╭━━━≪ KAMI BOT ≫━━━╮\n\n👋 *NEW MEMBER ALERT*\n\n┌─ ✦\n│ 👤 Welcome, @${displayName}!\n│ 💀 Member #${groupMetadata.participants.length}\n│ ⏰ ${timeString}\n└───────────────────────\n\n📜 *${groupName}*\n${groupDesc || 'No description'}\n\n⚠️ *RULES*\n│ • No spam\n│ • No illegal content\n│ • No toxic behavior\n\n> *Powered by KAMI Bot*`;
+          // Create formatted welcome message - KAMI STYLE with tsotsitaal
+                    const welcomeLines = [
+                      `${bold(greet().toUpperCase())} @${displayName}! 👋`,
+                      '',
+                      `${mention(participantJid)} ${bold('lekker to have you here')}`,
+                      `- 💀 ${bold('Member')} #${groupMetadata.participants.length}`,
+                      `- ⏰ ${timeString}`,
+                      '',
+                      line(20),
+                      '',
+                      `📜 *${groupName}*`,
+                      groupDesc || '_No description yet_',
+                      '',
+                      `${bold('RULES')}`,
+                      '- No spam',
+                      '- No illegal content',
+                      '- No toxic behavior',
+                      '',
+                      `_${pick(SLANG.vibe)}, enjoy your stay chommie_`,
+                    ];
+          const welcomeMsg = welcomeLines.join('\n');
           
           // Construct API URL for welcome image
           const apiUrl = `https://api.some-random-api.com/welcome/img/7/gaming4?type=join&textcolor=white&username=${encodeURIComponent(displayName)}&guildName=${encodeURIComponent(groupName)}&memberCount=${groupMetadata.participants.length}&avatar=${encodeURIComponent(profilePicUrl)}`;
@@ -1012,7 +1032,7 @@ const handleGroupUpdate = async (sock, update) => {
         } catch (welcomeError) {
           // Fallback to text message if image generation fails
           console.error('Welcome image error:', welcomeError);
-          let message = groupSettings.welcomeMessage || 'Welcome @user to @group! 👋\nEnjoy your stay!';
+          let message = groupSettings.welcomeMessage || `${greet()} @user! 👋\n${lekker()} to have you in @group!`;
           message = message.replace('@user', `@${participantNumber}`);
           message = message.replace('@group', groupMetadata.subject || 'the group');
           
@@ -1119,8 +1139,14 @@ const handleGroupUpdate = async (sock, update) => {
             hour12: true 
           });
           
-          // Create simple goodbye message
-          const goodbyeMsg = `Goodbye @${displayName} 👋 We will never miss you!`;
+          // Create goodbye message with tsotsitaal flair
+          const goodbyeLines = [
+            `${bold('TOTSIENS')} @${displayName} 👋`,
+            '',
+            `${pick(SLANG.vibe)}, we'll miss you hey.`,
+            `_Go well, chommie._`,
+          ];
+          const goodbyeMsg = goodbyeLines.join('\n');
           
           // Construct API URL for goodbye image (using leave type)
           const apiUrl = `https://api.some-random-api.com/welcome/img/7/gaming4?type=leave&textcolor=white&username=${encodeURIComponent(displayName)}&guildName=${encodeURIComponent(groupName)}&memberCount=${groupMetadata.participants.length}&avatar=${encodeURIComponent(profilePicUrl)}`;
@@ -1138,7 +1164,7 @@ const handleGroupUpdate = async (sock, update) => {
         } catch (goodbyeError) {
           // Fallback to simple goodbye message
           console.error('Goodbye error:', goodbyeError);
-          const goodbyeMsg = `Goodbye @${participantNumber} 👋 We will never miss you! 💀`;
+          const goodbyeMsg = `_${pick(SLANG.vibe)}_ @${participantNumber} 👋\n_Go well, chommie._ 💀`;
           
           await sock.sendMessage(id, { 
             text: goodbyeMsg, 
@@ -1204,7 +1230,7 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
         await sock.sendMessage(from, { delete: msg.key });
         await sock.groupParticipantsUpdate(from, [sender], 'remove');
         await sock.sendMessage(from, { 
-          text: `🔗 Anti-link triggered. Link removed.`,
+          text: `🔗 _Anti-link triggered. Link removed, ${pick(SLANG.vibe)}._`,
           mentions: [sender]
         });
       } catch (e) {
@@ -1221,14 +1247,14 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
         if (warnCount >= maxWarnings) {
           await sock.groupParticipantsUpdate(from, [sender], 'remove');
           await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-LINK AUTOMATED ACTION*\n\n❌ @${sender.split('@')[0]} HAS BEEN REMOVED\n\nReason: 3 violations for posting links\n\nThis is your final warning. Do not rejoin.`,
+            text: `🚫 *ANTI-LINK*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: 3 link violations_\n\n_This was your final warning._`,
             mentions: [sender]
           });
           database.clearWarnings(from, sender);
         } else {
           const remaining = maxWarnings - warnCount;
           await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-LINK WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} - LINKS ARE PROHIBITED!\n\nViolation recorded. ${remaining} more and you're out.`,
+            text: `🚫 *ANTI-LINK WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} — links are prohibited!\n\n_${remaining} more and you're out, ${pick(SLANG.friend)}._`,
             mentions: [sender]
           });
         }
@@ -1239,7 +1265,7 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
       try {
         await sock.sendMessage(from, { delete: msg.key });
         await sock.sendMessage(from, { 
-          text: `🔗 Anti-link triggered. Link removed.`,
+          text: `🔗 _Anti-link triggered. Link removed, ${pick(SLANG.vibe)}._`,
           mentions: [sender]
         });
       } catch (e) {
@@ -1337,14 +1363,14 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
         if (warnCount >= maxWarnings) {
           await sock.groupParticipantsUpdate(from, [sender], 'remove');
           await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-GROUP MENTION AUTOMATED ACTION*\n\n❌ @${sender.split('@')[0]} HAS BEEN REMOVED\n\nReason: 3 violations for group mentions\n\nThis is your final warning. Do not rejoin.`,
+            text: `🚫 *ANTI-GROUP MENTION*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: 3 group mention violations_\n\n_This was your final warning._`,
             mentions: [sender]
           });
           database.clearWarnings(from, sender);
         } else {
           const remaining = maxWarnings - warnCount;
           await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-GROUP MENTION WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} - GROUP MENTIONS ARE PROHIBITED!\n\nViolation recorded. ${remaining} more and you're out.`,
+            text: `🚫 *ANTI-GROUP MENTION WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} — group mentions are prohibited!\n\n_${remaining} more and you're out, ${pick(SLANG.friend)}._`,
             mentions: [sender]
           });
         }
@@ -1394,7 +1420,7 @@ const initializeAntiCall = (sock) => {
 
           // Notify user
           await sock.sendMessage(call.from, {
-            text: '🚫 Calls are not allowed. You have been blocked.'
+            text: `🚫 _Calls aren't allowed here. You've been blocked, ${pick(SLANG.vibe)}._`
           });
         }
       }

@@ -2,6 +2,8 @@
  * Ping Command - Check bot response time
  */
 
+const { bold, italic, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
     name: 'ping',
     aliases: ['p'],
@@ -12,7 +14,7 @@ module.exports = {
     async execute(sock, msg, args, extra) {
       try {
         const start = Date.now();
-        const sent = await extra.reply('🏓 *Pinging...*');
+        const sent = await extra.reply(`🏓 ${bold('Pinging...')}`);
         const end = Date.now();
         
         const responseTime = end - start;
@@ -24,14 +26,14 @@ module.exports = {
         if (responseTime > 1000) { status = '🔴'; quality = 'Poor'; }
         
         const text = [
-          `*KAMI BOT*`,
-          `━━━━━━━━━━━━━━━━━━`,
+          `${bold('KAMI BOT')}`,
+          `----------`,
           ``,
-          `${status} *Status:* Online`,
-          `⚡ *Response:* ${responseTime}ms`,
-          `📊 *Quality:* ${quality}`,
-          `━━━━━━━━━━━━━━━━━━`,
-          `⏱️ _Tested just now_`
+          `${status} ${bold('Status:')} Online`,
+          `⚡ ${bold('Response:')} ${responseTime}ms`,
+          `📊 ${bold('Quality:')} ${quality}`,
+          `----------`,
+          `⏱️ _Tested just now, ${pick(SLANG.vibe)}_`
         ].join('\n');
         
         await sock.sendMessage(extra.from, {
@@ -40,7 +42,7 @@ module.exports = {
         });
         
       } catch (error) {
-        await extra.reply('❌ Error: ' + error.message);
+        await extra.reply(`❌ _something went stukkend — ${error.message}_`);
       }
     }
   };

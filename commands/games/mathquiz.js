@@ -1,3 +1,4 @@
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 const quiz = new Map();
 module.exports = {
   name: 'mathquiz',
@@ -11,13 +12,13 @@ module.exports = {
       const ans = parseInt(arg0);
       if (ans === g.ans) {
         quiz.delete(ctx.from);
-        return ctx.reply('✅ correct! ' + g.expr + ' = ' + g.ans);
+        return ctx.reply(`✅ ${pick(SLANG.good)}, correct! ${g.expr} = ${g.ans}`);
       }
-      return ctx.reply('❌ wrong — try again!');
+      return ctx.reply(`❌ ${pick(SLANG.error)}, wrong — try again!`);
     }
     if (arg0 === 'stop') {
       quiz.delete(ctx.from);
-      return ctx.reply('quiz stopped');
+      return ctx.reply(`${pick(SLANG.vibe)}, quiz stopped!`);
     }
     const diff = arg0 || 'easy';
     let a, b, op, ans, expr;

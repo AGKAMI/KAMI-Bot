@@ -1,3 +1,4 @@
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 const rounds = [
   { emojis: '🐱👻🍕', answer: 'cat ghost pizza' },
   { emojis: '🌞🎸🎸', answer: 'sun guitar guitar' },
@@ -18,13 +19,13 @@ module.exports = {
     const sub = (args[0] || '').toLowerCase();
     if (sub === 'answer' || sub === 'skip') {
       const g = active.get(ctx.from);
-      if (!g) return ctx.reply('no active game hey');
+      if (!g) return ctx.reply(`❌ _no active game, ${pick(SLANG.vibe)}_`);
       active.delete(ctx.from);
-      return ctx.reply('Answer was: ' + g.answer);
+      return ctx.reply(`Answer was: ${g.answer}`);
     }
     if (sub === 'stop') {
       active.delete(ctx.from);
-      return ctx.reply('emoji guess stopped');
+      return ctx.reply(`${pick(SLANG.vibe)}, emoji guess stopped!`);
     }
     const guess = args.join(' ').toLowerCase();
     const g = active.get(ctx.from);
@@ -32,12 +33,12 @@ module.exports = {
       if (guess === g.answer) {
         const winner = ctx.sender.split('@')[0];
         active.delete(ctx.from);
-        return ctx.reply('🎉 ' + winner + ' guessed it! ' + g.answer);
+        return ctx.reply(`🎉 ${pick(SLANG.good)}, ${winner} guessed it! ${g.answer}`);
       }
-      return ctx.reply('❌ wrong! hint: ' + g.answer.split(' ').join(' / '));
+      return ctx.reply(`❌ ${pick(SLANG.error)}, wrong! hint: ${g.answer.split(' ').join(' / ')}`);
     }
     const r = rounds[Math.floor(Math.random() * rounds.length)];
     active.set(ctx.from, { answer: r.answer, emojis: r.emojis });
-    return ctx.reply('🎯 guess the phrase!\n\n' + r.emojis + '\n\nUse .emoji <answer>');
+    return ctx.reply(`🎯 guess the phrase!\n\n${r.emojis}\n\nUse .emoji <answer>`);
   }
 };

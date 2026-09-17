@@ -1,3 +1,4 @@
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 const REELS = ['🍒','🍋','🍇','🍉','🔔','💎','7️⃣'];
 const PAYOUTS = {
   '7️⃣7️⃣7️⃣': 100,
@@ -25,9 +26,9 @@ module.exports = {
     const win = tripleMatch || (twoMatch ? TWO_MATCH : 0);
     let text = '🎰 | ' + r1 + ' | ' + r2 + ' | ' + r3 + ' |\n';
     if (win > 0) {
-      text += '🏆 Win: ' + win + ' points!';
+      text += `🏆 ${pick(SLANG.good)}, you win ${win} points!`;
     } else {
-      text += '😢 no match — try again!';
+      text += `😢 ${pick(SLANG.error)}, no match — try again!`;
     }
     await ctx.reply(text);
   }

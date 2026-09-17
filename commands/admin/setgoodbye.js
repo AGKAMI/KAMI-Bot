@@ -3,6 +3,7 @@
  */
 
 const db = require('../../database');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setgoodbye',
@@ -20,7 +21,7 @@ module.exports = {
       if (!args.length) {
         const groupSettings = db.getGroupSettings(groupId);
         return await sock.sendMessage(groupId, {
-          text: `📝 *current goodbye message*\n\n${groupSettings.goodbyeMessage}\n\n*Usage:* .setgoodbye <message>\n\n*Tip:* Use @user to mention the member who left`
+          text: `📝 ${bold('current goodbye message')}\n\n${groupSettings.goodbyeMessage}\n\n*Usage:* .setgoodbye <message>\n\n*Tip:* Use @user to mention the member who left`
         }, { quoted: msg });
       }
       
@@ -28,21 +29,21 @@ module.exports = {
       
       if (goodbyeMessage.length > 500) {
         return await sock.sendMessage(groupId, {
-          text: '❌ goodbye message is too long, max 500 characters'
+          text: '❌ _moegoe, goodbye message is too long, max 500 characters_'
         }, { quoted: msg });
       }
       
       db.updateGroupSettings(groupId, { goodbyeMessage });
       
       await sock.sendMessage(groupId, {
-        text: `✅ goodbye message updated!\\n\\n*preview:*\\n${goodbyeMessage.replace('@user', '@' + msg.key.participant.split('@')[0])}`,
+        text: `✅ _lekke, goodbye message updated!_\n\n*preview:*\n${goodbyeMessage.replace('@user', '@' + msg.key.participant.split('@')[0])}`,
         mentions: [msg.key.participant]
       }, { quoted: msg });
       
     } catch (error) {
       console.error('Set Goodbye Error:', error);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ error: ${error.message}`
+        text: `❌ _moegoe, ${error.message}_`
       }, { quoted: msg });
     }
   }

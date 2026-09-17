@@ -3,6 +3,7 @@
  */
 
 const db = require('../../database');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'goodbye',
@@ -20,9 +21,9 @@ module.exports = {
       
       if (!action || !['on', 'off'].includes(action)) {
         const groupSettings = db.getGroupSettings(groupId);
-        const status = groupSettings.goodbye ? '✅ Enabled' : '❌ Disabled';
+        const status = groupSettings.goodbye ? '✅ _Enabled_' : '❌ _Disabled_';
         return await sock.sendMessage(groupId, {
-          text: `👋 *goodbye messages*\n\nStatus: ${status}\nMessage: ${groupSettings.goodbyeMessage}\n\nUsage: .goodbye on/off\n\nTo customize: .setgoodbye <message>`
+          text: `👋 ${bold('goodbye messages')}\n\nStatus: ${status}\nMessage: ${groupSettings.goodbyeMessage}\n\nUsage: .goodbye on/off\n\nTo customize: .setgoodbye <message>`
         }, { quoted: msg });
       }
       
@@ -30,13 +31,13 @@ module.exports = {
       db.updateGroupSettings(groupId, { goodbye: enable });
       
       await sock.sendMessage(groupId, {
-        text: `✅ goodbye messages ${enable ? 'enabled' : 'disabled'}${enable ? '\\n\\nleaving members will get a goodbye now' : ''}`
+        text: `✅ _lekke, goodbye messages ${enable ? 'enabled' : 'disabled'}${enable ? '\\n\\nleaving members will get a goodbye now' : ''}_`
       }, { quoted: msg });
       
     } catch (error) {
       console.error('Goodbye Error:', error);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ error: ${error.message}`
+        text: `❌ _moegoe, ${error.message}_`
       }, { quoted: msg });
     }
   }

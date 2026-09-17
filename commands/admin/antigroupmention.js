@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'antigroupmention',
@@ -21,9 +22,9 @@ module.exports = {
         const status = settings.antigroupmention ? 'ON' : 'OFF';
         const action = settings.antigroupmentionAction || 'delete';
         return extra.reply(
-          `📌 *Antigroupmention Status*\n\n` +
-          `Status: *${status}*\n` +
-          `Action: *${action}*\n\n` +
+          `${bold('Antigroupmention Status')}\n\n` +
+          `${bold('Status')}: *${status}*\n` +
+          `${bold('Action')}: *${action}*\n\n` +
           `Usage:\n` +
           `  .antigroupmention on\n` +
           `  .antigroupmention off\n` +
@@ -37,45 +38,45 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antigroupmention) {
-          return extra.reply('*ag, antigroupmention is already on*');
+          return extra.reply(`✅ _sho, antigroupmention is already on_`);
         }
         database.updateGroupSettings(extra.from, { antigroupmention: true });
-        return extra.reply('*antigroupmention turned ON*');
+        return extra.reply('✅ _lekke, antigroupmention turned ON_');
       }
       
       if (opt === 'off') {
         database.updateGroupSettings(extra.from, { antigroupmention: false });
-        return extra.reply('*antigroupmention turned OFF*');
+        return extra.reply('✅ _antigroupmention turned OFF_');
       }
       
       if (opt === 'set') {
         if (args.length < 2) {
-          return extra.reply('*specify an action: .antigroupmention set delete | kick | warn*');
+          return extra.reply(`❌ _moegoe, specify an action: .antigroupmention set delete | kick | warn_`);
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick', 'warn'].includes(setAction)) {
-          return extra.reply('*invalid action — choose delete, kick, or warn*');
+          return extra.reply('❌ _moegoe, invalid action — choose delete, kick, or warn_');
         }
         
         database.updateGroupSettings(extra.from, { 
           antigroupmentionAction: setAction,
           antigroupmention: true // Auto-enable when setting action
         });
-        return extra.reply(`*antigroupmention action set to ${setAction}*`);
+        return extra.reply(`✅ _lekke, antigroupmention action set to ${setAction}_`);
       }
       
       if (opt === 'get') {
         const settings = database.getGroupSettings(extra.from);
         const status = settings.antigroupmention ? 'ON' : 'OFF';
         const action = settings.antigroupmentionAction || 'delete';
-        return extra.reply(`*antigroupmention config:*\\nstatus: ${status}\\naction: ${action}`);
+        return extra.reply(`${bold('antigroupmention config:')}\nStatus: ${status}\nAction: ${action}`);
       }
       
-      return extra.reply('*use .antigroupmention for usage*');
+      return extra.reply('❌ _moegoe, use .antigroupmention for usage_');
       
     } catch (error) {
-      await extra.reply(`❌ error: ${error.message}`);
+      await extra.reply(`❌ _moegoe, ${error.message}_`);
     }
   }
 };

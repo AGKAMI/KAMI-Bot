@@ -14,9 +14,10 @@ module.exports = {
   
   async execute(sock, msg, args, extra) {
     try {
+      const { bold, pick, SLANG } = require('../../utils/format');
       const count = parseInt(args[0]);
       if (!count || count < 1 || count > 100) {
-        return extra.reply('❌ enter a number between 1 and 100');
+        return extra.reply('❌ _moegoe, enter a number between 1 and 100_');
       }
 
       const jid = extra.from;
@@ -28,7 +29,7 @@ module.exports = {
 
       const msgs = store.messages[jid];
       if (!msgs) {
-        return extra.reply('❌ no stored messages found hey');
+        return extra.reply('❌ _moegoe, no stored messages found hey_');
       }
 
       let messagesToDelete = [];
@@ -63,7 +64,7 @@ module.exports = {
       
     } catch (e) {
       console.error('[clean cmd] error:', e);
-      extra.reply("❌ couldn't clean the messages hey");
+      extra.reply("❌ _moegoe, couldn't clean the messages hey_");
     }
   }
 };

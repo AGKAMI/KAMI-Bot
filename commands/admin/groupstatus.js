@@ -6,6 +6,7 @@ const {
 } = require('@whiskeysockets/baileys');
 const { PassThrough } = require('stream');
 const ffmpeg = require('fluent-ffmpeg');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 // Single default color for text statuses (purple)
 const PURPLE_COLOR = '#9C27B0';
@@ -26,7 +27,7 @@ module.exports = {
 
       // Only inside groups
       if (!extra.isGroup) {
-        return extra.reply('❌ ag, this only works in groups hey');
+        return extra.reply('❌ _moegoe, this only works in groups hey_');
       }
 
       const caption = (args.join(' ') || '').trim();
@@ -38,26 +39,26 @@ module.exports = {
       if (!hasQuoted) {
         if (!caption) {
           return extra.reply(
-            '📝 *group status usage*\n\n' +
-            '• Reply to image/video/audio with:\n' +
-            '  `.groupstatus [optional caption]`\n' +
-            '• Or send text status only:\n' +
-            '  `.groupstatus Your text here`\n\n' +
-            'Text statuses use a single purple background color by default.'
+            `${bold('group status usage')}\n\n` +
+            `• Reply to image/video/audio with:\n` +
+            `  \`.groupstatus [optional caption]\`\n` +
+            `• Or send text status only:\n` +
+            `  \`.groupstatus Your text here\`\n\n` +
+            `Text statuses use a single purple background color by default.`
           );
         }
 
-        await extra.reply('⏳ posting status...');
+        await extra.reply('⏳ _posting status..._');
 
         try {
           await groupStatus(sock, from, {
             text: caption,
             backgroundColor: PURPLE_COLOR,
           });
-          return extra.reply('✅ status posted, sharp');
+          return extra.reply('✅ _lekke, status posted_');
         } catch (e) {
           console.error('groupstatus text error:', e);
-          return extra.reply('❌ couldn\'t post status: ' + (e.message || e));
+          return extra.reply('❌ _moegoe, couldn\'t post status: ' + (e.message || e) + '_');
         }
       }
 
@@ -84,60 +85,60 @@ module.exports = {
 
       // IMAGE (also handles stickers)
       if (/image|sticker/i.test(mtype)) {
-        await extra.reply('⏳ posting image status...');
+        await extra.reply('⏳ _posting image status..._');
         let buf;
         try {
           buf = await downloadBuf();
         } catch {
-          return extra.reply('❌ couldn\'t download image');
+          return extra.reply('❌ _moegoe, couldn\'t download image_');
         }
-        if (!buf) return extra.reply('❌ couldn\'t download image');
+        if (!buf) return extra.reply('❌ _moegoe, couldn\'t download image_');
 
         try {
           await groupStatus(sock, from, {
             image: buf,
             caption: caption || '',
           });
-          return extra.reply('✅ image status posted');
+          return extra.reply('✅ _lekke, image status posted_');
         } catch (e) {
           console.error('groupstatus image error:', e);
-          return extra.reply('❌ couldn\'t post image status: ' + (e.message || e));
+          return extra.reply('❌ _moegoe, couldn\'t post image status: ' + (e.message || e) + '_');
         }
       }
 
       // VIDEO
       if (/video/i.test(mtype)) {
-        await extra.reply('⏳ posting video status...');
+        await extra.reply('⏳ _posting video status..._');
         let buf;
         try {
           buf = await downloadBuf();
         } catch {
-          return extra.reply('❌ couldn\'t download video');
+          return extra.reply('❌ _moegoe, couldn\'t download video_');
         }
-        if (!buf) return extra.reply('❌ couldn\'t download video');
+        if (!buf) return extra.reply('❌ _moegoe, couldn\'t download video_');
 
         try {
           await groupStatus(sock, from, {
             video: buf,
             caption: caption || '',
           });
-          return extra.reply('✅ video status posted');
+          return extra.reply('✅ _lekke, video status posted_');
         } catch (e) {
           console.error('groupstatus video error:', e);
-          return extra.reply('❌ couldn\'t post video status: ' + (e.message || e));
+          return extra.reply('❌ _moegoe, couldn\'t post video status: ' + (e.message || e) + '_');
         }
       }
 
       // AUDIO (voice-style group status)
       if (/audio/i.test(mtype)) {
-        await extra.reply('⏳ posting audio status...');
+        await extra.reply('⏳ _posting audio status..._');
         let buf;
         try {
           buf = await downloadBuf();
         } catch {
-          return extra.reply('❌ couldn\'t download audio');
+          return extra.reply('❌ _moegoe, couldn\'t download audio_');
         }
-        if (!buf) return extra.reply('❌ couldn\'t download audio');
+        if (!buf) return extra.reply('❌ _moegoe, couldn\'t download audio_');
 
         let vn;
         try {
@@ -160,15 +161,15 @@ module.exports = {
             ptt: true,
             waveform,
           });
-          return extra.reply('✅ audio status posted');
+          return extra.reply('✅ _lekke, audio status posted_');
         } catch (e) {
           console.error('groupstatus audio error:', e);
-          return extra.reply('❌ couldn\'t post audio status: ' + (e.message || e));
+          return extra.reply('❌ _moegoe, couldn\'t post audio status: ' + (e.message || e) + '_');
         }
       }
     } catch (e) {
       console.error('groupstatus error:', e);
-      return extra.reply('❌ error: ' + (e.message || e));
+      return extra.reply('❌ _moegoe, ' + (e.message || e) + '_');
     }
   }
 };

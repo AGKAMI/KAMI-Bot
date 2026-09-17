@@ -8,6 +8,7 @@ const path = require('path');
 const axios = require('axios');
 const APIs = require('../../utils/api');
 const { toAudio } = require('../../utils/converter');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 const AXIOS_DEFAULTS = {
   timeout: 60000,
@@ -29,7 +30,7 @@ module.exports = {
   async execute(sock, msg, args) {
     if (activeAudioDownloads >= 2) {
       return await sock.sendMessage(msg.key.remoteJid, {
-        text: 'Too many downloads. Try again in a few seconds.'
+        text: `❌ _too many downloads ${pick(SLANG.friend)} — try again in a few seconds_`
       }, { quoted: msg });
     }
     activeAudioDownloads++;
@@ -39,7 +40,7 @@ module.exports = {
       
       if (!text) {
         return await sock.sendMessage(chatId, { 
-          text: 'Usage: .song <song name or YouTube link>' 
+          text: `📝 _${pick(SLANG.vibe)}, give me a song name or YouTube link_\n\n_Example:_ .song Shape of You` 
         }, { quoted: msg });
       }
       
@@ -51,7 +52,7 @@ module.exports = {
         const search = await yts(text);
         if (!search || !search.videos.length) {
           return await sock.sendMessage(chatId, { 
-            text: 'No results found.' 
+            text: `❌ _${pick(SLANG.error)}, no results found for that one_`
           }, { quoted: msg });
         }
         video = search.videos[0];
@@ -70,14 +71,14 @@ module.exports = {
       } catch (err) {
         console.log('YouTube download failed:', err.message);
         return await sock.sendMessage(chatId, { 
-          text: `❌ Failed to download: ${err.message}` 
+          text: `❌ _${pick(SLANG.error)} — failed to download: ${err.message}_`
         }, { quoted: msg });
       }
       
       const audioUrl = audioData.download;
       if (!audioUrl) {
         return await sock.sendMessage(chatId, { 
-          text: '❌ No download URL received' 
+          text: `❌ _${pick(SLANG.error)}, no download URL received_`
         }, { quoted: msg });
       }
       
@@ -100,7 +101,7 @@ module.exports = {
         }
       } catch (dlErr) {
         return await sock.sendMessage(chatId, { 
-          text: `❌ Failed to download audio file: ${dlErr.message}` 
+          text: `❌ _download failed hey — ${dlErr.message}_`
         }, { quoted: msg });
       }
 
@@ -115,7 +116,7 @@ module.exports = {
     } catch (err) {
       console.error('Song command error:', err);
       await sock.sendMessage(msg.key.remoteJid, { 
-        text: `❌ Download failed: ${err.message}` 
+        text: `❌ _${pick(SLANG.error)} — something went stukkend — ${err.message}_`
       }, { quoted: msg });
     } finally {
       activeAudioDownloads--;

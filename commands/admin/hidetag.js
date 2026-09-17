@@ -5,6 +5,7 @@
  */
 
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'hidetag',
@@ -103,7 +104,7 @@ module.exports = {
       }
     } catch (error) {
       console.error('HideTag command error:', error);
-      await extra.reply("❌ couldn't tag everyone hey");
+      await extra.reply("❌ _moegoe, couldn't tag everyone hey_");
     }
   },
 };

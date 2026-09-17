@@ -15,10 +15,11 @@ module.exports = {
   
   async execute(sock, msg, args, extra) {
     try {
+      const { bold, pick, SLANG } = require('../../utils/format');
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       
       if (!ctx?.stanzaId || !ctx?.participant) {
-        return extra.reply('🗑️ reply to the message you wanna delete');
+        return extra.reply('🗑️ _reply to the message you wanna delete_');
       }
       
       const deleteKey = { 
@@ -31,7 +32,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Delete command error:', error);
-      await extra.reply("❌ couldn't delete that message hey");
+      await extra.reply("❌ _moegoe, couldn't delete that message hey_");
     }
   }
 };

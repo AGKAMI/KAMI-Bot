@@ -6,6 +6,7 @@
 
 const config = require('../../config');
 const handler = require('../../handler');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'kick',
@@ -31,7 +32,7 @@ module.exports = {
       }
       
       if (usersToKick.length === 0) {
-        return extra.reply('👤 tag or reply to the oke you wanna kick');
+        return extra.reply('👤 _tag or reply to the oke you wanna kick_');
       }
       
       const botId = sock.user?.id || '';
@@ -93,19 +94,19 @@ module.exports = {
       });
       
       if (isTryingToKickBot) {
-        await extra.reply("❌ ag no, can't kick myself bru");
+        await extra.reply("❌ _moegoe, can't kick myself bru_");
         return;
       }
       
       await sock.groupParticipantsUpdate(chatId, usersToKick, 'remove');
       
       const usernames = usersToKick.map((jid) => `@${jid.split('@')[0]}`);
-      const text = `✅ ${usernames.join(', ')} has been kicked successfully.`;
+      const text = `✅ ${usernames.join(', ')} _has been kicked, lekke_!`;
       
       await sock.sendMessage(extra.from, { text, mentions: usersToKick }, { quoted: msg });
     } catch (error) {
       console.error('Kick command error:', error);
-      await extra.reply("❌ couldn't kick — check if I'm admin hey");
+      await extra.reply("❌ _moegoe, couldn't kick — check if I'm admin hey_");
     }
   },
 };

@@ -14,18 +14,19 @@ module.exports = {
     
     async execute(sock, msg, args, extra) {
       try {
+        const { bold, pick, SLANG } = require('../../utils/format');
         const code = await sock.groupInviteCode(extra.from);
         const link = `https://chat.whatsapp.com/${code}`;
         
-        let text = `🔗 *group invite link*\n\n`;
-        text += `📱 Group: ${extra.groupMetadata.subject}\n`;
-        text += `🔗 Link: ${link}\n\n`;
+        let text = `🔗 ${bold('group invite link')}\n\n`;
+        text += `📱 ${bold('Group')}: ${extra.groupMetadata.subject}\n`;
+        text += `🔗 ${bold('Link')}: ${link}\n\n`;
         text += `⚠️ Don't share this link publicly!`;
         
         await extra.reply(text);
         
       } catch (error) {
-        await extra.reply(`❌ error: ${error.message}`);
+        await extra.reply(`❌ _moegoe, ${error.message}_`);
       }
     }
   };

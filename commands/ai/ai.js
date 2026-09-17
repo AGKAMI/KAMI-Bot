@@ -3,6 +3,7 @@
  */
 
 const APIs = require('../../utils/api');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'ai',
@@ -14,7 +15,7 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply('❌ usage: .ai <question>\n\nexample: .ai what is the capital of france?');
+        return extra.reply(`❌ _${pick(SLANG.error)} — usage: .ai <question>_\n\n_example: .ai what is the capital of france?_`);
       }
       
       const question = args.join(' ');
@@ -26,7 +27,7 @@ module.exports = {
       await extra.reply(answer);
       
     } catch (error) {
-      await extra.reply(`❌ ai error: ${error.message}`);
+      await extra.reply(`❌ _${pick(SLANG.error)} — ai error: ${error.message}_`);
     }
   }
 };
