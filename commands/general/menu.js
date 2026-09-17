@@ -1,6 +1,8 @@
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
   name: 'menu',
@@ -70,7 +72,17 @@ module.exports = {
       text += `${line(20)}\n`;
       text += `${italic(`Use ${prefix}help <cmd> for info`)}`;
 
-      await sock.sendMessage(extra.from, { text: text }, { quoted: msg });
+      // Check for custom menu image
+      const imagePath = path.join(__dirname, '../../utils/bot_image.jpg');
+      if (fs.existsSync(imagePath)) {
+        const imageBuffer = fs.readFileSync(imagePath);
+        await sock.sendMessage(extra.from, {
+          image: imageBuffer,
+          caption: text
+        }, { quoted: msg });
+      } else {
+        await sock.sendMessage(extra.from, { text: text }, { quoted: msg });
+      }
 
     } catch (error) {
       console.error('[MENU] Error:', error);
