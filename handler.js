@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG } = require('./utils/format');
+const { overlayText } = require('./utils/imageText');
 
 // Group metadata cache to prevent rate limiting
 const groupMetadataCache = new Map();
@@ -1016,19 +1017,37 @@ const handleGroupUpdate = async (sock, update) => {
                     ];
           const welcomeMsg = welcomeLines.join('\n');
           
-          // Construct API URL for welcome image
-          const apiUrl = `https://api.some-random-api.com/welcome/img/7/gaming4?type=join&textcolor=white&username=${encodeURIComponent(displayName)}&guildName=${encodeURIComponent(groupName)}&memberCount=${groupMetadata.participants.length}&avatar=${encodeURIComponent(profilePicUrl)}`;
+          // Check for custom welcome image
+          const welcomeImagePath = path.join(__dirname, 'utils/welcome_image.jpg');
           
-          // Download the welcome image
-          const imageResponse = await axios.get(apiUrl, { responseType: 'arraybuffer' });
-          const imageBuffer = Buffer.from(imageResponse.data);
+          if (fs.existsSync(welcomeImagePath)) {
+            // Use custom image with text overlay
+            const imageBuffer = fs.readFileSync(welcomeImagePath);
+            const ws = groupSettings.welcomeStyle || {};
+            const textLines = [
+              { text: greet().toUpperCase() + ' ' + displayName, size: ws.fontSize || 40, bold: true, color: ws.textColor || '#ffffff' },
+              { text: `Member #${groupMetadata.participants.length}`, size: ws.subFontSize || 28, color: '#cccccc' },
+              { text: groupName, size: 24, italic: true, color: '#aaaaaa' },
+            ];
+            const resultBuffer = await overlayText(imageBuffer, {
+              lines: textLines,
+              position: ws.position || 'center',
+              bg: { color: ws.bgColor || 'rgba(0,0,0,0.65)', radius: 16, padding: 28 },
+            });
+            await sock.sendMessage(id, { image: resultBuffer, mentions: [participantJid] });
+          } else {
+            // Fallback to API-generated image
+            try {
+              const apiUrl = `https://api.some-random-api.com/welcome/img/7/gaming4?type=join&textcolor=white&username=${encodeURIComponent(displayName)}&guildName=${encodeURIComponent(groupName)}&memberCount=${groupMetadata.participants.length}&avatar=${encodeURIComponent(profilePicUrl)}`;
+              const imageResponse = await axios.get(apiUrl, { responseType: 'arraybuffer' });
+              await sock.sendMessage(id, { image: Buffer.from(imageResponse.data), mentions: [participantJid] });
+            } catch (apiErr) {
+              console.error('Welcome API image error:', apiErr);
+            }
+          }
           
-          // Send the welcome image with formatted caption
-          await sock.sendMessage(id, { 
-            image: imageBuffer,
-            caption: welcomeMsg,
-            mentions: [participantJid] 
-          });
+          // Always send the text caption too
+          await sock.sendMessage(id, { text: welcomeMsg, mentions: [participantJid] });
         } catch (welcomeError) {
           // Fallback to text message if image generation fails
           console.error('Welcome image error:', welcomeError);
@@ -1148,19 +1167,37 @@ const handleGroupUpdate = async (sock, update) => {
           ];
           const goodbyeMsg = goodbyeLines.join('\n');
           
-          // Construct API URL for goodbye image (using leave type)
-          const apiUrl = `https://api.some-random-api.com/welcome/img/7/gaming4?type=leave&textcolor=white&username=${encodeURIComponent(displayName)}&guildName=${encodeURIComponent(groupName)}&memberCount=${groupMetadata.participants.length}&avatar=${encodeURIComponent(profilePicUrl)}`;
+          // Check for custom goodbye image
+          const goodbyeImagePath = path.join(__dirname, 'utils/goodbye_image.jpg');
           
-          // Download the goodbye image
-          const imageResponse = await axios.get(apiUrl, { responseType: 'arraybuffer' });
-          const imageBuffer = Buffer.from(imageResponse.data);
+          if (fs.existsSync(goodbyeImagePath)) {
+            // Use custom image with text overlay
+            const imageBuffer = fs.readFileSync(goodbyeImagePath);
+            const gs = groupSettings.goodbyeStyle || {};
+            const textLines = [
+              { text: 'TOTSIENS ' + displayName, size: gs.fontSize || 40, bold: true, color: gs.textColor || '#ffffff' },
+              { text: "Go well, chommie", size: gs.subFontSize || 28, italic: true, color: '#cccccc' },
+              { text: groupName, size: 24, color: '#aaaaaa' },
+            ];
+            const resultBuffer = await overlayText(imageBuffer, {
+              lines: textLines,
+              position: gs.position || 'center',
+              bg: { color: gs.bgColor || 'rgba(0,0,0,0.65)', radius: 16, padding: 28 },
+            });
+            await sock.sendMessage(id, { image: resultBuffer, mentions: [participantJid] });
+          } else {
+            // Fallback to API-generated image
+            try {
+              const apiUrl = `https://api.some-random-api.com/welcome/img/7/gaming4?type=leave&textcolor=white&username=${encodeURIComponent(displayName)}&guildName=${encodeURIComponent(groupName)}&memberCount=${groupMetadata.participants.length}&avatar=${encodeURIComponent(profilePicUrl)}`;
+              const imageResponse = await axios.get(apiUrl, { responseType: 'arraybuffer' });
+              await sock.sendMessage(id, { image: Buffer.from(imageResponse.data), mentions: [participantJid] });
+            } catch (apiErr) {
+              console.error('Goodbye API image error:', apiErr);
+            }
+          }
           
-          // Send the goodbye image with caption
-          await sock.sendMessage(id, { 
-            image: imageBuffer,
-            caption: goodbyeMsg,
-            mentions: [participantJid] 
-          });
+          // Always send the text caption too
+          await sock.sendMessage(id, { text: goodbyeMsg, mentions: [participantJid] });
         } catch (goodbyeError) {
           // Fallback to simple goodbye message
           console.error('Goodbye error:', goodbyeError);
