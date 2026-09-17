@@ -2,6 +2,8 @@
  * Unblock Command - Unblock a user
  */
 
+const { bold, italic, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
   name: 'unblock',
   aliases: [],
@@ -22,18 +24,18 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply('❌ tag or reply to the oke you wanna unblock');
+        return extra.reply(`${bold(pick(SLANG.error))} — tag or reply to the oke you wanna unblock`);
       }
       
       await sock.updateBlockStatus(target, 'unblock');
       
       await sock.sendMessage(extra.from, {
-        text: `✅ @${target.split('@')[0]} has been unblocked!`,
+        text: `${bold('✅ UNBLOCKED')}\n\n@${target.split('@')[0]} _has been unblocked, ${pick(SLANG.good)}!_`,
         mentions: [target]
       }, { quoted: msg });
       
     } catch (error) {
-      await extra.reply(`❌ error: ${error.message}`);
+      await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

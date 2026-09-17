@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 // Max file size: 10MB for profile pictures
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -19,15 +20,14 @@ module.exports = {
       // Check if message is a reply
       const quotedMessage = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
       if (!quotedMessage) {
-        return extra.reply('⚠️ reply to an image or sticker with .setbotpp');
+        return extra.reply(`${bold('📷 SET BOT PP')}\n\n_reply to an image or sticker with .setbotpp_`);
       }
 
-      // Check if quoted message contains an image or sticker
       const imageMessage = quotedMessage.imageMessage;
       const stickerMessage = quotedMessage.stickerMessage;
       
       if (!imageMessage && !stickerMessage) {
-        return extra.reply('❌ need an image or sticker in the reply');
+        return extra.reply(`${bold(pick(SLANG.error))} — need an image or sticker in the reply`);
       }
       
       // Use whichever message type is available
@@ -47,7 +47,7 @@ module.exports = {
 
         // Check file size
         if (buffer.length > MAX_FILE_SIZE) {
-          return extra.reply(`❌ file too large: ${(buffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+          return extra.reply(`${bold(pick(SLANG.error))} — file too large: ${(buffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
         }
         
         // Save the image
@@ -56,17 +56,17 @@ module.exports = {
         // Set the profile picture
         await sock.updateProfilePicture(sock.user.id.split(':')[0] + '@s.whatsapp.net', { url: imagePath });
 
-        await extra.reply('✅ bot profile pic updated, sharp');
+        await extra.reply(`${bold('✅ PROFILE PIC UPDATED')}\n\n_${pick(SLANG.good)}, bot profile pic is updated_`);
       } catch (error) {
         console.error('setbotpp error:', error);
-        extra.reply("❌ couldn't update profile pic");
+        extra.reply(`_${pick(SLANG.error)} — couldn't update profile pic_`);
       } finally {
         // Always cleanup temp file
         deleteTempFile(imagePath);
       }
     } catch (error) {
       console.error('setbotpp error:', error);
-      extra.reply("❌ couldn't update profile pic");
+      extra.reply(`_${pick(SLANG.error)} — couldn't update profile pic_`);
     }
   }
 };

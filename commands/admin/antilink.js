@@ -22,7 +22,7 @@ module.exports = {
         const status = settings.antilink ? 'ON' : 'OFF';
         const action = settings.antilinkAction || 'delete';
         return extra.reply(
-          `🔗 ${bold('Antilink Status')}\n\n` +
+          `🔗 ${bold('ANTILINK STATUS')}\n\n` +
           `${bold('Status')}: *${status}*\n` +
           `${bold('Action')}: *${action}*\n\n` +
           `Usage:\n` +
@@ -30,7 +30,7 @@ module.exports = {
           `  .antilink off\n` +
           `  .antilink set delete | kick | warn\n` +
           `  .antilink get\n\n` +
-          `*Note:* warn = warn 3 times then auto-kick`
+          `_${pick(SLANG.vibe)}, warn = warn 3 times then auto-kick_`
         );
       }
       
@@ -38,10 +38,10 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antilink) {
-          return extra.reply('✅ _sho, antilink is already on_');
+          return extra.reply(`✅ _${pick(SLANG.vibe)}, antilink is already on_`);
         }
         database.updateGroupSettings(extra.from, { antilink: true });
-        return extra.reply('✅ _lekke, antilink turned ON_');
+        return extra.reply(`✅ _${pick(SLANG.good)}, antilink turned ON_`);
       }
       
       if (opt === 'off') {
@@ -51,32 +51,32 @@ module.exports = {
       
       if (opt === 'set') {
         if (args.length < 2) {
-          return extra.reply('❌ _moegoe, specify an action: .antilink set delete | kick | warn_');
+          return extra.reply(`❌ _${pick(SLANG.error)}, specify an action: .antilink set delete | kick | warn_`);
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick', 'warn'].includes(setAction)) {
-          return extra.reply('❌ _moegoe, invalid action — choose delete, kick, or warn_');
+          return extra.reply(`❌ _${pick(SLANG.error)}, invalid action — choose delete, kick, or warn_`);
         }
         
         database.updateGroupSettings(extra.from, { 
           antilinkAction: setAction,
           antilink: true // Auto-enable when setting action
         });
-        return extra.reply(`✅ _lekke, antilink action set to ${setAction}_`);
+        return extra.reply(`✅ _${pick(SLANG.good)}, antilink action set to ${setAction}_`);
       }
       
       if (opt === 'get') {
         const settings = database.getGroupSettings(extra.from);
         const status = settings.antilink ? 'ON' : 'OFF';
         const action = settings.antilinkAction || 'delete';
-        return extra.reply(`${bold('antilink config:')}\nStatus: ${status}\nAction: ${action}`);
+        return extra.reply(`${bold('ANTILINK CONFIG')}\n${bold('Status')}: ${status}\n${bold('Action')}: ${action}`);
       }
       
-      return extra.reply('❌ _moegoe, use .antilink for usage_');
+      return extra.reply(`❌ _${pick(SLANG.error)}, use .antilink for usage_`);
       
     } catch (error) {
-      await extra.reply(`❌ _moegoe, ${error.message}_`);
+      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

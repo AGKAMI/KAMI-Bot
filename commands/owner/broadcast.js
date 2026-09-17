@@ -2,6 +2,8 @@
  * Broadcast Command - Send message to all chats
  */
 
+const { bold, italic, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
     name: 'broadcast',
     aliases: ['bc'],
@@ -12,9 +14,8 @@ module.exports = {
     
     async execute(sock, msg, args, extra) {
       try {
-        const { bold, pick, SLANG } = require('../../utils/format');
         if (args.length === 0) {
-          return extra.reply('❌ _moegoe, usage: .broadcast <message>_\n\nExample: .broadcast Hello everyone!');
+          return extra.reply(`${bold('📢 BROADCAST')}\n\n_usage: .broadcast <message>_\n\nExample: .broadcast Hello everyone!`);
         }
         
         const message = args.join(' ');
@@ -28,7 +29,7 @@ module.exports = {
         for (const group of groups) {
           try {
             await sock.sendMessage(group.id, {
-              text: `📢 ${bold('broadcast')}\n\n${message}\n\n_this is a broadcast from bot owner_`
+              text: `${bold('📢 BROADCAST')}\n\n${message}\n\n_${pick(SLANG.vibe)}, this is a broadcast from bot owner_`
             });
             success++;
           } catch (e) {
@@ -36,10 +37,10 @@ module.exports = {
           }
         }
         
-        await extra.reply(`✅ _lekke, broadcast done_\n\n✅ Success: ${success}\n❌ Failed: ${failed}`);
+        await extra.reply(`${bold('✅ BROADCAST DONE')}\n\n_${pick(SLANG.good)}, sent to all groups_\n\n${bold('Success:')} ${success}\n${bold('Failed:')} ${failed}`);
         
       } catch (error) {
-        await extra.reply(`❌ _moegoe, ${error.message}_`);
+        await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
       }
     }
   };

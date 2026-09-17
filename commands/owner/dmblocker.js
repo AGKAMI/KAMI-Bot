@@ -24,11 +24,11 @@ module.exports = {
       
       if (!action || action === 'status') {
         return await sock.sendMessage(chatId, {
-          text: `🚫 ${bold('DM Blocker Configuration')}\n\n` +
-               `${bold('Status')}: *${currentStatus}*\n\n` +
+          text: `${bold('🚫 DM BLOCKER')}\n\n` +
+               `${bold('Status:')} *${currentStatus}*\n\n` +
                `When ON: Only whitelisted numbers can message the bot.\n` +
                `When OFF: Anyone can use the bot.\n\n` +
-               `*Usage:*\n` +
+               `${bold('Usage:')}\n` +
                `  .dmblocker on\n` +
                `  .dmblocker off\n` +
                `  .dmblocker status`
@@ -38,14 +38,15 @@ module.exports = {
       if (action === 'on') {
         if (globalSettings.selfMode) {
           return await sock.sendMessage(chatId, {
-            text: `⚠️ _sho, DM Blocker is already *ON*_`
+            text: `${bold('⚠️ ALREADY ON')}\n\n_DM Blocker is already *ON*, ${pick(SLANG.vibe)}_`
           }, { quoted: msg });
         }
         
         database.updateGlobalSettings({ selfMode: true });
         
         return await sock.sendMessage(chatId, {
-          text: `✅ _lekke, dm blocker turned on_\n\n` +
+          text: `${bold('✅ DM BLOCKER ON')}\n\n` +
+               `_${pick(SLANG.good)}, dm blocker is now on_\n\n` +
                `Only whitelisted numbers can now use this bot.\n` +
                `Others will be blocked.`
         }, { quoted: msg });
@@ -54,20 +55,22 @@ module.exports = {
       if (action === 'off') {
         if (!globalSettings.selfMode) {
           return await sock.sendMessage(chatId, {
-            text: `⚠️ _sho, DM Blocker is already *OFF*_`
+            text: `${bold('⚠️ ALREADY OFF')}\n\n_DM Blocker is already *OFF*, ${pick(SLANG.vibe)}_`
           }, { quoted: msg });
         }
         
         database.updateGlobalSettings({ selfMode: false });
         
         return await sock.sendMessage(chatId, {
-          text: `✅ _lekke, dm blocker turned off_\n\n` +
+          text: `${bold('✅ DM BLOCKER OFF')}\n\n` +
+               `_${pick(SLANG.good)}, dm blocker is now off_\n\n` +
                `Anyone can now use this bot.`
         }, { quoted: msg });
       }
       
       return await sock.sendMessage(chatId, {
-        text: `❌ _moegoe, invalid option. Use:\n` +
+        text: `${bold(pick(SLANG.error))} — invalid option\n\n` +
+             `${bold('Usage:')}\n` +
              `  .dmblocker on\n` +
              `  .dmblocker off\n` +
              `  .dmblocker status`
@@ -76,7 +79,7 @@ module.exports = {
     } catch (error) {
       console.error('DM Blocker Error:', error);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ error: ${error.message}`
+        text: `_${pick(SLANG.error)} — ${error.message}_`
       }, { quoted: msg });
     }
   }

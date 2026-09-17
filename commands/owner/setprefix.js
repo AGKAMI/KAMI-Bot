@@ -5,6 +5,7 @@
 const config = require('../../config');
 const fs = require('fs');
 const path = require('path');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setprefix',
@@ -17,13 +18,13 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply(`📌 current prefix: ${config.prefix}\n\nUsage: .setprefix <new prefix>`);
+        return extra.reply(`${bold('📌 CURRENT PREFIX')}\n\n${bold('Prefix:')} ${config.prefix}\n\nUsage: .setprefix <new prefix>`);
       }
       
       const newPrefix = args[0];
       
       if (newPrefix.length > 3) {
-        return extra.reply('❌ prefix must be 1-3 characters');
+        return extra.reply(`${bold(pick(SLANG.error))} — prefix must be 1-3 characters`);
       }
       
       // Update config
@@ -35,10 +36,10 @@ module.exports = {
       configContent = configContent.replace(/prefix: '.*'/, `prefix: '${newPrefix}'`);
       fs.writeFileSync(configPath, configContent);
       
-      await extra.reply(`✅ prefix changed to: ${newPrefix}\n\nnew command format: ${newPrefix}command`);
+      await extra.reply(`${bold('✅ PREFIX UPDATED')}\n\n_${pick(SLANG.good)}, prefix is now:_ ${newPrefix}\n\nnew command format: ${newPrefix}command`);
       
     } catch (error) {
-      await extra.reply(`❌ error: ${error.message}`);
+      await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

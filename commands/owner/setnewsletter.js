@@ -6,6 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const config = require('../../config');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setnewsletter',
@@ -53,7 +54,7 @@ module.exports = {
         
         // If we still don't have a newsletter JID, show error
         if (!newsletterJid) {
-          return extra.reply("❌ that's not a newsletter message\n\nreply to a newsletter message or provide a newsletter jid");
+          return extra.reply(`_${pick(SLANG.error)} — that's not a newsletter message_\n\nreply to a newsletter message or provide a newsletter jid`);
         }
       } else if (args[0]) {
         // Get JID from command arguments
@@ -62,10 +63,10 @@ module.exports = {
         // Show current status
         const currentJid = config.newsletterJid || 'Not set';
         return extra.reply(
-          `📰 *newsletter config*\n\n` +
-          `Current Newsletter JID: \`${currentJid}\`\n` +
-          `Newsletter Name: ${config.botName}\n\n` +
-          `Usage:\n` +
+          `${bold('📰 NEWSLETTER CONFIG')}\n\n` +
+          `${bold('Current JID:')} \`${currentJid}\`\n` +
+          `${bold('Name:')} ${config.botName}\n\n` +
+          `${bold('Usage:')}\n` +
           `  .setnewsletter <newsletter JID>\n` +
           `  Or reply to a newsletter message with .setnewsletter\n\n` +
           `Example: .setnewsletter 120363161513685998@newsletter`
@@ -74,7 +75,7 @@ module.exports = {
       
       // Validate JID format (should end with @newsletter)
       if (!newsletterJid.endsWith('@newsletter')) {
-        return extra.reply('❌ invalid newsletter jid format\n\nnewsletter jid must end with @newsletter\nexample: 120363161513685998@newsletter');
+        return extra.reply(`${bold(pick(SLANG.error))} — invalid newsletter jid format\n\nnewsletter jid must end with @newsletter\nexample: 120363161513685998@newsletter`);
       }
       
       // Update config.js
@@ -103,15 +104,16 @@ module.exports = {
       config.newsletterJid = newsletterJid;
       
       await extra.reply(
-        `✅ newsletter JID updated\n\n` +
-        `📰 Newsletter JID: \`${newsletterJid}\`\n` +
-        `📛 Newsletter Name: ${config.botName}\n\n` +
+        `${bold('✅ NEWSLETTER UPDATED')}\n\n` +
+        `_${pick(SLANG.good)}, jid has been updated!_\n\n` +
+        `${bold('JID:')} \`${newsletterJid}\`\n` +
+        `${bold('Name:')} ${config.botName}\n\n` +
         `The menu will now forward from this newsletter.`
       );
       
     } catch (error) {
       console.error('SetNewsletter command error:', error);
-      await extra.reply(`❌ couldn't set newsletter jid: ${error.message}`);
+      await extra.reply(`_${pick(SLANG.error)} — couldn't set newsletter jid: ${error.message}_`);
     }
   }
 };

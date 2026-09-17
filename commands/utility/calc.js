@@ -2,6 +2,8 @@
  * Calculator Command - Perform math calculations
  */
 
+const { bold, italic, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
     name: 'calc',
     aliases: ['calculate', 'math'],
@@ -12,14 +14,14 @@ module.exports = {
     async execute(sock, msg, args, extra) {
       try {
         if (args.length === 0) {
-          return extra.reply('❌ usage: .calc <expression>\n\nexample: .calc 5 + 3 * 2');
+          return extra.reply(`📝 _${pick(SLANG.vibe)}, give me something to calculate_\n\n_Example:_ .calc 5 + 3 * 2`);
         }
         
         const expression = args.join(' ');
         
         // Basic safety check
         if (!/^[0-9+\-*/(). ]+$/.test(expression)) {
-          return extra.reply('❌ invalid expression — only numbers and operators');
+          return extra.reply(`❌ _${pick(SLANG.error)}, invalid expression — only numbers and operators_`);
         }
         
         try {
@@ -31,11 +33,11 @@ module.exports = {
           
           await extra.reply(text);
         } catch (evalError) {
-          await extra.reply('❌ invalid math expression');
+          await extra.reply(`❌ _${pick(SLANG.error)}, invalid math expression_`);
         }
         
       } catch (error) {
-        await extra.reply(`❌ error: ${error.message}`);
+        await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
       }
     }
   };

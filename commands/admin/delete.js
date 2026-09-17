@@ -3,6 +3,8 @@
  * Delete a replied message
  */
 
+const { bold, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
   name: 'delete',
   aliases: ['del'],
@@ -15,11 +17,10 @@ module.exports = {
   
   async execute(sock, msg, args, extra) {
     try {
-      const { bold, pick, SLANG } = require('../../utils/format');
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       
       if (!ctx?.stanzaId || !ctx?.participant) {
-        return extra.reply('🗑️ _reply to the message you wanna delete_');
+        return extra.reply(`🗑️ _reply to the message you wanna delete, ${pick(SLANG.vibe)}_`);
       }
       
       const deleteKey = { 
@@ -32,7 +33,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Delete command error:', error);
-      await extra.reply("❌ _moegoe, couldn't delete that message hey_");
+      await extra.reply(`❌ _${pick(SLANG.error)}, couldn't delete that message ${pick(SLANG.vibe)}_`);
     }
   }
 };

@@ -2,6 +2,8 @@
  * Unmute Command - Open group (all members can send)
  */
 
+const { bold, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
     name: 'unmute',
     aliases: ['open', 'opengroup'],
@@ -14,12 +16,11 @@ module.exports = {
     
     async execute(sock, msg, args, extra) {
       try {
-        const { bold, pick, SLANG } = require('../../utils/format');
         await sock.groupSettingUpdate(extra.from, 'not_announcement');
-        await extra.reply(`🔓 _lekke, group opened hey_\n\neveryone can talk now`);
+        await extra.reply(`🔓 _${pick(SLANG.vibe)}, group opened hey_\n\neveryone can talk now`);
         
       } catch (error) {
-        await extra.reply(`❌ _moegoe, ${error.message}_`);
+        await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
       }
     }
   };

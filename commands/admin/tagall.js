@@ -2,6 +2,8 @@
  * Tag All Command - Mention all group members
  */
 
+const { bold, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
     name: 'tagall',
     aliases: ['mentionall', 'everyone'],
@@ -14,14 +16,13 @@ module.exports = {
     
     async execute(sock, msg, args, extra) {
       try {
-        const { bold, pick, SLANG } = require('../../utils/format');
         const message = args.join(' ') || 'Everyone!';
         
         const participants = extra.groupMetadata.participants.map(p => p.id);
         
-        let text = `📢 ${bold('group announcement')}\n\n`;
+        let text = `📢 ${bold('GROUP ANNOUNCEMENT')}\n\n`;
         text += `${message}\n\n`;
-        text += `👥 Tagged Members:\n`;
+        text += `👥 ${bold('Tagged Members')}:\n`;
         
         participants.forEach((participant, index) => {
           text += `${index + 1}. @${participant.split('@')[0]}\n`;
@@ -33,7 +34,7 @@ module.exports = {
         }, { quoted: msg });
         
       } catch (error) {
-        await extra.reply(`❌ _moegoe, ${error.message}_`);
+        await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
       }
     }
   };

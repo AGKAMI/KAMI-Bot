@@ -2,6 +2,8 @@
  * Mute Command - Close group (only admins can send)
  */
 
+const { bold, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
     name: 'mute',
     aliases: ['close', 'closegroup'],
@@ -14,12 +16,11 @@ module.exports = {
     
     async execute(sock, msg, args, extra) {
       try {
-        const { bold, pick, SLANG } = require('../../utils/format');
         await sock.groupSettingUpdate(extra.from, 'announcement');
-        await extra.reply(`🔒 _lekke, group closed hey_\n\nonly admins can talk now`);
+        await extra.reply(`🔒 _${pick(SLANG.vibe)}, group closed hey_\n\nonly admins can talk now`);
         
       } catch (error) {
-        await extra.reply(`❌ _moegoe, ${error.message}_`);
+        await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
       }
     }
   };

@@ -2,6 +2,8 @@
  * Anti-Call Command - Enable or disable anti-call system
  */
 
+const { bold, italic, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
   name: 'anticall',
   category: 'owner',
@@ -10,15 +12,14 @@ module.exports = {
   usage: '.anticall on/off',
 
   async execute(sock, msg, args, extra) {
-    const { bold, italic, pick, SLANG } = require('../../utils/format');
     if (!args[0]) {
-      return extra.reply('usage: .anticall on/off');
+      return extra.reply(`${bold('📞 ANTICALL')}\n\n_usage: .anticall on/off_`);
     }
 
     const option = args[0].toLowerCase();
 
     if (!['on', 'off'].includes(option)) {
-      return extra.reply('usage: .anticall on/off');
+      return extra.reply(`${bold('Usage:')} .anticall on/off`);
     }
 
     const enabled = option === 'on';
@@ -47,12 +48,12 @@ module.exports = {
       
       await extra.reply(
         enabled
-          ? '✅ _lekke, Anti-call enabled. Calls will be auto-rejected & blocked._'
-          : '❌ _moegoe, Anti-call disabled._'
+          ? `${bold('✅ ANTICALL ON')}\n\n_${pick(SLANG.good)}, calls will be auto-rejected & blocked_`
+          : `${bold('❌ ANTICALL OFF')}\n\n_${pick(SLANG.vibe)}, anti-call is now disabled_`
       );
     } catch (err) {
       console.error('[anticall cmd] error:', err);
-      extra.reply('❌ _moegoe, couldn\'t update anti-call setting_');
+      extra.reply(`_${pick(SLANG.error)} — couldn't update anti-call setting_`);
     }
   }
 };

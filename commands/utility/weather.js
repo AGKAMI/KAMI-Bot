@@ -3,6 +3,7 @@
  */
 
 const axios = require('axios');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'weather',
@@ -15,7 +16,7 @@ module.exports = {
     try {
       if (args.length === 0) {
         return await sock.sendMessage(msg.key.remoteJid, { 
-          text: '❌ usage: .weather <city>\n\nexample: .weather london' 
+          text: `📝 _${pick(SLANG.vibe)}, give me a city name_\n\n_Example:_ .weather london`
         }, { quoted: msg });
       }
       
@@ -31,7 +32,9 @@ module.exports = {
       
     } catch (error) {
       console.error('Error fetching weather:', error);
-      await sock.sendMessage(msg.key.remoteJid, { text: 'Sorry, I could not fetch the weather right now.' }, { quoted: msg });
+      await sock.sendMessage(msg.key.remoteJid, { 
+        text: `❌ _${pick(SLANG.error)}, couldn't get the weather right now_`
+      }, { quoted: msg });
     }
   }
 };

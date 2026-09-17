@@ -9,6 +9,7 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const config = require('../../config');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 const MAX_REDIRECTS = 5;
 
@@ -152,17 +153,17 @@ module.exports = {
     const zipUrl = (args[0] || config.updateZipUrl || process.env.UPDATE_ZIP_URL || '').trim();
 
     if (!zipUrl) {
-      return extra.reply('❌ no update url set — configure in config or pass a url');
+      return extra.reply(`${bold(pick(SLANG.error))} — no update url set\n\nconfigure in config or pass a url`);
     }
 
     try {
-      await extra.reply('🔄 updating the bot, wait a sec...');
+      await extra.reply(`${bold('🔄 UPDATING')}\n\n_${pick(SLANG.vibe)}, updating the bot, wait a sec..._`);
 
       const { copiedFiles } = await updateViaZip(zipUrl);
 
       const summary = copiedFiles.length
-        ? `✅ Update complete. Files updated: ${copiedFiles.length}`
-        : '✅ Update complete. No files needed updating.';
+        ? `${bold('✅ UPDATE COMPLETE')}\n\n_${pick(SLANG.good)}, ${copiedFiles.length} files updated_`
+        : `${bold('✅ UPDATE COMPLETE')}\n\n_${pick(SLANG.vibe)}, no files needed updating_`;
 
       await sock.sendMessage(chatId, { text: `${summary}\nRestarting…` }, { quoted: msg });
 
@@ -175,7 +176,7 @@ module.exports = {
       setTimeout(() => process.exit(0), 500);
     } catch (error) {
       console.error('Update failed:', error);
-      await sock.sendMessage(chatId, { text: `❌ update failed:\n${String(error.message || error)}` }, { quoted: msg });
+      await sock.sendMessage(chatId, { text: `_${pick(SLANG.error)} — update failed:_\n${String(error.message || error)}` }, { quoted: msg });
     }
   }
 };

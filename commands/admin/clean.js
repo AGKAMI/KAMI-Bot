@@ -2,6 +2,8 @@
  * Clean Command - Delete messages in group
  */
 
+const { bold, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
   name: 'clean',
   aliases: ['purge', 'clear'],
@@ -14,10 +16,9 @@ module.exports = {
   
   async execute(sock, msg, args, extra) {
     try {
-      const { bold, pick, SLANG } = require('../../utils/format');
       const count = parseInt(args[0]);
       if (!count || count < 1 || count > 100) {
-        return extra.reply('❌ _moegoe, enter a number between 1 and 100_');
+        return extra.reply(`❌ _${pick(SLANG.error)}, enter a number between 1 and 100_`);
       }
 
       const jid = extra.from;
@@ -29,7 +30,7 @@ module.exports = {
 
       const msgs = store.messages[jid];
       if (!msgs) {
-        return extra.reply('❌ _moegoe, no stored messages found hey_');
+        return extra.reply(`❌ _${pick(SLANG.error)}, no stored messages found ${pick(SLANG.vibe)}_`);
       }
 
       let messagesToDelete = [];
@@ -64,7 +65,7 @@ module.exports = {
       
     } catch (e) {
       console.error('[clean cmd] error:', e);
-      extra.reply("❌ _moegoe, couldn't clean the messages hey_");
+      extra.reply(`❌ _${pick(SLANG.error)}, couldn't clean the messages ${pick(SLANG.vibe)}_`);
     }
   }
 };

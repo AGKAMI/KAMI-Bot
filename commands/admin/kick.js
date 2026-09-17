@@ -32,7 +32,7 @@ module.exports = {
       }
       
       if (usersToKick.length === 0) {
-        return extra.reply('👤 _tag or reply to the oke you wanna kick_');
+        return extra.reply(`👤 _tag or reply to the ${pick(SLANG.friend)} you wanna kick_`);
       }
       
       const botId = sock.user?.id || '';
@@ -94,19 +94,19 @@ module.exports = {
       });
       
       if (isTryingToKickBot) {
-        await extra.reply("❌ _moegoe, can't kick myself bru_");
+        await extra.reply(`❌ _${pick(SLANG.error)}, can't kick myself ${pick(SLANG.friend)}_`);
         return;
       }
       
       await sock.groupParticipantsUpdate(chatId, usersToKick, 'remove');
       
       const usernames = usersToKick.map((jid) => `@${jid.split('@')[0]}`);
-      const text = `✅ ${usernames.join(', ')} _has been kicked, lekke_!`;
+      const text = `✅ ${usernames.join(', ')} _has been kicked, ${pick(SLANG.good)}_!`;
       
       await sock.sendMessage(extra.from, { text, mentions: usersToKick }, { quoted: msg });
     } catch (error) {
       console.error('Kick command error:', error);
-      await extra.reply("❌ _moegoe, couldn't kick — check if I'm admin hey_");
+      await extra.reply(`❌ _${pick(SLANG.error)}, couldn't kick — check if I'm admin ${pick(SLANG.vibe)}_`);
     }
   },
 };

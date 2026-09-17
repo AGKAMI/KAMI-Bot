@@ -22,7 +22,7 @@ module.exports = {
         const status = settings.antigroupmention ? 'ON' : 'OFF';
         const action = settings.antigroupmentionAction || 'delete';
         return extra.reply(
-          `${bold('Antigroupmention Status')}\n\n` +
+          `${bold('ANTIGROUPMENTION STATUS')}\n\n` +
           `${bold('Status')}: *${status}*\n` +
           `${bold('Action')}: *${action}*\n\n` +
           `Usage:\n` +
@@ -30,7 +30,7 @@ module.exports = {
           `  .antigroupmention off\n` +
           `  .antigroupmention set delete | kick | warn\n` +
           `  .antigroupmention get\n\n` +
-          `*Note:* warn = warn 3 times then auto-kick`
+          `_${pick(SLANG.vibe)}, warn = warn 3 times then auto-kick_`
         );
       }
       
@@ -38,10 +38,10 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antigroupmention) {
-          return extra.reply(`✅ _sho, antigroupmention is already on_`);
+          return extra.reply(`✅ _${pick(SLANG.vibe)}, antigroupmention is already on_`);
         }
         database.updateGroupSettings(extra.from, { antigroupmention: true });
-        return extra.reply('✅ _lekke, antigroupmention turned ON_');
+        return extra.reply(`✅ _${pick(SLANG.good)}, antigroupmention turned ON_`);
       }
       
       if (opt === 'off') {
@@ -51,32 +51,32 @@ module.exports = {
       
       if (opt === 'set') {
         if (args.length < 2) {
-          return extra.reply(`❌ _moegoe, specify an action: .antigroupmention set delete | kick | warn_`);
+          return extra.reply(`❌ _${pick(SLANG.error)}, specify an action: .antigroupmention set delete | kick | warn_`);
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick', 'warn'].includes(setAction)) {
-          return extra.reply('❌ _moegoe, invalid action — choose delete, kick, or warn_');
+          return extra.reply(`❌ _${pick(SLANG.error)}, invalid action — choose delete, kick, or warn_`);
         }
         
         database.updateGroupSettings(extra.from, { 
           antigroupmentionAction: setAction,
           antigroupmention: true // Auto-enable when setting action
         });
-        return extra.reply(`✅ _lekke, antigroupmention action set to ${setAction}_`);
+        return extra.reply(`✅ _${pick(SLANG.good)}, antigroupmention action set to ${setAction}_`);
       }
       
       if (opt === 'get') {
         const settings = database.getGroupSettings(extra.from);
         const status = settings.antigroupmention ? 'ON' : 'OFF';
         const action = settings.antigroupmentionAction || 'delete';
-        return extra.reply(`${bold('antigroupmention config:')}\nStatus: ${status}\nAction: ${action}`);
+        return extra.reply(`${bold('ANTIGROUPMENTION CONFIG')}\n${bold('Status')}: ${status}\n${bold('Action')}: ${action}`);
       }
       
-      return extra.reply('❌ _moegoe, use .antigroupmention for usage_');
+      return extra.reply(`❌ _${pick(SLANG.error)}, use .antigroupmention for usage_`);
       
     } catch (error) {
-      await extra.reply(`❌ _moegoe, ${error.message}_`);
+      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

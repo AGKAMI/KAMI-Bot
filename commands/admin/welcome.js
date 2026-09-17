@@ -23,7 +23,7 @@ module.exports = {
         const groupSettings = db.getGroupSettings(groupId);
         const status = groupSettings.welcome ? '✅ _Enabled_' : '❌ _Disabled_';
         return await sock.sendMessage(groupId, {
-          text: `👋 ${bold('welcome messages')}\n\nStatus: ${status}\nMessage: ${groupSettings.welcomeMessage}\n\nUsage: .welcome on/off\n\nTo customize: .setwelcome <message>`
+          text: `👋 ${bold('WELCOME MESSAGES')}\n\n${bold('Status')}: ${status}\n${bold('Message')}: ${groupSettings.welcomeMessage}\n\nUsage: .welcome on/off\n\nTo customize: .setwelcome <message>`
         }, { quoted: msg });
       }
       
@@ -31,13 +31,13 @@ module.exports = {
       db.updateGroupSettings(groupId, { welcome: enable });
       
       await sock.sendMessage(groupId, {
-        text: `✅ _lekke, welcome messages ${enable ? 'enabled' : 'disabled'}${enable ? '\\n\\nnew members will get a welcome now' : ''}_`
+        text: `✅ _${pick(SLANG.vibe)}, welcome messages ${enable ? 'enabled' : 'disabled'}${enable ? '\\n\\nnew members will get a welcome now' : ''}_`
       }, { quoted: msg });
       
     } catch (error) {
       console.error('Welcome Error:', error);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ _moegoe, ${error.message}_`
+        text: `❌ _${pick(SLANG.error)} — ${error.message}_`
       }, { quoted: msg });
     }
   }

@@ -2,6 +2,8 @@
  * Group Link Command - Get group invite link
  */
 
+const { bold, pick, SLANG } = require('../../utils/format');
+
 module.exports = {
     name: 'grouplink',
     aliases: ['link', 'invite'],
@@ -14,19 +16,18 @@ module.exports = {
     
     async execute(sock, msg, args, extra) {
       try {
-        const { bold, pick, SLANG } = require('../../utils/format');
         const code = await sock.groupInviteCode(extra.from);
         const link = `https://chat.whatsapp.com/${code}`;
         
-        let text = `🔗 ${bold('group invite link')}\n\n`;
+        let text = `🔗 ${bold('GROUP INVITE LINK')}\n\n`;
         text += `📱 ${bold('Group')}: ${extra.groupMetadata.subject}\n`;
         text += `🔗 ${bold('Link')}: ${link}\n\n`;
-        text += `⚠️ Don't share this link publicly!`;
+        text += `⚠️ _Don't share this publicly, ${pick(SLANG.vibe)}!_`;
         
         await extra.reply(text);
         
       } catch (error) {
-        await extra.reply(`❌ _moegoe, ${error.message}_`);
+        await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
       }
     }
   };

@@ -3,6 +3,7 @@
  */
 
 const axios = require('axios');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'translate',
@@ -58,13 +59,13 @@ module.exports = {
       
       if (!textToTranslate) {
         return await sock.sendMessage(chatId, { 
-          text: '❌ no text to translate — reply to a message or add text' 
+          text: `❌ _${pick(SLANG.error)}, no text to translate — reply to a message or add text_`
         }, { quoted: msg });
       }
       
       if (!lang) {
         return await sock.sendMessage(chatId, { 
-          text: '❌ specify a language code\n\nexample: .translate hello fr' 
+          text: `❌ _${pick(SLANG.error)}, specify a language code_\n\n_Example:_ .translate hello fr`
         }, { quoted: msg });
       }
       
@@ -116,7 +117,7 @@ module.exports = {
       
       if (!translatedText) {
         return await sock.sendMessage(chatId, { 
-          text: '❌ translation failed — try again later' 
+          text: `❌ _${pick(SLANG.error)}, translation failed — try again later_`
         }, { quoted: msg });
       }
       
@@ -128,7 +129,7 @@ module.exports = {
     } catch (error) {
       console.error('❌ Error in translate command:', error);
       await sock.sendMessage(msg.key.remoteJid, { 
-        text: '❌ translation failed — try again later' 
+        text: `❌ _${pick(SLANG.error)}, translation failed — try again later_`
       }, { quoted: msg });
     }
   }

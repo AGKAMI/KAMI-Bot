@@ -6,6 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setmenuimage',
@@ -25,14 +26,14 @@ module.exports = {
       // Check if message is a reply
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       if (!ctx?.quotedMessage) {
-        return extra.reply('📷 reply to an image or sticker to set as menu image');
+        return extra.reply(`${bold('📷 SET MENU IMAGE')}\n\n_reply to an image or sticker to set as menu image_`);
       }
       
       const quotedMsg = ctx.quotedMessage;
       const imageMsg = quotedMsg.imageMessage || quotedMsg.stickerMessage;
       
       if (!imageMsg) {
-        return extra.reply('❌ need an image or sticker in the reply');
+        return extra.reply(`${bold(pick(SLANG.error))} — need an image or sticker in the reply`);
       }
       
       // Download the media
@@ -53,7 +54,7 @@ module.exports = {
       );
       
       if (!mediaBuffer) {
-        return extra.reply("❌ couldn't download the image — try again");
+        return extra.reply(`_${pick(SLANG.error)} — couldn't download the image, try again_`);
       }
       
       // Convert to JPEG if it's a sticker (webp)
@@ -86,11 +87,11 @@ module.exports = {
       // Write new image
       fs.writeFileSync(imagePath, finalBuffer);
       
-      await extra.reply('✅ menu image updated, sharp');
+      await extra.reply(`${bold('✅ MENU IMAGE UPDATED')}\n\n_${pick(SLANG.good)}, menu image is updated_`);
       
     } catch (error) {
       console.error('SetMenuImage command error:', error);
-      await extra.reply(`❌ Failed to set menu image: ${error.message}`);
+      await extra.reply(`_${pick(SLANG.error)} — failed to set menu image: ${error.message}_`);
     }
   }
 };

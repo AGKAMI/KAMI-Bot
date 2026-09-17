@@ -26,27 +26,27 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply('❌ _moegoe, tag or reply to the person you wanna reset warnings_\n\nexample: .resetwarn @user');
+        return extra.reply(`❌ _${pick(SLANG.error)}, tag or reply to the person you wanna reset warnings_\n\nexample: .resetwarn @user`);
       }
       
       // Get current warnings before clearing
       const currentWarnings = database.getWarnings(extra.from, target);
       
       if (currentWarnings.count === 0) {
-        return extra.reply(`✅ _sho, @${target.split('@')[0]} has no warnings to reset._`, { mentions: [target] });
+        return extra.reply(`✅ _${pick(SLANG.vibe)}, @${target.split('@')[0]} has no warnings to reset._`, { mentions: [target] });
       }
       
       // Clear all warnings
       database.clearWarnings(extra.from, target);
       
       await sock.sendMessage(extra.from, {
-        text: `✅ ${bold('warnings reset')}\n\n👤 @${target.split('@')[0]}\n⚠️ ${bold('previous warnings')}: ${currentWarnings.count}\n\n_lekke, all warnings cleared, you\'re good_`,
+        text: `✅ ${bold('WARNINGS RESET')}\n\n👤 @${target.split('@')[0]}\n⚠️ ${bold('Previous Warnings')}: ${currentWarnings.count}\n\n_${pick(SLANG.good)}, all warnings cleared, you're good_`,
         mentions: [target]
       }, { quoted: msg });
       
     } catch (error) {
       console.error('ResetWarn command error:', error);
-      await extra.reply(`❌ _moegoe, ${error.message}_`);
+      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

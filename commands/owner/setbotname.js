@@ -5,6 +5,7 @@
 const config = require('../../config');
 const fs = require('fs');
 const path = require('path');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setbotname',
@@ -36,16 +37,16 @@ module.exports = {
       // Validate
       if (!newBotName) {
         return extra.reply(
-          `📝 *set bot name*\n\n` +
-          `Current bot name: *${config.botName}*\n\n` +
-          `Usage:\n` +
+          `${bold('📝 SET BOT NAME')}\n\n` +
+          `${bold('Current name:')} *${config.botName}*\n\n` +
+          `${bold('Usage:')}\n` +
           `  .setbotname <new name>\n` +
           `  Or reply to a message with .setbotname`
         );
       }
       
       if (newBotName.length > 50) {
-        return extra.reply('❌ bot name max 50 characters');
+        return extra.reply(`${bold(pick(SLANG.error))} — bot name max 50 characters`);
       }
       
       // Update runtime config
@@ -66,11 +67,11 @@ module.exports = {
       // Reload config module cache
       delete require.cache[require.resolve('../../config')];
       
-      await extra.reply(`✅ bot name changed to: *${newBotName}*\n\nnew name will show in menus`);
+      await extra.reply(`${bold('✅ NAME UPDATED')}\n\n_${pick(SLANG.good)}, bot name is now:_ *${newBotName}*\n\nnew name will show in menus`);
       
     } catch (error) {
       console.error('Setbotname command error:', error);
-      await extra.reply(`❌ error: ${error.message}`);
+      await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

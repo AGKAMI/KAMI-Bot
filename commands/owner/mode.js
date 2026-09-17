@@ -6,6 +6,7 @@
 const config = require('../../config');
 const fs = require('fs');
 const path = require('path');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'mode',
@@ -24,10 +25,10 @@ module.exports = {
           : 'Everyone can use commands';
         
         return extra.reply(
-          `🤖 *bot mode*\n\n` +
-          `Current Mode: *${currentMode.toUpperCase()}*\n` +
-          `Status: ${description}\n\n` +
-          `Usage:\n` +
+          `${bold('🤖 BOT MODE')}\n\n` +
+          `${bold('Current Mode:')} *${currentMode.toUpperCase()}*\n` +
+          `${bold('Status:')} ${description}\n\n` +
+          `${bold('Usage:')}\n` +
           `  .mode private - Only owner can use\n` +
           `  .mode public - Everyone can use`
         );
@@ -37,31 +38,29 @@ module.exports = {
       
       if (mode === 'private' || mode === 'priv') {
         if (config.selfMode) {
-          return extra.reply('🔒 bot already in private mode\nonly owner can use commands');
+          return extra.reply(`${bold('🔒 PRIVATE MODE')}\n\n_bot already private, ${pick(SLANG.vibe)}_`);
         }
         
-        // Update config
         updateConfig('selfMode', true);
-        config.selfMode = true; // Update runtime config
-        return extra.reply('🔒 bot mode changed to private\n\nonly owner can use commands now');
+        config.selfMode = true;
+        return extra.reply(`${bold('🔒 PRIVATE MODE')}\n\n_${pick(SLANG.good)}, bot is now private — only owner can use commands_`);
       }
       
       if (mode === 'public' || mode === 'pub') {
         if (!config.selfMode) {
-          return extra.reply('🌐 bot already in *public* mode\nEveryone can use commands.');
+          return extra.reply(`${bold('🌐 PUBLIC MODE')}\n\n_bot already public, ${pick(SLANG.vibe)}_`);
         }
         
-        // Update config
         updateConfig('selfMode', false);
-        config.selfMode = false; // Update runtime config
-        return extra.reply('🌐 bot mode changed to *public*\n\nEveryone can use commands now.');
+        config.selfMode = false;
+        return extra.reply(`${bold('🌐 PUBLIC MODE')}\n\n_${pick(SLANG.good)}, bot is now public — everyone can use commands_`);
       }
       
-      return extra.reply('❌ invalid mode\nusage: .mode <private/public>');
+      return extra.reply(`${bold(pick(SLANG.error))} — invalid mode\nusage: .mode <private/public>`);
       
     } catch (error) {
       console.error('Mode command error:', error);
-      await extra.reply("❌ couldn't change bot mode");
+      await extra.reply(`_${pick(SLANG.error)} — couldn't change bot mode_`);
     }
   }
 };

@@ -27,7 +27,7 @@ module.exports = {
 
       // Only inside groups
       if (!extra.isGroup) {
-        return extra.reply('❌ _moegoe, this only works in groups hey_');
+        return extra.reply(`❌ _${pick(SLANG.error)}, this only works in groups ${pick(SLANG.vibe)}_`);
       }
 
       const caption = (args.join(' ') || '').trim();
@@ -39,7 +39,7 @@ module.exports = {
       if (!hasQuoted) {
         if (!caption) {
           return extra.reply(
-            `${bold('group status usage')}\n\n` +
+            `${bold('GROUP STATUS USAGE')}\n\n` +
             `• Reply to image/video/audio with:\n` +
             `  \`.groupstatus [optional caption]\`\n` +
             `• Or send text status only:\n` +
@@ -48,17 +48,17 @@ module.exports = {
           );
         }
 
-        await extra.reply('⏳ _posting status..._');
+        await extra.reply(`⏳ _${pick(SLANG.vibe)}, posting status..._`);
 
         try {
           await groupStatus(sock, from, {
             text: caption,
             backgroundColor: PURPLE_COLOR,
           });
-          return extra.reply('✅ _lekke, status posted_');
+          return extra.reply(`✅ _${pick(SLANG.vibe)}, status posted_`);
         } catch (e) {
           console.error('groupstatus text error:', e);
-          return extra.reply('❌ _moegoe, couldn\'t post status: ' + (e.message || e) + '_');
+          return extra.reply(`❌ _${pick(SLANG.error)}, couldn't post status: ${e.message || e}_`);
         }
       }
 
@@ -85,60 +85,60 @@ module.exports = {
 
       // IMAGE (also handles stickers)
       if (/image|sticker/i.test(mtype)) {
-        await extra.reply('⏳ _posting image status..._');
+        await extra.reply(`⏳ _${pick(SLANG.vibe)}, posting image status..._`);
         let buf;
         try {
           buf = await downloadBuf();
         } catch {
-          return extra.reply('❌ _moegoe, couldn\'t download image_');
+          return extra.reply(`❌ _${pick(SLANG.error)}, couldn't download image_`);
         }
-        if (!buf) return extra.reply('❌ _moegoe, couldn\'t download image_');
+        if (!buf) return extra.reply(`❌ _${pick(SLANG.error)}, couldn't download image_`);
 
         try {
           await groupStatus(sock, from, {
             image: buf,
             caption: caption || '',
           });
-          return extra.reply('✅ _lekke, image status posted_');
+          return extra.reply(`✅ _${pick(SLANG.vibe)}, image status posted_`);
         } catch (e) {
           console.error('groupstatus image error:', e);
-          return extra.reply('❌ _moegoe, couldn\'t post image status: ' + (e.message || e) + '_');
+          return extra.reply(`❌ _${pick(SLANG.error)}, couldn't post image status: ${e.message || e}_`);
         }
       }
 
       // VIDEO
       if (/video/i.test(mtype)) {
-        await extra.reply('⏳ _posting video status..._');
+        await extra.reply(`⏳ _${pick(SLANG.vibe)}, posting video status..._`);
         let buf;
         try {
           buf = await downloadBuf();
         } catch {
-          return extra.reply('❌ _moegoe, couldn\'t download video_');
+          return extra.reply(`❌ _${pick(SLANG.error)}, couldn't download video_`);
         }
-        if (!buf) return extra.reply('❌ _moegoe, couldn\'t download video_');
+        if (!buf) return extra.reply(`❌ _${pick(SLANG.error)}, couldn't download video_`);
 
         try {
           await groupStatus(sock, from, {
             video: buf,
             caption: caption || '',
           });
-          return extra.reply('✅ _lekke, video status posted_');
+          return extra.reply(`✅ _${pick(SLANG.vibe)}, video status posted_`);
         } catch (e) {
           console.error('groupstatus video error:', e);
-          return extra.reply('❌ _moegoe, couldn\'t post video status: ' + (e.message || e) + '_');
+          return extra.reply(`❌ _${pick(SLANG.error)}, couldn't post video status: ${e.message || e}_`);
         }
       }
 
       // AUDIO (voice-style group status)
       if (/audio/i.test(mtype)) {
-        await extra.reply('⏳ _posting audio status..._');
+        await extra.reply(`⏳ _${pick(SLANG.vibe)}, posting audio status..._`);
         let buf;
         try {
           buf = await downloadBuf();
         } catch {
-          return extra.reply('❌ _moegoe, couldn\'t download audio_');
+          return extra.reply(`❌ _${pick(SLANG.error)}, couldn't download audio_`);
         }
-        if (!buf) return extra.reply('❌ _moegoe, couldn\'t download audio_');
+        if (!buf) return extra.reply(`❌ _${pick(SLANG.error)}, couldn't download audio_`);
 
         let vn;
         try {
@@ -161,15 +161,15 @@ module.exports = {
             ptt: true,
             waveform,
           });
-          return extra.reply('✅ _lekke, audio status posted_');
+          return extra.reply(`✅ _${pick(SLANG.vibe)}, audio status posted_`);
         } catch (e) {
           console.error('groupstatus audio error:', e);
-          return extra.reply('❌ _moegoe, couldn\'t post audio status: ' + (e.message || e) + '_');
+          return extra.reply(`❌ _${pick(SLANG.error)}, couldn't post audio status: ${e.message || e}_`);
         }
       }
     } catch (e) {
       console.error('groupstatus error:', e);
-      return extra.reply('❌ _moegoe, ' + (e.message || e) + '_');
+      return extra.reply(`❌ _${pick(SLANG.error)} — ${e.message || e}_`);
     }
   }
 };

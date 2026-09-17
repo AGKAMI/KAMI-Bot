@@ -21,9 +21,9 @@ module.exports = {
         const settings = database.getGroupSettings(extra.from);
         const status = settings.autosticker ? 'ON' : 'OFF';
         return extra.reply(
-          `📌 ${bold('AutoSticker Status')}\n\n` +
+          `📌 ${bold('AUTOSTICKER STATUS')}\n\n` +
           `${bold('Status')}: *${status}*\n\n` +
-          `When enabled, all images and videos sent in this group will automatically be converted to stickers.\n\n` +
+          `_When enabled, all images and videos go straight to sticker_${pick(SLANG.vibe)}\n\n` +
           `Usage:\n` +
           `  .autosticker on\n` +
           `  .autosticker off`
@@ -34,24 +34,24 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).autosticker) {
-          return extra.reply('✅ _sho, autosticker is already on_');
+          return extra.reply(`✅ _${pick(SLANG.vibe)}, autosticker is already on_`);
         }
         database.updateGroupSettings(extra.from, { autosticker: true });
-        return extra.reply('✅ _lekke, autosticker turned ON_\n\nevery image and video goes straight to sticker now');
+        return extra.reply(`✅ _${pick(SLANG.good)}, autosticker turned ON_\n\nevery image and video goes straight to sticker now hey`);
       }
       
       if (opt === 'off') {
         if (!database.getGroupSettings(extra.from).autosticker) {
-          return extra.reply('❌ _autosticker is off already_');
+          return extra.reply(`❌ _${pick(SLANG.vibe)}, autosticker is off already_`);
         }
         database.updateGroupSettings(extra.from, { autosticker: false });
-        return extra.reply('❌ _moegoe, autosticker turned off_');
+        return extra.reply(`❌ _${pick(SLANG.error)}, autosticker turned off_`);
       }
       
-      return extra.reply('❌ _moegoe, invalid option_\nusage: .autosticker <on/off>');
+      return extra.reply(`❌ _${pick(SLANG.error)}, invalid option_\nusage: .autosticker <on/off>`);
     } catch (error) {
       console.error('[AutoSticker Command Error]:', error);
-      return extra.reply("❌ _moegoe, couldn't update autosticker setting_");
+      return extra.reply(`❌ _${pick(SLANG.error)} — couldn't update autosticker setting_`);
     }
   }
 };

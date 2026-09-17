@@ -26,7 +26,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply('❌ _moegoe, tag or reply to the person you wanna promote_\n\nexample: .promote @user');
+        return extra.reply(`❌ _${pick(SLANG.error)}, tag or reply to the person you wanna promote_\n\nexample: .promote @user`);
       }
       
       // Fetch FRESH group metadata to avoid stale cache
@@ -36,23 +36,23 @@ module.exports = {
       const foundParticipant = findParticipant(freshMetadata.participants, target);
       
       if (!foundParticipant) {
-        return extra.reply('❌ _moegoe, couldn\'t find this oke in the group_');
+        return extra.reply(`❌ _${pick(SLANG.error)}, couldn't find this oke in the group_`);
       }
       
       // Check if already admin using fresh data
       if (foundParticipant.admin === 'admin' || foundParticipant.admin === 'superadmin') {
-        return extra.reply('❌ _sho, this oke is already an admin_');
+        return extra.reply(`✅ _${pick(SLANG.vibe)}, this oke is already an admin_`);
       }
       
       await sock.groupParticipantsUpdate(extra.from, [target], 'promote');
       
       await sock.sendMessage(extra.from, {
-        text: `✅ @${target.split('@')[0]} _is now an admin, lekke_!`,
+        text: `✅ @${target.split('@')[0]} _is now an admin, ${pick(SLANG.good)}_!`,
         mentions: [target]
       }, { quoted: msg });
       
     } catch (error) {
-      await extra.reply(`❌ _moegoe, ${error.message}_`);
+      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };

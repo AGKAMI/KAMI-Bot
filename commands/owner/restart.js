@@ -3,6 +3,7 @@
  */
 
 const { exec } = require('child_process');
+const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'restart',
@@ -14,7 +15,7 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
     try {
-      await extra.reply('🔁 restarting bot...');
+      await extra.reply(`${bold('🔁 RESTARTING')}\n\n_${pick(SLANG.vibe)}, bot is restarting..._`);
 
       const run = (cmd) =>
         new Promise((resolve, reject) => {
@@ -38,7 +39,7 @@ module.exports = {
       }, 500);
     } catch (error) {
       console.error('Restart error:', error);
-      await extra.reply(`❌ couldn't restart bot: ${error.message}`);
+      await extra.reply(`_${pick(SLANG.error)} — couldn't restart bot: ${error.message}_`);
     }
   },
 };

@@ -104,7 +104,7 @@ module.exports = {
       }
     } catch (error) {
       console.error('HideTag command error:', error);
-      await extra.reply("❌ _moegoe, couldn't tag everyone hey_");
+      await extra.reply(`❌ _${pick(SLANG.error)}, couldn't tag everyone ${pick(SLANG.vibe)}_`);
     }
   },
 };

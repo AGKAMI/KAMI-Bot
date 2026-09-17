@@ -26,7 +26,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply('❌ _moegoe, tag or reply to the person you wanna warn_\n\nexample: .warn @user breaking rules');
+        return extra.reply(`❌ _${pick(SLANG.error)}, tag or reply to the person you wanna warn_\n\nexample: .warn @user breaking rules`);
       }
       
       const reason = args.slice(mentioned.length > 0 ? 1 : 0).join(' ') || 'No reason specified';
@@ -37,18 +37,18 @@ module.exports = {
       );
       
       if (foundParticipant) {
-        return extra.reply("❌ _moegoe, eish no, can't warn an admin hey_");
+        return extra.reply(`❌ _${pick(SLANG.error)}, eish no, can't warn an admin hey_`);
       }
       
       const warnings = database.addWarning(extra.from, target, reason);
       
       let text = `⚠️ ${bold('WARNING')}\n\n`;
       text += `👤 @${target.split('@')[0]}\n`;
-      text += `📝 reason: ${reason}\n`;
-      text += `⚠️ warnings: ${warnings.count}/${config.maxWarnings}\n\n`;
+      text += `📝 ${bold('Reason')}: ${reason}\n`;
+      text += `⚠️ ${bold('Warnings')}: ${warnings.count}/${config.maxWarnings}\n\n`;
       
       if (warnings.count >= config.maxWarnings) {
-        text += `❌ _moegoe, aikona, max warnings hit — this oke is out_`;
+        text += `❌ _${pick(SLANG.error)}, aikona, max warnings hit — this oke is out_`;
         
         await sock.sendMessage(extra.from, {
           text,
@@ -60,7 +60,7 @@ module.exports = {
           database.clearWarnings(extra.from, target);
         }
       } else {
-        text += `⚠️ _one more and you're gone bru_`;
+        text += `⚠️ _one more and you're gone ${pick(SLANG.friend)}_`;
         
         await sock.sendMessage(extra.from, {
           text,
@@ -69,7 +69,7 @@ module.exports = {
       }
       
     } catch (error) {
-      await extra.reply(`❌ _moegoe, ${error.message}_`);
+      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }
 };
