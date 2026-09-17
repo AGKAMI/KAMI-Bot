@@ -27,38 +27,48 @@ module.exports = {
       const categoryMeta = {
         general:   { emoji: '🏠', label: 'General' },
         ai:        { emoji: '🤖', label: 'AI' },
-        admin:     { emoji: '🛡️', label: 'Admin' },
-        owner:     { emoji: '👑', label: 'Owner' },
         media:     { emoji: '🎬', label: 'Media' },
         fun:       { emoji: '🎉', label: 'Fun' },
         games:     { emoji: '🎮', label: 'Games' },
         utility:   { emoji: '🔧', label: 'Utility' },
         anime:     { emoji: '⛩️', label: 'Anime' },
         textmaker: { emoji: '✨', label: 'Text Maker' },
+        admin:     { emoji: '🛡️', label: 'Admin' },
+        owner:     { emoji: '👑', label: 'Owner' },
       };
 
       const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'owner'];
 
-      let text = `----------\n*KAMI BOT*\n----------\n\n`;
+      const line = (w) => '─'.repeat(w);
+
+      let text = '';
+      text += `${bold('KAMI BOT')}\n`;
+      text += `${line(20)}\n\n`;
       text += `${bold('HOWZIT')} ${extra.pushName || 'User'}! 👋\n`;
-      text += `📌 *${total} commands* available\n`;
-      text += `⚡ Prefix: *${prefix}*\n----------\n\n`;
+      text += `${total} ${bold('commands')} available\n`;
+      text += `Prefix: ${bold(prefix)}\n\n`;
 
       for (const cat of order) {
         const list = categories[cat];
         if (!list || list.length === 0) continue;
 
         const meta = categoryMeta[cat];
-        const cmds = list
+        const sorted = list
           .filter(item => item.name)
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map(cmd => `${prefix}${cmd.name}`)
-          .join(', ');
+          .sort((a, b) => a.name.localeCompare(b.name));
 
-        text += `${meta.emoji} *${meta.label}*\n${cmds}\n\n`;
+        text += `${meta.emoji} *${meta.label.toUpperCase()}*\n`;
+        text += `${line(15)}\n`;
+
+        for (const cmd of sorted) {
+          text += `${prefix}${cmd.name}\n`;
+        }
+
+        text += '\n';
       }
 
-      text += `----------\n- Use ${prefix}help <cmd>\n  for command info\n----------`;
+      text += `${line(20)}\n`;
+      text += `${italic(`Use ${prefix}help <cmd> for info`)}`;
 
       await sock.sendMessage(extra.from, { text: text }, { quoted: msg });
 
