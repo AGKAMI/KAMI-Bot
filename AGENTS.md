@@ -4,21 +4,28 @@ WhatsApp bot with 100+ commands — media, games, AI, admin, fun. Built with Bai
 
 ## Deployment Workflow
 
-**File uploads**: Use SFTP (paramiko) — Pterodactyl client API has no file write endpoint.
+**Primary**: GitHub auto-pull — push to `main`, restart from panel, it pulls automatically.
+**Fallback**: SFTP (paramiko) if GitHub isn't connected.
 **Restarts**: Use Pterodactyl API — `POST /api/client/servers/{id}/power` with `{"signal":"restart"}`.
-**Code changes**: Edit locally, git push, BUT always SFTP upload files to server directly.
 
-### Credentials
+### GitHub Integration
 
-- **SFTP**: `fi5.bot-hosting.net:2022`
-- **SFTP User**: `1369162108788281356.08b6894d`
-- **SFTP Pass**: `hQfgKb8qdg9LBPu`
-- **API Key**: `ptlc_uN1mvEAG4h97A7997CYRCjU9U1ic5me6clDrXCXLefa`
+- Repo: `AGKAMI/KAMI-Bot` (branch: `main`)
+- bot-hosting.net GitHub tab connected
+- Auto-pull at restart: enabled
+- Workflow: `git push origin main` → restart from panel → auto-pulls latest commit
+
+### Credentials (New Panel — bot-hosting.net)
+
+- **SFTP**: `fi9.bot-hosting.cloud:2022`
+- **SFTP User**: `b0665152-9b54-4ede-a11f-45c4a6641704.u9mg7ylz`
+- **SFTP Pass**: `hswNZ_VrtM2FiZywg_YPa-1v`
+- **API Key**: `ptlc_b2LS7kbmnkfIZCbC6MTRL1RWneTfpftTU531z5sBnLC`
 - **Server ID**: `08b6894d`
 
 ### Gotchas
 
-- `git pull` fails silently on bot-hosting — always SFTP upload files
+- Old SFTP host `fi5.bot-hosting.net` is dead — use `fi9.bot-hosting.cloud`
 - Root `package.json` breaks deploy — npm install runs wrong deps
 - `listMessage` doesn't work in Baileys — use plain text for menus
 - `config.author` doesn't exist — use `config.packname` as fallback in sticker.js
