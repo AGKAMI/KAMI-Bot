@@ -12,7 +12,7 @@ module.exports = {
   description: 'Enable/disable welcome messages',
   usage: 'welcome on/off',
   groupOnly: true,
-  adminOnly: true,
+  ownerOnly: true, adminOnly: false,
   botAdminNeeded: true,
   execute: async (sock, msg, args) => {
     try {

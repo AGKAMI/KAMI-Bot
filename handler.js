@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG } = require('./utils/format');
-const { overlayText } = require('./utils/imageText');
+const { buildImage } = require('./utils/imageText');
 
 // Group metadata cache to prevent rate limiting
 const groupMetadataCache = new Map();
@@ -374,6 +374,37 @@ const isBotAdmin = async (sock, groupId, groupMetadata = null) => {
 const isUrl = (text) => {
   const urlRegex = /(https?:\/\/[^\s]+)/gi;
   return urlRegex.test(text);
+};
+
+// Format raw number to +country code format (e.g. +27 83 388 2383)
+const formatPhone = (raw) => {
+  if (!raw) return '';
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length <= 4) return '+' + digits;
+  // Assume first 1-3 digits are country code
+  if (digits.length >= 10) {
+    const cc = digits.length === 12 ? digits.slice(0, 2) : digits.length === 11 ? digits.slice(0, 2) : digits.slice(0, 1);
+    const local = digits.slice(cc.length);
+    return `+${cc} ${local}`;
+  }
+  return '+' + digits;
+};
+
+// Resolve display name: WhatsApp username > contact name > formatted phone
+const resolveDisplayName = (participantJid, participantNumber, participantInfo, sock) => {
+  // 1. Try contact store name
+  if (sock.store?.contacts?.[participantJid]) {
+    const c = sock.store.contacts[participantJid];
+    const name = c.notify || c.name;
+    if (name && name.trim() && !name.match(/^\d+$/)) return name.trim();
+  }
+  // 2. Try participantInfo notify/name
+  if (participantInfo) {
+    if (participantInfo.notify?.trim() && !participantInfo.notify.match(/^\d+$/)) return participantInfo.notify.trim();
+    if (participantInfo.name?.trim() && !participantInfo.name.match(/^\d+$/)) return participantInfo.name.trim();
+  }
+  // 3. Fall back to formatted phone number
+  return formatPhone(participantNumber);
 };
 
 const hasGroupLink = (text) => {
@@ -897,91 +928,15 @@ const handleGroupUpdate = async (sock, update) => {
       
       if (action === 'add' && groupSettings.welcome) {
         try {
-          // Get user's display name - find participant using phoneNumber or JID
-          let displayName = participantNumber;
-          
-          // Try to find participant in group metadata
+          // Find participant info
           const participantInfo = groupMetadata.participants.find(p => {
             const pId = p.id || p.jid || p.participant;
             const pPhone = p.phoneNumber;
-            // Match by JID or phoneNumber
             return pId === participantJid || 
                    pId?.split('@')[0] === participantNumber ||
                    pPhone === participantJid ||
                    pPhone?.split('@')[0] === participantNumber;
           });
-          
-          // Get phoneNumber JID to fetch contact name
-          let phoneJid = null;
-          if (participantInfo && participantInfo.phoneNumber) {
-            phoneJid = participantInfo.phoneNumber;
-          } else {
-            // Try to normalize participantJid to phoneNumber format
-            // If it's a LID, try to convert to phoneNumber
-            try {
-              const normalized = normalizeJidWithLid(participantJid);
-              if (normalized && normalized.includes('@s.whatsapp.net')) {
-                phoneJid = normalized;
-              }
-            } catch (e) {
-              // If normalization fails, try using participantJid directly if it's a valid JID
-              if (participantJid.includes('@s.whatsapp.net')) {
-                phoneJid = participantJid;
-              }
-            }
-          }
-          
-          // Try to get contact name from phoneNumber JID
-          if (phoneJid) {
-            try {
-              // Method 1: Try to get from contact store if available
-              if (sock.store && sock.store.contacts && sock.store.contacts[phoneJid]) {
-                const contact = sock.store.contacts[phoneJid];
-                if (contact.notify && contact.notify.trim() && !contact.notify.match(/^\d+$/)) {
-                  displayName = contact.notify.trim();
-                } else if (contact.name && contact.name.trim() && !contact.name.match(/^\d+$/)) {
-                  displayName = contact.name.trim();
-                }
-              }
-              
-              // Method 2: Try to fetch contact using onWhatsApp and then check store
-              if (displayName === participantNumber) {
-                try {
-                  await sock.onWhatsApp(phoneJid);
-                  
-                  // After onWhatsApp, check store again (might populate after check)
-                  if (sock.store && sock.store.contacts && sock.store.contacts[phoneJid]) {
-                    const contact = sock.store.contacts[phoneJid];
-                    if (contact.notify && contact.notify.trim() && !contact.notify.match(/^\d+$/)) {
-                      displayName = contact.notify.trim();
-                    }
-                  }
-                } catch (fetchError) {
-                  // Silently handle fetch errors
-                }
-              }
-            } catch (contactError) {
-              // Silently handle contact errors
-            }
-          }
-          
-          // Final fallback: use participantInfo.notify or name if available
-          if (displayName === participantNumber && participantInfo) {
-            if (participantInfo.notify && participantInfo.notify.trim() && !participantInfo.notify.match(/^\d+$/)) {
-              displayName = participantInfo.notify.trim();
-            } else if (participantInfo.name && participantInfo.name.trim() && !participantInfo.name.match(/^\d+$/)) {
-              displayName = participantInfo.name.trim();
-            }
-          }
-          
-          // Get user's profile picture URL
-          let profilePicUrl = '';
-          try {
-            profilePicUrl = await sock.profilePictureUrl(participantJid, 'image');
-          } catch (ppError) {
-            // If profile picture not available, use default avatar
-            profilePicUrl = 'https://img.pyrocdn.com/dbKUgahg.png';
-          }
           
           // Get group name and description
           const groupName = groupMetadata.subject || 'the group';
@@ -995,8 +950,8 @@ const handleGroupUpdate = async (sock, update) => {
             hour12: true 
           });
           
-          // Create formatted welcome message - KAMI STYLE with tsotsitaal
-                    const welcomeLines = [
+          // Create formatted welcome message
+          const welcomeLines = [
                       `${bold(greet().toUpperCase())} @${displayName}! 👋`,
                       '',
                       `${mention(participantJid)} ${bold('lekker to have you here')}`,
@@ -1017,33 +972,54 @@ const handleGroupUpdate = async (sock, update) => {
                     ];
           const welcomeMsg = welcomeLines.join('\n');
           
-          // Check for custom welcome image
-          const welcomeImagePath = path.join(__dirname, 'utils/welcome_image.jpg');
+          // Resolve display name (username > contact name > formatted phone)
+          const displayName = resolveDisplayName(participantJid, participantNumber, participantInfo, sock);
           
-          if (fs.existsSync(welcomeImagePath)) {
-            // Use custom image with text overlay
-            const imageBuffer = fs.readFileSync(welcomeImagePath);
+          // Fetch user profile pic (buffer)
+          let userAvatarBuf = null;
+          try {
+            const userPicUrl = await sock.profilePictureUrl(participantJid, 'image');
+            const userPicRes = await axios.get(userPicUrl, { responseType: 'arraybuffer' });
+            userAvatarBuf = Buffer.from(userPicRes.data);
+          } catch (e) { /* no pic available */ }
+          
+          // Fetch group profile pic as background
+          let bgBuffer = null;
+          const customWelcomePath = path.join(__dirname, 'utils/welcome_image.jpg');
+          
+          // Priority: custom image > group profile pic > fallback local image
+          if (fs.existsSync(customWelcomePath)) {
+            bgBuffer = fs.readFileSync(customWelcomePath);
+          } else {
+            try {
+              const groupPicUrl = await sock.profilePictureUrl(id, 'image');
+              const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer' });
+              bgBuffer = Buffer.from(groupPicRes.data);
+            } catch (e) {
+              // Group has no profile pic — use fallback image
+              const fallbackPath = path.join(__dirname, 'Picsart_25-11-17_09-42-48-275.png');
+              if (fs.existsSync(fallbackPath)) {
+                bgBuffer = fs.readFileSync(fallbackPath);
+              }
+            }
+          }
+          
+          // Build the image
+          if (bgBuffer) {
             const ws = groupSettings.welcomeStyle || {};
             const textLines = [
-              { text: greet().toUpperCase() + ' ' + displayName, size: ws.fontSize || 40, bold: true, color: ws.textColor || '#ffffff' },
-              { text: `Member #${groupMetadata.participants.length}`, size: ws.subFontSize || 28, color: '#cccccc' },
-              { text: groupName, size: 24, italic: true, color: '#aaaaaa' },
+              { text: greet().toUpperCase(), size: ws.fontSize || 48, bold: true, color: ws.textColor || '#ffffff' },
+              { text: displayName, size: ws.subFontSize || 32, color: '#ffffff' },
+              { text: `Member #${groupMetadata.participants.length}`, size: 24, color: '#cccccc' },
             ];
-            const resultBuffer = await overlayText(imageBuffer, {
+            const resultBuffer = await buildImage(bgBuffer, {
               lines: textLines,
-              position: ws.position || 'center',
-              bg: { color: ws.bgColor || 'rgba(0,0,0,0.65)', radius: 16, padding: 28 },
+              position: 'bottom',
+              avatar: userAvatarBuf,
+              avatarSize: 120,
+              bg: { color: ws.bgColor || 'rgba(0,0,0,0.55)', radius: 16, padding: 28 },
             });
             await sock.sendMessage(id, { image: resultBuffer, mentions: [participantJid] });
-          } else {
-            // Fallback to API-generated image
-            try {
-              const apiUrl = `https://api.some-random-api.com/welcome/img/7/gaming4?type=join&textcolor=white&username=${encodeURIComponent(displayName)}&guildName=${encodeURIComponent(groupName)}&memberCount=${groupMetadata.participants.length}&avatar=${encodeURIComponent(profilePicUrl)}`;
-              const imageResponse = await axios.get(apiUrl, { responseType: 'arraybuffer' });
-              await sock.sendMessage(id, { image: Buffer.from(imageResponse.data), mentions: [participantJid] });
-            } catch (apiErr) {
-              console.error('Welcome API image error:', apiErr);
-            }
           }
           
           // Always send the text caption too
@@ -1062,103 +1038,31 @@ const handleGroupUpdate = async (sock, update) => {
         }
       } else if (action === 'remove' && groupSettings.goodbye) {
         try {
-          // Get user's display name - find participant using phoneNumber or JID
-          let displayName = participantNumber;
-          
-          // Try to find participant in group metadata (before they left)
+          // Find participant info
           const participantInfo = groupMetadata.participants.find(p => {
             const pId = p.id || p.jid || p.participant;
             const pPhone = p.phoneNumber;
-            // Match by JID or phoneNumber
             return pId === participantJid || 
                    pId?.split('@')[0] === participantNumber ||
                    pPhone === participantJid ||
                    pPhone?.split('@')[0] === participantNumber;
           });
           
-          // Get phoneNumber JID to fetch contact name
-          let phoneJid = null;
-          if (participantInfo && participantInfo.phoneNumber) {
-            phoneJid = participantInfo.phoneNumber;
-          } else {
-            // Try to normalize participantJid to phoneNumber format
-            try {
-              const normalized = normalizeJidWithLid(participantJid);
-              if (normalized && normalized.includes('@s.whatsapp.net')) {
-                phoneJid = normalized;
-              }
-            } catch (e) {
-              if (participantJid.includes('@s.whatsapp.net')) {
-                phoneJid = participantJid;
-              }
-            }
-          }
+          // Resolve display name (username > contact name > formatted phone)
+          const displayName = resolveDisplayName(participantJid, participantNumber, participantInfo, sock);
           
-          // Try to get contact name from phoneNumber JID
-          if (phoneJid) {
-            try {
-              // Method 1: Try to get from contact store if available
-              if (sock.store && sock.store.contacts && sock.store.contacts[phoneJid]) {
-                const contact = sock.store.contacts[phoneJid];
-                if (contact.notify && contact.notify.trim() && !contact.notify.match(/^\d+$/)) {
-                  displayName = contact.notify.trim();
-                } else if (contact.name && contact.name.trim() && !contact.name.match(/^\d+$/)) {
-                  displayName = contact.name.trim();
-                }
-              }
-              
-              // Method 2: Try to fetch contact using onWhatsApp and then check store
-              if (displayName === participantNumber) {
-                try {
-                  await sock.onWhatsApp(phoneJid);
-                  
-                  // After onWhatsApp, check store again
-                  if (sock.store && sock.store.contacts && sock.store.contacts[phoneJid]) {
-                    const contact = sock.store.contacts[phoneJid];
-                    if (contact.notify && contact.notify.trim() && !contact.notify.match(/^\d+$/)) {
-                      displayName = contact.notify.trim();
-                    }
-                  }
-                } catch (fetchError) {
-                  // Silently handle fetch errors
-                }
-              }
-            } catch (contactError) {
-              // Silently handle contact errors
-            }
-          }
-          
-          // Final fallback: use participantInfo.notify or name if available
-          if (displayName === participantNumber && participantInfo) {
-            if (participantInfo.notify && participantInfo.notify.trim() && !participantInfo.notify.match(/^\d+$/)) {
-              displayName = participantInfo.notify.trim();
-            } else if (participantInfo.name && participantInfo.name.trim() && !participantInfo.name.match(/^\d+$/)) {
-              displayName = participantInfo.name.trim();
-            }
-          }
-          
-          // Get user's profile picture URL
-          let profilePicUrl = '';
-          try {
-            profilePicUrl = await sock.profilePictureUrl(participantJid, 'image');
-          } catch (ppError) {
-            // If profile picture not available, use default avatar
-            profilePicUrl = 'https://img.pyrocdn.com/dbKUgahg.png';
-          }
-          
-          // Get group name and description
+          // Get group name
           const groupName = groupMetadata.subject || 'the group';
-          const groupDesc = groupMetadata.desc || 'No description';
           
-          // Get current time string
-          const now = new Date();
-          const timeString = now.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: true 
-          });
+          // Fetch user profile pic (buffer)
+          let userAvatarBuf = null;
+          try {
+            const userPicUrl = await sock.profilePictureUrl(participantJid, 'image');
+            const userPicRes = await axios.get(userPicUrl, { responseType: 'arraybuffer' });
+            userAvatarBuf = Buffer.from(userPicRes.data);
+          } catch (e) { /* no pic */ }
           
-          // Create goodbye message with tsotsitaal flair
+          // Create goodbye text
           const goodbyeLines = [
             `${bold('TOTSIENS')} @${displayName} 👋`,
             '',
@@ -1167,33 +1071,41 @@ const handleGroupUpdate = async (sock, update) => {
           ];
           const goodbyeMsg = goodbyeLines.join('\n');
           
-          // Check for custom goodbye image
-          const goodbyeImagePath = path.join(__dirname, 'utils/goodbye_image.jpg');
+          // Fetch background image: custom > group pic > fallback
+          let bgBuffer = null;
+          const customGoodbyePath = path.join(__dirname, 'utils/goodbye_image.jpg');
           
-          if (fs.existsSync(goodbyeImagePath)) {
-            // Use custom image with text overlay
-            const imageBuffer = fs.readFileSync(goodbyeImagePath);
+          if (fs.existsSync(customGoodbyePath)) {
+            bgBuffer = fs.readFileSync(customGoodbyePath);
+          } else {
+            try {
+              const groupPicUrl = await sock.profilePictureUrl(id, 'image');
+              const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer' });
+              bgBuffer = Buffer.from(groupPicRes.data);
+            } catch (e) {
+              const fallbackPath = path.join(__dirname, 'Picsart_25-11-17_09-42-48-275.png');
+              if (fs.existsSync(fallbackPath)) {
+                bgBuffer = fs.readFileSync(fallbackPath);
+              }
+            }
+          }
+          
+          // Build the image
+          if (bgBuffer) {
             const gs = groupSettings.goodbyeStyle || {};
             const textLines = [
-              { text: 'TOTSIENS ' + displayName, size: gs.fontSize || 40, bold: true, color: gs.textColor || '#ffffff' },
-              { text: "Go well, chommie", size: gs.subFontSize || 28, italic: true, color: '#cccccc' },
-              { text: groupName, size: 24, color: '#aaaaaa' },
+              { text: 'TOTSIENS', size: gs.fontSize || 48, bold: true, color: gs.textColor || '#ffffff' },
+              { text: displayName, size: gs.subFontSize || 32, color: '#ffffff' },
+              { text: groupName, size: 24, color: '#cccccc' },
             ];
-            const resultBuffer = await overlayText(imageBuffer, {
+            const resultBuffer = await buildImage(bgBuffer, {
               lines: textLines,
-              position: gs.position || 'center',
-              bg: { color: gs.bgColor || 'rgba(0,0,0,0.65)', radius: 16, padding: 28 },
+              position: 'bottom',
+              avatar: userAvatarBuf,
+              avatarSize: 120,
+              bg: { color: gs.bgColor || 'rgba(0,0,0,0.55)', radius: 16, padding: 28 },
             });
             await sock.sendMessage(id, { image: resultBuffer, mentions: [participantJid] });
-          } else {
-            // Fallback to API-generated image
-            try {
-              const apiUrl = `https://api.some-random-api.com/welcome/img/7/gaming4?type=leave&textcolor=white&username=${encodeURIComponent(displayName)}&guildName=${encodeURIComponent(groupName)}&memberCount=${groupMetadata.participants.length}&avatar=${encodeURIComponent(profilePicUrl)}`;
-              const imageResponse = await axios.get(apiUrl, { responseType: 'arraybuffer' });
-              await sock.sendMessage(id, { image: Buffer.from(imageResponse.data), mentions: [participantJid] });
-            } catch (apiErr) {
-              console.error('Goodbye API image error:', apiErr);
-            }
           }
           
           // Always send the text caption too

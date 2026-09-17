@@ -12,7 +12,7 @@ module.exports = {
   description: 'Enable/disable goodbye messages',
   usage: 'goodbye on/off',
   groupOnly: true,
-  adminOnly: true,
+  ownerOnly: true, adminOnly: false,
   botAdminNeeded: true,
   execute: async (sock, msg, args) => {
     try {

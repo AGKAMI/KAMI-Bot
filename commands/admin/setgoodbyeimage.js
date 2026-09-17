@@ -14,7 +14,7 @@ module.exports = {
   description: 'Set custom goodbye image (reply to image/sticker)',
   usage: '.setgoodbyeimage (reply to image)',
   groupOnly: true,
-  adminOnly: true,
+  ownerOnly: true, adminOnly: false,
 
   async execute(sock, msg, args, extra) {
     try {

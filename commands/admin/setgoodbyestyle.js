@@ -12,7 +12,7 @@ module.exports = {
   description: 'Customize text overlay on goodbye image',
   usage: '.setgoodbyestyle <option> <value>',
   groupOnly: true,
-  adminOnly: true,
+  ownerOnly: true, adminOnly: false,
 
   async execute(sock, msg, args, extra) {
     try {
