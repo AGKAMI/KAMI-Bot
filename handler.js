@@ -952,6 +952,9 @@ const handleGroupUpdate = async (sock, update) => {
                    pPhone?.split('@')[0] === participantNumber;
           });
           
+          // Use real phone number from group metadata if available (not @lid garbage)
+          const realPhone = participantInfo?.phoneNumber || participantNumber;
+          
           // Get group name and description
           const groupName = groupMetadata.subject || 'the group';
           const groupDesc = groupMetadata.desc || 'No description';
@@ -965,7 +968,7 @@ const handleGroupUpdate = async (sock, update) => {
           });
           
           // Resolve display name (username > contact name > formatted phone)
-          const displayName = resolveDisplayName(participantJid, participantNumber, participantInfo, sock);
+          const displayName = resolveDisplayName(participantJid, realPhone, participantInfo, sock);
           
           // Create formatted welcome message
           const joinedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -1054,8 +1057,11 @@ const handleGroupUpdate = async (sock, update) => {
                    pPhone?.split('@')[0] === participantNumber;
           });
           
+          // Use real phone number from group metadata if available
+          const realPhone = participantInfo?.phoneNumber || participantNumber;
+          
           // Resolve display name (username > contact name > formatted phone)
-          const displayName = resolveDisplayName(participantJid, participantNumber, participantInfo, sock);
+          const displayName = resolveDisplayName(participantJid, realPhone, participantInfo, sock);
           
           // Get group name
           const groupName = groupMetadata.subject || 'the group';
