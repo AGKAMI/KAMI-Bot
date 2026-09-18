@@ -1014,16 +1014,16 @@ const handleGroupUpdate = async (sock, update) => {
             const ws = groupSettings.welcomeStyle || {};
             const joinedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
             const textLines = [
-              { text: 'New Member', size: ws.fontSize || 52, bold: true, color: ws.textColor || '#ffffff' },
-              { text: `Welcome to ${groupName}`, size: ws.subFontSize || 30, color: '#ffffff' },
-              { text: `Member #${groupMetadata.participants.length} | ${joinedDate}`, size: 22, color: '#cccccc' },
+              { text: 'New Member', size: ws.fontSize || 72, bold: true, color: ws.textColor || '#ffffff' },
+              { text: `Welcome to ${groupName}`, size: ws.subFontSize || 44, color: '#ffffff' },
+              { text: `Member #${groupMetadata.participants.length} | ${joinedDate}`, size: 32, color: '#cccccc' },
             ];
             try {
               const resultBuffer = await buildImage(bgBuffer, {
                 lines: textLines,
                 position: 'bottom',
                 avatar: userAvatarBuf,
-                avatarSize: 120,
+                avatarSize: 180,
                 bg: { color: ws.bgColor || 'rgba(0,0,0,0.55)', radius: 16, padding: 28 },
               });
               await sock.sendMessage(id, { image: resultBuffer, caption: welcomeMsg, mentions: [participantJid] });
@@ -1108,15 +1108,15 @@ const handleGroupUpdate = async (sock, update) => {
             const gs = groupSettings.goodbyeStyle || {};
             const leftDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
             const textLines = [
-              { text: 'Goodbye', size: gs.fontSize || 52, bold: true, color: gs.textColor || '#ffffff' },
-              { text: `Farewell from ${groupName}`, size: gs.subFontSize || 30, color: '#ffffff' },
-              { text: `Member #${groupMetadata.participants.length} | ${leftDate}`, size: 22, color: '#cccccc' },
+              { text: 'Goodbye', size: gs.fontSize || 72, bold: true, color: gs.textColor || '#ffffff' },
+              { text: `Farewell from ${groupName}`, size: gs.subFontSize || 44, color: '#ffffff' },
+              { text: `Member #${groupMetadata.participants.length} | ${leftDate}`, size: 32, color: '#cccccc' },
             ];
             const resultBuffer = await buildImage(bgBuffer, {
               lines: textLines,
               position: 'bottom',
               avatar: userAvatarBuf,
-              avatarSize: 120,
+              avatarSize: 180,
               bg: { color: gs.bgColor || 'rgba(0,0,0,0.55)', radius: 16, padding: 28 },
             });
             await sock.sendMessage(id, { image: resultBuffer, caption: goodbyeMsg, mentions: [participantJid] });
