@@ -71,12 +71,31 @@ module.exports = {
             text: `${bold('Usage:')} .dmblocker approve <number>\n\n_Example: .dmblocker approve 27831234567_`
           }, { quoted: msg });
         }
-        const added = database.addApprovedNumber(number);
-        // Also WhatsApp-unblock them if they were blocked
+
         let digits = number.replace(/\D/g, '');
+        if (!digits || digits.length < 8) {
+          return await sock.sendMessage(chatId, {
+            text: `${bold(pick(SLANG.error))} — invalid number`
+          }, { quoted: msg });
+        }
         if (digits.startsWith('0')) digits = '27' + digits.slice(1);
         const targetJid = digits + '@s.whatsapp.net';
-        try { await sock.updateBlockStatus(targetJid, 'unblock'); } catch (e) {}
+
+        // Add to approved list
+        const added = database.addApprovedNumber(number);
+
+        // WhatsApp-unblock if blocked
+        let wasBlocked = false;
+        try { await sock.updateBlockStatus(targetJid, 'unblock'); wasBlocked = true; } catch (e) {}
+
+        // Unban if banned
+        let wasBanned = false;
+        const user = database.getUser(targetJid);
+        if (user.banned) {
+          database.updateUser(targetJid, { banned: false, bannedIn: null });
+          wasBanned = true;
+        }
+
         // DM them the approval message
         try {
           await sock.sendMessage(targetJid, {
@@ -85,11 +104,20 @@ module.exports = {
                   `_Enjoy, ${pick(SLANG.good)}!_`
           });
         } catch (e) {}
-        return await sock.sendMessage(chatId, {
-          text: added
-            ? `${bold('✅ APPROVED')}\n\n_${number} can now use the bot._`
-            : `${bold('⚠️ ALREADY APPROVED')}\n\n_${number} is already approved._`
-        }, { quoted: msg });
+
+        // Confirm in chat
+        let reply = added
+          ? `${bold('✅ APPROVED')}\n\n_${digits} can now use the bot._`
+          : `${bold('⚠️ ALREADY APPROVED')}\n\n_${digits} is already approved._`;
+
+        if (wasBlocked) {
+          reply += `\n\n🔓 *UNBLOCKED* — removed from WhatsApp block list`;
+        }
+        if (wasBanned) {
+          reply += `\n\n🔨 *BAN LIFTED* — removed from bot ban list`;
+        }
+
+        return await sock.sendMessage(chatId, { text: reply }, { quoted: msg });
       }
 
       if (action === 'disapprove') {

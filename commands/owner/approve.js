@@ -5,6 +5,14 @@
 const database = require('../../database');
 const { bold, pick, SLANG } = require('../../utils/format');
 
+const parseNumber = (input) => {
+  if (!input) return null;
+  let digits = input.replace(/\D/g, '');
+  if (!digits || digits.length < 8) return null;
+  if (digits.startsWith('0')) digits = '27' + digits.slice(1);
+  return digits;
+};
+
 module.exports = {
   name: 'approve',
   aliases: [],
@@ -19,13 +27,27 @@ module.exports = {
       return extra.reply(`${bold('Usage:')} .approve <number>\n\n_Example: .approve 27833882383_`);
     }
 
+    const digits = parseNumber(number);
+    if (!digits) return extra.reply(`${bold(pick(SLANG.error))} — invalid number`);
+    const targetJid = digits + '@s.whatsapp.net';
+
+    // Add to approved list
     const added = database.addApprovedNumber(number);
 
-    // Also WhatsApp-unblock them if they were blocked
-    let digits = number.replace(/\D/g, '');
-    if (digits.startsWith('0')) digits = '27' + digits.slice(1);
-    const targetJid = digits + '@s.whatsapp.net';
-    try { await sock.updateBlockStatus(targetJid, 'unblock'); } catch (e) {}
+    // WhatsApp-unblock if blocked
+    let wasBlocked = false;
+    try {
+      await sock.updateBlockStatus(targetJid, 'unblock');
+      wasBlocked = true;
+    } catch (e) {}
+
+    // Unban if banned
+    let wasBanned = false;
+    const user = database.getUser(targetJid);
+    if (user.banned) {
+      database.updateUser(targetJid, { banned: false, bannedIn: null });
+      wasBanned = true;
+    }
 
     // DM them the approval message
     try {
@@ -36,10 +58,18 @@ module.exports = {
       });
     } catch (e) {}
 
-    await sock.sendMessage(extra.from, {
-      text: added
-        ? `${bold('✅ APPROVED')}\n\n_${number} can now use the bot in DMs._`
-        : `${bold('⚠️ ALREADY APPROVED')}\n\n_${number} is already approved._`
-    }, { quoted: msg });
+    // Confirm in chat with details
+    let reply = added
+      ? `${bold('✅ APPROVED')}\n\n_${digits} can now use the bot in DMs._`
+      : `${bold('⚠️ ALREADY APPROVED')}\n\n_${digits} is already approved._`;
+
+    if (wasBlocked) {
+      reply += `\n\n🔓 *UNBLOCKED* — removed from WhatsApp block list`;
+    }
+    if (wasBanned) {
+      reply += `\n\n🔨 *BAN LIFTED* — removed from bot ban list`;
+    }
+
+    await sock.sendMessage(extra.from, { text: reply }, { quoted: msg });
   }
 };
