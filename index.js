@@ -316,6 +316,14 @@ async function startBot() {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const errorMessage = lastDisconnect?.error?.message || 'Unknown error';
 
+      // Conflict = another session is active (phone/Web). Back off longer.
+      if (statusCode === 401 || statusCode === 440 || errorMessage.includes('conflict')) {
+        console.log('⚠️ Session conflict — another WhatsApp session is active on this number.');
+        console.log('   Log out of WhatsApp Web / close other sessions, then the bot will reconnect in 30s.');
+        setTimeout(() => startBot(), 30000);
+        return;
+      }
+
       // Suppress verbose error output for common stream errors (515, etc.)
       if (statusCode === 515 || statusCode === 503 || statusCode === 408) {
         console.log(`⚠️ Connection closed (${statusCode}). Reconnecting...`);
