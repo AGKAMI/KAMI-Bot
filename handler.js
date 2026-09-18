@@ -1361,44 +1361,36 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
 
 // Anti-call feature initializer
 const initializeAntiCall = (sock, isOwner) => {
-  // Anti-call feature - reject and block incoming calls
   sock.ev.on('call', async (calls) => {
     try {
-      // Reload config to get fresh settings
       delete require.cache[require.resolve('./config')];
       const config = require('./config');
-      
       if (!config.defaultGroupSettings.anticall) return;
 
       for (const call of calls) {
         if (call.status !== 'offer') continue;
-        
         const caller = call.from;
-        
-        console.log('[ANTICALL] Rejecting call from:', caller);
-        
-        // Send message BEFORE blocking so it actually delivers
+
+        console.log('[ANTICALL] Call from:', caller);
+
+        // Reject the call
+        try { await sock.rejectCall(call.id, caller); } catch (e) {
+          console.error('[ANTICALL] rejectCall failed:', e.message);
+        }
+
+        // Send message first (before block so it delivers)
         try {
           await sock.sendMessage(caller, {
-            text: `🚫 _Calls aren't allowed here. You've been blocked, ${pick(SLANG.vibe)}._`
+            text: `🚫 _Sorry ${pick(SLANG.friend)}, calls aren't allowed here. Send a message instead._`
           });
         } catch (e) {
-          console.error('[ANTICALL] Message send failed:', e.message);
+          console.error('[ANTICALL] message failed:', e.message);
         }
-        
-        // Reject the call
-        try {
-          await sock.rejectCall(call.id, caller);
-        } catch (e) {
-          console.error('[ANTICALL] Reject call failed:', e.message);
-        }
-        
-        // Block the caller (skip owner)
+
+        // Block non-owners
         if (!isOwner(caller)) {
-          try {
-            await sock.updateBlockStatus(caller, 'block');
-          } catch (e) {
-            console.error('[ANTICALL] Block failed:', e.message);
+          try { await sock.updateBlockStatus(caller, 'block'); } catch (e) {
+            console.error('[ANTICALL] block failed:', e.message);
           }
         }
       }
