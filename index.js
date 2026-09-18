@@ -66,6 +66,7 @@ console.warn = (...args) => {
 
 // Now safe to load libraries
 const pino = require('pino');
+const qrcode = require('qrcode-terminal');
 const {
   default: makeWASocket,
   useMultiFileAuthState,
@@ -240,7 +241,7 @@ async function startBot() {
   const sock = makeWASocket({
     version, // explicit WA Web version negotiated with the server
     logger: suppressedLogger,
-    printQRInTerminal: true,
+    printQRInTerminal: false,
     // Use a common desktop browser signature
     browser: ['Chrome', 'Windows', '10.0'],
     auth: state,
@@ -307,18 +308,8 @@ async function startBot() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log('\n📱 Pairing with phone number...');
-      try {
-        const pairingCode = await sock.requestPairingCode('27833882383');
-        console.log('\n╔══════════════════════════════════════╗');
-        console.log('║     🔗 PAIRING CODE: ' + pairingCode + '     ║');
-        console.log('╚══════════════════════════════════════╝');
-        console.log('Open WhatsApp → Linked Devices → Link a Device');
-        console.log('Enter the code above when prompted.\n');
-      } catch (e) {
-        console.log('\n⚠️ WhatsApp session needs re-pairing.');
-        console.log('   QR code should appear in terminal.\n');
-      }
+      console.log('\n⚠️ Scan this QR code in WhatsApp → Linked Devices:\n');
+      qrcode.generate(qr, { small: true });
     }
 
     if (connection === 'close') {
