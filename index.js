@@ -240,7 +240,7 @@ async function startBot() {
   const sock = makeWASocket({
     version, // explicit WA Web version negotiated with the server
     logger: suppressedLogger,
-    printQRInTerminal: false,
+    printQRInTerminal: true,
     // Use a common desktop browser signature
     browser: ['Chrome', 'Windows', '10.0'],
     auth: state,
