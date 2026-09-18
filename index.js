@@ -447,8 +447,7 @@ async function startBot() {
 
       // Process command IMMEDIATELY (don't block on other operations)
       handler.handleMessage(sock, msg).catch(err => {
-        if (!err.message?.includes('rate-overlimit') &&
-          !err.message?.includes('not-authorized')) {
+        if (!err.message?.includes('rate-overlimit')) {
           console.error('Error handling message:', err.message);
         }
       });

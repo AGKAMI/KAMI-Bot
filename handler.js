@@ -883,8 +883,21 @@ const handleMessage = async (sock, msg) => {
       isAdmin: await isAdmin(sock, sender, from, groupMetadata),
       isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
       isMod: isMod(sender),
-      reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
-      react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
+      reply: async (text) => {
+        try {
+          return await sock.sendMessage(from, { text }, { quoted: msg });
+        } catch (err) {
+          console.error(`[REPLY ERROR] Failed to send to ${from}:`, err.message);
+          throw err;
+        }
+      },
+      react: async (emoji) => {
+        try {
+          return await sock.sendMessage(from, { react: { text: emoji, key: msg.key } });
+        } catch (err) {
+          console.error(`[REACT ERROR] Failed to react in ${from}:`, err.message);
+        }
+      }
     });
     
   } catch (error) {
