@@ -307,8 +307,18 @@ async function startBot() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log('\n⚠️ WhatsApp session needs re-pairing.');
-      console.log('   Contact KAMI to restart the bot.\n');
+      console.log('\n📱 Pairing with phone number...');
+      try {
+        const pairingCode = await sock.requestPairingCode('27833882383');
+        console.log('\n╔══════════════════════════════════════╗');
+        console.log('║     🔗 PAIRING CODE: ' + pairingCode + '     ║');
+        console.log('╚══════════════════════════════════════╝');
+        console.log('Open WhatsApp → Linked Devices → Link a Device');
+        console.log('Enter the code above when prompted.\n');
+      } catch (e) {
+        console.log('\n⚠️ WhatsApp session needs re-pairing.');
+        console.log('   QR code should appear in terminal.\n');
+      }
     }
 
     if (connection === 'close') {
