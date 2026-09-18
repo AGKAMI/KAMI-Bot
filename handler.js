@@ -1360,7 +1360,7 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
 
 
 // Anti-call feature initializer
-const initializeAntiCall = (sock) => {
+const initializeAntiCall = (sock, isOwner) => {
   // Anti-call feature - reject and block incoming calls
   sock.ev.on('call', async (calls) => {
     try {
@@ -1371,17 +1371,39 @@ const initializeAntiCall = (sock) => {
       if (!config.defaultGroupSettings.anticall) return;
 
       for (const call of calls) {
-        if (call.status === 'offer') {
-          // Reject the call
-          await sock.rejectCall(call.id, call.from);
-
-          // Block the caller
-          await sock.updateBlockStatus(call.from, 'block');
-
-          // Notify user
-          await sock.sendMessage(call.from, {
+        if (call.status !== 'offer') continue;
+        
+        const caller = call.from;
+        
+        // Skip owner — never block/reject the owner
+        if (isOwner(caller)) {
+          console.log('[ANTICALL] Skipping owner call from:', caller);
+          continue;
+        }
+        
+        console.log('[ANTICALL] Rejecting call from:', caller);
+        
+        // Send message BEFORE blocking so it actually delivers
+        try {
+          await sock.sendMessage(caller, {
             text: `🚫 _Calls aren't allowed here. You've been blocked, ${pick(SLANG.vibe)}._`
           });
+        } catch (e) {
+          console.error('[ANTICALL] Message send failed:', e.message);
+        }
+        
+        // Reject the call
+        try {
+          await sock.rejectCall(call.id, caller);
+        } catch (e) {
+          console.error('[ANTICALL] Reject call failed:', e.message);
+        }
+        
+        // Block the caller
+        try {
+          await sock.updateBlockStatus(caller, 'block');
+        } catch (e) {
+          console.error('[ANTICALL] Block failed:', e.message);
         }
       }
     } catch (err) {

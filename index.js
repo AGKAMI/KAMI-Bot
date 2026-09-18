@@ -360,7 +360,7 @@ async function startBot() {
       }
 
       // Initialize anti-call feature
-      handler.initializeAntiCall(sock);
+      handler.initializeAntiCall(sock, handler.isOwner);
 
       // Cleanup old chats (keep only active ones, e.g., last touched <1 day)
       const now = Date.now();
