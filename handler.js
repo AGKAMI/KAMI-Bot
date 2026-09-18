@@ -823,9 +823,9 @@ const handleMessage = async (sock, msg) => {
     const command = commands.get(commandName);
     if (!command) return;
     
-    // Check self mode (private mode) - only owner/approved can use commands
+    // Check self mode (private mode) - only owner/approved can use commands (DMs ONLY, groups unaffected)
     const globalSettings = database.getGlobalSettings();
-    if (globalSettings.selfMode && !isOwner(sender) && !database.isApprovedNumber(sender)) {
+    if (!isGroup && globalSettings.selfMode && !isOwner(sender) && !database.isApprovedNumber(sender)) {
       // Send warning then block (owner can never reach here due to isOwner check above)
       try {
         await sock.sendMessage(from, {
