@@ -359,6 +359,18 @@ async function startBot() {
         await sock.updateProfileStatus(`${config.botName} | Active 24/7`);
       }
 
+      // Auto-unblock owner on startup (safety measure)
+      try {
+        for (const ownerNum of (config.ownerNumber || [])) {
+          const cleanNum = ownerNum.replace(/\D/g, '');
+          const ownerJid1 = cleanNum + '@s.whatsapp.net';
+          const ownerJid2 = cleanNum + '@lid';
+          try { await sock.updateBlockStatus(ownerJid1, 'unblock'); } catch (e) {}
+          try { await sock.updateBlockStatus(ownerJid2, 'unblock'); } catch (e) {}
+        }
+        console.log('✅ Owner auto-unblocked');
+      } catch (e) {}
+
       // Initialize anti-call feature
       handler.initializeAntiCall(sock, handler.isOwner);
 

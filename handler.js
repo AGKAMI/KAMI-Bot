@@ -826,7 +826,7 @@ const handleMessage = async (sock, msg) => {
     // Check self mode (private mode) - only owner/approved can use commands
     const globalSettings = database.getGlobalSettings();
     if (globalSettings.selfMode && !isOwner(sender) && !database.isApprovedNumber(sender)) {
-      // Send warning then block
+      // Send warning then block (owner can never reach here due to isOwner check above)
       try {
         await sock.sendMessage(from, {
           text: `🚫 *DO NOT TEXT THIS NUMBER* — this is a *bot* account 🤖\n` +
@@ -834,7 +834,9 @@ const handleMessage = async (sock, msg) => {
                 `⚠️ *Your number will be BLOCKED after this message* ⛔🔒`
         });
         await sock.updateBlockStatus(sender, 'block');
-      } catch (e) {}
+      } catch (e) {
+        console.error('[DMBLOCKER] block failed:', e.message);
+      }
       return;
     }
     

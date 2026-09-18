@@ -16,15 +16,20 @@ module.exports = {
     try {
       let target;
       
-      const ctx = msg.message?.extendedTextMessage?.contextInfo;
-      const mentioned = ctx?.mentionedJid || [];
-      
-      if (mentioned && mentioned.length > 0) {
-        target = mentioned[0];
-      } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
-        target = ctx.participant;
+      // .unblock me — unblock the sender
+      if (args[0] && args[0].toLowerCase() === 'me') {
+        target = extra.sender;
       } else {
-        return extra.reply(`${bold(pick(SLANG.error))} — tag or reply to the oke you wanna unblock`);
+        const ctx = msg.message?.extendedTextMessage?.contextInfo;
+        const mentioned = ctx?.mentionedJid || [];
+        
+        if (mentioned && mentioned.length > 0) {
+          target = mentioned[0];
+        } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
+          target = ctx.participant;
+        } else {
+          return extra.reply(`${bold(pick(SLANG.error))} — tag or reply to the oke you wanna unblock\n\nor use: .unblock me`);
+        }
       }
       
       await sock.updateBlockStatus(target, 'unblock');
