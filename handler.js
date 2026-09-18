@@ -1021,10 +1021,11 @@ const handleGroupUpdate = async (sock, update) => {
           // Build the image
           if (bgBuffer) {
             const ws = groupSettings.welcomeStyle || {};
+            const joinedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
             const textLines = [
-              { text: greet().toUpperCase(), size: ws.fontSize || 48, bold: true, color: ws.textColor || '#ffffff' },
-              { text: displayName, size: ws.subFontSize || 32, color: '#ffffff' },
-              { text: `Member #${groupMetadata.participants.length}`, size: 24, color: '#cccccc' },
+              { text: 'New Member', size: ws.fontSize || 52, bold: true, color: ws.textColor || '#ffffff' },
+              { text: `Welcome to ${groupName}`, size: ws.subFontSize || 30, color: '#ffffff' },
+              { text: `Member #${groupMetadata.participants.length} | ${joinedDate}`, size: 22, color: '#cccccc' },
             ];
             try {
               const resultBuffer = await buildImage(bgBuffer, {
@@ -1113,10 +1114,11 @@ const handleGroupUpdate = async (sock, update) => {
           // Build the image
           if (bgBuffer) {
             const gs = groupSettings.goodbyeStyle || {};
+            const leftDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
             const textLines = [
-              { text: 'TOTSIENS', size: gs.fontSize || 48, bold: true, color: gs.textColor || '#ffffff' },
-              { text: displayName, size: gs.subFontSize || 32, color: '#ffffff' },
-              { text: groupName, size: 24, color: '#cccccc' },
+              { text: 'Goodbye', size: gs.fontSize || 52, bold: true, color: gs.textColor || '#ffffff' },
+              { text: `Farewell from ${groupName}`, size: gs.subFontSize || 30, color: '#ffffff' },
+              { text: `Member #${groupMetadata.participants.length} | ${leftDate}`, size: 22, color: '#cccccc' },
             ];
             const resultBuffer = await buildImage(bgBuffer, {
               lines: textLines,
