@@ -63,7 +63,7 @@ module.exports = {
         text += `${line(15)}\n`;
 
         for (const cmd of sorted) {
-          const desc = cmd.description ? ` — _${cmd.description}_` : '';
+          const desc = cmd.description ? ` — \`${cmd.description}\`` : '';
           text += `${prefix}${cmd.name}${desc}\n`;
         }
 
