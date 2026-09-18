@@ -974,7 +974,7 @@ const handleGroupUpdate = async (sock, update) => {
           const joinedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
           const welcomeMsg = [
             `*New Member*`,
-            `Welcome to *${groupName}*`,
+            `Welcome ${mention(participantJid)} to *${groupName}*`,
             `Member #${groupMetadata.participants.length} | ${joinedDate}`,
             '',
             `_${pick(SLANG.vibe)}, enjoy your stay chommie_ 💀`,
@@ -1078,7 +1078,7 @@ const handleGroupUpdate = async (sock, update) => {
           const leftDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
           const goodbyeMsg = [
             `*Goodbye*`,
-            `Farewell from *${groupName}*`,
+            `Farewell ${mention(participantJid)} from *${groupName}*`,
             `Member #${groupMetadata.participants.length} | ${leftDate}`,
             '',
             `_${pick(SLANG.vibe)}, we'll miss you hey._ 💀`,
