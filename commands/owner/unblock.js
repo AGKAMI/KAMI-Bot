@@ -2,14 +2,22 @@
  * Unblock Command - Unblock a user
  */
 
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG } = require('../../utils/format');
+
+const parsePhoneNumber = (input) => {
+  if (!input) return null;
+  let digits = input.replace(/\D/g, '');
+  if (!digits || digits.length < 8) return null;
+  if (digits.startsWith('0')) digits = '27' + digits.slice(1);
+  return digits + '@s.whatsapp.net';
+};
 
 module.exports = {
   name: 'unblock',
   aliases: [],
   category: 'owner',
   description: 'Unblock a user',
-  usage: '.unblock @user or reply',
+  usage: '.unblock @user/reply OR .unblock 27833882383 OR .unblock me',
   ownerOnly: true,
   
   async execute(sock, msg, args, extra) {
@@ -20,15 +28,25 @@ module.exports = {
       if (args[0] && args[0].toLowerCase() === 'me') {
         target = extra.sender;
       } else {
-        const ctx = msg.message?.extendedTextMessage?.contextInfo;
-        const mentioned = ctx?.mentionedJid || [];
-        
-        if (mentioned && mentioned.length > 0) {
-          target = mentioned[0];
-        } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
-          target = ctx.participant;
+        // .unblock <phone number>
+        const rawArg = args.join(' ');
+        if (rawArg && /\d/.test(rawArg)) {
+          target = parsePhoneNumber(rawArg);
+          if (!target) {
+            return extra.reply(`${bold(pick(SLANG.error))} — invalid number, ${pick(SLANG.friend)}`);
+          }
         } else {
-          return extra.reply(`${bold(pick(SLANG.error))} — tag or reply to the oke you wanna unblock\n\nor use: .unblock me`);
+          // Tag or reply
+          const ctx = msg.message?.extendedTextMessage?.contextInfo;
+          const mentioned = ctx?.mentionedJid || [];
+          
+          if (mentioned && mentioned.length > 0) {
+            target = mentioned[0];
+          } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
+            target = ctx.participant;
+          } else {
+            return extra.reply(`${bold(pick(SLANG.error))} — tag, reply, or add a number\n\n_Examples:_\n.unblock 27833882383\n.unblock 083 388 2383\n.unblock me`);
+          }
         }
       }
       
