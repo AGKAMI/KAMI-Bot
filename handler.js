@@ -379,6 +379,8 @@ const isUrl = (text) => {
 // Format raw number to +country code format (e.g. +27 83 388 2383)
 const formatPhone = (raw) => {
   if (!raw) return '';
+  // Reject @lid JIDs — not real phone numbers
+  if (raw.includes('@lid')) return '';
   const digits = raw.replace(/\D/g, '');
   if (digits.length <= 4) return '+' + digits;
   let ccLen = 1;
@@ -402,7 +404,20 @@ const resolveDisplayName = (participantJid, participantNumber, participantInfo, 
     if (participantInfo.notify?.trim() && !participantInfo.notify.match(/^\d+$/)) return participantInfo.notify.trim();
     if (participantInfo.name?.trim() && !participantInfo.name.match(/^\d+$/)) return participantInfo.name.trim();
   }
-  // 3. Fall back to formatted phone number
+  // 3. If @lid JID, try resolving via getBusinessInfo or contacts
+  if (participantJid?.includes('@lid')) {
+    // Try all contacts for a match
+    if (sock.store?.contacts) {
+      for (const [jid, c] of Object.entries(sock.store.contacts)) {
+        if (c.lid === participantJid || c.lid === participantNumber) {
+          const name = c.notify || c.name;
+          if (name && name.trim() && !name.match(/^\d+$/)) return name.trim();
+        }
+      }
+    }
+    return 'A member'; // Can't resolve @lid to a name
+  }
+  // 4. Fall back to formatted phone number
   return formatPhone(participantNumber);
 };
 
