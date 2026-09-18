@@ -15,7 +15,7 @@ module.exports = {
   
   async execute(sock, msg, args, extra) {
     try {
-      const notStickerMessage = `${italic('reply to a sticker to convert it to image')}`;
+      const notStickerMessage = `⚠️ *WARNING*\n💡 Reply to a sticker to convert it to image`;
       
       // Check if message is a reply
       const ctxInfo = msg.message?.extendedTextMessage?.contextInfo;
@@ -47,7 +47,7 @@ module.exports = {
       );
       
       if (!stickerBuffer) {
-        return await extra.reply(`❌ _${pick(SLANG.error)} — couldn't download the sticker, try again_`);
+        return await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't download the sticker, try again`);
       }
       
       // Check if sticker is animated
@@ -86,7 +86,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Error in simage command:', error);
-      await extra.reply(`❌ _${pick(SLANG.error)} — couldn't convert sticker to image_`);
+      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't convert sticker to image`);
     }
   }
 };

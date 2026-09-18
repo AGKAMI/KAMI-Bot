@@ -15,25 +15,25 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length < 2) {
-        return extra.reply(`❌ _${pick(SLANG.error)}, usage: .translate <lang> <text>\n\nExample: .translate es Hello world_`);
+        return extra.reply(`❌ *ERROR*\n💡 Usage: .translate <lang> <text>\n\n📝 *Example:* .translate es Hello world`);
       }
       
       const targetLang = args[0];
       const text = args.slice(1).join(' ');
       
-      await extra.reply(`${italic('translating...')}`);
+      await extra.reply(`⏳ *TRANSLATING...*\n💡 _translating..._`);
       
       const result = await APIs.translate(text, targetLang);
       
-      let replyText = `${bold('Translation')}\n\n`;
-      replyText += `${bold('Original:')} ${text}\n`;
-      replyText += `${bold('Translated:')} ${result.translation || result}\n`;
-      replyText += `${bold('Language:')} ${targetLang.toUpperCase()}`;
+      let replyText = `✅ *TRANSLATION*\n\n`;
+      replyText += `📝 *Original:* ${text}\n`;
+      replyText += `🌐 *Translated:* ${result.translation || result}\n`;
+      replyText += `🗣️ *Language:* ${targetLang.toUpperCase()}`;
       
       await extra.reply(replyText);
       
     } catch (error) {
-      await extra.reply(`❌ _${pick(SLANG.error)}, translation failed — ${error.message}_\n\nsupported codes: en, es, fr, de, it, pt, ru, ja, ko, zh`);
+      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)}, translation failed — ${error.message}\n\n💡 Supported codes: en, es, fr, de, it, pt, ru, ja, ko, zh`);
     }
   }
 };

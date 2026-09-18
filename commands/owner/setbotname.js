@@ -37,16 +37,16 @@ module.exports = {
       // Validate
       if (!newBotName) {
         return extra.reply(
-          `${bold('📝 SET BOT NAME')}\n\n` +
-          `${bold('Current name:')} *${config.botName}*\n\n` +
-          `${bold('Usage:')}\n` +
+          `*📝 SET BOT NAME*\n\n` +
+          `📋 *Current name:* *${config.botName}*\n\n` +
+          `*Usage:*\n` +
           `  .setbotname <new name>\n` +
           `  Or reply to a message with .setbotname`
         );
       }
       
       if (newBotName.length > 50) {
-        return extra.reply(`${bold(pick(SLANG.error))} — bot name max 50 characters`);
+        return extra.reply(`*❌ ERROR* — bot name max 50 characters`);
       }
       
       // Update runtime config
@@ -67,12 +67,11 @@ module.exports = {
       // Reload config module cache
       delete require.cache[require.resolve('../../config')];
       
-      await extra.reply(`${bold('✅ NAME UPDATED')}\n\n_${pick(SLANG.good)}, bot name is now:_ *${newBotName}*\n\nnew name will show in menus`);
+      await extra.reply(`*✅ NAME UPDATED*\n\n✅ ${pick(SLANG.good)}, bot name is now: *${newBotName}*\n\n🔄 New name will show in menus`);
       
     } catch (error) {
       console.error('Setbotname command error:', error);
-      await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`*❌ ERROR* — ${error.message}`);
     }
   }
 };
-

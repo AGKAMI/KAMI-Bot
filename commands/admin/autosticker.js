@@ -21,12 +21,12 @@ module.exports = {
         const settings = database.getGroupSettings(extra.from);
         const status = settings.autosticker ? 'ON' : 'OFF';
         return extra.reply(
-          `📌 ${bold('AUTOSTICKER STATUS')}\n\n` +
-          `${bold('Status')}: *${status}*\n\n` +
-          `_When enabled, all images and videos go straight to sticker_${pick(SLANG.vibe)}\n\n` +
-          `Usage:\n` +
-          `  .autosticker on\n` +
-          `  .autosticker off`
+          `📌 AUTOSTICKER STATUS\n\n` +
+          `*Status*: ${status}\n\n` +
+          `When enabled, all images and videos go straight to sticker ${pick(SLANG.vibe)}\n\n` +
+          `📱 *Usage*:\n` +
+          `• .autosticker on\n` +
+          `• .autosticker off`
         );
       }
       
@@ -34,24 +34,24 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).autosticker) {
-          return extra.reply(`✅ _${pick(SLANG.vibe)}, autosticker is already on_`);
+          return extra.reply(`✅ SUCCESS\n\nAutosticker is already on ${pick(SLANG.vibe)}`);
         }
         database.updateGroupSettings(extra.from, { autosticker: true });
-        return extra.reply(`✅ _${pick(SLANG.good)}, autosticker turned ON_\n\nevery image and video goes straight to sticker now hey`);
+        return extra.reply(`✅ SUCCESS\n\nAutosticker turned ON ${pick(SLANG.good)}\n\nEvery image and video goes straight to sticker now`);
       }
       
       if (opt === 'off') {
         if (!database.getGroupSettings(extra.from).autosticker) {
-          return extra.reply(`❌ _${pick(SLANG.vibe)}, autosticker is off already_`);
+          return extra.reply(`⚠️ WARNING\n\nAutosticker is off already ${pick(SLANG.vibe)}`);
         }
         database.updateGroupSettings(extra.from, { autosticker: false });
-        return extra.reply(`❌ _${pick(SLANG.error)}, autosticker turned off_`);
+        return extra.reply(`✅ SUCCESS\n\nAutosticker turned OFF`);
       }
       
-      return extra.reply(`❌ _${pick(SLANG.error)}, invalid option_\nusage: .autosticker <on/off>`);
+      return extra.reply(`❌ ERROR\n\nInvalid option\nUsage: .autosticker <on/off>`);
     } catch (error) {
       console.error('[AutoSticker Command Error]:', error);
-      return extra.reply(`❌ _${pick(SLANG.error)} — couldn't update autosticker setting_`);
+      return extra.reply(`❌ ERROR\n\nCouldn't update autosticker setting`);
     }
   }
 };

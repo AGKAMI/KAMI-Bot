@@ -20,7 +20,7 @@ module.exports = {
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       if (!ctx?.quotedMessage) {
-        return extra.reply(`${bold('SET GOODBYE IMAGE')}\n\n_Reply to an image or sticker to set as goodbye image_`);
+        return extra.reply(`*SET GOODBYE IMAGE*\n\n_Reply to an image or sticker to set as goodbye image_`);
       }
 
       const quotedMsg = ctx.quotedMessage;
@@ -55,7 +55,7 @@ module.exports = {
       const imagePath = path.join(__dirname, '../../utils/goodbye_image.jpg');
       fs.writeFileSync(imagePath, finalBuffer);
 
-      await extra.reply(`${bold('✅ GOODBYE IMAGE UPDATED')}\n\n_${pick(SLANG.good)}, departing members will see this image_`);
+      await extra.reply(`*✅ GOODBYE IMAGE UPDATED*\n\n_${pick(SLANG.good)}, departing members will see this image_`);
     } catch (error) {
       console.error('SetGoodbyeImage error:', error);
       await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);

@@ -41,13 +41,13 @@ module.exports = {
 
       const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'owner'];
 
-      const line = (w) => '─'.repeat(w);
+      const line = () => '----------';
 
       let text = '';
-      text += `${bold('KAMI BOT')}\n`;
+      text += `*KAMI BOT*\n`;
       text += `${line(20)}\n\n`;
-      text += `${bold('HOWZIT')} ${extra.pushName || 'User'}! 👋\n`;
-      text += `${total} ${bold('commands')} available\n`;
+      text += `*HOWZIT* ${extra.pushName || 'User'}! 👋\n`;
+      text += `${total} *commands* available\n`;
       text += `Prefix: ${bold(prefix)}\n\n`;
 
       for (const cat of order) {
@@ -71,7 +71,7 @@ module.exports = {
       }
 
       text += `${line(20)}\n`;
-      text += `${italic(`Use ${prefix}help <cmd> for info`)}`;
+      text += `_Use ${prefix}help <cmd> for info_`;
 
       // Check for custom menu image
       const imagePath = path.join(__dirname, '../../utils/bot_image.jpg');

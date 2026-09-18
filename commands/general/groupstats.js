@@ -17,7 +17,7 @@ module.exports = {
             const stats = getStats(from);
 
             if (!stats)
-                return extra.reply(`${italic('nothing happening today hey')}`);
+                return extra.reply(`⚠️ *WARNING*\n💡 Nothing happening today hey`);
 
             const { total, users } = stats;
 
@@ -31,14 +31,14 @@ module.exports = {
                 : 'No active users yet.';
 
             const text = `
-📊 *group stats — today*
+📊 *GROUP STATS — TODAY*
 
 📌 *Total Messages:* ${total}
 
 👥 *Top Active Members:*
 ${topText}
 
-${italic('Type .myactivity to see your stats.')}
+💡 _Type .myactivity to see your stats._
 `.trim();
 
             await sock.sendMessage(from, {
@@ -48,7 +48,7 @@ ${italic('Type .myactivity to see your stats.')}
 
         } catch (err) {
             console.error('[groupstats cmd] error:', err);
-            extra.reply(`❌ _${pick(SLANG.error)}, couldn't load stats_`);
+            extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)}, couldn't load stats`);
         }
     }
 };

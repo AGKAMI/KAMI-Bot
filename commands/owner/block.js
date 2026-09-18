@@ -31,7 +31,7 @@ module.exports = {
       if (rawArg && /\d/.test(rawArg)) {
         target = parsePhoneNumber(rawArg);
         if (!target) {
-          return extra.reply(`${bold(pick(SLANG.error))} — invalid number, ${pick(SLANG.friend)}`);
+          return extra.reply(`*pick(SLANG.error)* — invalid number, ${pick(SLANG.friend)}`);
         }
       } else {
         // Tag or reply
@@ -43,14 +43,14 @@ module.exports = {
         } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
           target = ctx.participant;
         } else {
-          return extra.reply(`${bold(pick(SLANG.error))} — tag, reply, or add a number\n\n_Example: .block 27833882383_`);
+          return extra.reply(`*pick(SLANG.error)* — tag, reply, or add a number\n\n_Example: .block 27833882383_`);
         }
       }
       
       await sock.updateBlockStatus(target, 'block');
       
       await sock.sendMessage(extra.from, {
-        text: `${bold('✅ BLOCKED')}\n\n@${target.split('@')[0]} _has been blocked, ${pick(SLANG.good)}!_`,
+        text: `*✅ BLOCKED*\n\n@${target.split('@')[0]} _has been blocked, ${pick(SLANG.good)}!_`,
         mentions: [target]
       }, { quoted: msg });
       

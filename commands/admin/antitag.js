@@ -23,13 +23,14 @@ module.exports = {
         const status = settings.antitag ? 'ON' : 'OFF';
         const action = settings.antitagAction || 'delete';
         return extra.reply(
-          `📛 ${bold('ANTITAG STATUS')}: *${status}*\n` +
-          `${bold('Action')}: *${action}*\n\n` +
-          `Usage:\n` +
-          `  .antitag on\n` +
-          `  .antitag off\n` +
-          `  .antitag set delete | kick\n` +
-          `  .antitag get`
+          `📛 ANTITAG STATUS\n\n` +
+          `*Status*: ${status}\n` +
+          `*Action*: ${action}\n\n` +
+          `📱 *Usage*:\n` +
+          `• .antitag on\n` +
+          `• .antitag off\n` +
+          `• .antitag set delete | kick\n` +
+          `• .antitag get`
         );
       }
       
@@ -37,45 +38,45 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antitag) {
-          return extra.reply(`✅ _${pick(SLANG.vibe)}, antitag is already on_`);
+          return extra.reply(`✅ SUCCESS\n\nAntitag is already on ${pick(SLANG.vibe)}`);
         }
         database.updateGroupSettings(extra.from, { antitag: true });
-        return extra.reply(`✅ _${pick(SLANG.good)}, antitag turned ON_`);
+        return extra.reply(`✅ SUCCESS\n\nAntitag turned ON ${pick(SLANG.good)}`);
       }
       
       if (opt === 'off') {
         database.updateGroupSettings(extra.from, { antitag: false });
-        return extra.reply('✅ _antitag turned OFF_');
+        return extra.reply('✅ SUCCESS\n\nAntitag turned OFF');
       }
       
       if (opt === 'set') {
         if (args.length < 2) {
-          return extra.reply(`❌ _${pick(SLANG.error)}, specify an action: .antitag set delete | kick_`);
+          return extra.reply(`❌ ERROR\n\nSpecify an action: .antitag set delete | kick`);
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick'].includes(setAction)) {
-          return extra.reply(`❌ _${pick(SLANG.error)}, invalid action — choose delete or kick_`);
+          return extra.reply(`❌ ERROR\n\nInvalid action — choose delete or kick`);
         }
         
         database.updateGroupSettings(extra.from, { 
           antitagAction: setAction,
           antitag: true // Auto-enable when setting action
         });
-        return extra.reply(`✅ _${pick(SLANG.good)}, antitag action set to ${setAction}_`);
+        return extra.reply(`✅ SUCCESS\n\nAntitag action set to ${setAction} ${pick(SLANG.good)}`);
       }
       
       if (opt === 'get') {
         const settings = database.getGroupSettings(extra.from);
         const status = settings.antitag ? 'ON' : 'OFF';
         const action = settings.antitagAction || 'delete';
-        return extra.reply(`${bold('ANTITAG CONFIG')}\n${bold('Status')}: ${status}\n${bold('Action')}: ${action}`);
+        return extra.reply(`📛 ANTITAG CONFIG\n\n*Status*: ${status}\n*Action*: ${action}`);
       }
       
-      return extra.reply(`❌ _${pick(SLANG.error)}, use .antitag for usage_`);
+      return extra.reply(`❌ ERROR\n\nUse .antitag for usage`);
       
     } catch (error) {
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`❌ ERROR\n\n${error.message}`);
     }
   }
 };

@@ -25,12 +25,12 @@ module.exports = {
           : 'Everyone can use commands';
         
         return extra.reply(
-          `${bold('🤖 BOT MODE')}\n\n` +
-          `${bold('Current Mode:')} *${currentMode.toUpperCase()}*\n` +
-          `${bold('Status:')} ${description}\n\n` +
-          `${bold('Usage:')}\n` +
-          `  .mode private - Only owner can use\n` +
-          `  .mode public - Everyone can use`
+          `*🤖 BOT MODE*\n\n` +
+          `📋 *Current Mode:* *${currentMode.toUpperCase()}*\n` +
+          `📝 *Status:* ${description}\n\n` +
+          `*Usage:*\n` +
+          `  .mode private — Only owner can use\n` +
+          `  .mode public — Everyone can use`
         );
       }
       
@@ -38,29 +38,29 @@ module.exports = {
       
       if (mode === 'private' || mode === 'priv') {
         if (config.selfMode) {
-          return extra.reply(`${bold('🔒 PRIVATE MODE')}\n\n_bot already private, ${pick(SLANG.vibe)}_`);
+          return extra.reply(`*🔒 PRIVATE MODE*\n\n⚠️ Bot already private, ${pick(SLANG.vibe)}`);
         }
         
         updateConfig('selfMode', true);
         config.selfMode = true;
-        return extra.reply(`${bold('🔒 PRIVATE MODE')}\n\n_${pick(SLANG.good)}, bot is now private — only owner can use commands_`);
+        return extra.reply(`*🔒 PRIVATE MODE*\n\n✅ ${pick(SLANG.good)}, bot is now private — only owner can use commands`);
       }
       
       if (mode === 'public' || mode === 'pub') {
         if (!config.selfMode) {
-          return extra.reply(`${bold('🌐 PUBLIC MODE')}\n\n_bot already public, ${pick(SLANG.vibe)}_`);
+          return extra.reply(`*🌐 PUBLIC MODE*\n\n⚠️ Bot already public, ${pick(SLANG.vibe)}`);
         }
         
         updateConfig('selfMode', false);
         config.selfMode = false;
-        return extra.reply(`${bold('🌐 PUBLIC MODE')}\n\n_${pick(SLANG.good)}, bot is now public — everyone can use commands_`);
+        return extra.reply(`*🌐 PUBLIC MODE*\n\n✅ ${pick(SLANG.good)}, bot is now public — everyone can use commands`);
       }
       
-      return extra.reply(`${bold(pick(SLANG.error))} — invalid mode\nusage: .mode <private/public>`);
+      return extra.reply(`*❌ ERROR* — invalid mode\n💡 Usage: .mode <private/public>`);
       
     } catch (error) {
       console.error('Mode command error:', error);
-      await extra.reply(`_${pick(SLANG.error)} — couldn't change bot mode_`);
+      await extra.reply(`*❌ ERROR* — couldn't change bot mode`);
     }
   }
 };
@@ -82,4 +82,3 @@ function updateConfig(key, value) {
     console.error('Error saving config:', error);
   }
 }
-

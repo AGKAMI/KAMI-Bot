@@ -24,11 +24,11 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     const number = args.join(' ');
     if (!number || !/\d/.test(number)) {
-      return extra.reply(`${bold('Usage:')} .approve <number>\n\n_Example: .approve 27833882383_`);
+      return extra.reply(`*Usage:* .approve <number>\n\n_Example: .approve 27833882383_`);
     }
 
     const digits = parseNumber(number);
-    if (!digits) return extra.reply(`${bold(pick(SLANG.error))} — invalid number`);
+    if (!digits) return extra.reply(`*pick(SLANG.error)* — invalid number`);
     const targetJid = digits + '@s.whatsapp.net';
 
     // Add to approved list
@@ -63,8 +63,8 @@ module.exports = {
 
     // Confirm in chat with details
     let reply = added
-      ? `${bold('✅ APPROVED')}\n\n_${digits} can now use the bot in DMs._`
-      : `${bold('⚠️ ALREADY APPROVED')}\n\n_${digits} is already approved._`;
+      ? `*✅ APPROVED*\n\n_${digits} can now use the bot in DMs._`
+      : `*⚠️ ALREADY APPROVED*\n\n_${digits} is already approved._`;
 
     if (wasBlocked) {
       reply += `\n\n🔓 *UNBLOCKED* — removed from WhatsApp block list`;

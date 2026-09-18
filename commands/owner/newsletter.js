@@ -73,20 +73,20 @@ module.exports = {
                    args.join(' ');
       
       if (!text || text.trim().length === 0) {
-        return extra.reply(`${bold('📰 NEWSLETTER')}\n\n_${pick(SLANG.error)} — need a whatsapp channel link_\n\nExample: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
+        return extra.reply(`*📰 NEWSLETTER*\n\n❌ ${pick(SLANG.error)} — need a whatsapp channel link\n\n💡 Example: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
       }
       
       let link = text.replace(/^\.(newsletter|nl|channel|channelinfo)\s+/i, '').trim() || args.join(' ').trim();
       
       if (!link || link.length === 0) {
-        return extra.reply(`${bold('📰 NEWSLETTER')}\n\n_${pick(SLANG.error)} — need a whatsapp channel link_\n\nExample: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
+        return extra.reply(`*📰 NEWSLETTER*\n\n❌ ${pick(SLANG.error)} — need a whatsapp channel link\n\n💡 Example: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
       }
       
       // Try to extract invite code first (works with or without full URL)
       const inviteCode = getChannelInviteCode(link);
       
       if (!inviteCode) {
-        return extra.reply(`${bold(pick(SLANG.error))} — couldn't extract the invite code\n\nPlease provide a valid WhatsApp channel link.\nExample: https://whatsapp.com/channel/0029VaAbCdEfGhIJkL\n\nOr just the invite code: .newsletter 0029VaAbCdEfGhIJkL`);
+        return extra.reply(`*❌ ERROR* — couldn't extract the invite code\n\n💡 Please provide a valid WhatsApp channel link:\n   https://whatsapp.com/channel/0029VaAbCdEfGhIJkL\n\nOr just the invite code: .newsletter 0029VaAbCdEfGhIJkL`);
       }
       
       // Use the extracted invite code directly
@@ -103,23 +103,23 @@ module.exports = {
         }
         
         // Format the response
-        let infoText = `${bold('📰 NEWSLETTER INFO')}\n\n${meta.id || 'N/A'}`;
+        let infoText = `*📰 NEWSLETTER INFO*\n\n📋 ${meta.id || 'N/A'}`;
         
         if (meta.description) {
-          infoText += `\n${bold('Description:')} ${meta.description}`;
+          infoText += `\n📝 *Description:* ${meta.description}`;
         }
         
         if (meta.invite) {
-          infoText += `\n${bold('Invite Code:')} \`${meta.invite}\``;
+          infoText += `\n🔗 *Invite Code:* \`${meta.invite}\``;
         }
         
         if (meta.subscriberCount !== undefined) {
-          infoText += `\n${bold('Subscribers:')} ${meta.subscriberCount.toLocaleString()}`;
+          infoText += `\n👥 *Subscribers:* ${meta.subscriberCount.toLocaleString()}`;
         }
         
         if (meta.creationTime) {
           const date = new Date(meta.creationTime * 1000);
-          infoText += `\n${bold('Created:')} ${date.toLocaleDateString()}`;
+          infoText += `\n📅 *Created:* ${date.toLocaleDateString()}`;
         }
         
         if (meta.image) {
@@ -139,20 +139,19 @@ module.exports = {
         console.error('Newsletter command error:', error);
         
         if (error.message.includes('Invalid channel link')) {
-          await extra.reply(`${bold(pick(SLANG.error))} — invalid channel link format\n\nPlease provide a valid WhatsApp channel link.\nExample: https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
+          await extra.reply(`*❌ ERROR* — invalid channel link format\n\n💡 Please provide a valid WhatsApp channel link:\n   https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
         } else if (error.message.includes('Newsletter not found')) {
-          await extra.reply(`${bold(pick(SLANG.error))} — newsletter not found, ${pick(SLANG.vibe)}\n\nThe channel link might be invalid or the newsletter might not exist.`);
+          await extra.reply(`*❌ ERROR* — newsletter not found, ${pick(SLANG.vibe)}\n\n💡 The channel link might be invalid or the newsletter might not exist.`);
         } else if (error.message.includes('newsletterMetadata')) {
-          await extra.reply(`${bold(pick(SLANG.error))} — newsletter feature not available\n\nMake sure you are using Baileys v7.0.0-rc or higher.`);
+          await extra.reply(`*❌ ERROR* — newsletter feature not available\n\n💡 Make sure you are using Baileys v7.0.0-rc or higher.`);
         } else {
-          await extra.reply(`_${pick(SLANG.error)} — couldn't get newsletter info: ${error.message}_`);
+          await extra.reply(`*❌ ERROR* — couldn't get newsletter info: ${error.message}`);
         }
       }
       
     } catch (error) {
       console.error('Newsletter command error:', error);
-      await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`*❌ ERROR* — ${error.message}`);
     }
   }
 };
-

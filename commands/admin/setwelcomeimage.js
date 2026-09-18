@@ -20,7 +20,7 @@ module.exports = {
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       if (!ctx?.quotedMessage) {
-        return extra.reply(`${bold('SET WELCOME IMAGE')}\n\n_Reply to an image or sticker to set as welcome image_`);
+        return extra.reply(`*SET WELCOME IMAGE*\n\n_Reply to an image or sticker to set as welcome image_`);
       }
 
       const quotedMsg = ctx.quotedMessage;
@@ -55,7 +55,7 @@ module.exports = {
       const imagePath = path.join(__dirname, '../../utils/welcome_image.jpg');
       fs.writeFileSync(imagePath, finalBuffer);
 
-      await extra.reply(`${bold('✅ WELCOME IMAGE UPDATED')}\n\n_${pick(SLANG.good)}, new members will see this image_`);
+      await extra.reply(`*✅ WELCOME IMAGE UPDATED*\n\n_${pick(SLANG.good)}, new members will see this image_`);
     } catch (error) {
       console.error('SetWelcomeImage error:', error);
       await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);

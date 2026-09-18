@@ -24,10 +24,10 @@ module.exports = {
         const approved = database.getApprovedNumbers();
         const list = approved.length ? approved.map(n => `  • ${n}`).join('\n') : '  _None_';
         return await sock.sendMessage(chatId, {
-          text: `${bold('🚫 DM BLOCKER')}\n\n` +
-               `${bold('Status:')} *${currentStatus}*\n\n` +
-               `${bold('Approved numbers:')}\n${list}\n\n` +
-               `${bold('Usage:')}\n` +
+          text: `*🚫 DM BLOCKER*\n\n` +
+               `*Status:* *${currentStatus}*\n\n` +
+               `*Approved numbers:*\n${list}\n\n` +
+               `*Usage:*\n` +
                `  .dmblocker on/off\n` +
                `  .dmblocker approve <number>\n` +
                `  .dmblocker disapprove <number>\n` +
@@ -38,12 +38,12 @@ module.exports = {
       if (action === 'on') {
         if (globalSettings.selfMode) {
           return await sock.sendMessage(chatId, {
-            text: `${bold('⚠️ ALREADY ON')}\n\n_DM Blocker is already *ON*, ${pick(SLANG.vibe)}_`
+            text: `*⚠️ ALREADY ON*\n\n_DM Blocker is already *ON*, ${pick(SLANG.vibe)}_`
           }, { quoted: msg });
         }
         database.updateGlobalSettings({ selfMode: true });
         return await sock.sendMessage(chatId, {
-          text: `${bold('✅ DM BLOCKER ON')}\n\n` +
+          text: `*✅ DM BLOCKER ON*\n\n` +
                `_${pick(SLANG.good)}, dm blocker is now on_\n\n` +
                `Only approved numbers can use this bot.\n` +
                `Use .dmblocker approve <number> to add someone.`
@@ -53,12 +53,12 @@ module.exports = {
       if (action === 'off') {
         if (!globalSettings.selfMode) {
           return await sock.sendMessage(chatId, {
-            text: `${bold('⚠️ ALREADY OFF')}\n\n_DM Blocker is already *OFF*, ${pick(SLANG.vibe)}_`
+            text: `*⚠️ ALREADY OFF*\n\n_DM Blocker is already *OFF*, ${pick(SLANG.vibe)}_`
           }, { quoted: msg });
         }
         database.updateGlobalSettings({ selfMode: false });
         return await sock.sendMessage(chatId, {
-          text: `${bold('✅ DM BLOCKER OFF')}\n\n` +
+          text: `*✅ DM BLOCKER OFF*\n\n` +
                `_${pick(SLANG.good)}, dm blocker is now off_\n\n` +
                `Anyone can now use this bot.`
         }, { quoted: msg });
@@ -68,14 +68,14 @@ module.exports = {
         const number = args[1];
         if (!number) {
           return await sock.sendMessage(chatId, {
-            text: `${bold('Usage:')} .dmblocker approve <number>\n\n_Example: .dmblocker approve 27831234567_`
+            text: `*Usage:* .dmblocker approve <number>\n\n_Example: .dmblocker approve 27831234567_`
           }, { quoted: msg });
         }
 
         let digits = number.replace(/\D/g, '');
         if (!digits || digits.length < 8) {
           return await sock.sendMessage(chatId, {
-            text: `${bold(pick(SLANG.error))} — invalid number`
+            text: `*pick(SLANG.error)* — invalid number`
           }, { quoted: msg });
         }
         if (digits.startsWith('0')) digits = '27' + digits.slice(1);
@@ -110,8 +110,8 @@ module.exports = {
 
         // Confirm in chat
         let reply = added
-          ? `${bold('✅ APPROVED')}\n\n_${digits} can now use the bot._`
-          : `${bold('⚠️ ALREADY APPROVED')}\n\n_${digits} is already approved._`;
+          ? `*✅ APPROVED*\n\n_${digits} can now use the bot._`
+          : `*⚠️ ALREADY APPROVED*\n\n_${digits} is already approved._`;
 
         if (wasBlocked) {
           reply += `\n\n🔓 *UNBLOCKED* — removed from WhatsApp block list`;
@@ -127,14 +127,14 @@ module.exports = {
         const number = args[1];
         if (!number) {
           return await sock.sendMessage(chatId, {
-            text: `${bold('Usage:')} .dmblocker disapprove <number>`
+            text: `*Usage:* .dmblocker disapprove <number>`
           }, { quoted: msg });
         }
         const removed = database.removeApprovedNumber(number);
         return await sock.sendMessage(chatId, {
           text: removed
-            ? `${bold('❌ REMOVED')}\n\n_${number} can no longer use the bot._`
-            : `${bold('⚠️ NOT FOUND')}\n\n_${number} wasn't in the approved list._`
+            ? `*❌ REMOVED*\n\n_${number} can no longer use the bot._`
+            : `*⚠️ NOT FOUND*\n\n_${number} wasn't in the approved list._`
         }, { quoted: msg });
       }
 
@@ -144,13 +144,13 @@ module.exports = {
           ? approved.map(n => `  • ${n}`).join('\n')
           : '  _No approved numbers yet_';
         return await sock.sendMessage(chatId, {
-          text: `${bold('📋 APPROVED NUMBERS')}\n\n${list}`
+          text: `*📋 APPROVED NUMBERS*\n\n${list}`
         }, { quoted: msg });
       }
 
       return await sock.sendMessage(chatId, {
-        text: `${bold(pick(SLANG.error))} — invalid option\n\n` +
-             `${bold('Usage:')}\n` +
+        text: `*pick(SLANG.error)* — invalid option\n\n` +
+             `*Usage:*\n` +
              `  .dmblocker on/off/status\n` +
              `  .dmblocker approve <number>\n` +
              `  .dmblocker disapprove <number>\n` +

@@ -21,9 +21,9 @@ module.exports = {
       
       if (!action || !['on', 'off'].includes(action)) {
         const groupSettings = db.getGroupSettings(groupId);
-        const status = groupSettings.goodbye ? '✅ _Enabled_' : '❌ _Disabled_';
+        const status = groupSettings.goodbye ? '✅ Enabled' : '❌ Disabled';
         return await sock.sendMessage(groupId, {
-          text: `👋 ${bold('GOODBYE MESSAGES')}\n\n${bold('Status')}: ${status}\n${bold('Message')}: ${groupSettings.goodbyeMessage}\n\nUsage: .goodbye on/off\n\nTo customize: .setgoodbye <message>`
+          text: `👋 GOODBYE MESSAGES\n\n*Status*: ${status}\n*Message*: ${groupSettings.goodbyeMessage}\n\n📱 *Usage*: .goodbye on/off\n💡 *Customize*: .setgoodbye <message>`
         }, { quoted: msg });
       }
       
@@ -31,13 +31,13 @@ module.exports = {
       db.updateGroupSettings(groupId, { goodbye: enable });
       
       await sock.sendMessage(groupId, {
-        text: `✅ _${pick(SLANG.vibe)}, goodbye messages ${enable ? 'enabled' : 'disabled'}${enable ? '\\n\\nleaving members will get a goodbye now' : ''}_`
+        text: `✅ SUCCESS\n\nGoodbye messages ${enable ? 'enabled' : 'disabled'} ${pick(SLANG.vibe)}${enable ? '\n\nLeaving members will get a goodbye now' : ''}`
       }, { quoted: msg });
       
     } catch (error) {
       console.error('Goodbye Error:', error);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ _${pick(SLANG.error)} — ${error.message}_`
+        text: `❌ ERROR\n\n${error.message}`
       }, { quoted: msg });
     }
   }

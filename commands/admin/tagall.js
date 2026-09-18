@@ -20,9 +20,9 @@ module.exports = {
         
         const participants = extra.groupMetadata.participants.map(p => p.id);
         
-        let text = `📢 ${bold('GROUP ANNOUNCEMENT')}\n\n`;
+        let text = `📢 *GROUP ANNOUNCEMENT*\n\n`;
         text += `${message}\n\n`;
-        text += `👥 ${bold('Tagged Members')}:\n`;
+        text += `👥 *Tagged Members*:\n`;
         
         participants.forEach((participant, index) => {
           text += `${index + 1}. @${participant.split('@')[0]}\n`;
@@ -34,7 +34,7 @@ module.exports = {
         }, { quoted: msg });
         
       } catch (error) {
-        await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+        await extra.reply(`❌ ERROR\n\n${error.message}`);
       }
     }
   };

@@ -73,14 +73,14 @@ module.exports = {
       const mediaInfo = resolveMedia(targetMessage);
       
       if (!mediaInfo) {
-        return extra.reply(`${italic('reply to a sticker, image, or video you wanna crop')}`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Reply to a sticker, image, or video you wanna crop`);
       }
 
       const { type, media } = mediaInfo;
       const mediaMessage = media;
 
       if (!mediaMessage) {
-        return extra.reply(`${italic('reply to an image/video/sticker with .crop, or send media with .crop as caption')}`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Reply to an image/video/sticker with .crop, or send media with .crop as caption`);
       }
 
       // Download media
@@ -92,12 +92,12 @@ module.exports = {
       );
 
       if (!mediaBuffer) {
-        return extra.reply(`❌ _${pick(SLANG.error)} — couldn't download that, try again_`);
+        return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't download that, try again`);
       }
 
       // Check file size
       if (mediaBuffer.length > MAX_FILE_SIZE) {
-        return extra.reply(`❌ _${pick(SLANG.error)} — file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)_`);
+        return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
       }
 
       // Write media to temp file
@@ -196,7 +196,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crop command error:', error);
-      await extra.reply(`❌ _${pick(SLANG.error)} — couldn't crop the sticker, try with an image or video_`);
+      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't crop the sticker, try with an image or video`);
     } finally {
       // Always cleanup temp files
       tempFiles.forEach(file => deleteTempFile(file));

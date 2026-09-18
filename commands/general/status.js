@@ -26,8 +26,7 @@ module.exports = {
       const memTotal = (os.totalmem() / 1024 / 1024).toFixed(0);
 
       const text = [
-        `*KAMI BOT STATUS*`,
-        `----------`,
+        `✅ *KAMI BOT STATUS*`,
         ``,
         `⏱️ *Uptime:* ${hours}h ${minutes}m ${seconds}s`,
         `💾 *Memory:* ${memUsed}MB / ${memTotal}MB`,
@@ -38,14 +37,13 @@ module.exports = {
         `👑 *Owner:* ${config.ownerName || 'AG KAMI'}`,
         `⚡ *Prefix:* ${config.prefix || '.'}`,
         ``,
-        `----------`,
         `💡 _${config.prefix || '.'}menu for all commands_`
       ].join('\n');
 
       await extra.reply(text);
     } catch (error) {
       console.error('[STATUS] Error:', error);
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
     }
   }
 };

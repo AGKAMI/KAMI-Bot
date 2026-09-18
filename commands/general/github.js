@@ -23,7 +23,7 @@ module.exports = {
             const apiUrl = 'https://api.github.com/repos/AGKAMI/KAMI-Bot';
             
             // Send loading message
-            const loadingMsg = await extra.reply('🔍 pulling github info...');
+            const loadingMsg = await extra.reply('🔍 *LOADING...*\n💡 Pulling github info...');
             
             try {
                 // Fetch repository data from GitHub API
@@ -36,7 +36,7 @@ module.exports = {
                 const repo = response.data;
                 
                 // Format the response with proper styling
-                let message = `----------\n*GITHUB REPOSITORY*\n----------\n\n`;
+                let message = `✅ *GITHUB REPOSITORY*\n\n`;
                 message += `🤖 *Bot Name:* ${config.botName}\n`;
                 message += `🔗 *Repository:* ${repo.name}\n`;
                 message += `👨‍💻 *Owner:* ${repo.owner.login}\n`;
@@ -50,12 +50,11 @@ module.exports = {
                 message += `📦 *Size:* ${(repo.size / 1024).toFixed(2)} MB\n\n`;
                 
                 message += `🔗 *Quick Links*\n`;
-                message += `⭐ Star: ${repo.html_url}/stargazers\n`;
-                message += `🍴 Fork: ${repo.html_url}/fork\n`;
-                message += `📥 Clone: git clone ${repo.clone_url}\n\n`;
+                message += `⭐ *Star:* ${repo.html_url}/stargazers\n`;
+                message += `🍴 *Fork:* ${repo.html_url}/fork\n`;
+                message += `📥 *Clone:* git clone ${repo.clone_url}\n\n`;
                 
-                message += `----------\n\n`;
-                message += `> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ${config.botName}*`;
+                message += `> _ᴘᴏᴡᴇʀᴇᴅ ʙʏ ${config.botName}_`;
                 
                 // Edit the loading message with the actual data
                 await sock.sendMessage(chatId, {
@@ -67,15 +66,14 @@ module.exports = {
                 // Fallback message if API fails
                 console.error('GitHub API Error:', apiError.message);
                 
-                let fallbackMessage = `----------\n*GITHUB REPOSITORY*\n----------\n\n`;
+                let fallbackMessage = `⚠️ *GITHUB REPOSITORY*\n\n`;
                 fallbackMessage += `🤖 *Bot Name:* ${config.botName}\n`;
                 fallbackMessage += `🔗 *Repository:* KAMI-Bot\n`;
                 fallbackMessage += `👨‍💻 *Owner:* AGKAMI\n`;
                 fallbackMessage += `🌐 *URL:* ${repoUrl}\n\n`;
                 fallbackMessage += `⚠️ *Note:* Unable to fetch real-time statistics.\n`;
-                fallbackMessage += `Please visit the repository directly for latest stats.\n\n`;
-                fallbackMessage += `----------\n\n`;
-                fallbackMessage += `> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ${config.botName}*`;
+                fallbackMessage += `💡 Please visit the repository directly for latest stats.\n\n`;
+                fallbackMessage += `> _ᴘᴏᴡᴇʀᴇᴅ ʙʏ ${config.botName}_`;
                 
                 await sock.sendMessage(chatId, {
                     text: fallbackMessage,
@@ -85,7 +83,7 @@ module.exports = {
             
         } catch (error) {
             console.error('GitHub command error:', error);
-            await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+            await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
         }
     }
 };

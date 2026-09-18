@@ -29,7 +29,7 @@ module.exports = {
       }
       
       if (!targetUser) {
-        return extra.reply(`${italic('who are you looking for? reply to a message or tag someone')}`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Who are you looking for? Reply to a message or tag someone`);
       }
       
       try {
@@ -37,7 +37,7 @@ module.exports = {
         const ppUrl = await sock.profilePictureUrl(targetUser, 'image');
         
         if (!ppUrl) {
-          return extra.reply(`❌ _${pick(SLANG.error)} — no profile pic found for this oke_`);
+          return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
         }
         
         // Download the profile picture
@@ -47,7 +47,7 @@ module.exports = {
         // Send the profile picture
         await sock.sendMessage(extra.from, { 
           image: buffer,
-          caption: `${bold('Profile picture')} of @${targetUser.split('@')[0]}`,
+          caption: `*Profile picture* of @${targetUser.split('@')[0]}`,
           mentions: [targetUser]
         }, { quoted: msg });
         
@@ -57,18 +57,18 @@ module.exports = {
             profileError.output?.statusCode === 404 || 
             profileError.output?.statusCode === 500 ||
             profileError.message?.includes('not found')) {
-          return extra.reply(`❌ _${pick(SLANG.error)} — no profile pic found for this oke_`);
+          return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
         } else if (profileError.output?.statusCode === 401 || 
                    profileError.message?.includes('forbidden') || 
                    profileError.message?.includes('unauthorized')) {
-          return extra.reply(`❌ _${pick(SLANG.error)} — profile pic is private or not available_`);
+          return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — profile pic is private or not available`);
         } else {
-          return extra.reply(`❌ _${pick(SLANG.error)} — no profile pic found for this oke_`);
+          return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
         }
       }
       
     } catch (error) {
-      extra.reply(`❌ _${pick(SLANG.error)} — no profile pic found for this oke_`);
+      extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
     }
   }
 };

@@ -41,11 +41,11 @@ END:VCARD
                 }
             });
 
-            await extra.reply(`👑 _here's my owner's contact, ${pick(SLANG.vibe)}_`);
+            await extra.reply(`👑 *OWNER CONTACT*\n💡 _here's my owner's contact, ${pick(SLANG.vibe)}_`);
 
         } catch (error) {
             console.error('Owner command error:', error);
-            await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+            await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
         }
     }
 };

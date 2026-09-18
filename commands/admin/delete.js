@@ -20,7 +20,7 @@ module.exports = {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       
       if (!ctx?.stanzaId || !ctx?.participant) {
-        return extra.reply(`🗑️ _reply to the message you wanna delete, ${pick(SLANG.vibe)}_`);
+        return extra.reply(`🗑️ DELETE\n\nReply to the message you wanna delete ${pick(SLANG.vibe)}`);
       }
       
       const deleteKey = { 
@@ -33,7 +33,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Delete command error:', error);
-      await extra.reply(`❌ _${pick(SLANG.error)}, couldn't delete that message ${pick(SLANG.vibe)}_`);
+      await extra.reply(`❌ ERROR\n\nCouldn't delete that message ${pick(SLANG.vibe)}`);
     }
   }
 };

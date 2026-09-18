@@ -153,19 +153,19 @@ module.exports = {
     const zipUrl = (args[0] || config.updateZipUrl || process.env.UPDATE_ZIP_URL || '').trim();
 
     if (!zipUrl) {
-      return extra.reply(`${bold(pick(SLANG.error))} — no update url set\n\nconfigure in config or pass a url`);
+      return extra.reply(`*❌ ERROR* — no update url set\n\n💡 Configure in config or pass a url`);
     }
 
     try {
-      await extra.reply(`${bold('🔄 UPDATING')}\n\n_${pick(SLANG.vibe)}, updating the bot, wait a sec..._`);
+      await extra.reply(`*🔄 UPDATING*\n\n🔄 ${pick(SLANG.vibe)}, updating the bot, wait a sec...`);
 
       const { copiedFiles } = await updateViaZip(zipUrl);
 
       const summary = copiedFiles.length
-        ? `${bold('✅ UPDATE COMPLETE')}\n\n_${pick(SLANG.good)}, ${copiedFiles.length} files updated_`
-        : `${bold('✅ UPDATE COMPLETE')}\n\n_${pick(SLANG.vibe)}, no files needed updating_`;
+        ? `*✅ UPDATE COMPLETE*\n\n✅ ${pick(SLANG.good)}, ${copiedFiles.length} files updated`
+        : `*✅ UPDATE COMPLETE*\n\n✅ ${pick(SLANG.vibe)}, no files needed updating`;
 
-      await sock.sendMessage(chatId, { text: `${summary}\nRestarting…` }, { quoted: msg });
+      await sock.sendMessage(chatId, { text: `${summary}\n\n🔁 Restarting…` }, { quoted: msg });
 
       // Attempt restart via pm2 if available, else exit to allow panel auto-restart
       try {
@@ -176,8 +176,7 @@ module.exports = {
       setTimeout(() => process.exit(0), 500);
     } catch (error) {
       console.error('Update failed:', error);
-      await sock.sendMessage(chatId, { text: `_${pick(SLANG.error)} — update failed:_\n${String(error.message || error)}` }, { quoted: msg });
+      await sock.sendMessage(chatId, { text: `*❌ ERROR* — update failed:\n${String(error.message || error)}` }, { quoted: msg });
     }
   }
 };
-

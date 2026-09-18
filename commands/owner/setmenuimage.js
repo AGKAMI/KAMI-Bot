@@ -26,14 +26,14 @@ module.exports = {
       // Check if message is a reply
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       if (!ctx?.quotedMessage) {
-        return extra.reply(`${bold('📷 SET MENU IMAGE')}\n\n_reply to an image or sticker to set as menu image_`);
+        return extra.reply(`*📷 SET MENU IMAGE*\n\n💡 Reply to an image or sticker to set as menu image`);
       }
       
       const quotedMsg = ctx.quotedMessage;
       const imageMsg = quotedMsg.imageMessage || quotedMsg.stickerMessage;
       
       if (!imageMsg) {
-        return extra.reply(`${bold(pick(SLANG.error))} — need an image or sticker in the reply`);
+        return extra.reply(`*❌ ERROR* — need an image or sticker in the reply`);
       }
       
       // Download the media
@@ -54,7 +54,7 @@ module.exports = {
       );
       
       if (!mediaBuffer) {
-        return extra.reply(`_${pick(SLANG.error)} — couldn't download the image, try again_`);
+        return extra.reply(`*❌ ERROR* — couldn't download the image, try again`);
       }
       
       // Convert to JPEG if it's a sticker (webp)
@@ -87,13 +87,11 @@ module.exports = {
       // Write new image
       fs.writeFileSync(imagePath, finalBuffer);
       
-      await extra.reply(`${bold('✅ MENU IMAGE UPDATED')}\n\n_${pick(SLANG.good)}, menu image is updated_`);
+      await extra.reply(`*✅ MENU IMAGE UPDATED*\n\n✅ ${pick(SLANG.good)}, menu image is updated`);
       
     } catch (error) {
       console.error('SetMenuImage command error:', error);
-      await extra.reply(`_${pick(SLANG.error)} — failed to set menu image: ${error.message}_`);
+      await extra.reply(`*❌ ERROR* — failed to set menu image: ${error.message}`);
     }
   }
 };
-
-

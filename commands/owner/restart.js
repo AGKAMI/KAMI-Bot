@@ -15,7 +15,7 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
     try {
-      await extra.reply(`${bold('🔁 RESTARTING')}\n\n_${pick(SLANG.vibe)}, bot is restarting..._`);
+      await extra.reply(`*🔁 RESTARTING*\n\n🔄 ${pick(SLANG.vibe)}, bot is restarting...`);
 
       const run = (cmd) =>
         new Promise((resolve, reject) => {
@@ -39,7 +39,7 @@ module.exports = {
       }, 500);
     } catch (error) {
       console.error('Restart error:', error);
-      await extra.reply(`_${pick(SLANG.error)} — couldn't restart bot: ${error.message}_`);
+      await extra.reply(`*❌ ERROR* — couldn't restart bot: ${error.message}`);
     }
   },
 };

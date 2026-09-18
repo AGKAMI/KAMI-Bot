@@ -18,12 +18,12 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply(`${italic('give me some text hey')}\n\nExample: ${bold(extra.prefix || '.' + 'attp Hello World')}`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Give me some text hey\n\n📝 *Example:* ${bold(extra.prefix || '.' + 'attp Hello World')}`);
       }
       
       const text = args.join(' ');
       if (text.length > 50) {
-        return extra.reply(`${italic("that's too long")} — max 50 characters`);
+        return extra.reply(`⚠️ *WARNING*\n💡 That's too long — max 50 characters`);
       }
       
       try {
@@ -32,11 +32,11 @@ module.exports = {
         await sock.sendMessage(extra.from, { sticker: webpBuffer }, { quoted: msg });
       } catch (error) {
         console.error('Error generating attp sticker:', error);
-        await extra.reply(`❌ _${pick(SLANG.error)} — couldn't make the sticker_`);
+        await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't make the sticker`);
       }
     } catch (error) {
       console.error('ATTP command error:', error);
-      await extra.reply(`❌ _${pick(SLANG.error)} — animated sticker failed_`);
+      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — animated sticker failed`);
     }
   }
 };

@@ -16,10 +16,10 @@ module.exports = {
 
       if (!args[0]) {
         return extra.reply(
-          `*Command Help*\n\n` +
-          `Usage: ${prefix}help <command>\n` +
-          `Example: ${prefix}help song\n\n` +
-          `Type ${prefix}menu to see all commands.`
+          `📖 *COMMAND HELP*\n\n` +
+          `💡 *Usage:* ${prefix}help <command>\n` +
+          `📝 *Example:* ${prefix}help song\n\n` +
+          ` Type ${prefix}menu to see all commands.`
         );
       }
 
@@ -27,7 +27,7 @@ module.exports = {
       const cmd = commands.get(cmdName);
 
       if (!cmd) {
-        return extra.reply(`Command "${cmdName}" not found.\nType ${prefix}menu to see all commands.`);
+        return extra.reply(`❌ *ERROR*\n command "${cmdName}" not found.\n💡 Type ${prefix}menu to see all commands.`);
       }
 
       const aliases = cmd.aliases && cmd.aliases.length > 0
@@ -48,8 +48,7 @@ module.exports = {
       };
 
       const text = [
-        `*${prefix}${cmd.name}*`,
-        `----------`,
+        `📋 *${prefix}${cmd.name}*`,
         ``,
         `📝 *Description:* ${cmd.description || 'No description'}`,
         `📂 *Category:* ${categoryMeta[cmd.category] || cmd.category}`,
@@ -62,7 +61,7 @@ module.exports = {
       await extra.reply(text);
     } catch (error) {
       console.error('[HELP] Error:', error);
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
     }
   }
 };

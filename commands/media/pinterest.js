@@ -37,7 +37,7 @@ module.exports = {
       
       if (!text) {
         return await extra.reply(
-          `${bold('📌 Pinterest Downloader')}\n\n` +
+          `*📌 Pinterest Downloader*\n\n` +
           `_Download images or videos from Pinterest._\n\n` +
           `_Usage:_ ${config.prefix}pinterest <Pinterest URL>\n\n` +
           `_Example:_\n` +

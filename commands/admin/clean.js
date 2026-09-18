@@ -18,7 +18,7 @@ module.exports = {
     try {
       const count = parseInt(args[0]);
       if (!count || count < 1 || count > 100) {
-        return extra.reply(`❌ _${pick(SLANG.error)}, enter a number between 1 and 100_`);
+        return extra.reply(`❌ ERROR\n\nEnter a number between 1 and 100`);
       }
 
       const jid = extra.from;
@@ -30,7 +30,7 @@ module.exports = {
 
       const msgs = store.messages[jid];
       if (!msgs) {
-        return extra.reply(`❌ _${pick(SLANG.error)}, no stored messages found ${pick(SLANG.vibe)}_`);
+        return extra.reply(`❌ ERROR\n\nNo stored messages found ${pick(SLANG.vibe)}`);
       }
 
       let messagesToDelete = [];
@@ -65,7 +65,7 @@ module.exports = {
       
     } catch (e) {
       console.error('[clean cmd] error:', e);
-      extra.reply(`❌ _${pick(SLANG.error)}, couldn't clean the messages ${pick(SLANG.vibe)}_`);
+      extra.reply(`❌ ERROR\n\nCouldn't clean the messages ${pick(SLANG.vibe)}`);
     }
   }
 };

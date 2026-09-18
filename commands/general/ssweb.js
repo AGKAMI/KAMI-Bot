@@ -15,7 +15,7 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply(`${italic('give me a website link hey')}\n\nExample: ${bold('.ssweb https://github.com')}`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Give me a website link hey\n\n📝 *Example:* *.ssweb https://github.com*`);
       }
       
       let url = args.join(' ');
@@ -37,7 +37,7 @@ module.exports = {
       
     } catch (error) {
       console.error('SSWeb command error:', error);
-      await extra.reply(`❌ _${pick(SLANG.error)} — couldn't screenshot that site: ${error.message}_`);
+      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't screenshot that site: ${error.message}`);
     }
   }
 };

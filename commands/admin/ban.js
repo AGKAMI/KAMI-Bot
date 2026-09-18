@@ -30,7 +30,7 @@ module.exports = {
       const rawArg = args.join(' ');
       if (rawArg && /\d/.test(rawArg)) {
         target = parseNumber(rawArg);
-        if (!target) return extra.reply(`${bold(pick(SLANG.error))} — invalid number`);
+        if (!target) return extra.reply(`*pick(SLANG.error)* — invalid number`);
       } else {
         const ctx = msg.message?.extendedTextMessage?.contextInfo;
         const mentioned = ctx?.mentionedJid || [];
@@ -39,17 +39,17 @@ module.exports = {
         } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
           target = ctx.participant;
         } else {
-          return extra.reply(`${bold(pick(SLANG.error))} — tag, reply, or add a number\n\n_Example: .ban 27833882383_`);
+          return extra.reply(`*pick(SLANG.error)* — tag, reply, or add a number\n\n_Example: .ban 27833882383_`);
         }
       }
 
       const targetNum = target.split('@')[0].replace(/:/g, '');
       const ownerNums = (config.ownerNumber || []).map(n => n.replace(/\D/g, ''));
       if (ownerNums.includes(targetNum)) {
-        return extra.reply(`${bold(pick(SLANG.error))} — can't ban the owner`);
+        return extra.reply(`*pick(SLANG.error)* — can't ban the owner`);
       }
       if (target === sender) {
-        return extra.reply(`${bold(pick(SLANG.error))} — can't ban yourself`);
+        return extra.reply(`*pick(SLANG.error)* — can't ban yourself`);
       }
 
       // Send ban message first (before block so it delivers)
@@ -70,7 +70,7 @@ module.exports = {
 
       // Confirm in chat
       await sock.sendMessage(from, {
-        text: `${bold('🔨 BANNED')}\n\n@${target.split('@')[0]} _has been banned, ${pick(SLANG.good)}!_`,
+        text: `*🔨 BANNED*\n\n@${target.split('@')[0]} _has been banned, ${pick(SLANG.good)}!_`,
         mentions: [target]
       }, { quoted: msg });
 

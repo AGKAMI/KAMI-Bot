@@ -13,13 +13,13 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
     if (!args[0]) {
-      return extra.reply(`${bold('📞 ANTICALL')}\n\n_usage: .anticall on/off_`);
+      return extra.reply(`*📞 ANTICALL*\n\n💡 Usage: .anticall on/off`);
     }
 
     const option = args[0].toLowerCase();
 
     if (!['on', 'off'].includes(option)) {
-      return extra.reply(`${bold('Usage:')} .anticall on/off`);
+      return extra.reply(`*❌ ERROR* — invalid option\n💡 Usage: .anticall on/off`);
     }
 
     const enabled = option === 'on';
@@ -48,12 +48,12 @@ module.exports = {
       
       await extra.reply(
         enabled
-          ? `${bold('✅ ANTICALL ON')}\n\n_${pick(SLANG.good)}, calls will be auto-rejected & blocked_`
-          : `${bold('❌ ANTICALL OFF')}\n\n_${pick(SLANG.vibe)}, anti-call is now disabled_`
+          ? `*✅ ANTICALL ON*\n\n✅ ${pick(SLANG.good)}, calls will be auto-rejected & blocked`
+          : `*❌ ANTICALL OFF*\n\n❌ ${pick(SLANG.vibe)}, anti-call is now disabled`
       );
     } catch (err) {
       console.error('[anticall cmd] error:', err);
-      extra.reply(`_${pick(SLANG.error)} — couldn't update anti-call setting_`);
+      extra.reply(`*❌ ERROR* — couldn't update anti-call setting`);
     }
   }
 };

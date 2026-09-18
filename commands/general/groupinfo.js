@@ -19,23 +19,23 @@ module.exports = {
         const admins = metadata.participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
         const members = metadata.participants.filter(p => !p.admin);
         
-        let text = `----------\n*KAMI BOT*\n----------\n\n📋 *GROUP INFO*\n----------\n`;
-                text += `- 🏷️ Name: ${metadata.subject}\n`;
-                text += `- 👥 Members: ${metadata.participants.length}\n`;
-                text += `- 👑 Admins: ${admins.length}\n`;
-                text += `- 💀 Members: ${members.length}\n----------\n\n`;
+        let text = `✅ *GROUP INFO*\n\n`;
+                text += `🏷️ *Name:* ${metadata.subject}\n`;
+                text += `👥 *Members:* ${metadata.participants.length}\n`;
+                text += `👑 *Admins:* ${admins.length}\n`;
+                text += `💀 *Members:* ${members.length}\n\n`;
                 text += `📜 *Description*\n${metadata.desc || 'No description'}\n\n`;
                 text += `🔒 *Settings*\n`;
-                text += `- 🔒 Restrict: ${metadata.restrict ? '✅' : '❌'}\n`;
-                text += `- 📢 Announce: ${metadata.announce ? '✅' : '❌'}\n`;
-                text += `- 📅 Created: ${new Date(metadata.creation * 1000).toLocaleDateString()}\n\n`;
+                text += `🔒 *Restrict:* ${metadata.restrict ? '✅' : '❌'}\n`;
+                text += `📢 *Announce:* ${metadata.announce ? '✅' : '❌'}\n`;
+                text += `📅 *Created:* ${new Date(metadata.creation * 1000).toLocaleDateString()}\n\n`;
                 text += `👑 *Admins List*\n`;
         
                 admins.forEach((admin, index) => {
                   text += `${index + 1}. @${admin.id.split('@')[0]}\n`;
                 });
         
-                text += `\n----------\n*KAMI Bot*`;
+                text += `\n_KAMI Bot_`;
         
         await sock.sendMessage(extra.from, {
           text,
@@ -43,7 +43,7 @@ module.exports = {
         }, { quoted: msg });
         
       } catch (error) {
-        await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+        await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
       }
     }
   };

@@ -15,7 +15,7 @@ module.exports = {
     async execute(sock, msg, args, extra) {
       try {
         if (args.length === 0) {
-          return extra.reply(`${bold('📢 BROADCAST')}\n\n_usage: .broadcast <message>_\n\nExample: .broadcast Hello everyone!`);
+          return extra.reply(`*📢 BROADCAST*\n\n💡 Usage: .broadcast <message>\n📝 Example: .broadcast Hello everyone!`);
         }
         
         const message = args.join(' ');
@@ -29,7 +29,7 @@ module.exports = {
         for (const group of groups) {
           try {
             await sock.sendMessage(group.id, {
-              text: `${bold('📢 BROADCAST')}\n\n${message}\n\n_${pick(SLANG.vibe)}, this is a broadcast from bot owner_`
+              text: `*📢 BROADCAST*\n\n${message}\n\n📢 ${pick(SLANG.vibe)}, this is a broadcast from bot owner`
             });
             success++;
           } catch (e) {
@@ -37,11 +37,10 @@ module.exports = {
           }
         }
         
-        await extra.reply(`${bold('✅ BROADCAST DONE')}\n\n_${pick(SLANG.good)}, sent to all groups_\n\n${bold('Success:')} ${success}\n${bold('Failed:')} ${failed}`);
+        await extra.reply(`*✅ BROADCAST DONE*\n\n✅ ${pick(SLANG.good)}, sent to all groups\n\n📊 *Success:* ${success}\n❌ *Failed:* ${failed}`);
         
       } catch (error) {
-        await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
+        await extra.reply(`*❌ ERROR* — ${error.message}`);
       }
     }
   };
-  

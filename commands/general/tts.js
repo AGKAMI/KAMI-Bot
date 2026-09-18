@@ -18,7 +18,7 @@ module.exports = {
       const text = args.join(' ');
 
       if (!text) {
-        return extra.reply(`${italic('give me text to convert to speech')}\nExample: ${bold('.tts hi how are you')}`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Give me text to convert to speech\n📝 *Example:* *.tts hi how are you*`);
       }
 
       const audioUrl = await APIs.textToSpeech(text);
@@ -40,7 +40,7 @@ module.exports = {
 
     } catch (error) {
       console.error('TTS command error:', error);
-      await extra.reply(`❌ _${pick(SLANG.error)} — couldn't generate speech: ${error.message}_`);
+      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't generate speech: ${error.message}`);
     }
   }
 };

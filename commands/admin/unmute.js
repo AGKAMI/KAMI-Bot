@@ -17,10 +17,10 @@ module.exports = {
     async execute(sock, msg, args, extra) {
       try {
         await sock.groupSettingUpdate(extra.from, 'not_announcement');
-        await extra.reply(`🔓 _${pick(SLANG.vibe)}, group opened hey_\n\neveryone can talk now`);
+        await extra.reply(`🔓 UNMUTED\n\nGroup opened ${pick(SLANG.vibe)}\nEveryone can talk now`);
         
       } catch (error) {
-        await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+        await extra.reply(`❌ ERROR\n\n${error.message}`);
       }
     }
   };

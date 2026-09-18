@@ -33,7 +33,7 @@ module.exports = {
         if (rawArg && /\d/.test(rawArg)) {
           target = parsePhoneNumber(rawArg);
           if (!target) {
-            return extra.reply(`${bold(pick(SLANG.error))} — invalid number, ${pick(SLANG.friend)}`);
+            return extra.reply(`*pick(SLANG.error)* — invalid number, ${pick(SLANG.friend)}`);
           }
         } else {
           // Tag or reply
@@ -45,7 +45,7 @@ module.exports = {
           } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
             target = ctx.participant;
           } else {
-            return extra.reply(`${bold(pick(SLANG.error))} — tag, reply, or add a number\n\n_Examples:_\n.unblock 27833882383\n.unblock 083 388 2383\n.unblock me`);
+            return extra.reply(`*pick(SLANG.error)* — tag, reply, or add a number\n\n_Examples:_\n.unblock 27833882383\n.unblock 083 388 2383\n.unblock me`);
           }
         }
       }
@@ -53,7 +53,7 @@ module.exports = {
       await sock.updateBlockStatus(target, 'unblock');
       
       await sock.sendMessage(extra.from, {
-        text: `${bold('✅ UNBLOCKED')}\n\n@${target.split('@')[0]} _has been unblocked, ${pick(SLANG.good)}!_`,
+        text: `*✅ UNBLOCKED*\n\n@${target.split('@')[0]} _has been unblocked, ${pick(SLANG.good)}!_`,
         mentions: [target]
       }, { quoted: msg });
       

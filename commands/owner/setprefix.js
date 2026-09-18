@@ -18,13 +18,13 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply(`${bold('📌 CURRENT PREFIX')}\n\n${bold('Prefix:')} ${config.prefix}\n\nUsage: .setprefix <new prefix>`);
+        return extra.reply(`*📌 CURRENT PREFIX*\n\n📋 *Prefix:* *${config.prefix}*\n\n💡 Usage: .setprefix <new prefix>`);
       }
       
       const newPrefix = args[0];
       
       if (newPrefix.length > 3) {
-        return extra.reply(`${bold(pick(SLANG.error))} — prefix must be 1-3 characters`);
+        return extra.reply(`*❌ ERROR* — prefix must be 1-3 characters`);
       }
       
       // Update config
@@ -36,10 +36,10 @@ module.exports = {
       configContent = configContent.replace(/prefix: '.*'/, `prefix: '${newPrefix}'`);
       fs.writeFileSync(configPath, configContent);
       
-      await extra.reply(`${bold('✅ PREFIX UPDATED')}\n\n_${pick(SLANG.good)}, prefix is now:_ ${newPrefix}\n\nnew command format: ${newPrefix}command`);
+      await extra.reply(`*✅ PREFIX UPDATED*\n\n✅ ${pick(SLANG.good)}, prefix is now: *${newPrefix}*\n\n🔄 New command format: ${newPrefix}command`);
       
     } catch (error) {
-      await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`*❌ ERROR* — ${error.message}`);
     }
   }
 };

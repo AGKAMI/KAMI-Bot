@@ -33,14 +33,14 @@ module.exports = {
         };
 
         return extra.reply(
-          `${bold('WELCOME TEXT STYLE')}\n\n` +
-          `${bold('Current settings:')}\n` +
+          `*WELCOME TEXT STYLE*\n\n` +
+          `*Current settings:*\n` +
           `• Position: ${current.position}\n` +
           `• Text color: ${current.textColor}\n` +
           `• BG color: ${current.bgColor}\n` +
           `• Font size: ${current.fontSize}\n` +
           `• Sub font size: ${current.subFontSize}\n\n` +
-          `${bold('Options:')}\n` +
+          `*Options:*\n` +
           `• .setwelcomestyle position <top/center/bottom>\n` +
           `• .setwelcomestyle textcolor <hex>\n` +
           `• .setwelcomestyle bgcolor <rgba/hex>\n` +

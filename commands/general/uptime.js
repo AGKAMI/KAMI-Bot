@@ -56,17 +56,16 @@ const botName = config.botName || 'Bot';
 const botVersion = 'V1.0.2';
       
       // Build response message
-      let message = `----------\n*BOT UPTIME*\n----------\n\n`;
+      let message = `✅ *BOT UPTIME*\n\n`;
     message += `🤖 *Bot Name:* ${botName}\n`;
     message += `🧬 *Bot Version:* ${botVersion}\n`;
-      message += `⏱️ *Uptime:* ${uptime}\n`;
-      message += `\n----------`;
+      message += `⏱️ *Uptime:* ${uptime}`;
       
       await extra.reply(message);
       
     } catch (error) {
       console.error('Error in uptime command:', error);
-      await extra.reply(`❌ _${pick(SLANG.error)}, couldn't get uptime info — try again later_`);
+      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)}, couldn't get uptime info — try again later`);
     }
   }
 };

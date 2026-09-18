@@ -22,15 +22,15 @@ module.exports = {
         const status = settings.antilink ? 'ON' : 'OFF';
         const action = settings.antilinkAction || 'delete';
         return extra.reply(
-          `🔗 ${bold('ANTILINK STATUS')}\n\n` +
-          `${bold('Status')}: *${status}*\n` +
-          `${bold('Action')}: *${action}*\n\n` +
-          `Usage:\n` +
-          `  .antilink on\n` +
-          `  .antilink off\n` +
-          `  .antilink set delete | kick | warn\n` +
-          `  .antilink get\n\n` +
-          `_${pick(SLANG.vibe)}, warn = warn 3 times then auto-kick_`
+          `🔗 ANTILINK STATUS\n\n` +
+          `*Status*: ${status}\n` +
+          `*Action*: ${action}\n\n` +
+          `📱 *Usage*:\n` +
+          `• .antilink on\n` +
+          `• .antilink off\n` +
+          `• .antilink set delete | kick | warn\n` +
+          `• .antilink get\n\n` +
+          `💡 Warn = warn 3 times then auto-kick ${pick(SLANG.vibe)}`
         );
       }
       
@@ -38,45 +38,45 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antilink) {
-          return extra.reply(`✅ _${pick(SLANG.vibe)}, antilink is already on_`);
+          return extra.reply(`✅ SUCCESS\n\nAntilink is already on ${pick(SLANG.vibe)}`);
         }
         database.updateGroupSettings(extra.from, { antilink: true });
-        return extra.reply(`✅ _${pick(SLANG.good)}, antilink turned ON_`);
+        return extra.reply(`✅ SUCCESS\n\nAntilink turned ON ${pick(SLANG.good)}`);
       }
       
       if (opt === 'off') {
         database.updateGroupSettings(extra.from, { antilink: false });
-        return extra.reply('✅ _antilink turned OFF_');
+        return extra.reply('✅ SUCCESS\n\nAntilink turned OFF');
       }
       
       if (opt === 'set') {
         if (args.length < 2) {
-          return extra.reply(`❌ _${pick(SLANG.error)}, specify an action: .antilink set delete | kick | warn_`);
+          return extra.reply(`❌ ERROR\n\nSpecify an action: .antilink set delete | kick | warn`);
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick', 'warn'].includes(setAction)) {
-          return extra.reply(`❌ _${pick(SLANG.error)}, invalid action — choose delete, kick, or warn_`);
+          return extra.reply(`❌ ERROR\n\nInvalid action — choose delete, kick, or warn`);
         }
         
         database.updateGroupSettings(extra.from, { 
           antilinkAction: setAction,
           antilink: true // Auto-enable when setting action
         });
-        return extra.reply(`✅ _${pick(SLANG.good)}, antilink action set to ${setAction}_`);
+        return extra.reply(`✅ SUCCESS\n\nAntilink action set to ${setAction} ${pick(SLANG.good)}`);
       }
       
       if (opt === 'get') {
         const settings = database.getGroupSettings(extra.from);
         const status = settings.antilink ? 'ON' : 'OFF';
         const action = settings.antilinkAction || 'delete';
-        return extra.reply(`${bold('ANTILINK CONFIG')}\n${bold('Status')}: ${status}\n${bold('Action')}: ${action}`);
+        return extra.reply(`🔗 ANTILINK CONFIG\n\n*Status*: ${status}\n*Action*: ${action}`);
       }
       
-      return extra.reply(`❌ _${pick(SLANG.error)}, use .antilink for usage_`);
+      return extra.reply(`❌ ERROR\n\nUse .antilink for usage`);
       
     } catch (error) {
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`❌ ERROR\n\n${error.message}`);
     }
   }
 };

@@ -3,7 +3,7 @@
  */
 
 const database = require('../../database');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'resetwarn',
@@ -14,40 +14,39 @@ module.exports = {
   groupOnly: true,
   adminOnly: true,
   botAdminNeeded: true,
-  
+
   async execute(sock, msg, args, extra) {
     try {
       let target;
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
-      
+
       if (mentioned && mentioned.length > 0) {
         target = mentioned[0];
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply(`❌ _${pick(SLANG.error)}, tag or reply to the person you wanna reset warnings_\n\nexample: .resetwarn @user`);
+        return extra.reply(`*✅ RESET WARN*\n\n_Tag or reply to the person you wanna reset_\n\n_Example: .resetwarn @user_`);
       }
-      
-      // Get current warnings before clearing
+
       const currentWarnings = database.getWarnings(extra.from, target);
-      
+
       if (currentWarnings.count === 0) {
-        return extra.reply(`✅ _${pick(SLANG.vibe)}, @${target.split('@')[0]} has no warnings to reset._`, { mentions: [target] });
+        return extra.reply(`*✅ NO WARNINGS*\n\n@${target.split('@')[0]} _has no warnings to reset_`, { mentions: [target] });
       }
-      
-      // Clear all warnings
+
       database.clearWarnings(extra.from, target);
-      
+
       await sock.sendMessage(extra.from, {
-        text: `✅ ${bold('WARNINGS RESET')}\n\n👤 @${target.split('@')[0]}\n⚠️ ${bold('Previous Warnings')}: ${currentWarnings.count}\n\n_${pick(SLANG.good)}, all warnings cleared, you're good_`,
+        text: `*✅ WARNINGS RESET*\n\n` +
+              `👤 @${target.split('@')[0]}\n` +
+              `📝 *Cleared:* ${currentWarnings.count} warnings\n\n` +
+              `_Clean slate, ${pick(SLANG.good)}!_`,
         mentions: [target]
       }, { quoted: msg });
-      
+
     } catch (error) {
-      console.error('ResetWarn command error:', error);
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`*❌ ERROR*\n\n_${error.message}_`);
     }
   }
 };
-

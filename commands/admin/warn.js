@@ -4,7 +4,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'warn',
@@ -20,56 +20,65 @@ module.exports = {
       let target;
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
-      
+
       if (mentioned && mentioned.length > 0) {
         target = mentioned[0];
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply(`❌ _${pick(SLANG.error)}, tag or reply to the person you wanna warn_\n\nexample: .warn @user breaking rules`);
+        return extra.reply(`*⚠️ WARN*\n\n_Tag, reply, or add a number_\n\n_Example: .warn @user breaking rules_`);
       }
-      
+
       const reason = args.slice(mentioned.length > 0 ? 1 : 0).join(' ') || 'No reason specified';
-      
+
       // Cannot warn admins
       const foundParticipant = extra.groupMetadata.participants.find(
         p => (p.id === target || p.lid === target) && (p.admin === 'admin' || p.admin === 'superadmin')
       );
-      
+
       if (foundParticipant) {
-        return extra.reply(`❌ _${pick(SLANG.error)}, eish no, can't warn an admin hey_`);
+        return extra.reply(`*🚫 CAN'T WARN AN ADMIN*\n\n_Nice try though ${pick(SLANG.friend)}_`);
       }
-      
+
       const warnings = database.addWarning(extra.from, target, reason);
-      
-      let text = `⚠️ ${bold('WARNING')}\n\n`;
+      const remaining = config.maxWarnings - warnings.count;
+
+      let text = `⚠️ *WARNING ${warnings.count}/${config.maxWarnings}*\n\n`;
       text += `👤 @${target.split('@')[0]}\n`;
-      text += `📝 ${bold('Reason')}: ${reason}\n`;
-      text += `⚠️ ${bold('Warnings')}: ${warnings.count}/${config.maxWarnings}\n\n`;
-      
+      text += `📝 *Reason:* ${reason}\n`;
+
       if (warnings.count >= config.maxWarnings) {
-        text += `❌ _${pick(SLANG.error)}, aikona, max warnings hit — this oke is out_`;
-        
+        text += `❌ *MAX WARNINGS HIT*\n\n`;
+        text += `@${target.split('@')[0]} _is being removed from the group_${pick(SLANG.vibe)}`;
+
         await sock.sendMessage(extra.from, {
           text,
           mentions: [target]
         }, { quoted: msg });
-        
+
         if (extra.isBotAdmin) {
-          await sock.groupParticipantsUpdate(extra.from, [target], 'remove');
+          try {
+            await sock.groupParticipantsUpdate(extra.from, [target], 'remove');
+            await sock.sendMessage(extra.from, {
+              text: `*🔨 KICKED*\n\n@${target.split('@')[0]} _has been removed for exceeding max warnings_`,
+              mentions: [target]
+            });
+          } catch (e) {
+            await extra.reply(`*❌ KICK FAILED*\n\n_Couldn't remove the user — check if I'm admin_`);
+          }
           database.clearWarnings(extra.from, target);
         }
       } else {
-        text += `⚠️ _one more and you're gone ${pick(SLANG.friend)}_`;
-        
+        text += `⚠️ *${remaining} more ${remaining === 1 ? 'strike' : 'strikes'} and you're out*`;
+
         await sock.sendMessage(extra.from, {
           text,
           mentions: [target]
         }, { quoted: msg });
       }
-      
+
     } catch (error) {
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`*❌ ERROR*\n\n_${error.message}_`);
     }
   }
 };

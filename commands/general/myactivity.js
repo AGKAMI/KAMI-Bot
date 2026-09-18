@@ -18,7 +18,7 @@ module.exports = {
             const stats = getStats(from);
 
             if (!stats || !stats.users || !stats.users[sender]) {
-                return extra.reply(`${italic('you haven\'t sent any messages today yet')}`);
+                return extra.reply(`⚠️ *WARNING*\n💡 You haven't sent any messages today yet`);
             }
 
             const userCount = stats.users[sender];
@@ -32,14 +32,14 @@ module.exports = {
             const rank = sortedUsers.findIndex(([id]) => id === sender) + 1;
 
             const text = `
-📊 *your activity today*
+📊 *YOUR ACTIVITY TODAY*
 
 👤 *User:* @${sender.split('@')[0]}
 📝 *Messages Sent:* ${userCount}
 📈 *Your Share:* ${percentage}%
 🏆 *Rank:* #${rank} of ${sortedUsers.length}
 
-${italic('keep chatting!')} 💬
+💬 _Keep chatting!_
 `.trim();
 
             await sock.sendMessage(from, {
@@ -49,7 +49,7 @@ ${italic('keep chatting!')} 💬
 
         } catch (err) {
             console.error('[myactivity cmd] error:', err);
-            extra.reply(`❌ _${pick(SLANG.error)}, couldn't load your activity_`);
+            extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)}, couldn't load your activity`);
         }
     }
 };

@@ -26,7 +26,7 @@ module.exports = {
       if (!ctx?.quotedMessage || !ctx?.stanzaId) {
         return await sock.sendMessage(
           chatId,
-          { text: `🗑️ _${pick(SLANG.error)}, reply to a view-once message to reveal it_` },
+          { text: `⚠️ *WARNING*\n💡 ${pick(SLANG.error)}, reply to a view-once message to reveal it` },
           { quoted: msg }
         );
       }
@@ -46,7 +46,7 @@ module.exports = {
       if (!hasViewOnce) {
         return await sock.sendMessage(
           chatId,
-          { text: `❌ _${pick(SLANG.error)}, this isn't a view-once message_` },
+          { text: `❌ *ERROR*\n💡 ${pick(SLANG.error)}, this isn't a view-once message` },
           { quoted: msg }
         );
       }
@@ -84,7 +84,7 @@ module.exports = {
       if (!actualMsg || !mtype) {
         return await sock.sendMessage(
           chatId,
-          { text: `❌ _${pick(SLANG.error)}, unsupported view-once type_` },
+          { text: `❌ *ERROR*\n💡 ${pick(SLANG.error)}, unsupported view-once type` },
           { quoted: msg }
         );
       }
@@ -145,7 +145,7 @@ module.exports = {
         msg.key.remoteJid,
         {
           text:
-            `❌ _${pick(SLANG.error)}, couldn't process view-once — ${(error.message || 'Unknown error')}_`
+            `❌ *ERROR*\n💡 ${pick(SLANG.error)}, couldn't process view-once — ${(error.message || 'Unknown error')}`
         },
         { quoted: msg }
       );

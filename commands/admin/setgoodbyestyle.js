@@ -33,14 +33,14 @@ module.exports = {
         };
 
         return extra.reply(
-          `${bold('GOODBYE TEXT STYLE')}\n\n` +
-          `${bold('Current settings:')}\n` +
+          `*GOODBYE TEXT STYLE*\n\n` +
+          `*Current settings:*\n` +
           `• Position: ${current.position}\n` +
           `• Text color: ${current.textColor}\n` +
           `• BG color: ${current.bgColor}\n` +
           `• Font size: ${current.fontSize}\n` +
           `• Sub font size: ${current.subFontSize}\n\n` +
-          `${bold('Options:')}\n` +
+          `*Options:*\n` +
           `• .setgoodbyestyle position <top/center/bottom>\n` +
           `• .setgoodbyestyle textcolor <hex>\n` +
           `• .setgoodbyestyle bgcolor <rgba/hex>\n` +
