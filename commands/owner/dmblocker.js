@@ -72,6 +72,12 @@ module.exports = {
           }, { quoted: msg });
         }
         const added = database.addApprovedNumber(number);
+        // Also WhatsApp-unblock them if they were blocked
+        try {
+          let digits = number.replace(/\D/g, '');
+          if (digits.startsWith('0')) digits = '27' + digits.slice(1);
+          await sock.updateBlockStatus(digits + '@s.whatsapp.net', 'unblock');
+        } catch (e) {}
         return await sock.sendMessage(chatId, {
           text: added
             ? `${bold('✅ APPROVED')}\n\n_${number} can now use the bot._`
