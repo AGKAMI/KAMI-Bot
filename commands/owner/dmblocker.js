@@ -99,9 +99,12 @@ module.exports = {
         // DM them the approval message
         try {
           await sock.sendMessage(targetJid, {
-            text: `✅ *YOU HAVE BEEN APPROVED BY KAMI* 🤖\n\n` +
-                  `You can now use the bot. Send *.menu* to see all commands.\n\n` +
-                  `_Enjoy, ${pick(SLANG.good)}!_`
+            text: `🎉 *WELCOME TO KAMI BOT* 🤖\n\n` +
+                  `✅ You have been *approved* by KAMI\n` +
+                  `🔓 You can now message this bot directly\n\n` +
+                  `Send *.menu* to see all available commands\n` +
+                  `Type *.help* if you need assistance\n\n` +
+                  `_Lekke, enjoy the bot!_ 💀`
           });
         } catch (e) {}
 
