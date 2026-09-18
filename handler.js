@@ -381,13 +381,12 @@ const formatPhone = (raw) => {
   if (!raw) return '';
   const digits = raw.replace(/\D/g, '');
   if (digits.length <= 4) return '+' + digits;
-  // Assume first 1-3 digits are country code
-  if (digits.length >= 10) {
-    const cc = digits.length === 12 ? digits.slice(0, 2) : digits.length === 11 ? digits.slice(0, 2) : digits.slice(0, 1);
-    const local = digits.slice(cc.length);
-    return `+${cc} ${local}`;
-  }
-  return '+' + digits;
+  let ccLen = 1;
+  if (digits.length >= 11) ccLen = 2;
+  if (digits.length >= 12) ccLen = 3;
+  const cc = digits.slice(0, ccLen);
+  const local = digits.slice(ccLen);
+  return `+${cc} ${local}`;
 };
 
 // Resolve display name: WhatsApp username > contact name > formatted phone
@@ -1012,14 +1011,20 @@ const handleGroupUpdate = async (sock, update) => {
               { text: displayName, size: ws.subFontSize || 32, color: '#ffffff' },
               { text: `Member #${groupMetadata.participants.length}`, size: 24, color: '#cccccc' },
             ];
-            const resultBuffer = await buildImage(bgBuffer, {
-              lines: textLines,
-              position: 'bottom',
-              avatar: userAvatarBuf,
-              avatarSize: 120,
-              bg: { color: ws.bgColor || 'rgba(0,0,0,0.55)', radius: 16, padding: 28 },
-            });
-            await sock.sendMessage(id, { image: resultBuffer, mentions: [participantJid] });
+            try {
+              const resultBuffer = await buildImage(bgBuffer, {
+                lines: textLines,
+                position: 'bottom',
+                avatar: userAvatarBuf,
+                avatarSize: 120,
+                bg: { color: ws.bgColor || 'rgba(0,0,0,0.55)', radius: 16, padding: 28 },
+              });
+              await sock.sendMessage(id, { image: resultBuffer, mentions: [participantJid] });
+            } catch (imgErr) {
+              console.error('Welcome buildImage error:', imgErr.message);
+            }
+          } else {
+            console.error('Welcome: no bgBuffer available');
           }
           
           // Always send the text caption too
