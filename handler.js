@@ -963,7 +963,7 @@ const handleGroupUpdate = async (sock, update) => {
                       line(20),
                       '',
                       `📜 *${groupName}*`,
-                      groupDesc || '_No description yet_`,
+                      groupDesc || '_No description yet_',
                       '',
                       `${bold('RULES')}`,
                       '- No spam',
