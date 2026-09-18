@@ -54,9 +54,10 @@ module.exports = {
 
       // Send ban message first (before block so it delivers)
       await sock.sendMessage(from, {
-        text: `🚫 *YOU HAVE BEEN BANNED FROM USING THIS BOT* 🤖\n\n` +
-              `📲 *Message me on:* 084 082 0712\n` +
-              `⚠️ *Your number will be BLOCKED after this message* ⛔🔒`,
+        text: `🚫 *BANNED FROM KAMI BOT* 🤖\n\n` +
+              `You have been permanently banned from using this bot.\n` +
+              `Do NOT contact this number about your ban — it will be ignored.\n\n` +
+              `_If you think this is a mistake, contact the bot owner directly._`,
         mentions: [target]
       });
 
