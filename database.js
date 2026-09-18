@@ -205,12 +205,18 @@ const removeApprovedNumber = (number) => {
 const isApprovedNumber = (jid) => {
   const settings = getGlobalSettings();
   if (!settings.selfMode) return true; // Not in private mode, everyone allowed
-  const number = jid.replace(/@.*$/, '');
+  
+  // Normalize JID (resolve @lid to phone number)
+  const { normalizeJidWithLid } = require('./utils/jidHelper');
+  const normalized = normalizeJidWithLid(jid);
+  const number = (normalized || jid).replace(/@.*$/, '');
+  const rawNumber = jid.replace(/@.*$/, '');
+  
   const approved = settings.approvedNumbers || [];
   // Owner is always approved
   const ownerNumbers = (config.ownerNumber || []).map(n => n.replace(/[\+\-\s]/g, ''));
-  if (ownerNumbers.includes(number)) return true;
-  return approved.includes(number);
+  if (ownerNumbers.includes(number) || ownerNumbers.includes(rawNumber)) return true;
+  return approved.includes(number) || approved.includes(rawNumber);
 };
 
 module.exports = {
