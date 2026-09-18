@@ -968,26 +968,14 @@ const handleGroupUpdate = async (sock, update) => {
           const displayName = resolveDisplayName(participantJid, participantNumber, participantInfo, sock);
           
           // Create formatted welcome message
-          const welcomeLines = [
-                      `${bold(greet().toUpperCase())} @${displayName}! 👋`,
-                      '',
-                      `${mention(participantJid)} ${bold('lekker to have you here')}`,
-                      `- 💀 ${bold('Member')} #${groupMetadata.participants.length}`,
-                      `- ⏰ ${timeString}`,
-                      '',
-                      line(20),
-                      '',
-                      `📜 *${groupName}*`,
-                      groupDesc || '_No description yet_',
-                      '',
-                      `${bold('RULES')}`,
-                      '- No spam',
-                      '- No illegal content',
-                      '- No toxic behavior',
-                      '',
-                      `_${pick(SLANG.vibe)}, enjoy your stay chommie_`,
-                    ];
-          const welcomeMsg = welcomeLines.join('\n');
+          const joinedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          const welcomeMsg = [
+            `*New Member*`,
+            `Welcome to *${groupName}*`,
+            `Member #${groupMetadata.participants.length} | ${joinedDate}`,
+            '',
+            `_${pick(SLANG.vibe)}, enjoy your stay chommie_ 💀`,
+          ].join('\n');
           
           // Fetch user profile pic (buffer)
           let userAvatarBuf = null;
@@ -1035,21 +1023,18 @@ const handleGroupUpdate = async (sock, update) => {
                 avatarSize: 120,
                 bg: { color: ws.bgColor || 'rgba(0,0,0,0.55)', radius: 16, padding: 28 },
               });
-              await sock.sendMessage(id, { image: resultBuffer, mentions: [participantJid] });
+              await sock.sendMessage(id, { image: resultBuffer, caption: welcomeMsg, mentions: [participantJid] });
             } catch (imgErr) {
               console.error('Welcome buildImage error:', imgErr.message);
             }
           } else {
             console.error('Welcome: no bgBuffer available');
           }
-          
-          // Always send the text caption too
-          await sock.sendMessage(id, { text: welcomeMsg, mentions: [participantJid] });
         } catch (welcomeError) {
           // Fallback to text message if image generation fails
           console.error('Welcome image error:', welcomeError);
           let message = groupSettings.welcomeMessage || `${greet()} @user! 👋\n${lekker()} to have you in @group!`;
-          message = message.replace('@user', `@${participantNumber}`);
+          message = message.replace('@user', `@${displayName}`);
           message = message.replace('@group', groupMetadata.subject || 'the group');
           
           await sock.sendMessage(id, { 
@@ -1084,13 +1069,14 @@ const handleGroupUpdate = async (sock, update) => {
           } catch (e) { /* no pic */ }
           
           // Create goodbye text
-          const goodbyeLines = [
-            `${bold('TOTSIENS')} @${displayName} 👋`,
+          const leftDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          const goodbyeMsg = [
+            `*Goodbye*`,
+            `Farewell from *${groupName}*`,
+            `Member #${groupMetadata.participants.length} | ${leftDate}`,
             '',
-            `${pick(SLANG.vibe)}, we'll miss you hey.`,
-            `_Go well, chommie._`,
-          ];
-          const goodbyeMsg = goodbyeLines.join('\n');
+            `_${pick(SLANG.vibe)}, we'll miss you hey._ 💀`,
+          ].join('\n');
           
           // Fetch background image: custom > group pic > fallback
           let bgBuffer = null;
@@ -1127,15 +1113,12 @@ const handleGroupUpdate = async (sock, update) => {
               avatarSize: 120,
               bg: { color: gs.bgColor || 'rgba(0,0,0,0.55)', radius: 16, padding: 28 },
             });
-            await sock.sendMessage(id, { image: resultBuffer, mentions: [participantJid] });
+            await sock.sendMessage(id, { image: resultBuffer, caption: goodbyeMsg, mentions: [participantJid] });
           }
-          
-          // Always send the text caption too
-          await sock.sendMessage(id, { text: goodbyeMsg, mentions: [participantJid] });
         } catch (goodbyeError) {
           // Fallback to simple goodbye message
           console.error('Goodbye error:', goodbyeError);
-          const goodbyeMsg = `_${pick(SLANG.vibe)}_ @${participantNumber} 👋\n_Go well, chommie._ 💀`;
+          const goodbyeMsg = `_${pick(SLANG.vibe)}_ @${displayName} 👋\n_Go well, chommie._ 💀`;
           
           await sock.sendMessage(id, { 
             text: goodbyeMsg, 
