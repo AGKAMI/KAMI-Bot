@@ -18,11 +18,11 @@ module.exports = {
         return extra.reply(`${italic('give me a website link hey')}\n\nExample: ${bold('.ssweb https://github.com')}`);
       }
       
-      const url = args.join(' ');
+      let url = args.join(' ');
       
-      // Validate URL
+      // Auto-prepend https:// if no protocol
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        return extra.reply(`${italic('need a valid url starting with http:// or https://')}`);
+        url = 'https://' + url;
       }
       
       await sock.sendMessage(extra.from, {

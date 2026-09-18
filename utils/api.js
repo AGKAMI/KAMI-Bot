@@ -335,13 +335,22 @@ const APIs = {
   screenshotWebsite: async (url) => {
     return firstSuccess([
       async () => {
+        const apiUrl = `https://image.thum.io/get/width/1920/crop/1080/png?url=${encodeURIComponent(url)}`;
+        const r = await axios.get(apiUrl, { timeout: 30000, responseType: 'arraybuffer', headers: { 'User-Agent': 'Mozilla/5.0' } });
+        if (r.data && r.data.length > 1000) return Buffer.from(r.data);
+        throw new Error('empty response');
+      },
+      async () => {
+        const apiUrl = `https://api.screenshotone.com/take?url=${encodeURIComponent(url)}&viewport_width=1920&viewport_height=1080&format=png&delay=3`;
+        const r = await axios.get(apiUrl, { timeout: 30000, responseType: 'arraybuffer', headers: { 'User-Agent': 'Mozilla/5.0' } });
+        if (r.data && r.data.length > 1000) return Buffer.from(r.data);
+        throw new Error('empty response');
+      },
+      async () => {
         const apiUrl = `https://eliteprotech-apis.zone.id/ssweb?url=${encodeURIComponent(url)}`;
-        const r = await axios.get(apiUrl, { timeout: 30000, responseType: 'arraybuffer', headers: { 'accept': '*/*', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } });
+        const r = await axios.get(apiUrl, { timeout: 30000, responseType: 'arraybuffer', headers: { 'accept': '*/*', 'User-Agent': 'Mozilla/5.0' } });
         if (r.headers['content-type']?.includes('image')) return Buffer.from(r.data);
-        try {
-          const data = JSON.parse(Buffer.from(r.data).toString());
-          return data.url || data.data?.url || data.image || null;
-        } catch (e) { return Buffer.from(r.data); }
+        throw new Error('not an image');
       }
     ]);
   },
