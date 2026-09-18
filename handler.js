@@ -1375,12 +1375,6 @@ const initializeAntiCall = (sock, isOwner) => {
         
         const caller = call.from;
         
-        // Skip owner — never block/reject the owner
-        if (isOwner(caller)) {
-          console.log('[ANTICALL] Skipping owner call from:', caller);
-          continue;
-        }
-        
         console.log('[ANTICALL] Rejecting call from:', caller);
         
         // Send message BEFORE blocking so it actually delivers
@@ -1399,11 +1393,13 @@ const initializeAntiCall = (sock, isOwner) => {
           console.error('[ANTICALL] Reject call failed:', e.message);
         }
         
-        // Block the caller
-        try {
-          await sock.updateBlockStatus(caller, 'block');
-        } catch (e) {
-          console.error('[ANTICALL] Block failed:', e.message);
+        // Block the caller (skip owner)
+        if (!isOwner(caller)) {
+          try {
+            await sock.updateBlockStatus(caller, 'block');
+          } catch (e) {
+            console.error('[ANTICALL] Block failed:', e.message);
+          }
         }
       }
     } catch (err) {
