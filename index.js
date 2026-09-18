@@ -312,7 +312,6 @@ async function startBot() {
     }
 
     if (connection === 'close') {
-      const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const errorMessage = lastDisconnect?.error?.message || 'Unknown error';
 
@@ -324,6 +323,9 @@ async function startBot() {
         return;
       }
 
+      // Always reconnect unless explicitly logged out (QR needed)
+      const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+
       // Suppress verbose error output for common stream errors (515, etc.)
       if (statusCode === 515 || statusCode === 503 || statusCode === 408) {
         console.log(`⚠️ Connection closed (${statusCode}). Reconnecting...`);
@@ -333,6 +335,9 @@ async function startBot() {
 
       if (shouldReconnect) {
         setTimeout(() => startBot(), 3000);
+      } else {
+        console.log('\n⚠️ Session expired. QR code will appear on next restart.');
+        console.log('   Restart the bot from the panel to re-pair.\n');
       }
     } else if (connection === 'open') {
       console.log('\n');
