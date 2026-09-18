@@ -949,6 +949,9 @@ const handleGroupUpdate = async (sock, update) => {
             hour12: true 
           });
           
+          // Resolve display name (username > contact name > formatted phone)
+          const displayName = resolveDisplayName(participantJid, participantNumber, participantInfo, sock);
+          
           // Create formatted welcome message
           const welcomeLines = [
                       `${bold(greet().toUpperCase())} @${displayName}! 👋`,
@@ -960,7 +963,7 @@ const handleGroupUpdate = async (sock, update) => {
                       line(20),
                       '',
                       `📜 *${groupName}*`,
-                      groupDesc || '_No description yet_',
+                      groupDesc || '_No description yet_`,
                       '',
                       `${bold('RULES')}`,
                       '- No spam',
@@ -970,9 +973,6 @@ const handleGroupUpdate = async (sock, update) => {
                       `_${pick(SLANG.vibe)}, enjoy your stay chommie_`,
                     ];
           const welcomeMsg = welcomeLines.join('\n');
-          
-          // Resolve display name (username > contact name > formatted phone)
-          const displayName = resolveDisplayName(participantJid, participantNumber, participantInfo, sock);
           
           // Fetch user profile pic (buffer)
           let userAvatarBuf = null;
