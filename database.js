@@ -12,6 +12,8 @@ const USERS_DB = path.join(DB_PATH, 'users.json');
 const WARNINGS_DB = path.join(DB_PATH, 'warnings.json');
 const MODS_DB = path.join(DB_PATH, 'mods.json');
 
+const GLOBAL_DB = path.join(DB_PATH, 'global.json');
+
 // Initialize database directory
 if (!fs.existsSync(DB_PATH)) {
   fs.mkdirSync(DB_PATH, { recursive: true });
@@ -28,6 +30,7 @@ initDB(GROUPS_DB, {});
 initDB(USERS_DB, {});
 initDB(WARNINGS_DB, {});
 initDB(MODS_DB, { moderators: [] });
+initDB(GLOBAL_DB, { selfMode: false, approvedNumbers: [] });
 
 // Read database
 const readDB = (filePath) => {
@@ -162,6 +165,54 @@ const isModerator = (userId) => {
   return mods.includes(userId);
 };
 
+// Global Settings
+const getGlobalSettings = () => {
+  return readDB(GLOBAL_DB);
+};
+
+const updateGlobalSettings = (settings) => {
+  const current = readDB(GLOBAL_DB);
+  const updated = { ...current, ...settings };
+  return writeDB(GLOBAL_DB, updated);
+};
+
+// Approved Numbers (for DM blocker)
+const getApprovedNumbers = () => {
+  const settings = getGlobalSettings();
+  return settings.approvedNumbers || [];
+};
+
+const addApprovedNumber = (number) => {
+  const settings = getGlobalSettings();
+  if (!settings.approvedNumbers) settings.approvedNumbers = [];
+  // Normalize: remove +, spaces, dashes
+  const normalized = number.replace(/[\+\-\s]/g, '');
+  if (!settings.approvedNumbers.includes(normalized)) {
+    settings.approvedNumbers.push(normalized);
+    return writeDB(GLOBAL_DB, settings);
+  }
+  return false;
+};
+
+const removeApprovedNumber = (number) => {
+  const settings = getGlobalSettings();
+  if (!settings.approvedNumbers) return false;
+  const normalized = number.replace(/[\+\-\s]/g, '');
+  settings.approvedNumbers = settings.approvedNumbers.filter(n => n !== normalized);
+  return writeDB(GLOBAL_DB, settings);
+};
+
+const isApprovedNumber = (jid) => {
+  const settings = getGlobalSettings();
+  if (!settings.selfMode) return true; // Not in private mode, everyone allowed
+  const number = jid.replace(/@.*$/, '');
+  const approved = settings.approvedNumbers || [];
+  // Owner is always approved
+  const ownerNumbers = (config.ownerNumber || []).map(n => n.replace(/[\+\-\s]/g, ''));
+  if (ownerNumbers.includes(number)) return true;
+  return approved.includes(number);
+};
+
 module.exports = {
   getGroupSettings,
   updateGroupSettings,
@@ -174,5 +225,11 @@ module.exports = {
   getModerators,
   addModerator,
   removeModerator,
-  isModerator
+  isModerator,
+  getGlobalSettings,
+  updateGlobalSettings,
+  getApprovedNumbers,
+  addApprovedNumber,
+  removeApprovedNumber,
+  isApprovedNumber
 };

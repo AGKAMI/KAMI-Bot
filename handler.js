@@ -823,8 +823,18 @@ const handleMessage = async (sock, msg) => {
     const command = commands.get(commandName);
     if (!command) return;
     
-    // Check self mode (private mode) - only owner can use commands
-    if (config.selfMode && !isOwner(sender)) {
+    // Check self mode (private mode) - only owner/approved can use commands
+    const globalSettings = database.getGlobalSettings();
+    if (globalSettings.selfMode && !isOwner(sender) && !database.isApprovedNumber(sender)) {
+      // Send warning then block
+      try {
+        await sock.sendMessage(from, {
+          text: `🚫 *DO NOT TEXT THIS NUMBER* — this is a *bot* account 🤖\n` +
+                `📲 *Message me on:* 084 082 0712\n` +
+                `⚠️ *Your number will be BLOCKED after this message* ⛔🔒`
+        });
+        await sock.updateBlockStatus(sender, 'block');
+      } catch (e) {}
       return;
     }
     
