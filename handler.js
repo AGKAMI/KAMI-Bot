@@ -845,6 +845,14 @@ const handleMessage = async (sock, msg) => {
       return sock.sendMessage(from, { text: config.messages.ownerOnly }, { quoted: msg });
     }
     
+    // Ban check - banned users can't use commands in groups
+    if (isGroup) {
+      const user = database.getUser(sender);
+      if (user.banned && user.bannedIn === from) {
+        return; // silently ignore banned users
+      }
+    }
+    
     if (command.modOnly && !isMod(sender) && !isOwner(sender)) {
       return sock.sendMessage(from, { text: `${bold('Moderators only')} — this one's for the mods, ${pick(SLANG.friend)}` }, { quoted: msg });
     }
