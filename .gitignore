@@ -27,6 +27,11 @@ database/*.json
 .DS_Store
 Thumbs.db
 
+# Cache
+.cache/
+.npm/
+tmp/
+
 # Build
 dist/
 build/

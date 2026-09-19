@@ -21,7 +21,57 @@ const SIZE_TARGET_BYTES = 50 * 1024 * 1024;
 // Session directory name (must NEVER be cleaned)
 const SESSION_DIR_NAME = config.sessionName || 'session';
 
+// Directories safe to nuke entirely
+const NUKEABLE_DIRS = ['.cache', '.npm', 'temp', 'tmp'];
+
 let cleanupInterval = null;
+
+/**
+ * Recursively calculate directory size
+ */
+function getDirSize(dirPath) {
+  let total = 0;
+  try {
+    const files = fs.readdirSync(dirPath);
+    for (const file of files) {
+      const fp = path.join(dirPath, file);
+      try {
+        const stats = fs.statSync(fp);
+        if (stats.isDirectory()) {
+          total += getDirSize(fp);
+        } else {
+          total += stats.size;
+        }
+      } catch(e) {}
+    }
+  } catch(e) {}
+  return total;
+}
+
+/**
+ * Nuke a directory entirely — delete all contents, keep the folder
+ */
+function nukeDir(dirPath) {
+  try {
+    if (!fs.existsSync(dirPath)) return 0;
+    let freed = 0;
+    const files = fs.readdirSync(dirPath);
+    for (const file of files) {
+      const fp = path.join(dirPath, file);
+      try {
+        const stats = fs.statSync(fp);
+        if (stats.isDirectory()) {
+          freed += nukeDir(fp);
+          try { fs.rmdirSync(fp); } catch(e) {}
+        } else {
+          freed += stats.size;
+          fs.unlinkSync(fp);
+        }
+      } catch(e) {}
+    }
+    return freed;
+  } catch(e) { return 0; }
+}
 
 /**
  * Aggressively clean up ALL temp files
@@ -112,19 +162,56 @@ function cleanupBySize() {
 }
 
 /**
+ * Nuke cache directories (.cache, .npm, temp, tmp)
+ * These rebuild automatically — safe to delete
+ */
+function nukeCacheDirs() {
+  const rootDir = path.resolve(__dirname, '..');
+  let totalFreed = 0;
+
+  for (const dirName of NUKEABLE_DIRS) {
+    const dirPath = path.join(rootDir, dirName);
+    if (!fs.existsSync(dirPath)) continue;
+
+    const size = getDirSize(dirPath);
+    nukeDir(dirPath);
+    totalFreed += size;
+
+    if (size > 0) {
+      console.log(`🧹 Nuked ${dirName}/ — freed ${(size / (1024 * 1024)).toFixed(1)}MB`);
+    }
+  }
+
+  if (totalFreed > 0) {
+    console.log(`🧹 Cache nuke total: ${(totalFreed / (1024 * 1024)).toFixed(1)}MB freed`);
+  }
+
+  return totalFreed;
+}
+
+/**
  * Start the cleanup system
  */
 function startCleanup() {
-  console.log('🧹 Starting aggressive temp cleanup system...');
+  console.log('🧹 Starting aggressive cleanup system...');
+
+  // Initial cleanup on startup
   cleanupTempFiles();
   cleanupBySize();
+  nukeCacheDirs();
 
+  // Periodic cleanup
   cleanupInterval = setInterval(() => {
     cleanupTempFiles();
     cleanupBySize();
   }, CLEANUP_INTERVAL_MS);
 
-  console.log(`✅ Cleanup system started (runs every ${CLEANUP_INTERVAL_MS / 1000 / 60} min, size limit ${SIZE_LIMIT_BYTES / 1024 / 1024}MB)`);
+  // Cache nuke every 10 minutes (less aggressive)
+  setInterval(() => {
+    nukeCacheDirs();
+  }, 10 * 60 * 1000);
+
+  console.log(`✅ Cleanup system started (temp: every ${CLEANUP_INTERVAL_MS / 1000 / 60} min, cache: every 10 min, size limit ${SIZE_LIMIT_BYTES / 1024 / 1024}MB)`);
 }
 
 /**
@@ -152,6 +239,7 @@ process.on('SIGTERM', () => {
 module.exports = {
   cleanupTempFiles,
   cleanupBySize,
+  nukeCacheDirs,
   startCleanup,
   stopCleanup
 };
