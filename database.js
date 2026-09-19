@@ -30,7 +30,7 @@ initDB(GROUPS_DB, {});
 initDB(USERS_DB, {});
 initDB(WARNINGS_DB, {});
 initDB(MODS_DB, { moderators: [] });
-initDB(CREW_DB, { members: {}, events: {}, applicants: {}, checkins: {} });
+initDB(CREW_DB, { groups: {}, teamMap: {} });
 initDB(GLOBAL_DB, { selfMode: false, approvedNumbers: [] });
 
 // Read database
@@ -343,38 +343,51 @@ const getAllTeams = () => {
   return crew.groups || {};
 };
 
-const addCheckin = (jid) => {
+// ==================== Team Mapping Functions ====================
+
+// Set team abbreviation mapping: "SSRS" → group JID
+const setTeamMap = (abbrev, groupJid, teamName) => {
   const crew = getCrew();
-  if (!crew.checkins) crew.checkins = {};
-  const today = new Date().toDateString();
-  if (!crew.checkins[today]) crew.checkins[today] = {};
-  crew.checkins[today][jid] = Date.now();
-  
-  // Update member stats
-  if (crew.members?.[jid]) {
-    crew.members[jid].checkins = (crew.members[jid].checkins || 0) + 1;
-    crew.members[jid].lastCheckin = Date.now();
-  }
-  
+  if (!crew.teamMap) crew.teamMap = {};
+  crew.teamMap[abbrev.toUpperCase()] = {
+    jid: groupJid,
+    name: teamName || abbrev.toUpperCase()
+  };
   return writeDB(CREW_DB, crew);
 };
 
-const getCheckins = (date) => {
+// Remove team abbreviation mapping
+const removeTeamMap = (abbrev) => {
   const crew = getCrew();
-  const dateStr = date || new Date().toDateString();
-  return crew.checkins?.[dateStr] || {};
+  if (!crew.teamMap || !crew.teamMap[abbrev.toUpperCase()]) return false;
+  delete crew.teamMap[abbrev.toUpperCase()];
+  return writeDB(CREW_DB, crew);
 };
 
-const getCrewStats = () => {
+// Get team map (all abbreviations)
+const getTeamMap = () => {
   const crew = getCrew();
-  const members = Object.keys(crew.members || {}).length;
-  const events = Object.keys(crew.events || {}).length;
-  const pending = Object.values(crew.applicants || {}).filter(a => a.status === 'pending').length;
-  const teams = {};
-  for (const m of Object.values(crew.members || {})) {
-    if (m.team) teams[m.team] = (teams[m.team] || 0) + 1;
+  return crew.teamMap || {};
+};
+
+// Resolve abbreviation to group JID
+const resolveTeam = (abbrev) => {
+  const crew = getCrew();
+  const upper = abbrev.toUpperCase();
+  
+  // Direct match
+  if (crew.teamMap?.[upper]) {
+    return { jid: crew.teamMap[upper].jid, name: crew.teamMap[upper].name };
   }
-  return { members, events, pending, teams };
+  
+  // Case-insensitive search
+  for (const [key, val] of Object.entries(crew.teamMap || {})) {
+    if (key.toLowerCase() === abbrev.toLowerCase()) {
+      return { jid: val.jid, name: val.name };
+    }
+  }
+  
+  return null;
 };
 
 module.exports = {
@@ -412,5 +425,11 @@ module.exports = {
   addApplicant,
   getApplicants,
   removeApplicant,
-  getAllTeams
+  getAllTeams,
+
+  // Team mapping
+  setTeamMap,
+  removeTeamMap,
+  getTeamMap,
+  resolveTeam
 };
