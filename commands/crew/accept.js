@@ -10,7 +10,8 @@ const ROLE_EMOJIS = {
 };
 
 module.exports = {
-  name: 'accept',
+  subName: '',
+  name: null,
   aliases: ['hire'],
   category: 'crew',
   description: 'Accept applicant to crew',

@@ -26,7 +26,8 @@ function phoneToJid(phone) {
 }
 
 module.exports = {
-  name: 'add',
+  subName: '',
+  name: null,
   aliases: ['join'],
   category: 'crew',
   description: 'Add member to crew roster + WhatsApp group',

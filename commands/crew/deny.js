@@ -8,7 +8,8 @@ const { bold, pick, SLANG } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 module.exports = {
-  name: 'deny',
+  subName: '',
+  name: null,
   aliases: ['reject'],
   category: 'crew',
   description: 'Deny applicant',

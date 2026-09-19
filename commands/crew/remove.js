@@ -8,7 +8,8 @@ const { bold, pick, SLANG } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 module.exports = {
-  name: 'remove',
+  subName: '',
+  name: null,
   aliases: ['leave', 'fire'],
   category: 'crew',
   description: 'Remove member from crew roster',

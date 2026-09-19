@@ -2,7 +2,8 @@ const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
 
 module.exports = {
-  name: 'result',
+  subName: '',
+  name: null,
   description: 'Log event results',
   usage: '.crew result <event-id> <winner>',
   adminOnly: true,

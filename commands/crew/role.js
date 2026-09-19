@@ -8,7 +8,8 @@ const { bold, pick, SLANG } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 module.exports = {
-  name: 'role',
+  subName: '',
+  name: null,
   aliases: ['setrole'],
   category: 'crew',
   description: 'Set custom role for member',

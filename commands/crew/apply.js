@@ -23,7 +23,8 @@ const QUESTIONS = [
 ];
 
 module.exports = {
-  name: 'apply',
+  subName: '',
+  name: null,
   aliases: ['tryout'],
   category: 'crew',
   description: 'Open tryout applications for Slammed Society',

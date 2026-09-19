@@ -2,7 +2,8 @@ const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
 
 module.exports = {
-  name: 'event',
+  subName: '',
+  name: null,
   description: 'Schedule a new crew event',
   usage: '.crew event <name> <time>',
   adminOnly: true,

@@ -14,7 +14,8 @@ const TEAMS = {
 };
 
 module.exports = {
-  name: 'applicants',
+  subName: '',
+  name: null,
   aliases: ['pending', 'tryouts'],
   category: 'crew',
   description: 'View pending crew applications',

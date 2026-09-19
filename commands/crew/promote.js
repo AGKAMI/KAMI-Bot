@@ -15,7 +15,8 @@ const ROLE_EMOJIS = {
 };
 
 module.exports = {
-  name: 'promote',
+  subName: '',
+  name: null,
   aliases: ['up'],
   category: 'crew',
   description: 'Promote member to higher role',
