@@ -47,11 +47,18 @@ module.exports = {
       // Get custom roles for this group
       const validRoles = database.getCustomRoles(extra.from);
 
-      // Get new role from remaining args
-      const newRole = (resolved.args[0] || '').toLowerCase();
-      if (!newRole || !validRoles.includes(newRole)) {
+      // Find the role from args — look for a valid role word
+      let newRole = null;
+      for (const arg of resolved.args) {
+        const lower = arg.toLowerCase();
+        if (validRoles.includes(lower)) {
+          newRole = lower;
+          break;
+        }
+      }
+      if (!newRole) {
         return extra.reply(
-          `❌ ERROR\n\nInvalid role: ${newRole || '?'}\n\n` +
+          `❌ ERROR\n\nProvide a valid role\n\n` +
           `Valid roles:\n${validRoles.map(r => `• ${r}`).join('\n')}`
         );
       }

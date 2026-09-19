@@ -43,15 +43,12 @@ module.exports = {
       const validRoles = database.getCustomRoles(extra.from);
       let role = validRoles[0];
 
-      if (resolved.args[0]) {
-        const inputRole = resolved.args[0].toLowerCase();
-        if (validRoles.includes(inputRole)) {
-          role = inputRole;
-        } else {
-          return extra.reply(
-            '❌ ERROR\n\nInvalid role: ' + inputRole + '\n\n' +
-            'Valid roles:\n' + validRoles.map(r => '• ' + r).join('\n')
-          );
+      // Find role from args
+      for (const arg of resolved.args) {
+        const lower = arg.toLowerCase();
+        if (validRoles.includes(lower)) {
+          role = lower;
+          break;
         }
       }
 

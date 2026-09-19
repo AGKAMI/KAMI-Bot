@@ -94,17 +94,13 @@ module.exports = {
       // Get custom roles for this group
       const validRoles = database.getCustomRoles(extra.from);
 
-      // Parse role
+      // Parse role — find a valid role word from remaining args
       let role = validRoles[0]; // default to first (lowest) role
-      if (args.length >= 1) {
-        const inputRole = args[0].toLowerCase();
-        if (validRoles.includes(inputRole)) {
-          role = inputRole;
-        } else {
-          return extra.reply(
-            `❌ ERROR\n\nInvalid role: ${inputRole}\n\n` +
-            `Valid roles:\n${validRoles.map(r => `• ${r}`).join('\n')}`
-          );
+      for (const arg of args) {
+        const lower = arg.toLowerCase();
+        if (validRoles.includes(lower)) {
+          role = lower;
+          break;
         }
       }
 

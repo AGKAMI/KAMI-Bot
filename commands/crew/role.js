@@ -36,7 +36,7 @@ module.exports = {
         return extra.reply(`❌ ERROR\n\n@${targetNum} is not in this crew`);
       }
 
-      const newRole = resolved.args.join(' ');
+      const newRole = resolved.args.join(' ').trim();
       if (!newRole) {
         return extra.reply(`❌ ERROR\n\nProvide a role name`);
       }
