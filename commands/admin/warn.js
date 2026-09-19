@@ -40,7 +40,7 @@ module.exports = {
         return extra.reply(`*🚫 CAN'T WARN AN ADMIN*\n\n_Nice try though ${pick(SLANG.friend)}_`);
       }
 
-      const warnings = database.addWarning(extra.from, target, reason);
+      const warnings = database.addWarning(extra.from, target, reason, senderId);
       const remaining = config.maxWarnings - warnings.count;
 
       let text = `⚠️ *WARNING ${warnings.count}/${config.maxWarnings}*\n\n`;

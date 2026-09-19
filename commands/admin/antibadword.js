@@ -1,5 +1,5 @@
 /**
- * Antibadword Command - Toggle bad word filter
+ * Antibadword Command - Toggle bad word filter with wildcard/phrase support
  */
 
 const database = require('../../database');
@@ -10,7 +10,7 @@ module.exports = {
   aliases: ['badword', 'wordfilter', 'autocensor'],
   category: 'admin',
   description: 'Toggle bad word filter',
-  usage: '.antibadword <on/off/status>',
+  usage: '.antibadword <on/off/status/exempt/exceptions>',
   groupOnly: true,
   adminOnly: true,
   botAdminNeeded: true,
@@ -19,19 +19,11 @@ module.exports = {
     try {
       const sub = (args[0] || '').toLowerCase();
 
-      // No args — show status
-      if (!sub) {
+      if (!sub || sub === 'status') {
         const settings = database.getGroupSettings(extra.from);
         return extra.reply(buildStatus(settings));
       }
 
-      // .antibadword status
-      if (sub === 'status') {
-        const settings = database.getGroupSettings(extra.from);
-        return extra.reply(buildStatus(settings));
-      }
-
-      // .antibadword on
       if (sub === 'on') {
         const settings = database.getGroupSettings(extra.from);
         if (settings.antibadword) {
@@ -47,12 +39,62 @@ module.exports = {
         );
       }
 
-      // .antibadword off
       if (sub === 'off') {
         database.updateGroupSettings(extra.from, { antibadword: false });
         return extra.reply(
           `✅ *ANTIBADWORD OFF*\n\n` +
           `_Bad word filter disabled_`
+        );
+      }
+
+      if (sub === 'exempt') {
+        const mention = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+        if (!mention) {
+          return extra.reply(
+            `❌ *ERROR*\n\n` +
+            `_Tag a user to exempt, ${pick(SLANG.vibe)}_\n\n` +
+            `_Example: .antibadword exempt @user_`
+          );
+        }
+
+        const settings = database.getGroupSettings(extra.from);
+        const exempt = settings.badwordExempt || [];
+        if (exempt.includes(mention)) {
+          return extra.reply(
+            `⚠️ *ALREADY EXEMPT*\n\n` +
+            `@${mention.split('@')[0]} _is already exempt from bad word filter_`
+          );
+        }
+
+        exempt.push(mention);
+        database.updateGroupSettings(extra.from, { badwordExempt: exempt });
+
+        return extra.reply(
+          `✅ *USER EXEMPTED*\n\n` +
+          `👤 *User:* @${mention.split('@')[0]}\n` +
+          `🛡️ *Status:* Bypasses bad word filter\n\n` +
+          `_${pick(SLANG.good)}, exempted!_`,
+          [mention]
+        );
+      }
+
+      if (sub === 'exceptions') {
+        const settings = database.getGroupSettings(extra.from);
+        const exempt = settings.badwordExempt || [];
+        if (exempt.length === 0) {
+          return extra.reply(
+            `📋 *BADWORD EXCEPTIONS*\n\n` +
+            `_No users exempted yet, ${pick(SLANG.vibe)}_\n` +
+            `_Admins are always exempt by default_`
+          );
+        }
+
+        const list = exempt.map((j, i) => `${i + 1}. @${j.split('@')[0]}`).join('\n');
+        return extra.reply(
+          `📋 *BADWORD EXCEPTIONS*\n\n` +
+          `👑 *Admins:* Always exempt\n` +
+          `👥 *Exempt users (${exempt.length}):*\n${list}`,
+          exempt
         );
       }
 
@@ -62,7 +104,7 @@ module.exports = {
       );
 
     } catch (error) {
-      await extra.reply(`*❌ ERROR*\n\n_${error.message}_`);
+      await extra.reply(`❌ *ERROR*\n\n_${error.message}_`);
     }
   }
 };
@@ -70,16 +112,24 @@ module.exports = {
 function buildStatus(settings) {
   const status = settings.antibadword ? 'ON' : 'OFF';
   const words = settings.badwords || [];
-  const count = words.length;
+  const wildcards = words.filter(w => w.includes('*')).length;
+  const phrases = words.filter(w => w.startsWith('"') && w.endsWith('"')).length;
+  const simple = words.length - wildcards - phrases;
+  const exempt = settings.badwordExempt || [];
 
   return (
     `🛡️ *ANTIBADWORD STATUS*\n\n` +
     `⚡ *Status:* ${status}\n` +
-    `📝 *Words:* ${count} in blacklist\n\n` +
+    `📝 *Patterns:* ${wildcards} wildcards, ${phrases} phrases, ${simple} simple\n` +
+    `📊 *Total:* ${words.length} patterns\n` +
+    `👥 *Exempt:* ${exempt.length} users + admins\n\n` +
     `📱 *Commands:*\n` +
     `• _.antibadword on_\n` +
     `• _.antibadword off_\n` +
-    `• _.addbadword <word>_\n` +
-    `• _.delbadword <word>_`
+    `• _.addbadword <pattern>_\n` +
+    `• _.delbadword <pattern>_\n` +
+    `• _.antibadword exempt @user_\n` +
+    `• _.antibadword exceptions_\n\n` +
+    `💡 _Patterns: *bad* = wildcard, "bad word" = phrase, bad = simple_`
   );
 }

@@ -1,15 +1,18 @@
 /**
- * Report Command - Report a message to admins
+ * Report Command - Report messages to admins with queue and dismiss support
  */
 
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG } = require('../../utils/format');
+
+const reportStore = new Map();
+const reportCounters = new Map();
 
 module.exports = {
     name: 'report',
     aliases: ['flag', 'complain'],
-    category: 'general',
+    category: 'admin',
     description: 'Report a message to the group admins',
-    usage: '.report (reply to the message you want to report)',
+    usage: '.report <reason> | .report anon | .report queue | .report dismiss <number>',
     groupOnly: true,
 
     async execute(sock, msg, args, extra) {
@@ -18,14 +21,98 @@ module.exports = {
             const sender = extra.sender;
             const metadata = extra.groupMetadata;
 
+            if (!reportStore.has(from)) {
+                reportStore.set(from, []);
+            }
+
+            if (!reportCounters.has(from)) {
+                reportCounters.set(from, 0);
+            }
+
+            const groupReports = reportStore.get(from);
+
+            if (args.length >= 1 && args[0].toLowerCase() === 'queue') {
+                const pending = groupReports.filter(r => r.status === 'pending');
+
+                if (pending.length === 0) {
+                    return extra.reply(
+                        `✅ *SUCCESS*\n\n` +
+                        `📋 *Pending Reports:* None\n\n` +
+                        `_All clear, ${pick(SLANG.vibe)}_`
+                    );
+                }
+
+                const lines = [
+                    `📋 *REPORT QUEUE*`,
+                    ``,
+                    `_Pending: ${pending.length}_`,
+                    ``,
+                ];
+
+                for (const r of pending) {
+                    lines.push(`*#${r.number}* — ${r.status.toUpperCase()}`);
+                    lines.push(`👤 @${r.reportedBy.split('@')[0]}`);
+                    lines.push(`📝 ${r.reason}`);
+                    lines.push(`----------`);
+                }
+
+                lines.push(`_Use .report dismiss <number> to acknowledge_`);
+
+                const mentions = pending.map(r => r.reportedBy);
+
+                return sock.sendMessage(from, {
+                    text: lines.join('\n'),
+                    mentions
+                }, { quoted: msg });
+            }
+
+            if (args.length >= 2 && args[0].toLowerCase() === 'dismiss') {
+                const isGroupAdmin = metadata.participants.some(p =>
+                    (p.id === sender) && (p.admin === 'admin' || p.admin === 'superadmin')
+                );
+
+                if (!isGroupAdmin) {
+                    return extra.reply(`❌ *ERROR*\n\n💡 Only admins can dismiss reports, ${pick(SLANG.friend)}`);
+                }
+
+                const number = parseInt(args[1]);
+                const report = groupReports.find(r => r.number === number);
+
+                if (!report) {
+                    return extra.reply(
+                        `❌ *ERROR*\n\n` +
+                        `💡 Report #${number} not found. Use *.report queue* to see pending reports, ${pick(SLANG.vibe)}`
+                    );
+                }
+
+                if (report.status === 'dismissed') {
+                    return extra.reply(
+                        `❌ *ERROR*\n\n` +
+                        `💡 Report #${number} is already dismissed, ${pick(SLANG.vibe)}`
+                    );
+                }
+
+                report.status = 'dismissed';
+
+                return extra.reply(
+                    `✅ *SUCCESS*\n\n` +
+                    `🗑️ *Report #${number} Dismissed*\n` +
+                    `📝 *Reason:* ${report.reason}\n\n` +
+                    `_Done, ${pick(SLANG.vibe)} 🫡_`
+                );
+            }
+
             const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
             if (!quotedMsg) {
                 return extra.reply(
                     `❌ *ERROR*\n\n` +
                     `💡 Reply to a message to report it, ${pick(SLANG.vibe)}\n` +
-                    `📝 *Usage:* .report <reason>\n` +
-                    `💡 *Example:* Reply to a message → .report spam`
+                    `📝 *Usage:*\n` +
+                    `• Reply to message → .report <reason>\n` +
+                    `• Reply to message → .report anon <reason>\n` +
+                    `• .report queue\n` +
+                    `• .report dismiss <number>`
                 );
             }
 
@@ -40,7 +127,13 @@ module.exports = {
                 msg.message?.extendedTextMessage?.contextInfo?.participant ||
                 'Unknown';
 
-            const reason = args.join(' ').trim() || 'No reason given';
+            let isAnonymous = false;
+            let reasonParts = [...args];
+            if (args.length >= 1 && args[0].toLowerCase() === 'anon') {
+                isAnonymous = true;
+                reasonParts = args.slice(1);
+            }
+            const reason = reasonParts.join(' ').trim() || 'No reason given';
 
             const admins = metadata.participants
                 .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
@@ -48,6 +141,25 @@ module.exports = {
 
             if (admins.length === 0) {
                 return extra.reply(`❌ *ERROR*\n\n💡 No admins found in this group, ${pick(SLANG.friend)}`);
+            }
+
+            const reportNum = reportCounters.get(from) + 1;
+            reportCounters.set(from, reportNum);
+
+            const reportData = {
+                number: reportNum,
+                reportedBy: sender,
+                reportedUser: reportedBy,
+                reason,
+                message: reportedText,
+                time: Date.now(),
+                status: 'pending',
+                anonymous: isAnonymous
+            };
+            groupReports.push(reportData);
+
+            if (groupReports.length > 20) {
+                groupReports.shift();
             }
 
             const reportTime = new Date().toLocaleString('en-US', {
@@ -58,13 +170,20 @@ module.exports = {
                 day: 'numeric'
             });
 
+            const reporterLine = isAnonymous
+                ? `👤 *Reported by:* Anonymous`
+                : `👤 *Reported by:* @${sender.split('@')[0]}`;
+
+            const mentionsList = isAnonymous ? [reportedBy, ...admins] : [sender, reportedBy, ...admins];
+
             const reportText = [
-                `🚨 *REPORT — PAY ATTENTION*`,
+                `🚨 *REPORT #${reportNum} — PAY ATTENTION*`,
                 ``,
-                `👤 *Reported by:* @${sender.split('@')[0]}`,
+                reporterLine,
                 `📌 *Reported user:* @${reportedBy.split('@')[0]}`,
                 `⏰ *Time:* ${reportTime}`,
                 `📝 *Reason:* ${reason}`,
+                `📊 *Status:* PENDING`,
                 ``,
                 `----------`,
                 `💬 *Message:*`,
@@ -76,7 +195,7 @@ module.exports = {
 
             await sock.sendMessage(from, {
                 text: reportText,
-                mentions: [sender, reportedBy, ...admins]
+                mentions: mentionsList
             }, { quoted: msg });
 
             await sock.sendMessage(from, {

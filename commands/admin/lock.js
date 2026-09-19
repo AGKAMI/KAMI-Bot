@@ -1,5 +1,5 @@
 /**
- * Lock Command - Lock/unlock group settings (name, desc, pp)
+ * Lock Command - Granular lock/unlock for group name, desc, pp
  */
 
 const { bold, pick, SLANG } = require('../../utils/format');
@@ -10,7 +10,7 @@ module.exports = {
   aliases: ['unlock', 'lockstatus'],
   category: 'admin',
   description: 'Lock/unlock group settings (name, desc, profile pic)',
-  usage: '.lock / .unlock / .lock status',
+  usage: '.lock [name/desc/pp] [off]',
   groupOnly: true,
   adminOnly: true,
   botAdminNeeded: true,
@@ -19,69 +19,93 @@ module.exports = {
     try {
       const { from } = extra;
       const sub = (args[0] || '').toLowerCase();
+      const sub2 = (args[1] || '').toLowerCase();
       const settings = database.getGroupSettings(from);
 
       if (sub === 'status' || sub === '') {
-        const isLocked = settings.lock || false;
-        const icon = isLocked ? '🔒' : '🔓';
-        const label = isLocked ? 'LOCKED' : 'UNLOCKED';
-
-        const text = [
-          `${icon} *GROUP ${label}*`,
-          '',
-          `- 🔑 ${bold('Status:')} ${isLocked ? 'Only admins can change name, desc & pp' : 'Anyone can change name, desc & pp'}`,
-          `- 👥 ${bold('Group:')} ${extra.groupMetadata?.subject || 'Unknown'}`,
-          '',
-          `_💡 Use .lock to lock, .unlock to unlock, ${pick(SLANG.vibe)}_`
-        ].join('\n');
-
-        return await extra.reply(text);
+        return extra.reply(buildStatus(settings));
       }
 
       if (sub === 'on' || sub === 'lock') {
-        database.updateGroupSettings(from, { lock: true });
+        database.updateGroupSettings(from, {
+          lock: true,
+          lockName: true,
+          lockDesc: true,
+          lockPp: true
+        });
 
         try {
           await sock.groupSettingUpdate(from, 'announcement');
-        } catch (e) {
-          // If WhatsApp API fails, still track in DB
-        }
+        } catch (e) {}
 
-        const text = [
-          `🔒 *GROUP LOCKED*`,
-          '',
-          `- ✅ ${bold('Setting updated')}: Only admins can change group name, description & profile pic`,
-          `- 🔑 ${bold('Applied by')} @${extra.sender.split('@')[0]}`,
-          '',
-          `_${pick(SLANG.good)} — group secured, ${pick(SLANG.vibe)}_`
-        ].join('\n');
-
-        return await sock.sendMessage(from, { text, mentions: [extra.sender] }, { quoted: msg });
+        return extra.reply(
+          `🔒 *GROUP LOCKED*\n\n` +
+          `✅ *All settings locked:*\n` +
+          `🔒 Name\n` +
+          `🔒 Description\n` +
+          `🔒 Profile pic\n\n` +
+          `👤 *By:* @${extra.sender.split('@')[0]}\n\n` +
+          `_${pick(SLANG.good)}, group secured!_`,
+          [extra.sender]
+        );
       }
 
       if (sub === 'off' || sub === 'unlock') {
-        database.updateGroupSettings(from, { lock: false });
+        database.updateGroupSettings(from, {
+          lock: false,
+          lockName: false,
+          lockDesc: false,
+          lockPp: false
+        });
 
         try {
           await sock.groupSettingUpdate(from, 'not_announcement');
-        } catch (e) {
-          // If WhatsApp API fails, still track in DB
-        }
+        } catch (e) {}
 
-        const text = [
-          `🔓 *GROUP UNLOCKED*`,
-          '',
-          `- ✅ ${bold('Setting updated')}: Everyone can change group name, description & profile pic`,
-          `- 🔑 ${bold('Applied by')} @${extra.sender.split('@')[0]}`,
-          '',
-          `_${pick(SLANG.vibe)} — group opened up_`
-        ].join('\n');
-
-        return await sock.sendMessage(from, { text, mentions: [extra.sender] }, { quoted: msg });
+        return extra.reply(
+          `🔓 *GROUP UNLOCKED*\n\n` +
+          `🔓 *All settings unlocked*\n\n` +
+          `👤 *By:* @${extra.sender.split('@')[0]}\n\n` +
+          `_${pick(SLANG.vibe)}, group opened up_`,
+          [extra.sender]
+        );
       }
 
-      return await extra.reply(
-        `❌ *ERROR*\n\n💡 Usage:\n- .lock → lock group\n- .unlock → unlock group\n- .lock status → check status`
+      const validTargets = ['name', 'desc', 'pp'];
+      if (validTargets.includes(sub)) {
+        const lockKey = `lock${sub.charAt(0).toUpperCase() + sub.slice(1)}`;
+
+        if (sub2 === 'off') {
+          database.updateGroupSettings(from, { [lockKey]: false, lock: false });
+
+          return extra.reply(
+            `🔓 *${sub.toUpperCase()} UNLOCKED*\n\n` +
+            `✅ *${sub.charAt(0).toUpperCase() + sub.slice(1)} can now be changed by anyone*\n\n` +
+            `👤 *By:* @${extra.sender.split('@')[0]}`,
+            [extra.sender]
+          );
+        }
+
+        database.updateGroupSettings(from, { [lockKey]: true });
+
+        return extra.reply(
+          `🔒 *${sub.toUpperCase()} LOCKED*\n\n` +
+          `✅ *${sub.charAt(0).toUpperCase() + sub.slice(1)} can only be changed by admins*\n\n` +
+          `👤 *By:* @${extra.sender.split('@')[0]}`,
+          [extra.sender]
+        );
+      }
+
+      return extra.reply(
+        `❌ *ERROR*\n\n` +
+        `💡 *Usage:*\n` +
+        `• _.lock_ — lock all settings\n` +
+        `• _.unlock_ — unlock all\n` +
+        `• _.lock status_ — check status\n` +
+        `• _.lock name_ — lock name only\n` +
+        `• _.lock desc_ — lock desc only\n` +
+        `• _.lock pp_ — lock profile pic only\n` +
+        `• _.lock name off_ — unlock name`
       );
 
     } catch (error) {
@@ -90,3 +114,21 @@ module.exports = {
     }
   }
 };
+
+function buildStatus(settings) {
+  const lockName = settings.lockName || false;
+  const lockDesc = settings.lockDesc || false;
+  const lockPp = settings.lockPp || false;
+
+  return (
+    `🔒 *LOCK STATUS*\n\n` +
+    `${lockName ? '🔒' : '🔓'} *Name:* ${lockName ? 'Locked' : 'Unlocked'}\n` +
+    `${lockDesc ? '🔒' : '🔓'} *Description:* ${lockDesc ? 'Locked' : 'Unlocked'}\n` +
+    `${lockPp ? '🔒' : '🔓'} *Profile pic:* ${lockPp ? 'Locked' : 'Unlocked'}\n\n` +
+    `📱 *Commands:*\n` +
+    `• _.lock_ — lock all\n` +
+    `• _.unlock_ — unlock all\n` +
+    `• _.lock name / desc / pp_ — lock individual\n` +
+    `• _.lock name off / desc off / pp off_ — unlock individual`
+  );
+}

@@ -1,5 +1,5 @@
 /**
- * Antiflood Command - Toggle anti-flood protection
+ * Antiflood Command - Toggle anti-flood protection with exemptions
  */
 
 const database = require('../../database');
@@ -10,7 +10,7 @@ module.exports = {
   aliases: ['flood', 'spamprotect'],
   category: 'admin',
   description: 'Configure anti-flood protection',
-  usage: '.antiflood <on/off/status/set <limit> <window>s <action>>',
+  usage: '.antiflood <on/off/status/set/exempt/unexempt/exemptlist>',
   groupOnly: true,
   adminOnly: true,
   botAdminNeeded: true,
@@ -18,22 +18,13 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       const sub = (args[0] || '').toLowerCase();
+      const settings = database.getGroupSettings(extra.from);
 
-      // No args — show usage
-      if (!sub) {
-        const settings = database.getGroupSettings(extra.from);
+      if (!sub || sub === 'status') {
         return extra.reply(buildStatus(settings));
       }
 
-      // .antiflood status
-      if (sub === 'status') {
-        const settings = database.getGroupSettings(extra.from);
-        return extra.reply(buildStatus(settings));
-      }
-
-      // .antiflood on
       if (sub === 'on') {
-        const settings = database.getGroupSettings(extra.from);
         if (settings.antiflood) {
           return extra.reply(
             `✅ *ANTIFLOOD*\n\n` +
@@ -47,7 +38,6 @@ module.exports = {
         );
       }
 
-      // .antiflood off
       if (sub === 'off') {
         database.updateGroupSettings(extra.from, { antiflood: false });
         return extra.reply(
@@ -56,7 +46,6 @@ module.exports = {
         );
       }
 
-      // .antiflood set <limit> <window>s <action>
       if (sub === 'set') {
         if (args.length < 4) {
           return extra.reply(
@@ -112,13 +101,90 @@ module.exports = {
         );
       }
 
+      if (sub === 'exempt') {
+        const mention = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+        if (!mention) {
+          return extra.reply(
+            `❌ *ERROR*\n\n` +
+            `_Tag a user to exempt, ${pick(SLANG.vibe)}_\n\n` +
+            `_Example: .antiflood exempt @user_`
+          );
+        }
+
+        const exempt = settings.antifloodExempt || [];
+        if (exempt.includes(mention)) {
+          return extra.reply(
+            `⚠️ *ALREADY EXEMPT*\n\n` +
+            `@${mention.split('@')[0]} _is already exempt from flood detection_`
+          );
+        }
+
+        exempt.push(mention);
+        database.updateGroupSettings(extra.from, { antifloodExempt: exempt });
+
+        return extra.reply(
+          `✅ *USER EXEMPTED*\n\n` +
+          `👤 *User:* @${mention.split('@')[0]}\n` +
+          `🛡️ *Status:* Bypasses flood detection\n\n` +
+          `_${pick(SLANG.good)}, exempted!_`,
+          [mention]
+        );
+      }
+
+      if (sub === 'unexempt') {
+        const mention = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+        if (!mention) {
+          return extra.reply(
+            `❌ *ERROR*\n\n` +
+            `_Tag a user to unexempt, ${pick(SLANG.vibe)}_\n\n` +
+            `_Example: .antiflood unexempt @user_`
+          );
+        }
+
+        const exempt = settings.antifloodExempt || [];
+        if (!exempt.includes(mention)) {
+          return extra.reply(
+            `❌ *NOT EXEMPT*\n\n` +
+            `@${mention.split('@')[0]} _is not in the exemption list_`
+          );
+        }
+
+        const updated = exempt.filter(j => j !== mention);
+        database.updateGroupSettings(extra.from, { antifloodExempt: updated });
+
+        return extra.reply(
+          `✅ *EXEMPTION REMOVED*\n\n` +
+          `👤 *User:* @${mention.split('@')[0]}\n` +
+          `_Now subject to flood detection again_`,
+          [mention]
+        );
+      }
+
+      if (sub === 'exemptlist') {
+        const exempt = settings.antifloodExempt || [];
+        if (exempt.length === 0) {
+          return extra.reply(
+            `📋 *EXEMPT LIST*\n\n` +
+            `_No users exempted yet, ${pick(SLANG.vibe)}_`
+          );
+        }
+
+        const list = exempt.map((j, i) => `${i + 1}. @${j.split('@')[0]}`).join('\n');
+        return extra.reply(
+          `📋 *EXEMPT LIST*\n\n` +
+          `👥 *Exempt users (${exempt.length}):*\n${list}\n\n` +
+          `_These users bypass flood detection_`,
+          exempt
+        );
+      }
+
       return extra.reply(
         `❌ *ERROR*\n\n` +
         `_Use .antiflood for usage, ${pick(SLANG.vibe)}_`
       );
 
     } catch (error) {
-      await extra.reply(`*❌ ERROR*\n\n_${error.message}_`);
+      await extra.reply(`❌ *ERROR*\n\n_${error.message}_`);
     }
   }
 };
@@ -126,19 +192,24 @@ module.exports = {
 function buildStatus(settings) {
   const status = settings.antiflood ? 'ON' : 'OFF';
   const limit = settings.antifloodLimit || 5;
-  const window = settings.antifloodWindow || 10;
+  const windowSec = settings.antifloodWindow || 10;
   const action = settings.antifloodAction || 'warn';
+  const exempt = settings.antifloodExempt || [];
 
   return (
     `🛡️ *ANTIFLOOD STATUS*\n\n` +
     `⚡ *Status:* ${status}\n` +
     `📊 *Limit:* ${limit} messages\n` +
-    `⏱️ *Window:* ${window}s\n` +
-    `🔨 *Action:* ${action}\n\n` +
+    `⏱️ *Window:* ${windowSec}s\n` +
+    `🔨 *Action:* ${action}\n` +
+    `👥 *Exempt:* ${exempt.length} users\n\n` +
     `📱 *Commands:*\n` +
     `• _.antiflood on_\n` +
     `• _.antiflood off_\n` +
-    `• _.antiflood set <limit> <window>s <action>_\n\n` +
+    `• _.antiflood set <limit> <window>s <action>_\n` +
+    `• _.antiflood exempt @user_\n` +
+    `• _.antiflood unexempt @user_\n` +
+    `• _.antiflood exemptlist_\n\n` +
     `_Actions: warn, kick, mute_`
   );
 }

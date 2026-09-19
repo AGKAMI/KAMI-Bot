@@ -97,7 +97,7 @@ const getWarnings = (groupId, userId) => {
   return warnings[key] || { count: 0, warnings: [] };
 };
 
-const addWarning = (groupId, userId, reason) => {
+const addWarning = (groupId, userId, reason, warnedBy = null) => {
   const warnings = readDB(WARNINGS_DB);
   const key = `${groupId}_${userId}`;
   
@@ -108,7 +108,8 @@ const addWarning = (groupId, userId, reason) => {
   warnings[key].count++;
   warnings[key].warnings.push({
     reason,
-    date: Date.now()
+    date: Date.now(),
+    warnedBy
   });
   
   writeDB(WARNINGS_DB, warnings);

@@ -1,5 +1,5 @@
 /**
- * Set Name Command - Change group name
+ * Set Name Command - Change group name with template variables
  */
 
 const { bold, pick, SLANG } = require('../../utils/format');
@@ -21,44 +21,56 @@ module.exports = {
       const newName = args.join(' ').trim();
 
       if (!newName) {
-        const text = [
-          `❌ *ERROR*`,
-          '',
-          `💡 Usage: .setname <new group name>`,
-          `_Example: .setname KAMI Squad 🚀_`
-        ].join('\n');
-        return await extra.reply(text);
+        return extra.reply(
+          `❌ *ERROR*\n\n` +
+          `💡 *Usage:* .setname <new group name>\n\n` +
+          `🔧 *Template variables:*\n` +
+          `• _{user}_ — who ran the command\n` +
+          `• _{group}_ — current group name\n` +
+          `• _{count}_ — member count\n` +
+          `• _{time}_ — current time\n\n` +
+          `_Example: .setname {group} VIP_`
+        );
       }
 
       if (newName.length > 100) {
-        return await extra.reply(`❌ *ERROR*\n\nName too long, ${pick(SLANG.friend)} — max 100 characters`);
+        return extra.reply(`❌ *ERROR*\n\nName too long, ${pick(SLANG.friend)} — max 100 characters`);
       }
 
       const settings = database.getGroupSettings(from);
-      if (settings.lock) {
-        const text = [
-          `🔒 *GROUP LOCKED*`,
-          '',
-          `- This group is locked, ${pick(SLANG.vibe)}`,
-          `- Only admins can unlock it with .unlock`,
-          `- Current name: *${extra.groupMetadata?.subject || 'Unknown'}*`
-        ].join('\n');
-        return await extra.reply(text);
+      if (settings.lockName) {
+        return extra.reply(
+          `🔒 *NAME LOCKED*\n\n` +
+          `_${pick(SLANG.vibe)}, the group name is locked by an admin_\n` +
+          `Current name: *${extra.groupMetadata?.subject || 'Unknown'}*`
+        );
       }
 
-      await sock.groupUpdateSubject(from, newName);
+      const senderNum = extra.sender.split('@')[0];
+      const memberCount = extra.groupMetadata?.participants?.length || 0;
+      const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const currentName = extra.groupMetadata?.subject || 'Unknown';
 
-      const text = [
-        `✅ *GROUP RENAMED*`,
-        '',
-        `- 📝 ${bold('New name:')} ${newName}`,
-        `- 👤 ${bold('Changed by')} @${extra.sender.split('@')[0]}`,
-        `- 📛 ${bold('Old name:')} ${extra.groupMetadata?.subject || 'Unknown'}`,
-        '',
-        `_${pick(SLANG.good)} — fresh name, ${pick(SLANG.vibe)}_`
-      ].join('\n');
+      let resolved = newName
+        .replace(/\{user\}/g, senderNum)
+        .replace(/\{group\}/g, currentName)
+        .replace(/\{count\}/g, memberCount)
+        .replace(/\{time\}/g, currentTime);
 
-      await sock.sendMessage(from, { text, mentions: [extra.sender] }, { quoted: msg });
+      if (resolved.length > 100) {
+        return extra.reply(`❌ *ERROR*\n\nResolved name too long after variables — max 100 characters`);
+      }
+
+      await sock.groupUpdateSubject(from, resolved);
+
+      return extra.reply(
+        `✅ *GROUP RENAMED*\n\n` +
+        `📝 *New name:* ${resolved}\n` +
+        `👤 *Changed by:* @${senderNum}\n` +
+        `📛 *Old name:* ${currentName}\n\n` +
+        `_${pick(SLANG.good)}, fresh name!_`,
+        [extra.sender]
+      );
 
     } catch (error) {
       console.error('SetName Error:', error);

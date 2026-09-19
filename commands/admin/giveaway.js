@@ -1,70 +1,126 @@
 /**
- * Giveaway Command - Run a giveaway in the group
+ * Giveaway Command - Run a giveaway with multiple winners and min entries
  */
 
 const { bold, pick, SLANG } = require('../../utils/format');
 
 const activeGiveaways = new Map();
+const lastGiveaway = new Map();
 
 module.exports = {
     name: 'giveaway',
     aliases: ['gw', 'give'],
     category: 'admin',
     description: 'Run a giveaway — members react with 🎁 to enter',
-    usage: '.giveaway <prize> | <duration>m',
+    usage: '.giveaway <prize> | <duration>m | <winners>n | min <number>\n.giveaway reroll',
     groupOnly: true,
     adminOnly: true,
 
     async execute(sock, msg, args, extra) {
         try {
             const from = extra.from;
+            const fullArgs = args.join(' ');
 
-            if (activeGiveaways.has(from)) {
-                return extra.reply(`❌ *ERROR*\n\n💡 A giveaway is already running in this group, ${pick(SLANG.friend)}`);
+            if (args.length >= 1 && args[0].toLowerCase() === 'reroll') {
+                const last = lastGiveaway.get(from);
+                if (!last || last.winners.length === 0) {
+                    return extra.reply(`❌ *ERROR*\n\n💡 No previous giveaway to reroll, ${pick(SLANG.vibe)}`);
+                }
+
+                if (last.entries.length === 0) {
+                    return extra.reply(`❌ *ERROR*\n\n💡 Previous giveaway had no entries, ${pick(SLANG.vibe)}`);
+                }
+
+                const shuffled = [...last.entries].sort(() => Math.random() - 0.5);
+                const rerollWinners = shuffled.slice(0, last.winners.length);
+
+                const winnerMentions = rerollWinners.map(w => `@${w.split('@')[0]}`).join('\n');
+
+                await sock.sendMessage(from, {
+                    text: [
+                        `🎁 *REROLL RESULTS!*`,
+                        ``,
+                        `🏆 *Prize:* ${last.prize}`,
+                        `👥 *Entries:* ${last.entries.length}`,
+                        ``,
+                        `🎉 *NEW WINNER${rerollWinners.length > 1 ? 'S' : ''}:*`,
+                        winnerMentions,
+                        ``,
+                        `_Congratulations, ${pick(SLANG.good)}! 🥳_`
+                    ].join('\n'),
+                    mentions: rerollWinners
+                });
+                return;
             }
 
-            const fullArgs = args.join(' ');
+            if (activeGiveaways.has(from)) {
+                return extra.reply(`❌ *ERROR*\n\n💡 A giveaway is already running, ${pick(SLANG.friend)}`);
+            }
+
             if (!fullArgs.trim()) {
-                return extra.reply(`❌ *ERROR*\n\n💡 Usage: *.giveaway <prize> | <duration>m*\n📝 Example: *.giveaway iPhone 15 | 5m*`);
+                return extra.reply(
+                    `❌ *ERROR*\n\n` +
+                    `💡 *Usage:*\n` +
+                    `• .giveaway <prize> | <duration>m\n` +
+                    `• .giveaway <prize> | <duration>m | <winners>n\n` +
+                    `• .giveaway <prize> | <duration>m | min <number>\n` +
+                    `• .giveaway reroll`
+                );
             }
 
             let prize = fullArgs;
             let durationMinutes = 5;
+            let numWinners = 1;
+            let minEntries = 0;
 
             if (fullArgs.includes('|')) {
                 const parts = fullArgs.split('|').map(p => p.trim());
                 prize = parts[0];
-                const timeStr = parts[1] || '';
-                const match = timeStr.match(/^(\d+)m$/i);
-                if (match) {
-                    durationMinutes = parseInt(match[1]);
+
+                if (parts[1]) {
+                    const timeMatch = parts[1].match(/^(\d+)m$/i);
+                    if (timeMatch) {
+                        durationMinutes = parseInt(timeMatch[1]);
+                    }
                 }
-            } else {
-                const timeMatch = fullArgs.match(/\s+(\d+)m$/i);
-                if (timeMatch) {
-                    prize = fullArgs.replace(/\s+\d+m$/i, '').trim();
-                    durationMinutes = parseInt(timeMatch[1]);
+
+                for (let i = 2; i < parts.length; i++) {
+                    const winMatch = parts[i].match(/^(\d+)n$/i);
+                    if (winMatch) {
+                        numWinners = parseInt(winMatch[1]);
+                    }
+                    const minMatch = parts[i].match(/^min\s+(\d+)$/i);
+                    if (minMatch) {
+                        minEntries = parseInt(minMatch[1]);
+                    }
                 }
             }
 
             if (durationMinutes < 1 || durationMinutes > 60) {
-                return extra.reply(`❌ *ERROR*\n\n💡 Duration must be between 1 and 60 minutes, ${pick(SLANG.vibe)}`);
+                return extra.reply(`❌ *ERROR*\n\n💡 Duration must be 1-60 minutes, ${pick(SLANG.vibe)}`);
+            }
+            if (numWinners < 1 || numWinners > 20) {
+                return extra.reply(`❌ *ERROR*\n\n💡 Winners must be 1-20, ${pick(SLANG.vibe)}`);
             }
 
             const endTime = Date.now() + (durationMinutes * 60 * 1000);
 
-            const announcement = [
+            const lines = [
                 `🎁 *GIVEAWAY TIME!*`,
                 ``,
                 `🏆 *Prize:* ${prize}`,
                 `⏱️ *Duration:* ${durationMinutes} minute${durationMinutes > 1 ? 's' : ''}`,
                 `📅 *Ends:* ${new Date(endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`,
-                ``,
-                `✋ *React with 🎁 to enter!*`,
-                `_Hurry, this one's closing soon — ${pick(SLANG.vibe)}_`
-            ].join('\n');
+                `🎯 *Winners:* ${numWinners}`,
+            ];
 
-            const sent = await sock.sendMessage(from, { text: announcement }, { quoted: msg });
+            if (minEntries > 0) {
+                lines.push(`📋 *Min Entries:* ${minEntries}`);
+            }
+
+            lines.push(``, `✋ *React with 🎁 to enter!*`, `_Hurry, this one's closing soon — ${pick(SLANG.vibe)}_`);
+
+            const sent = await sock.sendMessage(from, { text: lines.join('\n') }, { quoted: msg });
 
             await sock.sendMessage(from, {
                 react: { text: '🎁', key: sent.key }
@@ -96,13 +152,16 @@ module.exports = {
 
             sock.ev.on('messages.upsert', messageListener);
 
-            activeGiveaways.set(from, { entries, endTime, prize, listener: messageListener });
+            activeGiveaways.set(from, { entries, endTime, prize, numWinners, minEntries, listener: messageListener });
 
             setTimeout(async () => {
                 sock.ev.off('messages.upsert', messageListener);
                 activeGiveaways.delete(from);
 
-                if (entries.size === 0) {
+                const entryList = Array.from(entries);
+
+                if (entryList.length === 0) {
+                    lastGiveaway.set(from, { winners: [], entries: [], prize });
                     await sock.sendMessage(from, {
                         text: [
                             `🎁 *GIVEAWAY ENDED*`,
@@ -116,8 +175,33 @@ module.exports = {
                     return;
                 }
 
-                const entryList = Array.from(entries);
-                const winner = entryList[Math.floor(Math.random() * entryList.length)];
+                if (minEntries > 0 && entryList.length < minEntries) {
+                    const extraTime = 2;
+                    const newEndTime = Date.now() + (extraTime * 60 * 1000);
+                    activeGiveaways.set(from, { entries, endTime: newEndTime, prize, numWinners, minEntries, listener: messageListener });
+                    sock.ev.on('messages.upsert', messageListener);
+
+                    activeGiveaways.set(from, { entries, endTime: newEndTime, prize, numWinners, minEntries, listener: messageListener });
+
+                    await sock.sendMessage(from, {
+                        text: [
+                            `🎁 *NOT ENOUGH ENTRIES!*`,
+                            ``,
+                            `📋 *Required:* ${minEntries}`,
+                            `👥 *Current:* ${entryList.length}`,
+                            `⏰ *Extended:* 2 more minutes`,
+                            ``,
+                            `React with 🎁 to join — ${pick(SLANG.vibe)}!`
+                        ].join('\n')
+                    });
+                    return;
+                }
+
+                const shuffled = [...entryList].sort(() => Math.random() - 0.5);
+                const winners = shuffled.slice(0, numWinners);
+                const winnerMentions = winners.map(w => `@${w.split('@')[0]}`).join('\n');
+
+                lastGiveaway.set(from, { winners, entries: entryList, prize });
 
                 await sock.sendMessage(from, {
                     text: [
@@ -126,11 +210,12 @@ module.exports = {
                         `🏆 *Prize:* ${prize}`,
                         `👥 *Total Entries:* ${entryList.length}`,
                         ``,
-                        `🎉 *WINNER:* @${winner.split('@')[0]}`,
+                        `🎉 *WINNER${winners.length > 1 ? 'S' : ''}:*`,
+                        winnerMentions,
                         ``,
                         `_Congratulations, ${pick(SLANG.good)}! 🥳_`
                     ].join('\n'),
-                    mentions: [winner]
+                    mentions: winners
                 });
 
             }, durationMinutes * 60 * 1000);

@@ -1,5 +1,5 @@
 /**
- * Set Description Command - Change group description
+ * Set Description Command - Change group description with template variables
  */
 
 const { bold, pick, SLANG } = require('../../utils/format');
@@ -21,43 +21,55 @@ module.exports = {
       const newDesc = args.join(' ').trim();
 
       if (!newDesc) {
-        const text = [
-          `❌ *ERROR*`,
-          '',
-          `💡 Usage: .setdesc <new description>`,
-          `_Example: .setdesc Welcome to KAMI Bot group! Be respectful._`
-        ].join('\n');
-        return await extra.reply(text);
+        return extra.reply(
+          `❌ *ERROR*\n\n` +
+          `💡 *Usage:* .setdesc <new description>\n\n` +
+          `🔧 *Template variables:*\n` +
+          `• _{user}_ — who ran the command\n` +
+          `• _{group}_ — current group name\n` +
+          `• _{count}_ — member count\n` +
+          `• _{time}_ — current time\n\n` +
+          `_Example: .setdesc Welcome to {group}! Members: {count}_`
+        );
       }
 
       if (newDesc.length > 250) {
-        return await extra.reply(`❌ *ERROR*\n\nDescription too long, ${pick(SLANG.friend)} — max 250 characters`);
+        return extra.reply(`❌ *ERROR*\n\nDescription too long, ${pick(SLANG.friend)} — max 250 characters`);
       }
 
       const settings = database.getGroupSettings(from);
-      if (settings.lock) {
-        const text = [
-          `🔒 *GROUP LOCKED*`,
-          '',
-          `- This group is locked, ${pick(SLANG.vibe)}`,
-          `- Only admins can unlock it with .unlock`,
-          `- Current desc: *${extra.groupMetadata?.desc || 'None'}*`
-        ].join('\n');
-        return await extra.reply(text);
+      if (settings.lockDesc) {
+        return extra.reply(
+          `🔒 *DESCRIPTION LOCKED*\n\n` +
+          `_${pick(SLANG.vibe)}, the group description is locked by an admin_\n` +
+          `Current desc: *${extra.groupMetadata?.desc || 'None'}*`
+        );
       }
 
-      await sock.groupUpdateDescription(from, newDesc);
+      const senderNum = extra.sender.split('@')[0];
+      const memberCount = extra.groupMetadata?.participants?.length || 0;
+      const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const currentName = extra.groupMetadata?.subject || 'Unknown';
 
-      const text = [
-        `✅ *DESCRIPTION UPDATED*`,
-        '',
-        `- 📝 ${bold('New description:')} ${newDesc}`,
-        `- 👤 ${bold('Changed by')} @${extra.sender.split('@')[0]}`,
-        "",
-        `_${pick(SLANG.good)} — fresh description, ${pick(SLANG.vibe)}_`
-      ].join('\n');
+      let resolved = newDesc
+        .replace(/\{user\}/g, senderNum)
+        .replace(/\{group\}/g, currentName)
+        .replace(/\{count\}/g, memberCount)
+        .replace(/\{time\}/g, currentTime);
 
-      await sock.sendMessage(from, { text, mentions: [extra.sender] }, { quoted: msg });
+      if (resolved.length > 250) {
+        return extra.reply(`❌ *ERROR*\n\nResolved description too long after variables — max 250 characters`);
+      }
+
+      await sock.groupUpdateDescription(from, resolved);
+
+      return extra.reply(
+        `✅ *DESCRIPTION UPDATED*\n\n` +
+        `📝 *New description:* ${resolved}\n` +
+        `👤 *Changed by:* @${senderNum}\n\n` +
+        `_${pick(SLANG.good)}, fresh description!_`,
+        [extra.sender]
+      );
 
     } catch (error) {
       console.error('SetDesc Error:', error);

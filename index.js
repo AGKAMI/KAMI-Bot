@@ -411,11 +411,12 @@ async function startBot() {
               const origMsg = chatMsgs.get(update.key.id);
               if (origMsg) {
                 const content = origMsg.message?.conversation || origMsg.message?.extendedTextMessage?.text || '[media/other]';
-                snipeStore.set(jid, {
+                snipeStore.add(jid, {
                   sender: origMsg.key.participant || origMsg.key.remoteJid,
                   content,
                   deletedBy,
-                  time: Date.now()
+                  time: Date.now(),
+                  type: require('./utils/snipeStore').constructor.detectType(origMsg)
                 });
               }
             }
