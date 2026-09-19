@@ -23,7 +23,7 @@ const QUESTIONS = [
 ];
 
 module.exports = {
-  subName: '',
+  subName: 'apply',
   name: null,
   aliases: ['tryout'],
   category: 'crew',

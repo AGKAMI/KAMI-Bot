@@ -10,7 +10,7 @@ const ROLE_EMOJIS = {
 };
 
 module.exports = {
-  subName: '',
+  subName: 'demote',
   name: null,
   aliases: ['down'],
   category: 'crew',

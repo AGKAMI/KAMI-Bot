@@ -26,7 +26,7 @@ function phoneToJid(phone) {
 }
 
 module.exports = {
-  subName: '',
+  subName: 'add',
   name: null,
   aliases: ['join'],
   category: 'crew',

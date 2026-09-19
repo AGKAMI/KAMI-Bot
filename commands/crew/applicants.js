@@ -14,7 +14,7 @@ const TEAMS = {
 };
 
 module.exports = {
-  subName: '',
+  subName: 'applicants',
   name: null,
   aliases: ['pending', 'tryouts'],
   category: 'crew',

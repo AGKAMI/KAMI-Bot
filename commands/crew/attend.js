@@ -2,7 +2,7 @@ const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
 
 module.exports = {
-  subName: '',
+  subName: 'attend',
   name: null,
   description: 'RSVP to a crew event',
   usage: '.crew attend <event-id> or .crew attend',
