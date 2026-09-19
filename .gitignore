@@ -22,6 +22,7 @@ temp/*
 database/*.json
 !database/groups.json.sample
 !database/users.json.sample
+!database/crew.json
 
 # System files
 .DS_Store
