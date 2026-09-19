@@ -11,7 +11,7 @@ const GROUPS_DB = path.join(DB_PATH, 'groups.json');
 const USERS_DB = path.join(DB_PATH, 'users.json');
 const WARNINGS_DB = path.join(DB_PATH, 'warnings.json');
 const MODS_DB = path.join(DB_PATH, 'mods.json');
-
+const CREW_DB = path.join(DB_PATH, 'crew.json');
 const GLOBAL_DB = path.join(DB_PATH, 'global.json');
 
 // Initialize database directory
@@ -30,6 +30,7 @@ initDB(GROUPS_DB, {});
 initDB(USERS_DB, {});
 initDB(WARNINGS_DB, {});
 initDB(MODS_DB, { moderators: [] });
+initDB(CREW_DB, { members: {}, events: {}, applicants: {}, checkins: {} });
 initDB(GLOBAL_DB, { selfMode: false, approvedNumbers: [] });
 
 // Read database
@@ -220,6 +221,127 @@ const isApprovedNumber = (jid) => {
   return approved.includes(number) || approved.includes(rawNumber);
 };
 
+// ==================== Crew Functions ====================
+
+const getCrew = () => readDB(CREW_DB);
+
+const updateCrew = (data) => writeDB(CREW_DB, data);
+
+const addCrewMember = (jid, data) => {
+  const crew = getCrew();
+  if (!crew.members) crew.members = {};
+  crew.members[jid] = {
+    role: data.role || 'member',
+    team: data.team || '',
+    joined: data.joined || Date.now(),
+    checkins: 0,
+    lastCheckin: 0,
+    ...data
+  };
+  return writeDB(CREW_DB, crew);
+};
+
+const removeCrewMember = (jid) => {
+  const crew = getCrew();
+  if (!crew.members || !crew.members[jid]) return false;
+  delete crew.members[jid];
+  return writeDB(CREW_DB, crew);
+};
+
+const getCrewMember = (jid) => {
+  const crew = getCrew();
+  return crew.members?.[jid] || null;
+};
+
+const getCrewMembers = () => {
+  const crew = getCrew();
+  return crew.members || {};
+};
+
+const addCrewEvent = (id, data) => {
+  const crew = getCrew();
+  if (!crew.events) crew.events = {};
+  crew.events[id] = {
+    name: data.name,
+    time: data.time,
+    createdBy: data.createdBy,
+    attendees: [],
+    results: null,
+    created: Date.now()
+  };
+  return writeDB(CREW_DB, crew);
+};
+
+const getCrewEvents = () => {
+  const crew = getCrew();
+  return crew.events || {};
+};
+
+const removeCrewEvent = (id) => {
+  const crew = getCrew();
+  if (!crew.events || !crew.events[id]) return false;
+  delete crew.events[id];
+  return writeDB(CREW_DB, crew);
+};
+
+const addApplicant = (jid, data) => {
+  const crew = getCrew();
+  if (!crew.applicants) crew.applicants = {};
+  crew.applicants[jid] = {
+    team: data.team,
+    answers: data.answers,
+    appliedAt: Date.now(),
+    status: 'pending'
+  };
+  return writeDB(CREW_DB, crew);
+};
+
+const getApplicants = () => {
+  const crew = getCrew();
+  return crew.applicants || {};
+};
+
+const removeApplicant = (jid) => {
+  const crew = getCrew();
+  if (!crew.applicants || !crew.applicants[jid]) return false;
+  delete crew.applicants[jid];
+  return writeDB(CREW_DB, crew);
+};
+
+const addCheckin = (jid) => {
+  const crew = getCrew();
+  if (!crew.checkins) crew.checkins = {};
+  const today = new Date().toDateString();
+  if (!crew.checkins[today]) crew.checkins[today] = {};
+  crew.checkins[today][jid] = Date.now();
+  
+  // Update member stats
+  if (crew.members?.[jid]) {
+    crew.members[jid].checkins = (crew.members[jid].checkins || 0) + 1;
+    crew.members[jid].lastCheckin = Date.now();
+  }
+  
+  return writeDB(CREW_DB, crew);
+};
+
+const getCheckins = (date) => {
+  const crew = getCrew();
+  const dateStr = date || new Date().toDateString();
+  return crew.checkins?.[dateStr] || {};
+};
+
+const getCrewStats = () => {
+  const crew = getCrew();
+  const members = Object.keys(crew.members || {}).length;
+  const events = Object.keys(crew.events || {}).length;
+  const pending = Object.values(crew.applicants || {}).filter(a => a.status === 'pending').length;
+  const teams = {};
+  for (const m of Object.values(crew.members || {})) {
+    if (m.team) teams[m.team] = (teams[m.team] || 0) + 1;
+  }
+  return { members, events, pending, teams };
+};
+
 module.exports = {
   getGroupSettings,
   updateGroupSettings,
@@ -238,5 +360,22 @@ module.exports = {
   getApprovedNumbers,
   addApprovedNumber,
   removeApprovedNumber,
-  isApprovedNumber
+  isApprovedNumber,
+
+  // Crew functions
+  getCrew,
+  updateCrew,
+  addCrewMember,
+  removeCrewMember,
+  getCrewMember,
+  getCrewMembers,
+  addCrewEvent,
+  getCrewEvents,
+  removeCrewEvent,
+  addApplicant,
+  getApplicants,
+  removeApplicant,
+  addCheckin,
+  getCheckins,
+  getCrewStats
 };
