@@ -460,12 +460,40 @@ const handleMessage = async (sock, msg) => {
     
     const from = msg.key.remoteJid;
     
-    // System message filter - ignore broadcast/status/newsletter messages
-    if (isSystemJid(from)) {
-      return; // Silently ignore system messages
-    }
+        // System message filter - ignore broadcast/status/newsletter messages
+        if (isSystemJid(from)) {
+          return; // Silently ignore system messages
+        }
+
+        // 🔒 DM BLOCKER (EARLY - fires on ANY message, command or not, before prefix gate)
+        // When selfMode is ON, block DMs from anyone who isn't owner or approved.
+        if (!from.endsWith('@g.us')) {
+          try {
+            const dmGlobal = database.getGlobalSettings();
+            const dmSender = msg.key.fromMe ? (sock.user.id.split(':')[0] + '@s.whatsapp.net') : (msg.key.participant || msg.key.remoteJid);
+            if (dmGlobal.selfMode && !msg.key.fromMe && !isOwner(dmSender) && !database.isApprovedNumber(dmSender)) {
+              try {
+                await sock.sendMessage(from, {
+                  text: `🚫 *DO NOT TEXT THIS NUMBER* — this is a *bot* account 🤖\n` +
+                        `📲 *Message me on:* 084 082 0712\n` +
+                        `⚠️ *Your number will be BLOCKED after this message* ⛔🔒`
+                });
+              } catch (warnErr) {
+                console.error('[DMBLOCKER] warning send failed:', warnErr.message);
+              }
+              try {
+                await sock.updateBlockStatus(dmSender, 'block');
+              } catch (blockErr) {
+                console.error('[DMBLOCKER] block failed:', blockErr.message);
+              }
+              return;
+            }
+          } catch (dmErr) {
+            console.error('[DMBLOCKER] early check error:', dmErr.message);
+          }
+        }
     
-    // Auto-React System
+        // Auto-React System
     try {
       // Clear cache to get fresh config values
       delete require.cache[require.resolve('./config')];
