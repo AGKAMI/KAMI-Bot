@@ -75,7 +75,7 @@ module.exports = {
         let digits = number.replace(/\D/g, '');
         if (!digits || digits.length < 8) {
           return await sock.sendMessage(chatId, {
-            text: `*pick(SLANG.error)* — invalid number`
+            text: `❌ ERROR\n\n_Invalid number_`
           }, { quoted: msg });
         }
         if (digits.startsWith('0')) digits = '27' + digits.slice(1);
@@ -149,7 +149,7 @@ module.exports = {
       }
 
       return await sock.sendMessage(chatId, {
-        text: `*pick(SLANG.error)* — invalid option\n\n` +
+        text: `❌ ERROR\n\n_Invalid option_\n\n` +
              `*Usage:*\n` +
              `  .dmblocker on/off/status\n` +
              `  .dmblocker approve <number>\n` +

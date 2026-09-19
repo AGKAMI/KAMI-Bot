@@ -31,7 +31,7 @@ module.exports = {
       if (rawArg && /\d/.test(rawArg)) {
         target = parsePhoneNumber(rawArg);
         if (!target) {
-          return extra.reply(`*pick(SLANG.error)* — invalid number, ${pick(SLANG.friend)}`);
+          return extra.reply(`❌ ERROR\n\n_Invalid number, ${pick(SLANG.friend)}_`);
         }
       } else {
         // Tag or reply
@@ -43,7 +43,7 @@ module.exports = {
         } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
           target = ctx.participant;
         } else {
-          return extra.reply(`*pick(SLANG.error)* — tag, reply, or add a number\n\n_Example: .block 27833882383_`);
+          return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Example: .block 27833882383_`);
         }
       }
       

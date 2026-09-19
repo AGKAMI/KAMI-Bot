@@ -28,7 +28,7 @@ module.exports = {
     }
 
     const digits = parseNumber(number);
-    if (!digits) return extra.reply(`*pick(SLANG.error)* — invalid number`);
+    if (!digits) return extra.reply(`❌ ERROR\n\n_Invalid number_`);
     const targetJid = digits + '@s.whatsapp.net';
 
     // Add to approved list
