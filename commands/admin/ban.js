@@ -4,7 +4,7 @@
  */
 
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { pick, SLANG } = require('../../utils/format');
 
 const parseNumber = (input) => {
   if (!input) return null;
@@ -24,13 +24,13 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
     try {
-      const { from, sender, isGroup } = extra;
+      const { from, sender } = extra;
       let target;
 
       const rawArg = args.join(' ');
       if (rawArg && /\d/.test(rawArg)) {
         target = parseNumber(rawArg);
-        if (!target) return extra.reply(`*pick(SLANG.error)* — invalid number`);
+        if (!target) return extra.reply(`❌ ERROR\n\n_Invalid number_`);
       } else {
         const ctx = msg.message?.extendedTextMessage?.contextInfo;
         const mentioned = ctx?.mentionedJid || [];
@@ -39,17 +39,17 @@ module.exports = {
         } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
           target = ctx.participant;
         } else {
-          return extra.reply(`*pick(SLANG.error)* — tag, reply, or add a number\n\n_Example: .ban 27833882383_`);
+          return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Example: .ban 27833882383_`);
         }
       }
 
       const targetNum = target.split('@')[0].replace(/:/g, '');
       const ownerNums = (config.ownerNumber || []).map(n => n.replace(/\D/g, ''));
       if (ownerNums.includes(targetNum)) {
-        return extra.reply(`*pick(SLANG.error)* — can't ban the owner`);
+        return extra.reply(`❌ ERROR\n\n_Can't ban the owner_`);
       }
       if (target === sender) {
-        return extra.reply(`*pick(SLANG.error)* — can't ban yourself`);
+        return extra.reply(`❌ ERROR\n\n_Can't ban yourself_`);
       }
 
       // Send ban message first (before block so it delivers)
@@ -70,12 +70,12 @@ module.exports = {
 
       // Confirm in chat
       await sock.sendMessage(from, {
-        text: `*🔨 BANNED*\n\n@${target.split('@')[0]} _has been banned, ${pick(SLANG.good)}!_`,
+        text: `🔨 *BANNED*\n\n@${target.split('@')[0]} _has been banned, ${pick(SLANG.good)}!_`,
         mentions: [target]
       }, { quoted: msg });
 
     } catch (error) {
-      await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`❌ ERROR\n\n_${error.message}_`);
     }
   }
 };

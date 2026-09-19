@@ -3,7 +3,7 @@
  * WhatsApp-unblocks them
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { pick, SLANG } = require('../../utils/format');
 
 const parseNumber = (input) => {
   if (!input) return null;
@@ -32,7 +32,7 @@ module.exports = {
         const rawArg = args.join(' ');
         if (rawArg && /\d/.test(rawArg)) {
           target = parseNumber(rawArg);
-          if (!target) return extra.reply(`*pick(SLANG.error)* — invalid number`);
+          if (!target) return extra.reply(`❌ ERROR\n\n_Invalid number_`);
         } else {
           const ctx = msg.message?.extendedTextMessage?.contextInfo;
           const mentioned = ctx?.mentionedJid || [];
@@ -41,7 +41,7 @@ module.exports = {
           } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
             target = ctx.participant;
           } else {
-            return extra.reply(`*pick(SLANG.error)* — tag, reply, or add a number\n\n_Examples:_\n.unban 27833882383\n.unban me`);
+            return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Examples:_\n.unban 27833882383\n.unban me`);
           }
         }
       }
@@ -54,12 +54,12 @@ module.exports = {
       }
 
       await sock.sendMessage(from, {
-        text: `*✅ UNBANNED*\n\n@${target.split('@')[0]} _has been unbanned, ${pick(SLANG.good)}!_`,
+        text: `✅ *UNBANNED*\n\n@${target.split('@')[0]} _has been unbanned, ${pick(SLANG.good)}!_`,
         mentions: [target]
       }, { quoted: msg });
 
     } catch (error) {
-      await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`❌ ERROR\n\n_${error.message}_`);
     }
   }
 };
