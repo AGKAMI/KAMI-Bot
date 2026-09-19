@@ -8,9 +8,9 @@ module.exports = {
   adminOnly: true,
   groupOnly: true,
 
-  async execute(message, args, sock) {
-    const jid = message.key.remoteJid;
-    const sender = message.key.participant || message.key.remoteJid;
+  async execute(sock, msg, args, extra) {
+    const jid = extra.from;
+    const sender = msg.key.participant || msg.key.remoteJid;
 
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
@@ -21,14 +21,14 @@ module.exports = {
     const eventId = args[0];
     const winner = args.slice(1).join(' ');
 
-    const crew = database.getCrew();
-    if (!crew.events || !crew.events[eventId]) {
+    const team = database.getTeam(jid);
+    if (!team || !team.events || !team.events[eventId]) {
       return sock.sendMessage(jid, {
         text: `❌ ERROR\n\nMehlangano leyo: *${eventId}* ayikho.\nBuka yonke imihlangano nge: *.crew events*`
       });
     }
 
-    const event = crew.events[eventId];
+    const event = team.events[eventId];
 
     if (event.status === 'completed') {
       return sock.sendMessage(jid, {
@@ -39,9 +39,9 @@ module.exports = {
     event.status = 'completed';
     event.winner = winner;
     event.completedAt = new Date().toISOString();
-    database.updateCrew(crew);
+    database.updateTeam(jid, team);
 
-    const winnerMember = database.getCrewMember(winner);
+    const winnerMember = database.getCrewMember(jid, winner);
     const winnerDisplay = winnerMember ? winnerMember.name : winner;
 
     return sock.sendMessage(jid, {

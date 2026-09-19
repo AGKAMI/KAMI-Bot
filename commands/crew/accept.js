@@ -45,7 +45,7 @@ module.exports = {
       const target = mentioned[0];
       const targetNum = target.split('@')[0];
 
-      const applicants = database.getApplicants();
+      const applicants = database.getApplicants(extra.from);
       const applicant = applicants[target];
 
       if (!applicant) {
@@ -67,12 +67,13 @@ module.exports = {
         }
       }
 
-      database.removeApplicant(target);
+      database.removeApplicant(extra.from, target);
 
-      database.addCrewMember(target, {
+      database.addCrewMember(extra.from, target, {
         role: 'member',
         team,
         joined: Date.now(),
+        addedBy: extra.sender,
       });
 
       const teamDisplay = TEAMS[team] || team;

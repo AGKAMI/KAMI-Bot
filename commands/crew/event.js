@@ -8,9 +8,9 @@ module.exports = {
   adminOnly: true,
   groupOnly: true,
 
-  async execute(message, args, sock) {
-    const jid = message.key.remoteJid;
-    const sender = message.key.participant || message.key.remoteJid;
+  async execute(sock, msg, args, extra) {
+    const jid = extra.from;
+    const sender = msg.key.participant || msg.key.remoteJid;
 
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
@@ -29,7 +29,7 @@ module.exports = {
 
     const eventId = `evt_${Date.now()}`;
 
-    database.addCrewEvent(eventId, {
+    database.addCrewEvent(jid, eventId, {
       name,
       time,
       createdBy: sender,
@@ -38,7 +38,7 @@ module.exports = {
       createdAt: new Date().toISOString()
     });
 
-    const member = database.getCrewMember(sender);
+    const member = database.getCrewMember(jid, sender);
     const creatorName = member ? member.name : sender.split('@')[0];
 
     return sock.sendMessage(jid, {

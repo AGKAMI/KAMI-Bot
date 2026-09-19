@@ -227,41 +227,66 @@ const getCrew = () => readDB(CREW_DB);
 
 const updateCrew = (data) => writeDB(CREW_DB, data);
 
-const addCrewMember = (jid, data) => {
+// Get team data for a specific group
+const getTeam = (groupJid) => {
   const crew = getCrew();
-  if (!crew.members) crew.members = {};
-  crew.members[jid] = {
+  if (!crew.groups) crew.groups = {};
+  if (!crew.groups[groupJid]) {
+    crew.groups[groupJid] = { members: {}, events: {}, applicants: {} };
+    writeDB(CREW_DB, crew);
+  }
+  return crew.groups[groupJid];
+};
+
+// Update team data for a specific group
+const updateTeam = (groupJid, data) => {
+  const crew = getCrew();
+  if (!crew.groups) crew.groups = {};
+  if (!crew.groups[groupJid]) {
+    crew.groups[groupJid] = { members: {}, events: {}, applicants: {} };
+  }
+  crew.groups[groupJid] = { ...crew.groups[groupJid], ...data };
+  return writeDB(CREW_DB, crew);
+};
+
+// Add member to a specific group's roster
+const addCrewMember = (groupJid, memberJid, data) => {
+  const team = getTeam(groupJid);
+  if (!team.members) team.members = {};
+  team.members[memberJid] = {
     role: data.role || 'member',
-    team: data.team || '',
     joined: data.joined || Date.now(),
-    checkins: 0,
-    lastCheckin: 0,
+    addedBy: data.addedBy || '',
     ...data
   };
-  return writeDB(CREW_DB, crew);
+  return updateTeam(groupJid, team);
 };
 
-const removeCrewMember = (jid) => {
-  const crew = getCrew();
-  if (!crew.members || !crew.members[jid]) return false;
-  delete crew.members[jid];
-  return writeDB(CREW_DB, crew);
+// Remove member from a specific group's roster
+const removeCrewMember = (groupJid, memberJid) => {
+  const team = getTeam(groupJid);
+  if (!team.members || !team.members[memberJid]) return false;
+  delete team.members[memberJid];
+  return updateTeam(groupJid, team);
 };
 
-const getCrewMember = (jid) => {
-  const crew = getCrew();
-  return crew.members?.[jid] || null;
+// Get member from a specific group
+const getCrewMember = (groupJid, memberJid) => {
+  const team = getTeam(groupJid);
+  return team.members?.[memberJid] || null;
 };
 
-const getCrewMembers = () => {
-  const crew = getCrew();
-  return crew.members || {};
+// Get all members in a specific group
+const getCrewMembers = (groupJid) => {
+  const team = getTeam(groupJid);
+  return team.members || {};
 };
 
-const addCrewEvent = (id, data) => {
-  const crew = getCrew();
-  if (!crew.events) crew.events = {};
-  crew.events[id] = {
+// Add event to a specific group
+const addCrewEvent = (groupJid, eventId, data) => {
+  const team = getTeam(groupJid);
+  if (!team.events) team.events = {};
+  team.events[eventId] = {
     name: data.name,
     time: data.time,
     createdBy: data.createdBy,
@@ -269,43 +294,53 @@ const addCrewEvent = (id, data) => {
     results: null,
     created: Date.now()
   };
-  return writeDB(CREW_DB, crew);
+  return updateTeam(groupJid, team);
 };
 
-const getCrewEvents = () => {
-  const crew = getCrew();
-  return crew.events || {};
+// Get events for a specific group
+const getCrewEvents = (groupJid) => {
+  const team = getTeam(groupJid);
+  return team.events || {};
 };
 
-const removeCrewEvent = (id) => {
-  const crew = getCrew();
-  if (!crew.events || !crew.events[id]) return false;
-  delete crew.events[id];
-  return writeDB(CREW_DB, crew);
+// Remove event from a specific group
+const removeCrewEvent = (groupJid, eventId) => {
+  const team = getTeam(groupJid);
+  if (!team.events || !team.events[eventId]) return false;
+  delete team.events[eventId];
+  return updateTeam(groupJid, team);
 };
 
-const addApplicant = (jid, data) => {
-  const crew = getCrew();
-  if (!crew.applicants) crew.applicants = {};
-  crew.applicants[jid] = {
-    team: data.team,
+// Add applicant to a specific group
+const addApplicant = (groupJid, applicantJid, data) => {
+  const team = getTeam(groupJid);
+  if (!team.applicants) team.applicants = {};
+  team.applicants[applicantJid] = {
     answers: data.answers,
     appliedAt: Date.now(),
     status: 'pending'
   };
-  return writeDB(CREW_DB, crew);
+  return updateTeam(groupJid, team);
 };
 
-const getApplicants = () => {
-  const crew = getCrew();
-  return crew.applicants || {};
+// Get applicants for a specific group
+const getApplicants = (groupJid) => {
+  const team = getTeam(groupJid);
+  return team.applicants || {};
 };
 
-const removeApplicant = (jid) => {
+// Remove applicant from a specific group
+const removeApplicant = (groupJid, applicantJid) => {
+  const team = getTeam(groupJid);
+  if (!team.applicants || !team.applicants[applicantJid]) return false;
+  delete team.applicants[applicantJid];
+  return updateTeam(groupJid, team);
+};
+
+// Get all teams overview
+const getAllTeams = () => {
   const crew = getCrew();
-  if (!crew.applicants || !crew.applicants[jid]) return false;
-  delete crew.applicants[jid];
-  return writeDB(CREW_DB, crew);
+  return crew.groups || {};
 };
 
 const addCheckin = (jid) => {
@@ -365,6 +400,8 @@ module.exports = {
   // Crew functions
   getCrew,
   updateCrew,
+  getTeam,
+  updateTeam,
   addCrewMember,
   removeCrewMember,
   getCrewMember,
@@ -375,7 +412,5 @@ module.exports = {
   addApplicant,
   getApplicants,
   removeApplicant,
-  addCheckin,
-  getCheckins,
-  getCrewStats
+  getAllTeams
 };

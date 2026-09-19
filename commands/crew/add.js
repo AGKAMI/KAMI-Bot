@@ -46,7 +46,7 @@ module.exports = {
       const target = mentioned[0];
       const targetNum = target.split('@')[0];
 
-      const existing = database.getCrewMember(target);
+      const existing = database.getCrewMember(extra.from, target);
       if (existing) {
         return extra.reply(
           `❌ ERROR\n\n@${targetNum} is already in the crew ${pick(SLANG.vibe)}\n` +
@@ -83,10 +83,11 @@ module.exports = {
         team = teamKey;
       }
 
-      database.addCrewMember(target, {
+      database.addCrewMember(extra.from, target, {
         role,
         team,
         joined: Date.now(),
+        addedBy: extra.sender,
       });
 
       const teamDisplay = team ? TEAMS[team] : 'None';

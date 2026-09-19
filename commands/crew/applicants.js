@@ -24,7 +24,7 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
     try {
-      const applicants = database.getApplicants();
+      const applicants = database.getApplicants(extra.from);
       const entries = Object.entries(applicants);
 
       if (entries.length === 0) {

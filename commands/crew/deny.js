@@ -29,7 +29,7 @@ module.exports = {
       const target = mentioned[0];
       const targetNum = target.split('@')[0];
 
-      const applicants = database.getApplicants();
+      const applicants = database.getApplicants(extra.from);
       const applicant = applicants[target];
 
       if (!applicant) {
@@ -38,7 +38,7 @@ module.exports = {
         );
       }
 
-      database.removeApplicant(target);
+      database.removeApplicant(extra.from, target);
 
       const reason = args.length >= 2
         ? args.slice(1).join(' ')

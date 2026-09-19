@@ -8,10 +8,10 @@ module.exports = {
   adminOnly: false,
   groupOnly: true,
 
-  async execute(message, args, sock) {
-    const jid = message.key.remoteJid;
+  async execute(sock, msg, args, extra) {
+    const jid = extra.from;
 
-    const allEvents = database.getCrewEvents();
+    const allEvents = database.getCrewEvents(jid);
 
     if (!allEvents || Object.keys(allEvents).length === 0) {
       return sock.sendMessage(jid, {

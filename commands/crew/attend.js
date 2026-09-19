@@ -8,16 +8,16 @@ module.exports = {
   adminOnly: false,
   groupOnly: true,
 
-  async execute(message, args, sock) {
-    const jid = message.key.remoteJid;
-    const sender = message.key.participant || message.key.remoteJid;
+  async execute(sock, msg, args, extra) {
+    const jid = extra.from;
+    const sender = msg.key.participant || msg.key.remoteJid;
 
     let eventId;
 
     if (args && args.length > 0) {
       eventId = args[0];
     } else {
-      const allEvents = database.getCrewEvents();
+      const allEvents = database.getCrewEvents(jid);
       if (!allEvents || Object.keys(allEvents).length === 0) {
         return sock.sendMessage(jid, {
           text: `❌ ERROR\n\nAkukho mehlangano ezayo khona manje.\nUmdalile ngenye nge: *.crew event <name> <time>*`
@@ -41,14 +41,14 @@ module.exports = {
       eventId = upcoming[0][0];
     }
 
-    const crew = database.getCrew();
-    if (!crew.events || !crew.events[eventId]) {
+    const team = database.getTeam(jid);
+    if (!team || !team.events || !team.events[eventId]) {
       return sock.sendMessage(jid, {
         text: `❌ ERROR\n\nMehlangano leyo: *${eventId}* ayikho.\nBuka yonke imihlangano nge: *.crew events*`
       });
     }
 
-    const event = crew.events[eventId];
+    const event = team.events[eventId];
 
     if (event.status !== 'upcoming') {
       return sock.sendMessage(jid, {
@@ -64,9 +64,9 @@ module.exports = {
 
     if (isAttending) {
       event.attendees = event.attendees.filter(a => a !== sender);
-      database.updateCrew(crew);
+      database.updateTeam(jid, team);
 
-      const member = database.getCrewMember(sender);
+      const member = database.getCrewMember(jid, sender);
       const name = member ? member.name : sender.split('@')[0];
 
       return sock.sendMessage(jid, {
@@ -74,9 +74,9 @@ module.exports = {
       });
     } else {
       event.attendees.push(sender);
-      database.updateCrew(crew);
+      database.updateTeam(jid, team);
 
-      const member = database.getCrewMember(sender);
+      const member = database.getCrewMember(jid, sender);
       const name = member ? member.name : sender.split('@')[0];
 
       return sock.sendMessage(jid, {

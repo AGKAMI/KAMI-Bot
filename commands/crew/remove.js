@@ -29,14 +29,14 @@ module.exports = {
       const target = mentioned[0];
       const targetNum = target.split('@')[0];
 
-      const member = database.getCrewMember(target);
+      const member = database.getCrewMember(extra.from, target);
       if (!member) {
         return extra.reply(
           `❌ ERROR\n\n@${targetNum} is not in the crew ${pick(SLANG.vibe)}`
         );
       }
 
-      database.removeCrewMember(target);
+      database.removeCrewMember(extra.from, target);
 
       await sock.sendMessage(extra.from, {
         text:

@@ -38,7 +38,7 @@ module.exports = {
       const target = mentioned[0];
       const targetNum = target.split('@')[0];
 
-      const member = database.getCrewMember(target);
+      const member = database.getCrewMember(extra.from, target);
       if (!member) {
         return extra.reply(
           `❌ ERROR\n\n@${targetNum} is not in the crew ${pick(SLANG.vibe)}`
@@ -57,7 +57,7 @@ module.exports = {
 
       const newRole = ROLE_HIERARCHY[currentIndex - 1];
 
-      database.addCrewMember(target, {
+      database.addCrewMember(extra.from, target, {
         ...member,
         role: newRole,
       });

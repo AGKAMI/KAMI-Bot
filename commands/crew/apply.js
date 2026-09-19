@@ -56,7 +56,7 @@ module.exports = {
       const sender = msg.key.remoteJid;
       const jid = msg.key.participant || sender;
 
-      const existing = database.getApplicants()[jid];
+      const existing = database.getApplicants(extra.from)[jid];
       if (existing) {
         return extra.reply(
           `❌ ERROR\n\nYou already have a pending application ${pick(SLANG.vibe)}\n` +
@@ -65,7 +65,7 @@ module.exports = {
         );
       }
 
-      const crewMember = database.getCrewMember(jid);
+      const crewMember = database.getCrewMember(extra.from, jid);
       if (crewMember) {
         return extra.reply(
           `❌ ERROR\n\nYou're already in the crew ${pick(SLANG.vibe)}\n` +
@@ -93,7 +93,7 @@ module.exports = {
         mentions: [jid],
       }, { quoted: msg });
 
-      database.addApplicant(jid, {
+      database.addApplicant(extra.from, jid, {
         team: teamKey,
         answers: null,
       });
