@@ -395,6 +395,36 @@ async function startBot() {
   // Credentials update handler
   sock.ev.on('creds.update', saveCreds);
 
+  // Snipe store — capture deleted messages
+  try {
+    const snipeStore = require('./utils/snipeStore');
+    sock.ev.on('messages.update', (updates) => {
+      for (const update of updates) {
+        if (update.update.message === null && update.key?.remoteJid) {
+          const jid = update.key.remoteJid;
+          if (!jid.endsWith('@g.us')) continue;
+          const deletedBy = update.key.participant || update.key.remoteJid;
+          // Find the original message from store
+          try {
+            const chatMsgs = store.messages.get(jid);
+            if (chatMsgs) {
+              const origMsg = chatMsgs.get(update.key.id);
+              if (origMsg) {
+                const content = origMsg.message?.conversation || origMsg.message?.extendedTextMessage?.text || '[media/other]';
+                snipeStore.set(jid, {
+                  sender: origMsg.key.participant || origMsg.key.remoteJid,
+                  content,
+                  deletedBy,
+                  time: Date.now()
+                });
+              }
+            }
+          } catch (e) {}
+        }
+      }
+    });
+  } catch (e) { console.error('[SNIPE] init error:', e.message); }
+
   // System JID filter - checks if JID is from broadcast/status/newsletter
   const isSystemJid = (jid) => {
     if (!jid) return true;

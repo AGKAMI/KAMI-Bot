@@ -49,7 +49,16 @@ welcome: false,
       nsfw: false,
       detect: false,
       chatbot: false,
-      autosticker: false // Auto-convert images/videos to stickers
+      autosticker: false, // Auto-convert images/videos to stickers
+      rules: '', // Group rules text
+      antiflood: false, // Anti-spam/flood protection
+      antifloodLimit: 5, // Max messages in time window
+      antifloodWindow: 10, // Time window in seconds
+      antifloodAction: 'warn', // 'warn', 'kick', 'mute'
+      antibadword: false, // Auto-delete messages with bad words
+      badwords: [], // List of banned words
+      slowmode: 0, // Slowmode in seconds (0 = off)
+      lock: false // Lock group settings (only admins can change name/desc/pp)
     },
     
     // API Keys (add your own)

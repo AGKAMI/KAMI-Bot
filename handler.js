@@ -13,6 +13,21 @@ const axios = require('axios');
 const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG } = require('./utils/format');
 const { buildImage } = require('./utils/imageText');
 
+// Slowmode enforcement (in-memory cooldown tracking)
+let slowmodeModule;
+try {
+  slowmodeModule = require('./commands/admin/slowmode');
+} catch (e) { /* slowmode not available */ }
+
+// AFK module
+let afkModule;
+try {
+  afkModule = require('./commands/general/afk');
+} catch (e) { /* afk not available */ }
+
+// Antiflood tracking (in-memory)
+const floodTracker = new Map(); // key: `group:sender` -> { count, firstMsgTime }
+
 // Group metadata cache to prevent rate limiting
 const groupMetadataCache = new Map();
 const CACHE_TTL = 60000; // 1 minute cache
@@ -810,7 +825,147 @@ const handleMessage = async (sock, msg) => {
     } catch (e) {
       // Silently ignore if tictactoe command doesn't exist or has errors
     }
-    
+
+    // AFK check — auto-reply when AFK user sends message or someone mentions AFK user
+    if (isGroup && afkModule && !msg.key.fromMe) {
+      // Check if sender was AFK — notify return
+      const senderAfk = afkModule.checkAfk(sender);
+      if (senderAfk) {
+        const duration = Date.now() - senderAfk.since;
+        const mins = Math.floor(duration / 60000);
+        const secs = Math.floor((duration % 60000) / 1000);
+        const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+        await sock.sendMessage(from, {
+          text: `✅ *WELCOME BACK*\n\n@${sender.split('@')[0]} _is no longer AFK_\n⏱️ _Was AFK for ${timeStr}_`,
+          mentions: [sender]
+        });
+        afkModule.clearAfk(sender);
+      }
+      // Check if message mentions an AFK user
+      if (afkModule.isAfkUser) {
+        const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+        for (const mentioned of mentions) {
+          const afkData = afkModule.checkAfk(mentioned);
+          if (afkData) {
+            const mins = Math.floor((Date.now() - afkData.since) / 60000);
+            const timeStr = mins > 0 ? `${mins}m` : `${Math.floor((Date.now() - afkData.since) / 1000)}s`;
+            await sock.sendMessage(from, {
+              text: `⚠️ *AFK*\n\n@${mentioned.split('@')[0]} _is AFK_${afkData.reason ? `\n💬 _${afkData.reason}_` : ''}\n⏱️ _For ${timeStr}_`,
+              mentions: [mentioned]
+            });
+          }
+        }
+      }
+    }
+
+    // Antibadword — auto-delete messages with banned words
+    if (isGroup && !msg.key.fromMe) {
+      try {
+        const groupSettings = database.getGroupSettings(from);
+        if (groupSettings.antibadword && groupSettings.badwords && groupSettings.badwords.length > 0 && body) {
+          const lowerBody = body.toLowerCase();
+          for (const word of groupSettings.badwords) {
+            if (lowerBody.includes(word.toLowerCase())) {
+              await sock.sendMessage(from, { delete: msg.key });
+              await sock.sendMessage(from, {
+                text: `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _your message was deleted — bad word detected_`,
+                mentions: [sender]
+              });
+              return;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Antiflood — auto-warn/kick spammers
+    if (isGroup && !msg.key.fromMe) {
+      try {
+        const groupSettings = database.getGroupSettings(from);
+        if (groupSettings.antiflood) {
+          const limit = groupSettings.antifloodLimit || 5;
+          const window = groupSettings.antifloodWindow || 10;
+          const action = groupSettings.antifloodAction || 'warn';
+          const key = `${from}:${sender}`;
+          const now = Date.now();
+          const tracker = floodTracker.get(key);
+
+          if (!tracker || (now - tracker.firstMsgTime) > window * 1000) {
+            floodTracker.set(key, { count: 1, firstMsgTime: now });
+          } else {
+            tracker.count++;
+            if (tracker.count >= limit) {
+              floodTracker.delete(key);
+              if (action === 'kick') {
+                await sock.sendMessage(from, {
+                  text: `🚫 *FLOOD DETECTED*\n\n@${sender.split('@')[0]} _kicked for spamming_`,
+                  mentions: [sender]
+                });
+                await sock.sendMessage(from, { protocolMessage: { type: 0 } }); // request group leave
+                await sock.groupParticipantsUpdate(from, [sender], 'remove');
+              } else if (action === 'mute') {
+                await sock.sendMessage(from, {
+                  text: `🔇 *FLOOD DETECTED*\n\n@${sender.split('@')[0]} _muted for spamming_`,
+                  mentions: [sender]
+                });
+                await sock.sendMessage(from, { groupMute: { mute: true, participants: [sender] } });
+              } else {
+                // warn
+                try {
+                  const warnCmd = commands.get('warn');
+                  if (warnCmd) {
+                    await warnCmd.execute(sock, msg, ['Auto-warn: flooding'], {
+                      from, sender, groupMetadata,
+                      isOwner: isOwner(sender),
+                      isAdmin: await isAdmin(sock, sender, from, groupMetadata),
+                      isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
+                      reply: (text) => sock.sendMessage(from, { text }, { quoted: msg })
+                    });
+                  }
+                } catch (e) {
+                  await sock.sendMessage(from, {
+                    text: `⚠️ *FLOOD WARNING*\n\n@${sender.split('@')[0]} _stop spamming or you'll be kicked_`,
+                    mentions: [sender]
+                  });
+                }
+              }
+              return;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Slowmode enforcement (group messages only)
+    if (isGroup && slowmodeModule && !msg.key.fromMe) {
+      const slowSettings = database.getGroupSettings(from);
+      const slowSec = slowSettings.slowmode || 0;
+      if (slowSec > 0) {
+        const trackMap = slowmodeModule.lastMessageTime;
+        const userKey = `${from}:${sender}`;
+        const lastTime = trackMap.get(userKey) || 0;
+        const elapsed = (Date.now() - lastTime) / 1000;
+
+        if (elapsed < slowSec && lastTime > 0) {
+          const remaining = Math.ceil(slowSec - elapsed);
+          await sock.sendMessage(from, {
+            text: `🐢 *SLOWMODE*\n\n@${sender.split('@')[0]} — wait *${remaining}s* before sending again`,
+            mentions: [sender]
+          });
+          return;
+        }
+
+        trackMap.set(userKey, Date.now());
+
+        // Cleanup old entries every 100 messages
+        if (trackMap.size > 200) {
+          const now = Date.now();
+          for (const [key, time] of trackMap) {
+            if (now - time > 300000) trackMap.delete(key);
+          }
+        }
+      }
+    }
     
     // Check if message starts with prefix
     if (!body.startsWith(config.prefix)) return;
