@@ -1,16 +1,18 @@
 /**
- * Crew Deny Command — Deny applicant from Slammed Society crew
+ * Crew Deny Command — Deny applicant
+ * Supports: @mention OR phone number
  */
 
 const database = require('../../database');
 const { bold, pick, SLANG } = require('../../utils/format');
+const { resolveUser } = require('./crewHelpers');
 
 module.exports = {
   name: 'deny',
   aliases: ['reject'],
   category: 'crew',
-  description: 'Deny applicant from crew',
-  usage: '.crew deny @user [reason]',
+  description: 'Deny applicant',
+  usage: '.crew deny @user|number [reason]',
   groupOnly: true,
   ownerOnly: true,
 
@@ -18,44 +20,31 @@ module.exports = {
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
+      const resolved = resolveUser(args, mentioned);
 
-      if (mentioned.length === 0) {
+      if (!resolved.jid) {
         return extra.reply(
-          `❌ ERROR\n\nTag the person you wanna deny ${pick(SLANG.friend)}\n\n` +
-          `Usage: .crew deny @user [reason]`
+          `❌ ERROR\n\nTag or add a number\n\nUsage: .crew deny @user|number [reason]`
         );
       }
 
-      const target = mentioned[0];
+      const target = resolved.jid;
       const targetNum = target.split('@')[0];
 
       const applicants = database.getApplicants(extra.from);
-      const applicant = applicants[target];
-
-      if (!applicant) {
-        return extra.reply(
-          `❌ ERROR\n\n@${targetNum} has no pending application ${pick(SLANG.vibe)}`
-        );
+      if (!applicants[target]) {
+        return extra.reply(`❌ ERROR\n\n@${targetNum} hasn't applied`);
       }
 
       database.removeApplicant(extra.from, target);
 
-      const reason = args.length >= 2
-        ? args.slice(1).join(' ')
-        : null;
-
-      const reasonText = reason
-        ? `\n📋 Reason: ${bold(reason)}`
-        : '';
+      const reason = resolved.args.join(' ') || 'No reason given';
 
       await sock.sendMessage(extra.from, {
         text:
-          `❌ *DENIED*\n\n` +
-          `@${targetNum}'s application has been denied\n\n` +
-          `🏢 Team applied: *${applicant.team}*` +
-          reasonText + '\n\n' +
-          `----------\n\n` +
-          `_${pick(SLANG.vibe)}, better luck next time_`,
+          `✅ SUCCESS\n\n❌ APPLICATION DENIED\n\n` +
+          `@${targetNum}\n\n` +
+          `Reason: ${reason}`,
         mentions: [target],
       }, { quoted: msg });
 

@@ -1,11 +1,11 @@
 /**
- * Crew Promote Command — Promote member role in Slammed Society
+ * Crew Promote Command — Promote member
+ * Supports: @mention OR phone number
  */
 
 const database = require('../../database');
 const { bold, pick, SLANG } = require('../../utils/format');
-
-const ROLE_HIERARCHY = ['member', 'officer', 'co-leader', 'leader'];
+const { resolveUser } = require('./crewHelpers');
 
 const ROLE_EMOJIS = {
   'leader': '👑',
@@ -14,12 +14,14 @@ const ROLE_EMOJIS = {
   'member': '👤',
 };
 
+const ROLE_HIERARCHY = ['member', 'officer', 'co-leader', 'leader'];
+
 module.exports = {
   name: 'promote',
-  aliases: ['rankup'],
+  aliases: ['up'],
   category: 'crew',
   description: 'Promote member to higher role',
-  usage: '.crew promote @user <role>',
+  usage: '.crew promote @user|number <role>',
   groupOnly: true,
   ownerOnly: true,
 
@@ -27,69 +29,47 @@ module.exports = {
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
+      const resolved = resolveUser(args, mentioned);
 
-      if (mentioned.length === 0) {
+      if (!resolved.jid) {
         return extra.reply(
-          `❌ ERROR\n\nTag or reply to the person you wanna promote ${pick(SLANG.friend)}\n\n` +
-          `Usage: .crew promote @user <role>\n` +
+          `❌ ERROR\n\nTag or add a number\n\n` +
+          `Usage: .crew promote @user|number <role>\n` +
           `Roles: ${ROLE_HIERARCHY.join(', ')}`
         );
       }
 
-      const target = mentioned[0];
+      const target = resolved.jid;
       const targetNum = target.split('@')[0];
 
       const member = database.getCrewMember(extra.from, target);
       if (!member) {
-        return extra.reply(
-          `❌ ERROR\n\n@${targetNum} is not in the crew ${pick(SLANG.vibe)}\n` +
-          `Use .crew add first`
-        );
+        return extra.reply(`❌ ERROR\n\n@${targetNum} is not in this crew`);
       }
 
-      if (args.length < 2) {
+      // Get new role from remaining args
+      const newRole = (resolved.args[0] || '').toLowerCase();
+      if (!newRole || !ROLE_HIERARCHY.includes(newRole)) {
         return extra.reply(
-          `❌ ERROR\n\nSpecify a role ${pick(SLANG.error)}\n\n` +
-          `Usage: .crew promote @user <role>\n` +
-          `Roles: ${ROLE_HIERARCHY.join(', ')}`
-        );
-      }
-
-      const newRole = args[1].toLowerCase();
-      if (!ROLE_HIERARCHY.includes(newRole)) {
-        return extra.reply(
-          `❌ ERROR\n\nInvalid role ${pick(SLANG.error)}\n` +
-          `Valid roles: ${ROLE_HIERARCHY.join(', ')}`
+          `❌ ERROR\n\nProvide a role: ${ROLE_HIERARCHY.join(', ')}`
         );
       }
 
       const oldRole = member.role;
-      if (oldRole === newRole) {
-        return extra.reply(
-          `❌ ERROR\n\n@${targetNum} already has the role ${bold(newRole)} ${pick(SLANG.vibe)}`
-        );
-      }
-
-      database.addCrewMember(extra.from, target, {
-        ...member,
-        role: newRole,
-      });
-
-      const oldEmoji = ROLE_EMOJIS[oldRole] || '👤';
-      const newEmoji = ROLE_EMOJIS[newRole] || '👤';
+      database.addCrewMember(extra.from, target, { ...member, role: newRole });
 
       await sock.sendMessage(extra.from, {
         text:
           `✅ SUCCESS\n\n` +
-          `🎖️ ROLE UPDATED\n\n` +
-          `${newEmoji} @${targetNum} has been promoted\n\n` +
-          `➡️ ${oldEmoji} ${bold(oldRole)} → ${newEmoji} ${bold(newRole)}`,
+          `⬆️ PROMOTED\n\n` +
+          `@${targetNum}\n\n` +
+          `${ROLE_EMOJIS[oldRole] || '👤'} ${oldRole} → ${ROLE_EMOJIS[newRole] || '👤'} ${bold(newRole)}`,
         mentions: [target],
       }, { quoted: msg });
 
     } catch (error) {
       console.error('Crew promote error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't promote member`);
+      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't promote`);
     }
   },
 };

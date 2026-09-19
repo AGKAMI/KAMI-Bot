@@ -1,17 +1,10 @@
 /**
  * Crew Add Command — Add member to Slammed Society roster
+ * Supports: @mention OR phone number (any format)
  */
 
 const database = require('../../database');
 const { bold, pick, SLANG } = require('../../utils/format');
-
-const TEAMS = {
-  'SSRS': '🟢🔵🟡 Royal Security',
-  'KSSPS': '⚫🔴⚪ Private Security',
-  'Meet Control': '🔴⚪⚫ Meet Control',
-  'KSSMP': '🔵⚪🩵 Metro Police',
-  'KSSMS': '⚫⚪🔴 Maganyeni Security',
-};
 
 const ROLE_EMOJIS = {
   'leader': '👑',
@@ -20,12 +13,28 @@ const ROLE_EMOJIS = {
   'member': '👤',
 };
 
+// Convert phone number to WhatsApp JID
+function phoneToJid(phone) {
+  if (!phone) return null;
+  // Already a JID
+  if (phone.includes('@s.whatsapp.net')) return phone;
+  // Strip non-digits
+  let digits = phone.replace(/\D/g, '');
+  // Handle leading 0 → South Africa country code (27)
+  if (digits.startsWith('0') && digits.length >= 10) {
+    digits = '27' + digits.slice(1);
+  }
+  // Must be at least 10 digits (SA format: 27xxxxxxxxx)
+  if (digits.length < 10) return null;
+  return digits + '@s.whatsapp.net';
+}
+
 module.exports = {
   name: 'add',
   aliases: ['join'],
   category: 'crew',
   description: 'Add member to crew roster',
-  usage: '.crew add @user <role> [team]',
+  usage: '.crew add @user|number <role>',
   groupOnly: true,
   ownerOnly: true,
 
@@ -34,72 +43,81 @@ module.exports = {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
 
-      if (mentioned.length === 0) {
+      let target = null;
+
+      // Method 1: @mention
+      if (mentioned.length > 0) {
+        target = mentioned[0];
+      }
+      // Method 2: phone number in args
+      else if (args.length > 0) {
+        const firstArg = args[0];
+        // Check if it looks like a phone number (digits, +, spaces)
+        if (/^[\d+\s()-]+$/.test(firstArg)) {
+          target = phoneToJid(firstArg);
+          if (!target) {
+            return extra.reply(
+              `❌ ERROR\n\nInvalid phone number\n\n` +
+              `Examples:\n` +
+              `• 0833882383\n` +
+              `• +27833882383\n` +
+              `• 27833882383`
+            );
+          }
+          // Remove phone from args so role parsing works
+          args = args.slice(1);
+        }
+      }
+
+      if (!target) {
         return extra.reply(
-          `❌ ERROR\n\nTag the person you wanna add ${pick(SLANG.friend)}\n\n` +
-          `Usage: .crew add @user <role> [team]\n` +
-          `Roles: leader, co-leader, officer, member\n` +
-          `Teams: SSRS, KSSPS, Meet Control, KSSMP, KSSMS`
+          `❌ ERROR\n\nTag or add a number ${pick(SLANG.friend)}\n\n` +
+          `Usage:\n` +
+          `• .crew add @user <role>\n` +
+          `• .crew add 0833882383 <role>\n` +
+          `• .crew add +27833882383 <role>\n\n` +
+          `Roles: leader, co-leader, officer, member`
         );
       }
 
-      const target = mentioned[0];
       const targetNum = target.split('@')[0];
 
+      // Check if already in crew
       const existing = database.getCrewMember(extra.from, target);
       if (existing) {
         return extra.reply(
-          `❌ ERROR\n\n@${targetNum} is already in the crew ${pick(SLANG.vibe)}\n` +
-          `Role: ${ROLE_EMOJIS[existing.role] || '👤'} ${existing.role}\n` +
-          `Team: ${existing.team || 'None'}`
+          `❌ ERROR\n\n@${targetNum} is already in the crew\n` +
+          `Role: ${ROLE_EMOJIS[existing.role] || '👤'} ${existing.role}`
         );
       }
 
+      // Parse role (default: member)
       let role = 'member';
-      let team = '';
-
-      if (args.length >= 2) {
-        role = args[1].toLowerCase();
+      if (args.length >= 1) {
+        role = args[0].toLowerCase();
         const validRoles = ['leader', 'co-leader', 'officer', 'member'];
         if (!validRoles.includes(role)) {
           return extra.reply(
-            `❌ ERROR\n\nInvalid role ${pick(SLANG.error)}\n` +
-            `Valid roles: ${validRoles.join(', ')}`
+            `❌ ERROR\n\nInvalid role\nValid: ${validRoles.join(', ')}`
           );
         }
       }
 
-      if (args.length >= 3) {
-        const teamInput = args.slice(2).join(' ');
-        const teamKey = Object.keys(TEAMS).find(
-          k => k.toLowerCase() === teamInput.toLowerCase()
-        );
-        if (!teamKey) {
-          return extra.reply(
-            `❌ ERROR\n\nInvalid team ${pick(SLANG.error)}\n` +
-            `Teams: SSRS, KSSPS, Meet Control, KSSMP, KSSMS`
-          );
-        }
-        team = teamKey;
-      }
-
+      // Save to database
       database.addCrewMember(extra.from, target, {
         role,
-        team,
         joined: Date.now(),
         addedBy: extra.sender,
       });
 
-      const teamDisplay = team ? TEAMS[team] : 'None';
       const roleEmoji = ROLE_EMOJIS[role] || '👤';
 
       await sock.sendMessage(extra.from, {
         text:
           `✅ SUCCESS\n\n` +
           `👤 MEMBER ADDED\n\n` +
-          `${roleEmoji} @${targetNum} has been added to Slammed Society\n\n` +
+          `${roleEmoji} @${targetNum} has been added\n\n` +
           `🏷️ Role: ${bold(role)}\n` +
-          `🏢 Team: ${bold(team || 'Unassigned')}\n` +
           `📅 Joined: ${new Date().toLocaleDateString('en-ZA')}`,
         mentions: [target],
       }, { quoted: msg });
