@@ -110,7 +110,7 @@ module.exports = {
                 ``,
                 `🏆 *Prize:* ${prize}`,
                 `⏱️ *Duration:* ${durationMinutes} minute${durationMinutes > 1 ? 's' : ''}`,
-                `📅 *Ends:* ${new Date(endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`,
+                `📅 *Ends:* ${new Date(endTime).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Johannesburg' })}`,
                 `🎯 *Winners:* ${numWinners}`,
             ];
 
