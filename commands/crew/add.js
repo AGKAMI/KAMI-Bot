@@ -1,10 +1,11 @@
 /**
- * Crew Add Command — Add member to Slammed Society roster
- * Supports: @mention OR phone number (any format)
+ * Crew Add Command — Add member to Slammed Society roster + WhatsApp group
+ * Supports: @mention OR phone number
  */
 
 const database = require('../../database');
 const { bold, pick, SLANG } = require('../../utils/format');
+const { resolveUser } = require('./crewHelpers');
 
 const ROLE_EMOJIS = {
   'leader': '👑',
@@ -13,18 +14,13 @@ const ROLE_EMOJIS = {
   'member': '👤',
 };
 
-// Convert phone number to WhatsApp JID
 function phoneToJid(phone) {
   if (!phone) return null;
-  // Already a JID
   if (phone.includes('@s.whatsapp.net')) return phone;
-  // Strip non-digits
   let digits = phone.replace(/\D/g, '');
-  // Handle leading 0 → South Africa country code (27)
   if (digits.startsWith('0') && digits.length >= 10) {
     digits = '27' + digits.slice(1);
   }
-  // Must be at least 10 digits (SA format: 27xxxxxxxxx)
   if (digits.length < 10) return null;
   return digits + '@s.whatsapp.net';
 }
@@ -33,10 +29,11 @@ module.exports = {
   name: 'add',
   aliases: ['join'],
   category: 'crew',
-  description: 'Add member to crew roster',
-  usage: '.crew add @user|number <role>',
+  description: 'Add member to crew roster + WhatsApp group',
+  usage: '.crew add @user|number [role]',
   groupOnly: true,
   ownerOnly: true,
+  botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
     try {
@@ -49,40 +46,27 @@ module.exports = {
       if (mentioned.length > 0) {
         target = mentioned[0];
       }
-      // Method 2: phone number in args
-      else if (args.length > 0) {
-        const firstArg = args[0];
-        // Check if it looks like a phone number (digits, +, spaces)
-        if (/^[\d+\s()-]+$/.test(firstArg)) {
-          target = phoneToJid(firstArg);
-          if (!target) {
-            return extra.reply(
-              `❌ ERROR\n\nInvalid phone number\n\n` +
-              `Examples:\n` +
-              `• 0833882383\n` +
-              `• +27833882383\n` +
-              `• 27833882383`
-            );
-          }
-          // Remove phone from args so role parsing works
-          args = args.slice(1);
+      // Method 2: phone number
+      else if (args.length > 0 && /^[\d+\s()-]+$/.test(args[0])) {
+        target = phoneToJid(args[0]);
+        if (!target) {
+          return extra.reply(`❌ ERROR\n\nInvalid phone number`);
         }
+        args = args.slice(1);
       }
 
       if (!target) {
         return extra.reply(
-          `❌ ERROR\n\nTag or add a number ${pick(SLANG.friend)}\n\n` +
+          `❌ ERROR\n\nTag or add a number\n\n` +
           `Usage:\n` +
           `• .crew add @user <role>\n` +
-          `• .crew add 0833882383 <role>\n` +
-          `• .crew add +27833882383 <role>\n\n` +
-          `Roles: leader, co-leader, officer, member`
+          `• .crew add 0833882383 <role>`
         );
       }
 
       const targetNum = target.split('@')[0];
 
-      // Check if already in crew
+      // Check if already in crew DB
       const existing = database.getCrewMember(extra.from, target);
       if (existing) {
         return extra.reply(
@@ -91,16 +75,22 @@ module.exports = {
         );
       }
 
-      // Parse role (default: member)
+      // Parse role
       let role = 'member';
       if (args.length >= 1) {
         role = args[0].toLowerCase();
         const validRoles = ['leader', 'co-leader', 'officer', 'member'];
         if (!validRoles.includes(role)) {
-          return extra.reply(
-            `❌ ERROR\n\nInvalid role\nValid: ${validRoles.join(', ')}`
-          );
+          return extra.reply(`❌ ERROR\n\nInvalid role\nValid: ${validRoles.join(', ')}`);
         }
+      }
+
+      // Add to WhatsApp group first
+      try {
+        await sock.groupParticipantsUpdate(extra.from, [target], 'add');
+      } catch (e) {
+        // If add fails (e.g. privacy settings), still add to DB
+        console.error('[CREW ADD] WhatsApp add failed:', e.message);
       }
 
       // Save to database
@@ -116,9 +106,10 @@ module.exports = {
         text:
           `✅ SUCCESS\n\n` +
           `👤 MEMBER ADDED\n\n` +
-          `${roleEmoji} @${targetNum} has been added\n\n` +
+          `${roleEmoji} @${targetNum}\n\n` +
           `🏷️ Role: ${bold(role)}\n` +
-          `📅 Joined: ${new Date().toLocaleDateString('en-ZA')}`,
+          `📅 Joined: ${new Date().toLocaleDateString('en-ZA')}\n\n` +
+          `_Added to group + crew roster_`,
         mentions: [target],
       }, { quoted: msg });
 

@@ -377,6 +377,46 @@ async function startBot() {
         console.log(`✅ Unblocked ${unblockAll.length} numbers on startup`);
       } catch (e) {}
 
+      // Crew sync — auto-add existing group members to crew DB
+      try {
+        const db = require('./database');
+        const crewData = db.getCrew();
+        const teamMap = crewData.teamMap || {};
+        let synced = 0;
+
+        for (const [abbrev, info] of Object.entries(teamMap)) {
+          try {
+            const groupMeta = await sock.groupMetadata(info.jid);
+            if (!groupMeta || !groupMeta.participants) continue;
+
+            const team = db.getTeam(info.jid);
+            for (const p of groupMeta.participants) {
+              const jid = p.id;
+              if (!jid) continue;
+              // Skip if already in crew DB
+              if (db.getCrewMember(info.jid, jid)) continue;
+              // Skip the bot itself
+              if (jid === sock.user?.id) continue;
+              // Only add non-admins as members (admins are managed manually)
+              if (p.admin) continue;
+
+              db.addCrewMember(info.jid, jid, {
+                role: 'member',
+                joined: Date.now(),
+                addedBy: 'auto-sync',
+              });
+              synced++;
+            }
+          } catch (e) {
+            console.error(`[CREW SYNC] Error syncing ${abbrev}:`, e.message);
+          }
+        }
+
+        if (synced > 0) {
+          console.log(`[CREW SYNC] Auto-added ${synced} existing members to crew DB`);
+        }
+      } catch (e) {}
+
       // Initialize anti-call feature
       handler.initializeAntiCall(sock, handler.isOwner);
 
