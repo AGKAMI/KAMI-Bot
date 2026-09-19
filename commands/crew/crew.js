@@ -34,7 +34,7 @@ module.exports = {
   aliases: ['ss', 'slammed'],
   category: 'crew',
   description: 'Slammed Society crew management',
-  usage: '.crew <add|remove|roster|promote|demote|role|checkin|activity|leaderboard|attendance|event|events|attend|result|apply|accept|deny|applicants|info|name|bio|banner>',
+  usage: '.crew <add|remove|promote|demote|role|event|events|attend|result|apply|accept|deny|applicants>',
 
   async execute(sock, msg, args, extra) {
     try {
@@ -54,25 +54,15 @@ module.exports = {
       // Check for aliased commands
       const aliasMap = {
         'rm': 'remove',
-        'ls': 'roster',
-        'list': 'roster',
         'up': 'promote',
         'down': 'demote',
         'setrole': 'role',
-        'in': 'checkin',
-        'stats': 'activity',
-        'lb': 'leaderboard',
-        'top': 'leaderboard',
         'rsvp': 'attend',
         'winner': 'result',
         'join': 'apply',
         'hire': 'accept',
         'fire': 'deny',
-        'pending': 'applicants',
-        'about': 'info',
-        'setname': 'name',
-        'setbio': 'bio',
-        'setbanner': 'banner'
+        'pending': 'applicants'
       };
 
       const aliased = aliasMap[sub];
@@ -100,16 +90,9 @@ async function showHelp(sock, msg, extra) {
     `📋 *ROSTER*`,
     `• .crew add @user <role> [team]`,
     `• .crew remove @user`,
-    `• .crew roster [team]`,
     `• .crew promote @user <role>`,
     `• .crew demote @user`,
     `• .crew role @user <role>`,
-    ``,
-    `✅ *ACTIVITY*`,
-    `• .crew checkin`,
-    `• .crew activity [7d]`,
-    `• .crew leaderboard`,
-    `• .crew attendance [event-id]`,
     ``,
     `📅 *EVENTS*`,
     `• .crew event <name> <time>`,
@@ -122,12 +105,6 @@ async function showHelp(sock, msg, extra) {
     `• .crew accept @user [team]`,
     `• .crew deny @user [reason]`,
     `• .crew applicants`,
-    ``,
-    `🔰 *IDENTITY*`,
-    `• .crew info`,
-    `• .crew name <name>`,
-    `• .crew bio <text>`,
-    `• .crew banner`,
     ``,
     `_${pick(SLANG.vibe)} — Slammed Society CPM_`
   ].join('\n');
