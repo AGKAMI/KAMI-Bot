@@ -20,11 +20,22 @@ function resolveUser(args, mentionedJid) {
   if (mentionedJid && mentionedJid.length > 0) {
     return { jid: mentionedJid[0], args, method: 'mention' };
   }
-  // Method 2: phone number
+  // Method 2: phone number (may be split across multiple args like +27 64 841 5504)
   if (args.length > 0 && /^[\d+\s()-]+$/.test(args[0])) {
-    const jid = phoneToJid(args[0]);
+    let phoneParts = [];
+    let roleIdx = 0;
+    for (let i = 0; i < args.length; i++) {
+      if (/^[\d+\s()-]+$/.test(args[i])) {
+        phoneParts.push(args[i]);
+        roleIdx = i + 1;
+      } else {
+        break;
+      }
+    }
+    const fullPhone = phoneParts.join(' ');
+    const jid = phoneToJid(fullPhone);
     if (jid) {
-      return { jid, args: args.slice(1), method: 'phone' };
+      return { jid, args: args.slice(roleIdx), method: 'phone' };
     }
     return { jid: null, error: 'invalid_phone' };
   }

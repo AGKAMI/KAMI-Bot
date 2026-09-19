@@ -46,13 +46,25 @@ module.exports = {
       if (mentioned.length > 0) {
         target = mentioned[0];
       }
-      // Method 2: phone number
+      // Method 2: phone number (may be split across multiple args like +27 64 841 5504)
       else if (args.length > 0 && /^[\d+\s()-]+$/.test(args[0])) {
-        target = phoneToJid(args[0]);
-        if (!target) {
-          return extra.reply(`❌ ERROR\n\nInvalid phone number`);
+        // Collect all phone-like args (digits, +, spaces, dashes, brackets)
+        let phoneParts = [];
+        let roleIdx = 0;
+        for (let i = 0; i < args.length; i++) {
+          if (/^[\d+\s()-]+$/.test(args[i])) {
+            phoneParts.push(args[i]);
+            roleIdx = i + 1;
+          } else {
+            break;
+          }
         }
-        args = args.slice(1);
+        const fullPhone = phoneParts.join(' ');
+        target = phoneToJid(fullPhone);
+        if (!target) {
+          return extra.reply(`❌ ERROR\n\nInvalid phone number: ${fullPhone}`);
+        }
+        args = args.slice(roleIdx);
       }
 
       if (!target) {
