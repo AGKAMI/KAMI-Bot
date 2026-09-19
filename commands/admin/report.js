@@ -1,5 +1,5 @@
 /**
- * Report Command - Report messages to admins with queue and dismiss support
+ * Report Command - DM reports to admins, block admin reports
  */
 
 const { bold, pick, SLANG } = require('../../utils/format');
@@ -11,7 +11,7 @@ module.exports = {
     name: 'report',
     aliases: ['flag', 'complain'],
     category: 'admin',
-    description: 'Report a message to the group admins',
+    description: 'Report a message to admins via DM',
     usage: '.report <reason> | .report anon | .report queue | .report dismiss <number>',
     groupOnly: true,
 
@@ -31,14 +31,15 @@ module.exports = {
 
             const groupReports = reportStore.get(from);
 
+            // .report queue
             if (args.length >= 1 && args[0].toLowerCase() === 'queue') {
                 const pending = groupReports.filter(r => r.status === 'pending');
 
                 if (pending.length === 0) {
                     return extra.reply(
-                        `✅ *SUCCESS*\n\n` +
-                        `📋 *Pending Reports:* None\n\n` +
-                        `_All clear, ${pick(SLANG.vibe)}_`
+                        `✅ SUCCESS\n\n` +
+                        `📋 Pending Reports: None\n\n` +
+                        `_All clear ${pick(SLANG.vibe)}_`
                     );
                 }
 
@@ -66,13 +67,14 @@ module.exports = {
                 }, { quoted: msg });
             }
 
+            // .report dismiss <number>
             if (args.length >= 2 && args[0].toLowerCase() === 'dismiss') {
                 const isGroupAdmin = metadata.participants.some(p =>
                     (p.id === sender) && (p.admin === 'admin' || p.admin === 'superadmin')
                 );
 
                 if (!isGroupAdmin) {
-                    return extra.reply(`❌ *ERROR*\n\n💡 Only admins can dismiss reports, ${pick(SLANG.friend)}`);
+                    return extra.reply(`❌ ERROR\n\nOnly admins can dismiss reports`);
                 }
 
                 const number = parseInt(args[1]);
@@ -80,37 +82,30 @@ module.exports = {
 
                 if (!report) {
                     return extra.reply(
-                        `❌ *ERROR*\n\n` +
-                        `💡 Report #${number} not found. Use *.report queue* to see pending reports, ${pick(SLANG.vibe)}`
+                        `❌ ERROR\n\nReport #${number} not found\nUse .report queue to see pending reports`
                     );
                 }
 
                 if (report.status === 'dismissed') {
-                    return extra.reply(
-                        `❌ *ERROR*\n\n` +
-                        `💡 Report #${number} is already dismissed, ${pick(SLANG.vibe)}`
-                    );
+                    return extra.reply(`❌ ERROR\n\nReport #${number} is already dismissed`);
                 }
 
                 report.status = 'dismissed';
 
                 return extra.reply(
-                    `✅ *SUCCESS*\n\n` +
-                    `🗑️ *Report #${number} Dismissed*\n` +
-                    `📝 *Reason:* ${report.reason}\n\n` +
-                    `_Done, ${pick(SLANG.vibe)} 🫡_`
+                    `✅ SUCCESS\n\n🗑️ Report #${number} Dismissed\n📝 Reason: ${report.reason}`
                 );
             }
 
+            // .report or .report anon — needs quoted message
             const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
             if (!quotedMsg) {
                 return extra.reply(
-                    `❌ *ERROR*\n\n` +
-                    `💡 Reply to a message to report it, ${pick(SLANG.vibe)}\n` +
-                    `📝 *Usage:*\n` +
-                    `• Reply to message → .report <reason>\n` +
-                    `• Reply to message → .report anon <reason>\n` +
+                    `❌ ERROR\n\nReply to a message to report it\n\n` +
+                    `📝 Usage:\n` +
+                    `• Reply → .report <reason>\n` +
+                    `• Reply → .report anon <reason>\n` +
                     `• .report queue\n` +
                     `• .report dismiss <number>`
                 );
@@ -127,6 +122,18 @@ module.exports = {
                 msg.message?.extendedTextMessage?.contextInfo?.participant ||
                 'Unknown';
 
+            // Block admin reports
+            const isReportedAdmin = metadata.participants.some(p =>
+                (p.id === reportedBy) && (p.admin === 'admin' || p.admin === 'superadmin')
+            );
+
+            if (isReportedAdmin) {
+                return extra.reply(
+                    `❌ ERROR\n\nYou can't report admins\n\n` +
+                    `If you have an issue with an admin's conduct, DM the owner directly`
+                );
+            }
+
             let isAnonymous = false;
             let reasonParts = [...args];
             if (args.length >= 1 && args[0].toLowerCase() === 'anon') {
@@ -140,7 +147,7 @@ module.exports = {
                 .map(p => p.id);
 
             if (admins.length === 0) {
-                return extra.reply(`❌ *ERROR*\n\n💡 No admins found in this group, ${pick(SLANG.friend)}`);
+                return extra.reply(`❌ ERROR\n\nNo admins found in this group`);
             }
 
             const reportNum = reportCounters.get(from) + 1;
@@ -154,7 +161,8 @@ module.exports = {
                 message: reportedText,
                 time: Date.now(),
                 status: 'pending',
-                anonymous: isAnonymous
+                anonymous: isAnonymous,
+                groupName: metadata.subject || 'Unknown Group'
             };
             groupReports.push(reportData);
 
@@ -171,39 +179,54 @@ module.exports = {
             });
 
             const reporterLine = isAnonymous
-                ? `👤 *Reported by:* Anonymous`
-                : `👤 *Reported by:* @${sender.split('@')[0]}`;
-
-            const mentionsList = isAnonymous ? [reportedBy, ...admins] : [sender, reportedBy, ...admins];
+                ? `👤 Reported by: Anonymous`
+                : `👤 Reported by: @${sender.split('@')[0]}`;
 
             const reportText = [
-                `🚨 *REPORT #${reportNum} — PAY ATTENTION*`,
+                `🚨 *REPORT #${reportNum}*`,
                 ``,
+                `📍 Group: ${metadata.subject}`,
                 reporterLine,
-                `📌 *Reported user:* @${reportedBy.split('@')[0]}`,
-                `⏰ *Time:* ${reportTime}`,
-                `📝 *Reason:* ${reason}`,
-                `📊 *Status:* PENDING`,
+                `📌 Reported user: @${reportedBy.split('@')[0]}`,
+                `⏰ Time: ${reportTime}`,
+                `📝 Reason: ${reason}`,
+                `📊 Status: PENDING`,
                 ``,
                 `----------`,
-                `💬 *Message:*`,
+                `💬 Message:`,
                 `${reportedText.substring(0, 500)}${reportedText.length > 500 ? '...' : ''}`,
                 `----------`,
                 ``,
-                `_Please review this, ${pick(SLANG.vibe)} 🫡_`
+                `_Use .report dismiss ${reportNum} in the group to acknowledge_`
             ].join('\n');
 
-            await sock.sendMessage(from, {
-                text: reportText,
-                mentions: mentionsList
-            }, { quoted: msg });
+            // DM each admin
+            let dmed = 0;
+            for (const adminJid of admins) {
+                try {
+                    await sock.sendMessage(adminJid, {
+                        text: reportText,
+                        mentions: isAnonymous ? [reportedBy] : [sender, reportedBy]
+                    });
+                    dmed++;
+                } catch (e) {
+                    console.error(`[REPORT] Failed to DM admin ${adminJid}:`, e.message);
+                }
+            }
+
+            // Confirm to reporter
+            const reporterMsg = isAnonymous
+                ? `✅ SUCCESS\n\n🚨 Anonymous report #${reportNum} sent to ${dmed} admin(s)`
+                : `✅ SUCCESS\n\n🚨 Report #${reportNum} sent to ${dmed} admin(s)`;
+
+            await extra.reply(reporterMsg);
 
             await sock.sendMessage(from, {
                 react: { text: '🚨', key: msg.key }
             });
 
         } catch (error) {
-            await extra.reply(`❌ *ERROR*\n\n💡 ${pick(SLANG.error)} — ${error.message}`);
+            await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);
         }
     }
 };
