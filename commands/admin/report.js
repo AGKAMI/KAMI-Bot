@@ -128,10 +128,27 @@ module.exports = {
             );
 
             if (isReportedAdmin) {
-                return extra.reply(
-                    `❌ ERROR\n\nYou can't report admins\n\n` +
-                    `If you have an issue with an admin's conduct, DM the owner directly`
-                );
+                // Check if owner is in the group
+                const config = require('../../config');
+                const ownerJids = (config.ownerNumber || []).map(n => {
+                    const clean = n.replace(/\D/g, '');
+                    return clean + '@s.whatsapp.net';
+                });
+                const ownerInGroup = metadata.participants.some(p => ownerJids.includes(p.id));
+
+                if (ownerInGroup) {
+                    const ownerJid = ownerJids.find(jid => 
+                        metadata.participants.some(p => p.id === jid)
+                    );
+                    return sock.sendMessage(from, {
+                        text: `❌ ERROR\n\nYou can't report admins\n\nIf you have an issue with an admin's conduct, DM the owner`,
+                        mentions: [ownerJid]
+                    }, { quoted: msg });
+                } else {
+                    return extra.reply(
+                        `❌ ERROR\n\nYou can't report admins\n\nIf you have an issue with an admin's conduct, DM the owner at *084 082 0712*`
+                    );
+                }
             }
 
             let isAnonymous = false;
