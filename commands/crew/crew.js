@@ -51,8 +51,18 @@ module.exports = {
         return showTeams(sock, msg, extra);
       }
 
-      // .crew setteam <abbrev> [team-name] — map abbreviation to current group
+      // Group whitelist check — only work in Slammed Society groups
+      const crewJids = Object.values(database.getTeamMap()).map(t => t.jid);
+      const inCrewGroup = crewJids.includes(extra.from);
+
+      // .crew setteam — only works in crew groups
       if (sub === 'setteam') {
+        if (!inCrewGroup) {
+          return extra.reply(
+            `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
+            `Your group: ${extra.from.split('@')[0]}`
+          );
+        }
         return setTeam(sock, msg, subArgs, extra);
       }
 
@@ -76,13 +86,20 @@ module.exports = {
           );
         }
       } else {
-        // Subcommand without team — check if we're in a group
+        // Subcommand without team — check if we're in a crew group
         if (!extra.from.endsWith('@g.us')) {
           return extra.reply(
             `❌ ERROR\n\nFrom DMs, you must specify a team\n\n` +
             `Usage: .crew <team> ${sub} [args]\n` +
             `Example: .crew ssrs ${sub}\n\n` +
             `Use .crew teams to see abbreviations`
+          );
+        }
+        // Check if this group is a crew group
+        if (!inCrewGroup) {
+          return extra.reply(
+            `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
+            `Your group: ${extra.from.split('@')[0]}`
           );
         }
       }
@@ -106,8 +123,6 @@ module.exports = {
       // Check for aliased commands
       const aliasMap = {
         'rm': 'remove',
-        'up': 'promote',
-        'down': 'demote',
         'setrole': 'role',
         'rsvp': 'attend',
         'winner': 'result',

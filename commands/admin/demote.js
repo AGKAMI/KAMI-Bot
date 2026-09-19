@@ -1,58 +1,56 @@
 /**
- * Demote Command - Remove admin privileges
+ * Demote Command — Demote someone from WhatsApp group admin
  */
 
-const { findParticipant } = require('../../utils/jidHelper');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'demote',
-  aliases: ['removeadmin'],
   category: 'admin',
-  description: 'Remove admin privileges from member',
+  description: 'Demote admin to regular member',
   usage: '.demote @user',
   groupOnly: true,
   adminOnly: true,
   botAdminNeeded: true,
-  
+
   async execute(sock, msg, args, extra) {
     try {
-      let target;
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
-      
-      if (mentioned && mentioned.length > 0) {
+      const replyJid = ctx?.participant;
+
+      let target = null;
+
+      // Method 1: Reply
+      if (replyJid) {
+        target = replyJid;
+      }
+      // Method 2: @mention
+      else if (mentioned.length > 0) {
         target = mentioned[0];
-      } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
-        target = ctx.participant;
-      } else {
-        return extra.reply(`❌ ERROR\n\nTag or reply to the person you wanna demote\n\nExample: .demote @user`);
       }
-      
-      // Fetch FRESH group metadata to avoid stale cache
-      const freshMetadata = await sock.groupMetadata(extra.from);
-      
-      // Use findParticipant for LID-aware matching with fresh metadata
-      const foundParticipant = findParticipant(freshMetadata.participants, target);
-      
-      if (!foundParticipant) {
-        return extra.reply(`❌ ERROR\n\nCouldn't find this oke in the group`);
+
+      if (!target) {
+        return extra.reply(
+          `❌ ERROR\n\nTag or reply to someone\n\n` +
+          `Usage:\n` +
+          `• .demote @user\n` +
+          `• Reply with .demote`
+        );
       }
-      
-      // Check if user is admin using fresh data
-      if (foundParticipant.admin !== 'admin' && foundParticipant.admin !== 'superadmin') {
-        return extra.reply(`❌ ERROR\n\nThis oke isn't an admin`);
-      }
-      
+
+      const targetNum = target.split('@')[0];
+
       await sock.groupParticipantsUpdate(extra.from, [target], 'demote');
-      
+
       await sock.sendMessage(extra.from, {
-        text: `⬇️ DEMOTED\n\n@${target.split('@')[0]} is no longer an admin ${pick(SLANG.good)}`,
-        mentions: [target]
+        text: `✅ SUCCESS\n\n⬇️ DEMOTED\n\n@${targetNum} is no longer a group admin`,
+        mentions: [target],
       }, { quoted: msg });
-      
+
     } catch (error) {
-      await extra.reply(`❌ ERROR\n\n${error.message}`);
+      console.error('Demote error:', error);
+      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't demote`);
     }
-  }
+  },
 };
