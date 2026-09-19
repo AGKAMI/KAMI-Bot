@@ -61,7 +61,8 @@ module.exports = {
                 return extra.reply(
                     `❌ *ERROR*\n\n` +
                     `💡 *Usage:*\n` +
-                    `• .giveaway <prize> | <duration>m\n` +
+                    `• .giveaway <prize> <winners> <duration>\n` +
+                    `• .giveaway Flag Cab 1 30\n` +
                     `• .giveaway <prize> | <duration>m | <winners>n\n` +
                     `• .giveaway <prize> | <duration>m | min <number>\n` +
                     `• .giveaway reroll`
@@ -94,6 +95,25 @@ module.exports = {
                         minEntries = parseInt(minMatch[1]);
                     }
                 }
+            } else {
+                // Positional form: .giveaway <prize> <winners> <duration>
+                // Trailing numeric tokens = winners + minutes; prize = the rest.
+                const tokens = fullArgs.split(/\s+/);
+                const trailingNums = [];
+                let i = tokens.length - 1;
+                while (i >= 0 && /^\d+$/.test(tokens[i])) {
+                    trailingNums.unshift(tokens.pop());
+                    i--;
+                }
+                // trailingNums now holds numeric tokens from the end (in order).
+                // Last = duration minutes, second-last = winner count.
+                if (trailingNums.length >= 2) {
+                    numWinners = parseInt(trailingNums[trailingNums.length - 2]);
+                    durationMinutes = parseInt(trailingNums[trailingNums.length - 1]);
+                } else if (trailingNums.length === 1) {
+                    durationMinutes = parseInt(trailingNums[0]);
+                }
+                prize = tokens.join(' ').trim() || fullArgs;
             }
 
             if (durationMinutes < 1 || durationMinutes > 60) {

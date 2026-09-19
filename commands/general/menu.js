@@ -36,10 +36,11 @@ module.exports = {
         anime:     { emoji: '⛩️', label: 'Anime' },
         textmaker: { emoji: '✨', label: 'Text Maker' },
         admin:     { emoji: '🛡️', label: 'Admin' },
+        crew:      { emoji: '🔰', label: 'Crew' },
         owner:     { emoji: '👑', label: 'Owner' },
       };
 
-      const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'owner'];
+      const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'crew', 'owner'];
 
       const line = () => '----------';
 
