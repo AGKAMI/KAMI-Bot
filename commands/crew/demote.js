@@ -16,7 +16,7 @@ module.exports = {
   description: 'Demote member one rank',
   usage: '.crew demote @user|number',
   groupOnly: false,
-  ownerOnly: true,
+  adminOnly: true,
 
   async execute(sock, msg, args, extra) {
     try {

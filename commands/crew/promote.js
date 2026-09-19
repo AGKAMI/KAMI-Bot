@@ -21,7 +21,7 @@ module.exports = {
   description: 'Promote member to higher role',
   usage: '.crew promote @user|number <role>',
   groupOnly: false,
-  ownerOnly: true,
+  adminOnly: true,
 
   async execute(sock, msg, args, extra) {
     try {
