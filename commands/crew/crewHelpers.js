@@ -15,8 +15,12 @@ function phoneToJid(phone) {
 }
 
 // Resolve user from @mention or phone number
-function resolveUser(args, mentionedJid) {
-  // Method 1: @mention
+function resolveUser(args, mentionedJid, contextInfo) {
+  // Method 1: Reply to someone's message
+  if (contextInfo?.participant) {
+    return { jid: contextInfo.participant, args, method: 'reply' };
+  }
+  // Method 2: @mention
   if (mentionedJid && mentionedJid.length > 0) {
     return { jid: mentionedJid[0], args, method: 'mention' };
   }

@@ -22,7 +22,7 @@ module.exports = {
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
-      const resolved = resolveUser(args, mentioned);
+      const resolved = resolveUser(args, mentioned, ctx);
 
       if (!resolved.jid) {
         return extra.reply(

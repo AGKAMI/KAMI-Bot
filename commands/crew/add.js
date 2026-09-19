@@ -42,11 +42,15 @@ module.exports = {
 
       let target = null;
 
-      // Method 1: @mention
-      if (mentioned.length > 0) {
+      // Method 1: Reply to someone's message
+      if (ctx?.participant) {
+        target = ctx.participant;
+      }
+      // Method 2: @mention
+      else if (mentioned.length > 0) {
         target = mentioned[0];
       }
-      // Method 2: phone number (may be split across multiple args like +27 64 841 5504)
+      // Method 3: phone number (may be split across multiple args like +27 64 841 5504)
       else if (args.length > 0 && /^[\d+\s()-]+$/.test(args[0])) {
         // Collect all phone-like args (digits, +, spaces, dashes, brackets)
         let phoneParts = [];
