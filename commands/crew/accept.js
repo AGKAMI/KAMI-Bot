@@ -1,11 +1,13 @@
-/**
- * Crew Accept Command — Accept applicant to crew
- * Supports: @mention OR phone number
- */
-
 const database = require('../../database');
 const { bold, pick, SLANG } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
+
+const ROLE_EMOJIS = {
+  'leader': '👑',
+  'co-leader': '⭐',
+  'officer': '🎖️',
+  'member': '👤',
+};
 
 module.exports = {
   name: 'accept',
@@ -13,7 +15,7 @@ module.exports = {
   category: 'crew',
   description: 'Accept applicant to crew',
   usage: '.crew accept @user|number [role]',
-  groupOnly: true,
+  groupOnly: false,
   ownerOnly: true,
 
   async execute(sock, msg, args, extra) {
@@ -24,7 +26,7 @@ module.exports = {
 
       if (!resolved.jid) {
         return extra.reply(
-          `❌ ERROR\n\nTag or add a number\n\nUsage: .crew accept @user|number [role]`
+          '❌ ERROR\n\nTag or add a number\n\nUsage: .crew accept @user|number [role]'
         );
       }
 
@@ -35,32 +37,45 @@ module.exports = {
       const applicant = applicants[target];
 
       if (!applicant) {
-        return extra.reply(`❌ ERROR\n\n@${targetNum} hasn't applied`);
+        return extra.reply('❌ ERROR\n\n@' + targetNum + ' hasn\'t applied');
       }
 
-      const role = resolved.args[0] || 'member';
+      const validRoles = database.getCustomRoles(extra.from);
+      let role = validRoles[0];
 
-      // Add to crew
+      if (resolved.args[0]) {
+        const inputRole = resolved.args[0].toLowerCase();
+        if (validRoles.includes(inputRole)) {
+          role = inputRole;
+        } else {
+          return extra.reply(
+            '❌ ERROR\n\nInvalid role: ' + inputRole + '\n\n' +
+            'Valid roles:\n' + validRoles.map(r => '• ' + r).join('\n')
+          );
+        }
+      }
+
       database.addCrewMember(extra.from, target, {
         role,
         joined: Date.now(),
         addedBy: extra.sender,
       });
 
-      // Remove from applicants
       database.removeApplicant(extra.from, target);
+
+      const roleEmoji = ROLE_EMOJIS[role] || '👤';
 
       await sock.sendMessage(extra.from, {
         text:
-          `✅ SUCCESS\n\n🎉 MEMBER ACCEPTED\n\n` +
-          `@${targetNum} has been accepted\n\n` +
-          `🏷️ Role: ${bold(role)}`,
+          '✅ SUCCESS\n\n🎉 MEMBER ACCEPTED\n\n' +
+          '@' + targetNum + ' has been accepted\n\n' +
+          '🏷️ Role: ' + bold(role),
         mentions: [target],
       }, { quoted: msg });
 
     } catch (error) {
       console.error('Crew accept error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't accept member`);
+      await extra.reply('❌ ERROR\n\n' + pick(SLANG.error) + ' — couldn\'t accept member');
     }
   },
 };

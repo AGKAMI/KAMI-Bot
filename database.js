@@ -390,6 +390,23 @@ const resolveTeam = (abbrev) => {
   return null;
 };
 
+// Get custom roles for a group (ordered by hierarchy)
+const getCustomRoles = (groupJid) => {
+  const team = getTeam(groupJid);
+  if (!team.roles || team.roles.length === 0) {
+    // Default roles if none configured
+    return ['member', 'officer', 'co-leader', 'leader'];
+  }
+  return team.roles;
+};
+
+// Set custom roles for a group
+const setCustomRoles = (groupJid, roles) => {
+  const team = getTeam(groupJid);
+  team.roles = roles;
+  return updateTeam(groupJid, team);
+};
+
 module.exports = {
   getGroupSettings,
   updateGroupSettings,
@@ -426,6 +443,10 @@ module.exports = {
   getApplicants,
   removeApplicant,
   getAllTeams,
+
+  // Custom roles
+  getCustomRoles,
+  setCustomRoles,
 
   // Team mapping
   setTeamMap,

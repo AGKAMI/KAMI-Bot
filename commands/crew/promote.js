@@ -14,15 +14,13 @@ const ROLE_EMOJIS = {
   'member': '👤',
 };
 
-const ROLE_HIERARCHY = ['member', 'officer', 'co-leader', 'leader'];
-
 module.exports = {
   name: 'promote',
   aliases: ['up'],
   category: 'crew',
   description: 'Promote member to higher role',
   usage: '.crew promote @user|number <role>',
-  groupOnly: true,
+  groupOnly: false,
   ownerOnly: true,
 
   async execute(sock, msg, args, extra) {
@@ -34,8 +32,7 @@ module.exports = {
       if (!resolved.jid) {
         return extra.reply(
           `❌ ERROR\n\nTag or add a number\n\n` +
-          `Usage: .crew promote @user|number <role>\n` +
-          `Roles: ${ROLE_HIERARCHY.join(', ')}`
+          `Usage: .crew promote @user|number <role>`
         );
       }
 
@@ -47,11 +44,15 @@ module.exports = {
         return extra.reply(`❌ ERROR\n\n@${targetNum} is not in this crew`);
       }
 
+      // Get custom roles for this group
+      const validRoles = database.getCustomRoles(extra.from);
+
       // Get new role from remaining args
       const newRole = (resolved.args[0] || '').toLowerCase();
-      if (!newRole || !ROLE_HIERARCHY.includes(newRole)) {
+      if (!newRole || !validRoles.includes(newRole)) {
         return extra.reply(
-          `❌ ERROR\n\nProvide a role: ${ROLE_HIERARCHY.join(', ')}`
+          `❌ ERROR\n\nInvalid role: ${newRole || '?'}\n\n` +
+          `Valid roles:\n${validRoles.map(r => `• ${r}`).join('\n')}`
         );
       }
 
@@ -60,8 +61,7 @@ module.exports = {
 
       await sock.sendMessage(extra.from, {
         text:
-          `✅ SUCCESS\n\n` +
-          `⬆️ PROMOTED\n\n` +
+          `✅ SUCCESS\n\n⬆️ PROMOTED\n\n` +
           `@${targetNum}\n\n` +
           `${ROLE_EMOJIS[oldRole] || '👤'} ${oldRole} → ${ROLE_EMOJIS[newRole] || '👤'} ${bold(newRole)}`,
         mentions: [target],

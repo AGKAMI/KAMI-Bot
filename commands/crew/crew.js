@@ -34,7 +34,7 @@ module.exports = {
   category: 'crew',
   description: 'Slammed Society crew management',
   usage: '.crew [team] <add|remove|promote|demote|role|event|events|attend|result|apply|accept|deny|applicants|teams|setteam> [args]',
-  groupOnly: true,
+  groupOnly: false,
 
   async execute(sock, msg, args, extra) {
     try {
@@ -73,6 +73,16 @@ module.exports = {
             `❌ ERROR\n\nUnknown team or command: ${sub}\n\n` +
             `Use .crew teams to see available abbreviations\n` +
             `Use .crew help for commands`
+          );
+        }
+      } else {
+        // Subcommand without team — check if we're in a group
+        if (!extra.from.endsWith('@g.us')) {
+          return extra.reply(
+            `❌ ERROR\n\nFrom DMs, you must specify a team\n\n` +
+            `Usage: .crew <team> ${sub} [args]\n` +
+            `Example: .crew ssrs ${sub}\n\n` +
+            `Use .crew teams to see abbreviations`
           );
         }
       }

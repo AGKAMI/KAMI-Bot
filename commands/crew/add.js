@@ -31,7 +31,7 @@ module.exports = {
   category: 'crew',
   description: 'Add member to crew roster + WhatsApp group',
   usage: '.crew add @user|number [role]',
-  groupOnly: true,
+  groupOnly: false,
   ownerOnly: true,
   botAdminNeeded: true,
 
@@ -75,13 +75,20 @@ module.exports = {
         );
       }
 
+      // Get custom roles for this group
+      const validRoles = database.getCustomRoles(extra.from);
+
       // Parse role
-      let role = 'member';
+      let role = validRoles[0]; // default to first (lowest) role
       if (args.length >= 1) {
-        role = args[0].toLowerCase();
-        const validRoles = ['leader', 'co-leader', 'officer', 'member'];
-        if (!validRoles.includes(role)) {
-          return extra.reply(`❌ ERROR\n\nInvalid role\nValid: ${validRoles.join(', ')}`);
+        const inputRole = args[0].toLowerCase();
+        if (validRoles.includes(inputRole)) {
+          role = inputRole;
+        } else {
+          return extra.reply(
+            `❌ ERROR\n\nInvalid role: ${inputRole}\n\n` +
+            `Valid roles:\n${validRoles.map(r => `• ${r}`).join('\n')}`
+          );
         }
       }
 
