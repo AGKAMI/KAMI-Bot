@@ -9,6 +9,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 const { TEAMS, buildAdminNotice, formatAnswers } = require('./crewForms');
+const { buildComparableIds } = require('../../utils/jidHelper');
 
 module.exports = {
   subName: 'applied',
@@ -73,8 +74,9 @@ module.exports = {
       // Find this applicant's pending app for this team
       let app = null;
       const applicants = database.getApplicants(storeGroupJid);
+      const applicantVariants = buildComparableIds(applicantJid);
       const existing = Object.values(applicants).find(a =>
-        a.jid === applicantJid && a.status === 'pending'
+        a.status === 'pending' && buildComparableIds(a.jid).some(v => applicantVariants.includes(v))
       );
 
       if (existing) {

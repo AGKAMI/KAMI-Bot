@@ -11,6 +11,7 @@ const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 const { TEAMS, buildFormMessage } = require('./crewForms');
 const { resolveUser } = require('./crewHelpers');
+const { buildComparableIds } = require('../../utils/jidHelper');
 
 module.exports = {
   subName: 'apply',
@@ -93,7 +94,10 @@ module.exports = {
 
       // --- Duplicate pending application? ---
       const existingApps = database.getApplicants(teamGroupJid);
-      const dup = Object.values(existingApps).find(a => a.jid === applicantJid && a.status === 'pending');
+      const applicantVariants = buildComparableIds(applicantJid);
+      const dup = Object.values(existingApps).find(a =>
+        a.status === 'pending' && buildComparableIds(a.jid).some(v => applicantVariants.includes(v))
+      );
       if (dup) {
         return extra.reply(
           applyingForSomeone

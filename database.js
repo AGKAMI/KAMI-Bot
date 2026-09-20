@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
+const { buildComparableIds } = require('./utils/jidHelper');
 
 const DB_PATH = path.join(__dirname, 'database');
 const GROUPS_DB = path.join(DB_PATH, 'groups.json');
@@ -408,13 +409,15 @@ const removeApplicant = (groupJid, applicantKey) => {
 const hasPendingApplication = (jid) => {
   const crew = getCrew();
   if (!jid) return false;
-  const jidKey = jid.includes('@') ? jid : jid + '@s.whatsapp.net';
-  const jidNum = jid.split('@')[0];
+  const inputVariants = buildComparableIds(jid);
   for (const team of Object.values(crew.groups || {})) {
     if (!team.applicants) continue;
     for (const app of Object.values(team.applicants)) {
-      if (app.status === 'pending' && (app.jid === jidKey || app.jid === jid || app.jid?.split('@')[0] === jidNum)) {
-        return true;
+      if (app.status === 'pending') {
+        const appVariants = buildComparableIds(app.jid);
+        if (appVariants.some(v => inputVariants.includes(v))) {
+          return true;
+        }
       }
     }
   }
