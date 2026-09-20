@@ -114,7 +114,7 @@ const buildAdminNotice = (app) => {
     `━━━━━━━━━━━━━━━━\n\n` +
     `✅ Accept: *.crew accept ${app.appUid}*\n` +
     `❌ Deny: *.crew deny ${app.appUid} <reason>*\n\n` +
-    `_Reply in any Slammed Society group._`;
+    `_Reply from any Slammed Society group or directly from DM._`;
 };
 
 const pickGood = () => {

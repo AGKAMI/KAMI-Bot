@@ -435,6 +435,54 @@ async function startBot() {
         }
       } catch (e) {}
 
+      // Team admin auto-detection — scan all crew groups for WhatsApp admins
+      try {
+        const db = require('./database');
+        const config = require('./config');
+        const currentAdminsByGroup = {};
+        let detected = 0;
+
+        // Scan all teams from config + teamMap
+        const allTeams = { ...(config.crewTeams || {}) };
+        const crewData = db.getCrew();
+        for (const [abbrev, info] of Object.entries(crewData.teamMap || {})) {
+          if (!allTeams[abbrev]) allTeams[abbrev] = info;
+        }
+
+        for (const [teamKey, teamInfo] of Object.entries(allTeams)) {
+          try {
+            const meta = await sock.groupMetadata(teamInfo.jid);
+            if (!meta || !meta.participants) continue;
+
+            const admins = meta.participants
+              .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
+              .map(p => p.id);
+
+            currentAdminsByGroup[teamInfo.jid] = admins;
+
+            for (const adminJid of admins) {
+              const number = adminJid.replace(/@.*$/, '');
+              const added = db.addTeamAdmin(number);
+              if (added) detected++;
+              // Track which teams each admin belongs to
+              db.addTeamAdminTeam(number, teamKey);
+            }
+          } catch (e) {
+            console.error(`[TEAM ADMIN SYNC] Error scanning ${teamKey}:`, e.message);
+          }
+        }
+
+        // Prune: remove anyone no longer admin in ANY crew group
+        const pruned = db.pruneTeamAdmins(currentAdminsByGroup);
+
+        if (detected > 0) {
+          console.log(`[TEAM ADMIN SYNC] Auto-detected ${detected} team admins`);
+        }
+        if (pruned > 0) {
+          console.log(`[TEAM ADMIN SYNC] Pruned ${pruned} former team admins`);
+        }
+      } catch (e) {}
+
       // Initialize anti-call feature
       handler.initializeAntiCall(sock, handler.isOwner);
 

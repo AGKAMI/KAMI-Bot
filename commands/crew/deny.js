@@ -65,6 +65,25 @@ module.exports = {
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
 
+      // Re-block auto-unblocked team admins if no pending apps remain for their teams
+      try {
+        const autoUnblocked = database.getAutoUnblockedTeamAdmins();
+        for (const adminNum of autoUnblocked) {
+          const adminJid = adminNum + '@s.whatsapp.net';
+          if (!database.hasPendingApplicationsForAnyTeam(adminJid)) {
+            try {
+              await sock.updateBlockStatus(adminJid, 'block');
+              database.removeAutoUnblockedTeamAdmin(adminJid);
+              console.log(`[CREW DENY] Re-blocked admin ${adminNum} — no pending applications remaining`);
+            } catch (e) {
+              console.error(`[CREW DENY] Failed to re-block admin ${adminNum}:`, e.message);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[CREW DENY] Admin re-block error:', e.message);
+      }
+
       // DM the applicant the denial message
       try {
         await sock.sendMessage(applicantJid, {

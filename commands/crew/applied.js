@@ -2,7 +2,7 @@
  * Crew Applied Command — submit answers for an existing application.
  * Flow: .crew apply <team> (bot DMs form + App ID)
  *   → .crew applied <team> <answers> (attaches answers, DMs the team's group admins)
- * Answers can be multi-line — they're extracted from the raw message, preserving line breaks.
+ * Also unblocks team admins so they can receive the application notice.
  */
 
 const database = require('../../database');
@@ -15,14 +15,15 @@ module.exports = {
   name: null,
   description: 'Submit your application answers',
   usage: '.crew applied <team> <answers>',
-  groupOnly: true,
+  groupOnly: false,
   ownerOnly: false,
 
   async execute(sock, msg, args, extra) {
     try {
       if (!args || args.length < 2) {
         return extra.reply(
-          `❌ ERROR\n\nUsage: .crew applied <team> <your answers>\n\n` +
+          `❌ ERROR\n\n` +
+          `Usage: .crew applied <team> <your answers>\n\n` +
           `Teams: ${Object.keys(TEAMS).join(', ')}\n\n` +
           `You can put each answer on its own line — just keep it in ONE message`
         );
@@ -31,7 +32,9 @@ module.exports = {
       const teamKey = args[0].toUpperCase();
       if (!TEAMS[teamKey]) {
         return extra.reply(
-          `❌ ERROR\n\nInvalid team ${pick(SLANG.error)}\n\nTeams: ${Object.keys(TEAMS).join(', ')}`
+          `❌ ERROR\n\n` +
+          `Invalid team ${pick(SLANG.error)}\n\n` +
+          `Teams: ${Object.keys(TEAMS).join(', ')}`
         );
       }
 
@@ -48,14 +51,20 @@ module.exports = {
       }
 
       if (!answers) {
-        return extra.reply(`❌ ERROR\n\nNo answers provided ${pick(SLANG.vibe)}\nRe-run with your full answers`);
+        return extra.reply(
+          `❌ ERROR\n\n` +
+          `No answers provided ${pick(SLANG.vibe)}\n` +
+          `Re-run with your full answers`
+        );
       }
 
       const sender = msg.key.participant || msg.key.remoteJid;
       const applicantJid = sender.includes('@g.us') ? (msg.key.participant || extra.sender) : sender;
 
+      // Use resolveTeamWithConfig to get the team's group JID
+      const resolved = database.resolveTeamWithConfig(teamKey);
       const crewTeam = config.crewTeams[teamKey];
-      const teamGroupJid = crewTeam ? crewTeam.jid : null;
+      const teamGroupJid = (resolved && resolved.jid) || (crewTeam ? crewTeam.jid : null);
       const storeGroupJid = teamGroupJid || extra.from;
 
       // Find this applicant's pending app for this team
@@ -80,7 +89,46 @@ module.exports = {
       }
 
       if (!app) {
-        return extra.reply(`❌ ERROR\n\nCouldn't save your application ${pick(SLANG.error)}`);
+        return extra.reply(
+          `❌ ERROR\n\n` +
+          `Couldn't save your application ${pick(SLANG.error)}`
+        );
+      }
+
+      // Unblock team admins for this team so they can receive the application notice
+      let unblockedAdmins = [];
+      if (teamGroupJid) {
+        try {
+          const meta = await sock.groupMetadata(teamGroupJid).catch(() => null);
+          if (meta && meta.participants) {
+            const groupAdmins = meta.participants.filter(p =>
+              p.admin === 'admin' || p.admin === 'superadmin'
+            );
+            
+            for (const admin of groupAdmins) {
+              const adminJid = admin.id;
+              if (!adminJid) continue;
+              const adminNum = adminJid.replace(/@.*$/, '');
+              
+              // Skip if already auto-unblocked
+              if (database.isAutoUnblockedTeamAdmin(adminJid)) continue;
+              // Skip owner
+              if (database.getGlobalSettings().approvedNumbers?.includes(adminNum)) continue;
+              
+              // Unblock them
+              try {
+                await sock.updateBlockStatus(adminJid, 'unblock');
+                database.addAutoUnblockedTeamAdmin(adminJid);
+                unblockedAdmins.push(adminJid);
+                console.log(`[CREW APPLIED] Unblocked team admin ${adminNum} for ${teamKey} application`);
+              } catch (e) {
+                console.error(`[CREW APPLIED] Failed to unblock admin ${adminNum}:`, e.message);
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[CREW APPLIED] Admin unblock error:', e.message);
+        }
       }
 
       // DM the application to ALL group admins of the team
@@ -123,9 +171,10 @@ module.exports = {
       }
 
       // Confirm to the applicant
-      const confirm = `✅ *APPLICATION SUBMITTED*\n\n` +
+      const confirm =
+        `✅ APPLICATION SUBMITTED\n\n` +
         `🏢 Team: *${teamKey}* — ${TEAMS[teamKey].label}\n` +
-        `🆔 *Application ID:* ${app.appUid}\n\n` +
+        `🆔 Application ID: *${app.appUid}*\n\n` +
         (adminMsg === false
           ? `⚠️ _Couldn't notify the team admins automatically — but your application is stored._\n\n`
           : `📲 _Your application has been sent to all ${teamKey} admins ${pick(SLANG.good)}_\n\n`) +
@@ -139,7 +188,10 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew applied error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't submit the application`);
+      await extra.reply(
+        `❌ ERROR\n\n` +
+        `${pick(SLANG.error)} — couldn't submit the application`
+      );
     }
   },
 };

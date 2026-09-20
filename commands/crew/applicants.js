@@ -1,9 +1,11 @@
 /**
- * Crew Applicants Command — view pending applications for this group (keyed by UID).
- * Usage: .crew applicants
+ * Crew Applicants Command — view pending applications for a team.
+ * Usage: .crew applicants <team>  (from DM)
+ *        .crew applicants          (from group — shows current group's team)
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 const { TEAMS } = require('./crewForms');
 
@@ -13,8 +15,8 @@ module.exports = {
   aliases: ['pending', 'tryouts'],
   category: 'crew',
   description: 'View pending crew applications',
-  usage: '.crew applicants',
-  groupOnly: true,
+  usage: '.crew applicants [team]',
+  groupOnly: false,
   ownerOnly: false,
 
   async execute(sock, msg, args, extra) {
@@ -25,17 +27,67 @@ module.exports = {
           )
         : false;
 
-      if (!extra.isOwner && !isGroupAdmin) {
-        return extra.reply('❌ ERROR\n\nOnly admins can view applications, ' + pick(SLANG.friend));
+      if (!extra.isOwner && !isGroupAdmin && !database.isTeamAdmin(extra.sender)) {
+        return extra.reply(
+          `❌ ERROR\n\n` +
+          `Only admins can view applications, ${pick(SLANG.friend)}`
+        );
       }
 
-      const applicants = database.getApplicants(extra.from);
+      // Determine which team's applicants to show
+      let targetGroupJid = extra.from;
+      let teamLabel = '';
+
+      if (extra.isGroup) {
+        // In a group — try to resolve the team for this group
+        const teamMap = database.getTeamMap();
+        for (const [abbrev, info] of Object.entries(teamMap)) {
+          if (info.jid === extra.from) {
+            teamLabel = abbrev;
+            break;
+          }
+        }
+        // Also check config
+        if (!teamLabel) {
+          for (const [key, info] of Object.entries(config.crewTeams || {})) {
+            if (info.jid === extra.from) {
+              teamLabel = key;
+              break;
+            }
+          }
+        }
+      } else {
+        // In DM — require team argument
+        const teamArg = (args[0] || '').toUpperCase();
+        if (!teamArg) {
+          return extra.reply(
+            `❌ ERROR\n\n` +
+            `Specify a team ${pick(SLANG.friend)}\n\n` +
+            `Usage: .crew applicants <team>\n` +
+            `Teams: ${Object.keys(TEAMS).join(', ')}`
+          );
+        }
+
+        const resolved = database.resolveTeamWithConfig(teamArg);
+        if (!resolved) {
+          return extra.reply(
+            `❌ ERROR\n\n` +
+            `Unknown team: ${teamArg}\n\n` +
+            `Teams: ${Object.keys(TEAMS).join(', ')}`
+          );
+        }
+
+        targetGroupJid = resolved.jid;
+        teamLabel = teamArg;
+      }
+
+      const applicants = database.getApplicants(targetGroupJid);
       const entries = Object.entries(applicants).filter(([, a]) => a.status === 'pending');
 
       if (entries.length === 0) {
         return extra.reply(
-          `📋 *PENDING APPLICATIONS*\n\n` +
-          `No pending applications ${pick(SLANG.vibe)}\n` +
+          `📋 PENDING APPLICATIONS\n\n` +
+          `No pending applications for ${teamLabel || 'this team'} ${pick(SLANG.vibe)}\n` +
           `Recruits can use .crew apply <team> to apply`
         );
       }
@@ -61,7 +113,7 @@ module.exports = {
 
       await sock.sendMessage(extra.from, {
         text:
-          `📋 *PENDING APPLICATIONS*\n\n` +
+          `📋 PENDING APPLICATIONS\n\n` +
           `👥 Total: *${entries.length}*\n\n` +
           `----------\n\n` +
           lines.join('\n\n') +
@@ -73,7 +125,10 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew applicants error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't load applicants`);
+      await extra.reply(
+        `❌ ERROR\n\n` +
+        `${pick(SLANG.error)} — couldn't load applicants`
+      );
     }
   },
 };

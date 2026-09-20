@@ -74,7 +74,7 @@ module.exports = {
 
       // If first arg is NOT a subcommand, treat it as a team abbreviation
       if (!SUBCOMMANDS.includes(sub)) {
-        const resolved = database.resolveTeam(sub);
+        const resolved = database.resolveTeamWithConfig(sub);
         if (resolved) {
           targetJid = resolved.jid;
           actualSub = (subArgs[0] || '').toLowerCase();
@@ -102,7 +102,7 @@ module.exports = {
               );
             }
             // allowed — route to handler below
-          } else if (sub !== 'apply' && sub !== 'applied') {
+          } else if (sub !== 'apply' && sub !== 'applied' && sub !== 'applicants' && sub !== 'pending') {
             // Any other crew command in DM
             if (!isOwner) {
               if (isTeamAdmin) {

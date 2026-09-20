@@ -1,6 +1,7 @@
 /**
  * Crew Remove Command — Remove member from Slammed Society roster
  * Supports: @mention OR phone number
+ * Also kicks the member from the WhatsApp group.
  */
 
 const database = require('../../database');
@@ -15,7 +16,7 @@ module.exports = {
   description: 'Remove member from crew roster',
   usage: '.crew remove @user|number',
   groupOnly: true,
-  ownerOnly: true,
+  ownerOnly: false,
 
   async execute(sock, msg, args, extra) {
     try {
@@ -25,7 +26,8 @@ module.exports = {
 
       if (!resolved.jid) {
         return extra.reply(
-          `❌ ERROR\n\nTag or add a number\n\n` +
+          `❌ ERROR\n\n` +
+          `Tag or add a number\n\n` +
           `Usage:\n` +
           `• .crew remove @user\n` +
           `• .crew remove 0833882383`
@@ -38,18 +40,32 @@ module.exports = {
       const member = database.getCrewMember(extra.from, target);
       if (!member) {
         return extra.reply(
-          `❌ ERROR\n\n@${targetNum} is not in this crew`
+          `❌ ERROR\n\n` +
+          `@${targetNum} is not in this crew`
         );
       }
 
+      // Remove from crew DB
       database.removeCrewMember(extra.from, target);
+
+      // Also kick from WhatsApp group
+      let kickedFromGroup = false;
+      try {
+        await sock.groupParticipantsUpdate(extra.from, [target], 'remove');
+        kickedFromGroup = true;
+      } catch (kickErr) {
+        console.error('[CREW REMOVE] WhatsApp kick failed:', kickErr.message);
+      }
 
       await sock.sendMessage(extra.from, {
         text:
           `✅ SUCCESS\n\n` +
           `👤 MEMBER REMOVED\n\n` +
           `@${targetNum} has been removed\n\n` +
-          `🏷️ Was: ${member.role}`,
+          `🏷️ Was: ${member.role}\n` +
+          (kickedFromGroup
+            ? `✅ Removed from the WhatsApp group`
+            : `⚠️ Removed from crew DB but couldn't kick from group`),
         mentions: [target],
       }, { quoted: msg });
 

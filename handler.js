@@ -491,12 +491,13 @@ const handleMessage = async (sock, msg) => {
 
         // 🔒 DM BLOCKER (EARLY - fires on ANY message, command or not, before prefix gate)
         // When selfMode is ON, block DMs from anyone who isn't owner or approved.
+        // Team admins: blocked if no pending applications for their teams.
+        // Applicants: allowed if they have a pending application.
         if (!from.endsWith('@g.us')) {
           try {
             const dmGlobal = database.getGlobalSettings();
             const dmSender = msg.key.fromMe ? (sock.user.id.split(':')[0] + '@s.whatsapp.net') : (msg.key.participant || msg.key.remoteJid);
-            if (dmGlobal.selfMode && !msg.key.fromMe && !isOwner(dmSender) && !database.isApprovedNumber(dmSender) && !database.isTeamAdmin(dmSender)) {
-              // Exempt pending applicants (application window) and the apply/applied on-ramp commands
+            if (dmGlobal.selfMode && !msg.key.fromMe && !isOwner(dmSender) && !database.isApprovedNumber(dmSender)) {
               const dmText =
                 (msg.message?.conversation) ||
                 (msg.message?.extendedTextMessage?.text) ||
@@ -505,9 +506,37 @@ const handleMessage = async (sock, msg) => {
                 '';
               const dmBody = (dmText || '').trim().toLowerCase();
               const isApplyCmd = dmBody.startsWith('.crew apply') || dmBody.startsWith('.crew applied');
-              if (database.hasPendingApplication(dmSender) || isApplyCmd) {
-                // Let the applicant through — skip blocking
-              } else {
+
+              // Team admin check — allowed only if they have pending applications for their teams
+              if (database.isTeamAdmin(dmSender)) {
+                if (database.hasPendingApplicationsForAnyTeam(dmSender)) {
+                  // Team admin with pending apps — let through (accept/deny restriction at command level)
+                } else {
+                  // Team admin with NO pending apps — block them
+                  try {
+                    await sock.sendMessage(from, {
+                      text: `🚫 *NO PENDING APPLICATIONS*\n\n` +
+                            `There are no pending applications for your teams.\n` +
+                            `You'll be unblocked when an application arrives.\n\n` +
+                            `⚠️ *Your number will be BLOCKED after this message* ⛔🔒`
+                    });
+                  } catch (warnErr) {
+                    console.error('[DMBLOCKER] admin warning send failed:', warnErr.message);
+                  }
+                  try {
+                    await sock.updateBlockStatus(dmSender, 'block');
+                  } catch (blockErr) {
+                    console.error('[DMBLOCKER] admin block failed:', blockErr.message);
+                  }
+                  return;
+                }
+              }
+              // Applicant check — allowed if they have a pending application
+              else if (database.hasPendingApplication(dmSender) || isApplyCmd) {
+                // Applicant with pending app or starting application — let through
+              }
+              // Regular user — block
+              else {
                 try {
                   await sock.sendMessage(from, {
                     text: `🚫 *DO NOT TEXT THIS NUMBER* — this is a *bot* account 🤖\n` +
@@ -1095,17 +1124,37 @@ const handleMessage = async (sock, msg) => {
       return;
     }
     
-    // Team admin DM restriction — can ONLY accept/deny applications from DMs.
+    // Team admin DM restriction — can ONLY accept/deny/applicants/pending from DMs.
     // Owner keeps universal access.
     if (!isGroup && database.isTeamAdmin(sender) && !isOwner(sender)) {
       const lowerBody = (body || '').trim().toLowerCase();
-      const isAcceptDeny = new RegExp('^\\' + config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') +
-        'crew\\s+(accept|deny|hire|reject|fire)\\b').test(lowerBody);
-      if (!isAcceptDeny) {
+      const prefixEscaped = config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const isAllowedCmd = new RegExp('^\\' + prefixEscaped +
+        'crew\\s+(accept|deny|hire|reject|fire|applicants|pending)\\b').test(lowerBody);
+      if (!isAllowedCmd) {
         return sock.sendMessage(from, {
-          text: `❌ *ERROR*\n\nAs a team admin you're only allowed to accept or deny pending applications from DMs\n\n` +
+          text: `❌ ERROR\n\n` +
+                `As a team admin you're only allowed to accept or deny pending applications from DMs\n\n` +
                 `✅ Accept: *.crew accept <App ID>*\n` +
-                `❌ Deny: *.crew deny <App ID> <reason>*`
+                `❌ Deny: *.crew deny <App ID> <reason>*\n` +
+                `📋 View pending: *.crew applicants <team>*`
+        }, { quoted: msg });
+      }
+    }
+    
+    // Applicant DM restriction — can ONLY use .crew apply for other teams while pending.
+    // Owner keeps universal access. Team admins handled above.
+    if (!isGroup && !database.isTeamAdmin(sender) && !isOwner(sender) && database.hasPendingApplication(sender)) {
+      const lowerBody = (body || '').trim().toLowerCase();
+      const prefixEscaped = config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const isApplyCmd = new RegExp('^\\' + prefixEscaped + 'crew\\s+apply\\b').test(lowerBody);
+      if (!isApplyCmd) {
+        return sock.sendMessage(from, {
+          text: `⏳ APPLICATION PENDING\n\n` +
+                `You have a pending application being reviewed by an admin.\n` +
+                `Wait for an admin to accept or deny your application.\n\n` +
+                `❌ You cannot use other commands while your application is being reviewed.\n\n` +
+                `💡 You can apply to other teams with: *.crew apply <team>*`
         }, { quoted: msg });
       }
     }
@@ -1211,8 +1260,13 @@ const handleGroupUpdate = async (sock, update) => {
         for (const participant of participants) {
           const jid = typeof participant === 'string' ? participant : (participant.id || participant.jid || participant.participant);
           if (!jid || jid === sock.user?.id) continue;
+          
+          // Build JID variants for matching (handle LID/PN)
+          const jidVariants = buildComparableIds(jid);
+          const isInCrew = jidVariants.some(v => database.getCrewMember(id, v));
+          
           if (action === 'add') {
-            if (!database.getCrewMember(id, jid)) {
+            if (!isInCrew) {
               database.addCrewMember(id, jid, {
                 role: 'member',
                 joined: Date.now(),
@@ -1221,10 +1275,104 @@ const handleGroupUpdate = async (sock, update) => {
               console.log(`[CREW SYNC] Auto-added ${jid.split('@')[0]} to ${id}`);
             }
           } else if (action === 'remove') {
-            if (database.getCrewMember(id, jid)) {
+            if (isInCrew) {
+              // Remove using the JID variant that matched
+              for (const variant of jidVariants) {
+                database.removeCrewMember(id, variant);
+              }
               database.removeCrewMember(id, jid);
               console.log(`[CREW SYNC] Auto-removed ${jid.split('@')[0]} from ${id}`);
             }
+          }
+        }
+      }
+      
+      // Promote/Demote — sync teamAdmins list from WhatsApp group metadata
+      if (action === 'promote' || action === 'demote') {
+        // Check if this group is a crew team
+        const teamMap = database.getTeamMap();
+        const isCrewGroup = Object.values(teamMap).some(t => t.jid === id) ||
+          Object.values(config.crewTeams || {}).some(t => t.jid === id);
+        
+        if (isCrewGroup) {
+          try {
+            const meta = await sock.groupMetadata(id).catch(() => null);
+            if (meta && meta.participants) {
+              for (const participant of participants) {
+                const jid = typeof participant === 'string' ? participant : (participant.id || participant.jid || participant.participant);
+                if (!jid) continue;
+                const number = jid.replace(/@.*$/, '');
+                
+                if (action === 'promote') {
+                  // Added as admin — add to teamAdmins
+                  database.addTeamAdmin(number);
+                  // Track which team this admin belongs to
+                  const teamMap = database.getTeamMap();
+                  for (const [abbrev, info] of Object.entries(teamMap)) {
+                    if (info.jid === id) {
+                      database.addTeamAdminTeam(number, abbrev);
+                      break;
+                    }
+                  }
+                  for (const [key, info] of Object.entries(config.crewTeams || {})) {
+                    if (info.jid === id) {
+                      database.addTeamAdminTeam(number, key);
+                      break;
+                    }
+                  }
+                  console.log(`[TEAM ADMIN SYNC] Auto-added ${number} (promoted in ${id})`);
+                  
+                  // Unblock them if their team has pending applications
+                  if (database.hasPendingApplicationsForTeam(id) && !isOwner(jid)) {
+                    try {
+                      await sock.updateBlockStatus(jid, 'block');
+                      await sock.updateBlockStatus(jid, 'unblock');
+                      database.addAutoUnblockedTeamAdmin(jid);
+                      console.log(`[TEAM ADMIN SYNC] Unblocked ${number} for pending applications`);
+                    } catch (e) {}
+                  }
+                } else if (action === 'demote') {
+                  // Removed as admin — check if still admin in ANY crew group
+                  let stillAdminAnywhere = false;
+                  const allTeams = { ...teamMap };
+                  for (const [key, info] of Object.entries(config.crewTeams || {})) {
+                    if (!allTeams[key]) allTeams[key] = info;
+                  }
+                  
+                  for (const teamInfo of Object.values(allTeams)) {
+                    try {
+                      const teamMeta = await sock.groupMetadata(teamInfo.jid).catch(() => null);
+                      if (teamMeta && teamMeta.participants) {
+                        const found = teamMeta.participants.find(p => {
+                          const pJid = p.id || p.jid;
+                          return pJid === jid && (p.admin === 'admin' || p.admin === 'superadmin');
+                        });
+                        if (found) {
+                          stillAdminAnywhere = true;
+                          break;
+                        }
+                      }
+                    } catch (e) {}
+                  }
+                  
+                  if (!stillAdminAnywhere) {
+                    database.removeTeamAdmin(number);
+                    database.removeAutoUnblockedTeamAdmin(jid);
+                    // Remove from all team mappings
+                    const teamMap = database.getTeamMap();
+                    for (const [abbrev] of Object.entries(teamMap)) {
+                      database.removeTeamAdminTeam(number, abbrev);
+                    }
+                    for (const [key] of Object.entries(config.crewTeams || {})) {
+                      database.removeTeamAdminTeam(number, key);
+                    }
+                    console.log(`[TEAM ADMIN SYNC] Removed ${number} (no longer admin anywhere)`);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error('[TEAM ADMIN SYNC] Error:', e.message);
           }
         }
       }
