@@ -7,6 +7,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
+const axios = require('axios');
 const { bold, pick, SLANG } = require('../../utils/format');
 const { TEAMS, buildHiredMessage } = require('./crewForms');
 
@@ -86,14 +87,42 @@ module.exports = {
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
 
-      // DM the applicant the hired message + invite link
+      // Add the applicant to the team's WhatsApp group
+      let addedToGroup = false;
+      if (teamGroupJid) {
+        try {
+          await sock.groupParticipantsUpdate(teamGroupJid, [applicantJid], 'add');
+          addedToGroup = true;
+        } catch (addErr) {
+          console.error('[CREW ACCEPT] group add failed:', addErr.message);
+        }
+      }
+
+      // Build the hired message with the team's invite link
       const inviteLink = config.crewTeams[teamKey]?.invite
         ? 'https://chat.whatsapp.com/' + config.crewTeams[teamKey].invite
         : null;
+      const hiredText = buildHiredMessage(teamKey, inviteLink);
+
+      // DM the applicant the hired message, attaching the team group's profile pic as the caption image
       try {
-        await sock.sendMessage(applicantJid, {
-          text: buildHiredMessage(teamKey, inviteLink),
-        });
+        let sent = false;
+        try {
+          const ppUrl = await sock.profilePictureUrl(teamGroupJid, 'image');
+          if (ppUrl) {
+            const picRes = await axios.get(ppUrl, { responseType: 'arraybuffer' });
+            await sock.sendMessage(applicantJid, {
+              image: Buffer.from(picRes.data),
+              caption: hiredText,
+            });
+            sent = true;
+          }
+        } catch (ppErr) {
+          console.error('[CREW ACCEPT] pp fetch failed:', ppErr.message);
+        }
+        if (!sent) {
+          await sock.sendMessage(applicantJid, { text: hiredText });
+        }
       } catch (dmErr) {
         console.error('[CREW ACCEPT] hired DM failed:', dmErr.message);
       }
@@ -106,7 +135,10 @@ module.exports = {
           '🆔 App ID: ' + bold(uid) + '\n' +
           '👤 @' + applicantNum + '\n' +
           '🏷️ Role: ' + roleEmoji + ' ' + bold(role) + '\n\n' +
-          '_Hired message + group invite sent to them_' + pick(SLANG.vibe),
+          (addedToGroup
+            ? '✅ Added to the ' + teamKey + ' group\n'
+            : '⚠️ Couldn\'t auto-add them to the group — send the invite manually\n') +
+          '_Hired message + group pic + invite sent to them_' + pick(SLANG.vibe),
         mentions: applicantJid ? [applicantJid] : [],
       }, { quoted: msg });
 

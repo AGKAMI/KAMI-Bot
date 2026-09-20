@@ -143,6 +143,19 @@ module.exports = {
             const messageText = args.slice(1).join(' ');
             const reminderId = Date.now().toString(36);
 
+            // Resolve who to remind: a mentioned user, or the command sender if no mention.
+            const ctxM = msg.message?.extendedTextMessage?.contextInfo;
+            const mentionedJids = ctxM?.mentionedJid || [];
+            const targetJids = mentionedJids.length > 0 ? mentionedJids : [sender];
+            const targetJid = targetJids[0];
+
+            // Strip raw @jid tokens out of the message so it reads cleanly
+            const cleanMessage = messageText
+              .replace(/@\d+/g, '')
+              .replace(/@lid/g, '')
+              .replace(/\s+/g, ' ')
+              .trim() || `Reminder for @${targetJid.split('@')[0]}`;
+
             const timeout = setTimeout(async () => {
                 const idx = groupReminders.findIndex(r => r.id === reminderId);
                 if (idx !== -1) groupReminders.splice(idx, 1);
@@ -152,12 +165,12 @@ module.exports = {
                         text: [
                             `⏰ *REMINDER TIME!*`,
                             ``,
-                            `👤 *For:* @${sender.split('@')[0]}`,
-                            `📝 *Message:* ${messageText}`,
+                            `👤 *For:* ${targetJids.map(j => `@${j.split('@')[0]}`).join(', ')}`,
+                            `📝 *Message:* ${cleanMessage}`,
                             ``,
                             `_Set ${amount} ${fullUnit} ago — ${pick(SLANG.vibe)}_`
                         ].join('\n'),
-                        mentions: [sender]
+                        mentions: targetJids
                     });
                 } catch (e) {
                     console.error('[Remind] Failed to send reminder:', e.message);
@@ -166,8 +179,8 @@ module.exports = {
 
             groupReminders.push({
                 id: reminderId,
-                sender,
-                message: messageText,
+                sender: targetJid,
+                message: cleanMessage,
                 timeLabel: `${amount} ${fullUnit}`,
                 timeout
             });
@@ -175,10 +188,11 @@ module.exports = {
             await extra.reply(
                 `✅ *SUCCESS*\n\n` +
                 `⏰ *Reminder Set*\n` +
-                `👤 *Who:* @${sender.split('@')[0]}\n` +
+                `👤 *Who:* ${targetJids.map(j => `@${j.split('@')[0]}`).join(', ')}\n` +
                 `⏳ *When:* ${amount} ${fullUnit} from now\n` +
-                `📝 *Message:* ${messageText}\n\n` +
-                `_I'll ping you, ${pick(SLANG.vibe)} 🫡_`
+                `📝 *Message:* ${cleanMessage}\n\n` +
+                `_I'll ping ${targetJids.length > 1 ? 'them' : 'you'}, ${pick(SLANG.vibe)} 🫡_`,
+                targetJids
             );
 
         } catch (error) {

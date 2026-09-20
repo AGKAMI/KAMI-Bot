@@ -1,7 +1,8 @@
 /**
- * Crew Applied Command — submit a completed application.
- * Flow: .crew applied <team> <answers> (run in any SS group)
- * → generates a short UID, stores the app, notifies the team's group admins.
+ * Crew Applied Command — submit answers for an existing application.
+ * Flow: .crew apply <team> (bot DMs form + App ID)
+ *   → .crew applied <team> <answers> (attaches answers, DMs the team's group admins)
+ * Answers can be multi-line — they're extracted from the raw message, preserving line breaks.
  */
 
 const database = require('../../database');
@@ -12,7 +13,7 @@ const { TEAMS, buildAdminNotice } = require('./crewForms');
 module.exports = {
   subName: 'applied',
   name: null,
-  description: 'Submit a completed crew application',
+  description: 'Submit your application answers',
   usage: '.crew applied <team> <answers>',
   groupOnly: true,
   ownerOnly: false,
@@ -22,8 +23,8 @@ module.exports = {
       if (!args || args.length < 2) {
         return extra.reply(
           `❌ ERROR\n\nUsage: .crew applied <team> <your answers>\n\n` +
-          `Example: .crew applied SSRS 1) 3 hours 2) 18 3) yes 4) yes 5) active daily 6) i move the vip to safety\n\n` +
-          `Teams: ${Object.keys(TEAMS).join(', ')}`
+          `Teams: ${Object.keys(TEAMS).join(', ')}\n\n` +
+          `You can put each answer on its own line — just keep it in ONE message`
         );
       }
 
@@ -34,7 +35,18 @@ module.exports = {
         );
       }
 
-      const answers = args.slice(1).join(' ').trim();
+      // Extract the raw message text so we can preserve line breaks in the answers
+      const rawText = msg.message?.extendedTextMessage?.text ||
+                      msg.message?.conversation ||
+                      '';
+      const match = rawText.match(/^\.?\s*crew\s+applied\s+\S+\s*([\s\S]*)$/i);
+      let answers = (match ? match[1] : args.slice(1).join('\n')).trim();
+
+      // Fallback: strip leading command tokens from raw if regex missed (custom prefix)
+      if (!answers) {
+        answers = args.slice(1).join('\n').trim();
+      }
+
       if (!answers) {
         return extra.reply(`❌ ERROR\n\nNo answers provided ${pick(SLANG.vibe)}\nRe-run with your full answers`);
       }
@@ -42,47 +54,36 @@ module.exports = {
       const sender = msg.key.participant || msg.key.remoteJid;
       const applicantJid = sender.includes('@g.us') ? (msg.key.participant || extra.sender) : sender;
 
-      // Which team group does this application belong to?
       const crewTeam = config.crewTeams[teamKey];
       const teamGroupJid = crewTeam ? crewTeam.jid : null;
-
-      // Prevent duplicate pending apps for the same applicant+team
-      if (teamGroupJid) {
-        const applicants = database.getApplicants(teamGroupJid);
-        const dup = Object.values(applicants).find(a => a.jid === applicantJid);
-        if (dup) {
-          return extra.reply(
-            `❌ ERROR\n\nYou already have a pending ${teamKey} application ${pick(SLANG.vibe)}\n` +
-            `App ID: ${dup.appUid}\n\nWait for review or hit an admin`
-          );
-        }
-      } else {
-        // If team group unknown, scan all apps for this applicant
-        const crew = require('../../database');
-        const all = crew.getAllTeams ? crew.getAllTeams() : {};
-        for (const [jid, team] of Object.entries(all)) {
-          if (team.applicants) {
-            const dup = Object.values(team.applicants).find(a => a.jid === applicantJid && a.team === teamKey);
-            if (dup) return extra.reply(`❌ ERROR\n\nYou already have a pending ${teamKey} application (${dup.appUid}) ${pick(SLANG.vibe)}`);
-          }
-        }
-      }
-
-      // If team group is not configured, use the group they submitted from
       const storeGroupJid = teamGroupJid || extra.from;
 
-      // Create the application keyed by UID
-      const app = database.addApplicant(storeGroupJid, applicantJid, {
-        team: teamKey,
-        answers,
-        appUid: undefined // database generates a fresh UID
-      });
+      // Find this applicant's pending app for this team
+      let app = null;
+      const applicants = database.getApplicants(storeGroupJid);
+      const existing = Object.values(applicants).find(a =>
+        a.jid === applicantJid && a.status === 'pending'
+      );
 
-      if (!app) {
-        return extra.reply(`❌ ERROR\n\nCouldn't create application ${pick(SLANG.error)}`);
+      if (existing) {
+        // Attach answers to the existing app (created by .crew apply)
+        const team = database.getTeam(storeGroupJid);
+        team.applicants[existing.appUid].answers = answers;
+        database.updateTeam(storeGroupJid, team);
+        app = team.applicants[existing.appUid];
+      } else {
+        // No prior .crew apply — create the app now with answers
+        app = database.addApplicant(storeGroupJid, applicantJid, {
+          team: teamKey,
+          answers,
+        });
       }
 
-      // Notify the team's group admins (post the app notice there)
+      if (!app) {
+        return extra.reply(`❌ ERROR\n\nCouldn't save your application ${pick(SLANG.error)}`);
+      }
+
+      // DM the application to ALL group admins of the team
       let adminMsg = null;
       if (teamGroupJid) {
         try {
@@ -90,17 +91,31 @@ module.exports = {
             ...app,
             team: teamKey,
             answers,
-            jid: applicantJid
+            jid: applicantJid,
+            appUid: app.appUid,
           });
+
           const members = await sock.groupMetadata(teamGroupJid).catch(() => null);
           const admins = (members && members.participants
             ? members.participants.filter(p => p.admin).map(p => p.id)
             : []);
-          await sock.sendMessage(teamGroupJid, {
-            text: notice,
-            ...(admins.length ? { mentions: admins } : {})
-          });
-          adminMsg = true;
+
+          if (admins.length > 0) {
+            let dmed = 0;
+            for (const adminJid of admins) {
+              try {
+                await sock.sendMessage(adminJid, { text: notice });
+                dmed++;
+              } catch (e) {
+                console.error(`[CREW APPLIED] admin DM failed ${adminJid}:`, e.message);
+              }
+            }
+            adminMsg = dmed > 0;
+          } else {
+            // No admins resolvable — post in the team group as fallback
+            await sock.sendMessage(teamGroupJid, { text: notice });
+            adminMsg = true;
+          }
         } catch (e) {
           console.error('[CREW APPLIED] admin notify failed:', e.message);
           adminMsg = false;
@@ -110,17 +125,16 @@ module.exports = {
       // Confirm to the applicant
       const confirm = `✅ *APPLICATION SUBMITTED*\n\n` +
         `🏢 Team: *${teamKey}* — ${TEAMS[teamKey].label}\n` +
-        `🆔 *Application ID:* ${app.appUid}\n` +
-        `👤 Applicant: @${applicantJid.split('@')[0]}\n\n` +
+        `🆔 *Application ID:* ${app.appUid}\n\n` +
         (adminMsg === false
-          ? `⚠️ _Couldn't notify the team group automatically — but your application is stored._\n\n`
-          : `_Your application has been sent to the ${teamKey} leadership ${pick(SLANG.good)}_\n\n`) +
-        `⏳ Keep this App ID — one of the ${teamKey} admins will use it to accept or reject you.\n\n` +
+          ? `⚠️ _Couldn't notify the team admins automatically — but your application is stored._\n\n`
+          : `📲 _Your application has been sent to all ${teamKey} admins ${pick(SLANG.good)}_\n\n`) +
+        `⏳ Keep this App ID — an admin will accept or reject you with it.\n\n` +
         `_${pick(SLANG.greeting)}, good luck!_`;
 
       return sock.sendMessage(extra.from, {
         text: confirm,
-        mentions: [applicantJid]
+        mentions: [applicantJid],
       }, { quoted: msg });
 
     } catch (error) {
