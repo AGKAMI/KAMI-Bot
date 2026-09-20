@@ -89,6 +89,19 @@ module.exports = {
               });
             } catch (e) {}
 
+            // DM the protected admin — VIP treatment
+            try {
+              await sock.sendMessage(target, {
+                text:
+                  `🛡️ *YOU ARE PROTECTED*\n\n` +
+                  `@${demoterNum} tried to demote you in *${extra.from.split('@')[0]}*\n\n` +
+                  `The attempt was blocked — you're staying as admin\n` +
+                  `Only the owner can demote you\n\n` +
+                  `_You were promoted by the owner — act like it_ 👑`,
+                mentions: [extra.sender],
+              });
+            } catch (e) {}
+
             // DM the owner
             const ownerNumbers = config.ownerNumber || [];
             for (const ownerNum of ownerNumbers) {
@@ -145,6 +158,19 @@ module.exports = {
                   `in *${extra.from.split('@')[0]}*\n\n` +
                   `This is your consequence\n` +
                   `Only the owner can demote people they've promoted`,
+              });
+            } catch (e) {}
+
+            // DM the protected admin — VIP outcome
+            try {
+              await sock.sendMessage(target, {
+                text:
+                  `🛡️ *PROTECTION SERVED*\n\n` +
+                  `@${demoterNum} tried to demote you twice in *${extra.from.split('@')[0]}*\n\n` +
+                  `They have been *demoted* as a result\n` +
+                  `You have been re-promoted ✅\n\n` +
+                  `_The owner's word is final_ 👑`,
+                mentions: [extra.sender],
               });
             } catch (e) {}
 

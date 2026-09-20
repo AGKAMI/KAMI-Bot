@@ -87,6 +87,18 @@ module.exports = {
               });
             } catch (e) {}
 
+            // DM the victim — let them know they're protected
+            try {
+              await sock.sendMessage(target, {
+                text:
+                  `🛡️ *YOU ARE PROTECTED*\n\n` +
+                  `@${kickerNum} tried to kick you from *${chatId.split('@')[0]}*\n\n` +
+                  `The attempt was blocked — you're staying\n` +
+                  `Only the owner can remove you`,
+                mentions: [extra.sender],
+              });
+            } catch (e) {}
+
             // DM the owner
             const ownerNumbers = config.ownerNumber || [];
             for (const ownerNum of ownerNumbers) {

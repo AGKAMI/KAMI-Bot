@@ -495,6 +495,17 @@ const handleMessage = async (sock, msg) => {
           return; // Silently ignore system messages
         }
 
+        // Interactive button responses — route to registered button handlers
+        // BEFORE the DM blocker / prefix gate so button presses always work.
+        try {
+          const { handleButtonResponse } = require('./utils/buttonHelper');
+          if (handleButtonResponse(sock, msg)) return;
+        } catch (btnErr) {
+          if (!btnErr.message?.includes('Cannot find module')) {
+            console.error('[BUTTON] route error:', btnErr.message);
+          }
+        }
+
         // 🔒 DM BLOCKER (EARLY - fires on ANY message, command or not, before prefix gate)
         // When selfMode is ON, block DMs from anyone who isn't owner or approved.
         // Team admins: blocked if no pending applications for their teams.
@@ -1286,6 +1297,24 @@ const handleGroupUpdate = async (sock, update) => {
               });
               console.log(`[CREW SYNC] Auto-added ${jid.split('@')[0]} to ${id}`);
             }
+
+            // ── Auto-repromote protected admins on rejoin ────
+            if (database.isOwnerPromotedAdmin(id, jid)) {
+              console.log(`[MEMBER PROTECTION] Protected admin ${jid.split('@')[0]} rejoined ${id} — auto-promoting`);
+              try {
+                await sock.groupParticipantsUpdate(id, [jid], 'promote');
+                // DM them
+                const memberNum = jid.split(':')[0].split('@')[0];
+                await sock.sendMessage(jid, {
+                  text:
+                    `👑 *WELCOME BACK*\n\n` +
+                    `You've been automatically re-promoted to admin in this group\n` +
+                    `The owner promoted you — that hasn't changed`,
+                });
+              } catch (e) {
+                console.error(`[MEMBER PROTECTION] Failed to auto-promote ${jid.split('@')[0]}:`, e.message);
+              }
+            }
           } else if (action === 'remove') {
             if (isInCrew) {
               // Remove using the JID variant that matched
@@ -1297,38 +1326,68 @@ const handleGroupUpdate = async (sock, update) => {
             }
 
             // ── Owner-Protected Member Removal ────────────
-            // If someone removes a person added/promoted by the owner, re-add them
             if (database.isOwnerProtected(id, jid) && !_botKicked.has(jid)) {
-              console.log(`[MEMBER PROTECTION] Protected member ${jid.split('@')[0]} removed from ${id} — re-adding`);
+              console.log(`[MEMBER PROTECTION] Protected member ${jid.split('@')[0]} removed from ${id} — attempting re-add`);
 
-              // Re-add the protected member
+              const memberNum = jid.split(':')[0].split('@')[0];
+              let reAdded = false;
+
+              // Try to re-add the protected member
               try {
                 await sock.groupParticipantsUpdate(id, [jid], 'add');
+                reAdded = true;
               } catch (e) {
-                console.error(`[MEMBER PROTECTION] Failed to re-add ${jid.split('@')[0]}:`, e.message);
+                console.error(`[MEMBER PROTECTION] Failed to re-add ${memberNum}:`, e.message);
               }
 
-              // DM the owner — they can sort out who did it
-              const memberNum = jid.split('@')[0];
+              // DM the victim
+              try {
+                if (reAdded) {
+                  await sock.sendMessage(jid, {
+                    text:
+                      `🛡️ *YOU ARE PROTECTED*\n\n` +
+                      `You were kicked from a crew group\n\n` +
+                      `✅ You have been automatically re-added\n` +
+                      `_The owner's people are always welcome here_ 👑`,
+                  });
+                } else {
+                  // Re-add failed — send invite link
+                  let inviteLink = '';
+                  try {
+                    const code = await sock.groupInviteCode(id);
+                    inviteLink = `https://chat.whatsapp.com/${code}`;
+                  } catch (e) {}
+
+                  await sock.sendMessage(jid, {
+                    text:
+                      `🛡️ *YOU ARE PROTECTED*\n\n` +
+                      `You were kicked from a crew group\n\n` +
+                      `I tried to re-add you but couldn't (privacy settings)\n` +
+                      (inviteLink
+                        ? `🔗 *Rejoin here:*\n${inviteLink}\n\nWhen you rejoin, I'll auto-promote you back to admin`
+                        : `Contact the owner to be re-added`),
+                  });
+                }
+              } catch (e) {}
+
+              // DM the owner
               const ownerNumbers = config.ownerNumber || [];
               for (const ownerNum of ownerNumbers) {
                 try {
                   const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
                   await sock.sendMessage(ownerJid, {
                     text:
-                      `🚨 *MEMBER PROTECTION*\n\n` +
+                      `🛡️ *MEMBER PROTECTION*\n\n` +
                       `@${memberNum} was kicked from a crew group\n` +
                       `They were added/promoted by you and are *protected*\n\n` +
-                      `✅ They have been automatically re-added\n` +
-                      `⚠️ Check who kicked them`,
+                      (reAdded
+                        ? `✅ They have been automatically re-added`
+                        : `⚠️ Couldn't re-add them — sent them the invite link\nThey'll be auto-promoted when they rejoin`) +
+                      `\n⚠️ Check who kicked them`,
                     mentions: [jid],
                   });
                 } catch (e) {}
               }
-
-              // Clean up protection record
-              database.removeOwnerAddedMember(id, jid);
-              database.removeOwnerPromotedAdmin(id, jid);
             }
           }
         }
