@@ -99,6 +99,12 @@ module.exports = {
       }
       
       await sock.groupParticipantsUpdate(chatId, usersToKick, 'remove');
+
+      // Mark as bot-initiated so handler.js skips member protection
+      for (const u of usersToKick) {
+        handler._botKicked.add(u);
+        setTimeout(() => handler._botKicked.delete(u), 5000);
+      }
       
       const usernames = usersToKick.map((jid) => `@${jid.split('@')[0]}`);
       const text = `🔨 KICKED\n\n${usernames.join(', ')} has been kicked ${pick(SLANG.good)}`;

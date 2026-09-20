@@ -5,6 +5,7 @@
  */
 
 const database = require('../../database');
+const handler = require('../../handler');
 const { bold, pick, SLANG } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
@@ -51,6 +52,10 @@ module.exports = {
       // Also kick from WhatsApp group
       let kickedFromGroup = false;
       try {
+        // Mark as bot-initiated so handler.js skips member protection
+        handler._botKicked.add(target);
+        setTimeout(() => handler._botKicked.delete(target), 5000);
+
         await sock.groupParticipantsUpdate(extra.from, [target], 'remove');
         kickedFromGroup = true;
       } catch (kickErr) {

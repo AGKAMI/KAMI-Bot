@@ -121,6 +121,11 @@ module.exports = {
         addedBy: extra.sender,
       });
 
+      // Track owner-added members for protection
+      if (extra.isOwner) {
+        database.addOwnerAddedMember(extra.from, target, extra.sender);
+      }
+
       const roleEmoji = ROLE_EMOJIS[role] || '👤';
       const ownerVIP = extra.isOwnerMentioned;
 

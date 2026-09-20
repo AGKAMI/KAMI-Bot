@@ -83,6 +83,11 @@ module.exports = {
           joined: Date.now(),
           addedBy: extra.sender,
         });
+
+        // Track owner-added members for protection
+        if (extra.isOwner) {
+          database.addOwnerAddedMember(teamGroupJid, applicantJid, extra.sender);
+        }
       }
 
       // Remove the pending application

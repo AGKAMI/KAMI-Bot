@@ -15,6 +15,7 @@ const MODS_DB = path.join(DB_PATH, 'mods.json');
 const CREW_DB = path.join(DB_PATH, 'crew.json');
 const GLOBAL_DB = path.join(DB_PATH, 'global.json');
 const OWNER_PROMOTED_DB = path.join(DB_PATH, 'ownerPromotedAdmins.json');
+const OWNER_ADDED_DB = path.join(DB_PATH, 'ownerAddedMembers.json');
 
 // Initialize database directory
 if (!fs.existsSync(DB_PATH)) {
@@ -35,6 +36,7 @@ initDB(MODS_DB, { moderators: [] });
 initDB(CREW_DB, { groups: {}, teamMap: {} });
 initDB(GLOBAL_DB, { selfMode: false, approvedNumbers: [] });
 initDB(OWNER_PROMOTED_DB, {});
+initDB(OWNER_ADDED_DB, {});
 
 // Read database
 const readDB = (filePath) => {
@@ -726,6 +728,41 @@ const removeOwnerPromotedAdmin = (groupJid, adminJid) => {
   }
 };
 
+// ── Owner-Added Member Protection ───────────────────────────
+// Tracks anyone added by the owner (via .crew accept, .crew add, .promote)
+// Structure: { "groupJid": { "memberJid": { addedBy, date } } }
+
+const isOwnerAddedMember = (groupJid, memberJid) => {
+  const data = readDB(OWNER_ADDED_DB);
+  return !!(data[groupJid] && data[groupJid][memberJid]);
+};
+
+const addOwnerAddedMember = (groupJid, memberJid, ownerJid) => {
+  const data = readDB(OWNER_ADDED_DB);
+  if (!data[groupJid]) data[groupJid] = {};
+  data[groupJid][memberJid] = {
+    addedBy: ownerJid,
+    date: Date.now(),
+  };
+  return writeDB(OWNER_ADDED_DB, data);
+};
+
+const removeOwnerAddedMember = (groupJid, memberJid) => {
+  const data = readDB(OWNER_ADDED_DB);
+  if (data[groupJid]) {
+    delete data[groupJid][memberJid];
+    if (Object.keys(data[groupJid]).length === 0) {
+      delete data[groupJid];
+    }
+    writeDB(OWNER_ADDED_DB, data);
+  }
+};
+
+// ── Combined protection check ───────────────────────────────
+const isOwnerProtected = (groupJid, memberJid) => {
+  return isOwnerPromotedAdmin(groupJid, memberJid) || isOwnerAddedMember(groupJid, memberJid);
+};
+
 module.exports = {
   getGroupSettings,
   updateGroupSettings,
@@ -804,4 +841,10 @@ module.exports = {
   getOwnerPromotedAdmin,
   incrementDemoteAttempts,
   removeOwnerPromotedAdmin,
+
+  // Owner-added member protection
+  isOwnerAddedMember,
+  addOwnerAddedMember,
+  removeOwnerAddedMember,
+  isOwnerProtected,
 };
