@@ -56,20 +56,22 @@ module.exports = {
         } else {
           const record = database.getOwnerPromotedAdmin(extra.from, target);
           const attempts = record?.demoteAttempts || 0;
+          const ownerNum = (config.ownerNumber || [])[0] || '';
+          const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
 
           if (attempts === 0) {
             // 1st attempt — warn + block
             database.incrementDemoteAttempts(extra.from, target);
 
-            // Group — show authority
+            // Group — show authority (mention owner)
             await sock.sendMessage(extra.from, {
               text:
                 `🚫 *NAH*\n\n` +
                 `@${demoterNum} tried demoting @${targetNum}\n\n` +
-                `That's the owner's admin ${pick(SLANG.friend)}\n` +
+                `That's @${ownerNum.split(':')[0].split('@')[0]}'s admin ${pick(SLANG.friend)}\n` +
                 `You can't touch them\n\n` +
                 `_Try that again and see what happens_`,
-              mentions: [target, extra.sender],
+              mentions: [target, extra.sender, ownerJid],
             });
 
             // DM victim
@@ -79,7 +81,7 @@ module.exports = {
                   `🛡️ *YOU GOOD*\n\n` +
                   `@${demoterNum} tried demoting you\n` +
                   `Blocked — you're still the admin\n` +
-                  `_The owner put you there, nobody else decides_ 👑`,
+                  `_KAMI put you there, nobody else decides_ 👑`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
@@ -89,7 +91,7 @@ module.exports = {
               await sock.sendMessage(extra.sender, {
                 text:
                   `🚫 *Oi*\n\n` +
-                  `You just tried demoting someone the owner promoted\n` +
+                  `You just tried demoting someone KAMI promoted\n` +
                   `That's not how this works ${pick(SLANG.friend)}\n\n` +
                   `One more time and you're losing your admin too`,
               });
@@ -97,12 +99,10 @@ module.exports = {
 
             // DM owner
             const ownerNumbers = config.ownerNumber || [];
-            for (const ownerNum of ownerNumbers) {
+            for (const oNum of ownerNumbers) {
               try {
-                const ownerJid = ownerNum.includes('@')
-                  ? ownerNum
-                  : `${ownerNum}@s.whatsapp.net`;
-                await sock.sendMessage(ownerJid, {
+                const oJid = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
+                await sock.sendMessage(oJid, {
                   text:
                     `🛡️ *PROTECTION*\n\n` +
                     `@${demoterNum} tried demoting @${targetNum}\n` +
@@ -125,15 +125,15 @@ module.exports = {
 
             database.removeOwnerPromotedAdmin(extra.from, target);
 
-            // Group — show who's boss
+            // Group — show who's boss (mention owner)
             await sock.sendMessage(extra.from, {
               text:
                 `🚨 *ADMIN PROTECTION*\n\n` +
                 `@${demoterNum} got demoted\n` +
-                `Kept trying to touch the owner's admin\n\n` +
+                `Kept trying to touch ${ownerNum.split(':')[0].split('@')[0]}'s admin\n\n` +
                 `@${targetNum} back where they belong\n\n` +
-                `_KAMI doesn't play_ 👑`,
-              mentions: [target, extra.sender],
+                `_KAMI-Bot doesn't play_ 👑`,
+              mentions: [target, extra.sender, ownerJid],
             });
 
             // DM victim
@@ -144,7 +144,7 @@ module.exports = {
                   `@${demoterNum} tried demoting you twice\n` +
                   `They got demoted for it\n` +
                   `You're back as admin\n\n` +
-                  `_The owner's word is final_ 👑`,
+                  `_KAMI's word is final_ 👑`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
@@ -154,7 +154,7 @@ module.exports = {
               await sock.sendMessage(extra.sender, {
                 text:
                   `🚨 *YOU GOT DEMOTED*\n\n` +
-                  `Kept trying to demote the owner's admin\n` +
+                  `Kept trying to demote KAMI's admin\n` +
                   `Now you're regular ${pick(SLANG.vibe)}\n\n` +
                   `_Should've left it alone_`,
               });

@@ -58,15 +58,17 @@ module.exports = {
           if (database.isOwnerProtected(chatId, target)) {
             const targetNum = target.split(':')[0].split('@')[0];
             const kickerNum = extra.sender.split(':')[0].split('@')[0];
+            const ownerNum = (config.ownerNumber || [])[0] || '';
+            const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
 
-            // Block — group message
+            // Block — group message (mention owner)
             await sock.sendMessage(chatId, {
               text:
                 `🚫 *ACCESS DENIED*\n\n` +
                 `@${kickerNum} — nah you can't kick @${targetNum}\n\n` +
-                `That's the owner's person ${pick(SLANG.friend)}\n` +
-                `Only KAMI can remove them`,
-              mentions: [target, extra.sender],
+                `That's @${ownerNum.split(':')[0].split('@')[0]}'s person ${pick(SLANG.friend)}\n` +
+                `Only KAMI-Bot can remove them`,
+              mentions: [target, extra.sender, ownerJid],
             });
 
             // DM victim
@@ -85,7 +87,7 @@ module.exports = {
               await sock.sendMessage(extra.sender, {
                 text:
                   `🚫 *Oi*\n\n` +
-                  `You just tried kicking someone the owner added\n` +
+                  `You just tried kicking someone KAMI added\n` +
                   `That's not happening ${pick(SLANG.friend)}\n\n` +
                   `Don't try that again`,
               });
@@ -93,12 +95,10 @@ module.exports = {
 
             // DM owner
             const ownerNumbers = config.ownerNumber || [];
-            for (const ownerNum of ownerNumbers) {
+            for (const oNum of ownerNumbers) {
               try {
-                const ownerJid = ownerNum.includes('@')
-                  ? ownerNum
-                  : `${ownerNum}@s.whatsapp.net`;
-                await sock.sendMessage(ownerJid, {
+                const oJid = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
+                await sock.sendMessage(oJid, {
                   text:
                     `🛡️ *PROTECTION*\n\n` +
                     `@${kickerNum} tried kicking @${targetNum}\n` +

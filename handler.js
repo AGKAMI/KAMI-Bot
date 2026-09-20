@@ -1307,7 +1307,7 @@ const handleGroupUpdate = async (sock, update) => {
                   text:
                     `👑 *WELCOME BACK*\n\n` +
                     `You're the admin again\n` +
-                    `_KAMI doesn't forget who the owner picked_`,
+                    `_KAMI-Bot doesn't forget who put you there_`,
                 });
               } catch (e) {
                 console.error(`[MEMBER PROTECTION] Failed to auto-promote ${jid.split('@')[0]}:`, e.message);
@@ -1345,8 +1345,8 @@ const handleGroupUpdate = async (sock, update) => {
                     text:
                       `🛡️ *YOU GOOD*\n\n` +
                       `Someone kicked you from a crew group\n` +
-                      `KAMI brought you back\n\n` +
-                      `_The owner's people stay_ 👑`,
+                      `KAMI-Bot brought you back\n\n` +
+                      `_KAMI's people stay_ 👑`,
                   });
                 } else {
                   // Re-add failed — send invite link
@@ -1360,10 +1360,10 @@ const handleGroupUpdate = async (sock, update) => {
                     text:
                       `🛡️ *YOU GOOD*\n\n` +
                       `Someone kicked you from a crew group\n` +
-                      `KAMI tried bringing you back but couldn't\n\n` +
+                      `KAMI-Bot tried bringing you back but couldn't\n\n` +
                       (inviteLink
                         ? `🔗 *Jump back in:*\n${inviteLink}\n\nWhen you're back, you'll be admin again`
-                        : `Hit up the owner to get back in`),
+                        : `Hit up KAMI to get back in`),
                   });
                 }
               } catch (e) {}
@@ -1378,7 +1378,7 @@ const handleGroupUpdate = async (sock, update) => {
                       `🛡️ *PROTECTION*\n\n` +
                       `@${memberNum} got kicked from a crew group\n\n` +
                       (reAdded
-                        ? `KAMI brought them back ${pick(SLANG.vibe)}`
+                        ? `KAMI-Bot brought them back ${pick(SLANG.vibe)}`
                         : `Couldn't re-add — sent them the invite link\nThey'll be admin again when they join`) +
                       `\nCheck who did it`,
                     mentions: [jid],
