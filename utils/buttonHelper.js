@@ -10,12 +10,31 @@
  */
 
 const config = require('../config');
+const fs = require('fs');
+const path = require('path');
 
 const buttonHandlers = new Map();
 
 // Button mode toggle — read from config.buttonMode
 function isButtonModeOn() {
   return config.buttonMode === true || config.buttonMode === 'on';
+}
+
+// Load a thumbnail buffer for the externalAdReply card (helps buttons render)
+function loadThumbnail() {
+  try {
+    const candidates = [
+      path.join(__dirname, 'bot_image.jpg'),
+      path.join(__dirname, '..', 'commands', 'general', 'bot_image.jpg'),
+      path.join(__dirname, '..', 'utils', 'bot_image.jpg'),
+    ];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) {
+        return fs.readFileSync(p);
+      }
+    }
+  } catch (e) {}
+  return null;
 }
 
 /**
@@ -33,6 +52,11 @@ async function sendButtons(sock, jid, opts, quoted) {
     return quoted
       ? sock.sendMessage(jid, { text }, { quoted })
       : sock.sendMessage(jid, { text });
+  }
+
+  // Inject a thumbnail so the interactive card renders on more clients
+  if (!opts.thumbnail) {
+    opts.thumbnail = loadThumbnail();
   }
 
   // Baileys caps quick-reply buttons at 3 per message
@@ -64,7 +88,7 @@ async function sendButtons(sock, jid, opts, quoted) {
           mediaType: 1,
           title: header || config.botName || 'KAMI Bot',
           body: footer || text.substring(0, 60),
-          thumbnailUrl: '',
+          ...(opts.thumbnail ? { thumbnail: opts.thumbnail } : {}),
           sourceUrl: '',
           containsAutoReply: false,
         },

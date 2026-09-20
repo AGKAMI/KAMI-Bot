@@ -7,6 +7,14 @@ const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 
+function getOwnerJid(sock) {
+  const botId = sock.user?.id || '';
+  const botNum = botId.includes(':') ? botId.split(':')[0] : botId.split('@')[0];
+  const ownerNum = (config.ownerNumber || []).find(n => n !== botNum);
+  if (!ownerNum) return null;
+  return ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
+}
+
 module.exports = {
   name: 'kick',
   aliases: ['remove'],
