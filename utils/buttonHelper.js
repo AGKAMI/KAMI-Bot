@@ -1,7 +1,8 @@
 /**
  * Button Helper — interactive quick-reply buttons via Baileys nativeFlowMessage.
- * When button mode is OFF (or no buttons passed) it falls back to plain text,
- * so the bot keeps working on clients that don't render interactive messages.
+ * Uses the full gifted-btns-compatible structure (header + messageVersion +
+ * messageParamsJson + externalAdReply) so buttons render on supported clients.
+ * When button mode is OFF (or no buttons passed) it falls back to plain text.
  *
  * Button presses arrive as buttonsResponseMessage / interactiveResponseMessage
  * with an id. Register handlers with onButton(id, fn) and route them in
@@ -25,7 +26,7 @@ function isButtonModeOn() {
  * @param {object} quoted - message to quote (optional)
  */
 async function sendButtons(sock, jid, opts, quoted) {
-  const { text, footer = '', buttons = [] } = opts;
+  const { text, footer = '', buttons = [], header = '' } = opts;
 
   // Fallback: button mode off, or no buttons → plain text
   if (!isButtonModeOn() || buttons.length === 0) {
@@ -45,15 +46,43 @@ async function sendButtons(sock, jid, opts, quoted) {
 
   const content = {
     interactiveMessage: {
+      ...(header ? { header: { title: header, hasMediaAttachment: false } } : {}),
       body: { text },
       ...(footer ? { footer: { text: footer } } : {}),
-      nativeFlowMessage: { buttons: rows },
+      nativeFlowMessage: {
+        messageVersion: 1,
+        messageParamsJson: '',
+        buttons: rows,
+      },
+      contextInfo: {
+        mentionedJid: [],
+        forwardingScore: 0,
+        isForwarded: false,
+        externalAdReply: {
+          showAdAttribution: true,
+          renderLargerThumbnail: false,
+          mediaType: 1,
+          title: header || config.botName || 'KAMI Bot',
+          body: footer || text.substring(0, 60),
+          thumbnailUrl: '',
+          sourceUrl: '',
+          containsAutoReply: false,
+        },
+      },
     },
   };
 
-  return quoted
-    ? sock.sendMessage(jid, content, { quoted })
-    : sock.sendMessage(jid, content);
+  // Try interactive; if the client can't build it, fall back to plain text
+  try {
+    return quoted
+      ? await sock.sendMessage(jid, content, { quoted })
+      : await sock.sendMessage(jid, content);
+  } catch (err) {
+    console.error('[BUTTON] send failed, falling back to text:', err.message);
+    return quoted
+      ? sock.sendMessage(jid, { text }, { quoted })
+      : sock.sendMessage(jid, { text });
+  }
 }
 
 // Register a handler for a button id

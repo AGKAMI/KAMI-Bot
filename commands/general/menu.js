@@ -125,6 +125,8 @@ module.exports = {
           { id: 'menu:owner', text: '👑 Owner' },
         ];
 
+        const btnFooter = config.botName || 'KAMI Bot';
+
         if (fs.existsSync(imagePath)) {
           const imageBuffer = fs.readFileSync(imagePath);
           await sock.sendMessage(extra.from, {
@@ -135,14 +137,16 @@ module.exports = {
           }, { quoted: msg });
           // Buttons can't attach to the image message, so send a follow-up interactive row
           await sendButtons(sock, extra.from, {
-            text: `_${prefix}menu <category>_ also works as text`,
-            footer: config.botName || 'KAMI Bot',
+            text: `📖 Full list: *${prefix}menu all*`,
+            footer: btnFooter,
+            header: 'KAMI BOT',
             buttons,
           }, msg);
         } else {
           await sendButtons(sock, extra.from, {
             text: summary,
-            footer: config.botName || 'KAMI Bot',
+            footer: btnFooter,
+            header: 'KAMI BOT',
             buttons,
           }, msg);
         }
