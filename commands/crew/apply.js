@@ -27,7 +27,7 @@ module.exports = {
     try {
       if (!args || args.length === 0) {
         return extra.reply(
-          `❌ ERROR\n\nProvide a team ${pick(SLANG.friend)}\n\n` +
+          `❌ ERROR\n\nProvide a team\n\n` +
           `Usage:\n` +
           `• \`.crew apply <team>\` — apply for yourself\n` +
           `• \`.crew apply <team> @user\` — apply for someone\n` +

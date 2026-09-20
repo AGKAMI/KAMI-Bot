@@ -64,7 +64,7 @@ module.exports = {
       }
       if (!extra.isOwner && !isTeamAdmin && !isGroupAdmin) {
         return extra.reply(
-          '❌ ERROR\n\nOnly ' + teamKey + ' admins can accept applications, ' + pick(SLANG.friend)
+          '❌ ERROR\n\nOnly ' + teamKey + ' admins can accept applications'
         );
       }
 

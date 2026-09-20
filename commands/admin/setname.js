@@ -34,7 +34,7 @@ module.exports = {
       }
 
       if (newName.length > 100) {
-        return extra.reply(`❌ *ERROR*\n\nName too long, ${pick(SLANG.friend)} — max 100 characters`);
+        return extra.reply(`❌ *ERROR*\n\nName too long — max 100 characters`);
       }
 
       const settings = database.getGroupSettings(from);

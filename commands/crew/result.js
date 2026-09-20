@@ -15,7 +15,7 @@ module.exports = {
 
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nUsage: \`.crew result <event-id> <winner>\`\nExample: \`.crew result evt_1234567890 Mfowethu\`\n\nLog the results of the event, ${pick(SLANG.friend)}.`
+        text: `❌ *ERROR*\n\nUsage: \`.crew result <event-id> <winner>\`\nExample: \`.crew result evt_1234567890 Mfowethu\`\n\nLog the results of the event.`
       });
     }
 

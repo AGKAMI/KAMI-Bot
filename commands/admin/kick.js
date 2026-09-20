@@ -40,7 +40,7 @@ module.exports = {
 
       if (usersToKick.length === 0) {
         return extra.reply(
-          `❌ ERROR\n\nTag or reply to the ${pick(SLANG.friend)} you wanna kick`
+          `❌ ERROR\n\nTag or reply to the person you wanna kick`
         );
       }
 
@@ -57,7 +57,7 @@ module.exports = {
       );
 
       if (isTryingToKickBot) {
-        return extra.reply(`❌ ERROR\n\nCan't kick myself ${pick(SLANG.friend)}`);
+        return extra.reply(`❌ ERROR\n\nCan't kick myself`);
       }
 
       // ── Owner protection check ────────────────────────────
@@ -69,14 +69,14 @@ module.exports = {
             const ownerJid = getOwnerJid(sock);
             const ownerNum = ownerJid ? ownerJid.split(':')[0].split('@')[0] : '';
 
-            // Block — group message (mention owner)
+            // Block — group message
             await sock.sendMessage(chatId, {
               text:
                 `🚫 *ACCESS DENIED*\n\n` +
                 `@${kickerNum} — nah you can't kick @${targetNum}\n\n` +
                 (ownerNum
-                  ? `That's @${ownerNum}'s person ${pick(SLANG.friend)}\n`
-                  : `That's KAMI's person ${pick(SLANG.friend)}\n`) +
+                  ? `That's @${ownerNum}'s person\n`
+                  : `That's KAMI's person\n`) +
                 `Only KAMI-Bot can remove them`,
               mentions: ownerNum
                 ? [target, extra.sender, ownerJid]
@@ -89,7 +89,7 @@ module.exports = {
                 text:
                   `🛡️ *YOU GOOD*\n\n` +
                   `@${kickerNum} tried to kick you\n` +
-                  `Blocked — you're staying ${pick(SLANG.vibe)}`,
+                  `Blocked — you're staying`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
@@ -100,7 +100,7 @@ module.exports = {
                 text:
                   `🚫 *Oi*\n\n` +
                   `You just tried kicking someone KAMI added\n` +
-                  `That's not happening ${pick(SLANG.friend)}\n\n` +
+                  `That's not happening\n\n` +
                   `Don't try that again`,
               });
             } catch (e) {}

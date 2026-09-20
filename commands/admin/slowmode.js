@@ -140,11 +140,11 @@ module.exports = {
       else if (unit === 'h') seconds = value * 3600;
 
       if (seconds < 5) {
-        return extra.reply(`❌ *ERROR*\n\nMinimum slowmode is 5 seconds, ${pick(SLANG.friend)}`);
+        return extra.reply(`❌ *ERROR*\n\nMinimum slowmode is 5 seconds`);
       }
 
       if (seconds > 3600) {
-        return extra.reply(`❌ *ERROR*\n\nMaximum slowmode is 1 hour, ${pick(SLANG.friend)}`);
+        return extra.reply(`❌ *ERROR*\n\nMaximum slowmode is 1 hour`);
       }
 
       database.updateGroupSettings(from, { slowmode: seconds });

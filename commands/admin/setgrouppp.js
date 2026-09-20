@@ -33,7 +33,7 @@ module.exports = {
 
       const quotedMsg = ctxInfo.quotedMessage;
       if (!quotedMsg.imageMessage) {
-        return await extra.reply(`❌ *ERROR*\n\nYou need to reply to a *photo*, ${pick(SLANG.friend)} — not that type of message`);
+        return await extra.reply(`❌ *ERROR*\n\nYou need to reply to a *photo* — not that type of message`);
       }
 
       const settings = database.getGroupSettings(from);

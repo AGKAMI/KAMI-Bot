@@ -30,7 +30,7 @@ module.exports = {
       if (!extra.isOwner && !isGroupAdmin && !database.isTeamAdmin(extra.sender)) {
         return extra.reply(
           `❌ ERROR\n\n` +
-          `Only admins can view applications, ${pick(SLANG.friend)}`
+          `Only admins can view applications`
         );
       }
 
@@ -62,7 +62,7 @@ module.exports = {
         if (!teamArg) {
           return extra.reply(
             `❌ ERROR\n\n` +
-            `Specify a team ${pick(SLANG.friend)}\n\n` +
+            `Specify a team\n\n` +
             `Usage: .crew applicants <team>\n` +
             `Teams: ${Object.keys(TEAMS).join(', ')}`
           );

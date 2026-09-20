@@ -96,7 +96,7 @@ module.exports = {
     if (!senderMeta || !senderMeta.admin) {
       return extra.reply(
         `🛡️ *ADMINS ONLY*\n\n` +
-        `_You need admin to set rules ${pick(SLANG.friend)}_`
+        `_You need admin to set rules_`
       );
     }
 
@@ -132,7 +132,7 @@ module.exports = {
     if (!senderMeta || !senderMeta.admin) {
       return extra.reply(
         `🛡️ *ADMINS ONLY*\n\n` +
-        `_You need admin to clear rules ${pick(SLANG.friend)}_`
+        `_You need admin to clear rules_`
       );
     }
 

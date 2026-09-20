@@ -33,7 +33,7 @@ module.exports = {
         if (rawArg && /\d/.test(rawArg)) {
           target = parsePhoneNumber(rawArg);
           if (!target) {
-            return extra.reply(`❌ ERROR\n\n_Invalid number, ${pick(SLANG.friend)}_`);
+            return extra.reply(`❌ ERROR\n\n_Invalid number_`);
           }
         } else {
           // Tag or reply

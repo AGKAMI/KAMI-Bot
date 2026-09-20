@@ -30,7 +30,7 @@ module.exports = {
   async execute(sock, msg, args) {
     if (activeAudioDownloads >= 2) {
       return await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ _too many downloads ${pick(SLANG.friend)} — try again in a few seconds_`
+        text: `❌ _too many downloads — try again in a few seconds_`
       }, { quoted: msg });
     }
     activeAudioDownloads++;

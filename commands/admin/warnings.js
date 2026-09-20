@@ -85,13 +85,13 @@ module.exports = {
       // Danger zone when 1 strike remains
       if (remaining === 1) {
         text += `\n🚨 *DANGER ZONE*\n`;
-        text += `_One more strike and ${pick(SLANG.friend)}, they OUT!_\n`;
+        text += `_One more strike and they OUT!_\n`;
         text += `_Auto-kick is armed and ready 💀_\n`;
       } else if (remaining <= 0) {
         text += `\n🔴 *MAX WARNINGS HIT*\n`;
         text += `_This person should be removed ${pick(SLANG.vibe)}_\n`;
       } else {
-        text += `\n_${remaining} more and they're gone, ${pick(SLANG.friend)}_\n`;
+        text += `\n_${remaining} more and they're gone_\n`;
       }
 
       await sock.sendMessage(extra.from, {

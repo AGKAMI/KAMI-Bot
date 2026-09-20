@@ -71,14 +71,14 @@ module.exports = {
             // 1st attempt — warn + block
             database.incrementDemoteAttempts(extra.from, target);
 
-            // Group — show authority (mention owner)
+            // Group — show authority
             await sock.sendMessage(extra.from, {
               text:
                 `🚫 *NAH*\n\n` +
                 `@${demoterNum} tried demoting @${targetNum}\n\n` +
                 (ownerNum
-                  ? `That's @${ownerNum}'s admin ${pick(SLANG.friend)}\n`
-                  : `That's KAMI's admin ${pick(SLANG.friend)}\n`) +
+                  ? `That's @${ownerNum}'s admin\n`
+                  : `That's KAMI's admin\n`) +
                 `You can't touch them\n\n` +
                 `_Try that again and see what happens_`,
               mentions: ownerNum
@@ -104,7 +104,7 @@ module.exports = {
                 text:
                   `🚫 *Oi*\n\n` +
                   `You just tried demoting someone KAMI promoted\n` +
-                  `That's not how this works ${pick(SLANG.friend)}\n\n` +
+                  `That's not how this works\n\n` +
                   `One more time and you're losing your admin too`,
               });
             } catch (e) {}
@@ -137,7 +137,7 @@ module.exports = {
 
             database.removeOwnerPromotedAdmin(extra.from, target);
 
-            // Group — show who's boss (mention owner)
+            // Group — show who's boss
             await sock.sendMessage(extra.from, {
               text:
                 `🚨 *ADMIN PROTECTION*\n\n` +
@@ -171,7 +171,7 @@ module.exports = {
                 text:
                   `🚨 *YOU GOT DEMOTED*\n\n` +
                   `Kept trying to demote KAMI's admin\n` +
-                  `Now you're regular ${pick(SLANG.vibe)}\n\n` +
+                  `Now you're regular\n\n` +
                   `_Should've left it alone_`,
               });
             } catch (e) {}

@@ -114,7 +114,7 @@ module.exports = {
         const summary = [
           `*KAMI BOT* ${pick(SLANG.greeting)}! 👋`,
           ``,
-          `🤖 ${pick(SLANG.friend)}, tap a button to see that section's commands 👇`,
+          `🤖 Tap a button to see that section's commands 👇`,
           ``,
           `📖 Full list: *${prefix}menu all*`,
         ].join('\n');

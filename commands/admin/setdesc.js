@@ -34,7 +34,7 @@ module.exports = {
       }
 
       if (newDesc.length > 250) {
-        return extra.reply(`❌ *ERROR*\n\nDescription too long, ${pick(SLANG.friend)} — max 250 characters`);
+        return extra.reply(`❌ *ERROR*\n\nDescription too long — max 250 characters`);
       }
 
       const settings = database.getGroupSettings(from);

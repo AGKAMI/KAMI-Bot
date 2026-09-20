@@ -1070,7 +1070,7 @@ const handleMessage = async (sock, msg) => {
                     ? sender.split('@')[0] + '@s.whatsapp.net'
                     : sender;
                   await sock.sendMessage(targetJid, {
-                    text: `⚠️ *FLOOD WARNING*\n\nHey, ${pick(SLANG.friend)} — slow down. You\'re spamming too fast in the group.\n\n_One more burst and you\'re getting kicked, ${pick(SLANG.vibe)}_`
+                    text: `⚠️ *FLOOD WARNING*\n\nHey — slow down. You\'re spamming too fast in the group.\n\n_One more burst and you\'re getting kicked, ${pick(SLANG.vibe)}_`
                   });
                 } catch (e) {}
               }
@@ -1182,7 +1182,7 @@ const handleMessage = async (sock, msg) => {
     }
     
     if (command.modOnly && !isMod(sender) && !isOwner(sender)) {
-      return sock.sendMessage(from, { text: `${bold('Moderators only')} — this one's for the mods, ${pick(SLANG.friend)}` }, { quoted: msg });
+      return sock.sendMessage(from, { text: `${bold('Moderators only')} — this one's for the mods` }, { quoted: msg });
     }
     
     if (command.groupOnly && !isGroup) {
@@ -1856,7 +1856,7 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
         } else {
           const remaining = maxWarnings - warnCount;
           await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-LINK WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} — links are prohibited!\n\n_${remaining} more and you're out, ${pick(SLANG.friend)}._`,
+            text: `🚫 *ANTI-LINK WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} — links are prohibited!\n\n_${remaining} more and you're out._`,
             mentions: [sender]
           });
         }
@@ -1972,7 +1972,7 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
         } else {
           const remaining = maxWarnings - warnCount;
           await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-GROUP MENTION WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} — group mentions are prohibited!\n\n_${remaining} more and you're out, ${pick(SLANG.friend)}._`,
+            text: `🚫 *ANTI-GROUP MENTION WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} — group mentions are prohibited!\n\n_${remaining} more and you're out._`,
             mentions: [sender]
           });
         }
@@ -2023,7 +2023,7 @@ const initializeAntiCall = (sock, isOwner) => {
         // Send message first (before block so it delivers)
         try {
           await sock.sendMessage(caller, {
-            text: `🚫 _Sorry ${pick(SLANG.friend)}, calls aren't allowed here. Send a message instead._`
+            text: `🚫 _Sorry, calls aren't allowed here. Send a message instead._`
           });
         } catch (e) {
           console.error('[ANTICALL] message failed:', e.message);

@@ -15,7 +15,7 @@ module.exports = {
 
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nUsage: \`.crew event <name> <time>\`\nExample: \`.crew event Friday Drift 20:30\`\n\nGive us the event name and the time, ${pick(SLANG.friend)}.`
+        text: `❌ *ERROR*\n\nUsage: \`.crew event <name> <time>\`\nExample: \`.crew event Friday Drift 20:30\`\n\nGive us the event name and the time.`
       });
     }
 

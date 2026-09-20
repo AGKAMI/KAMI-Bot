@@ -56,7 +56,7 @@ module.exports = {
       }
       if (!extra.isOwner && !isTeamAdmin && !isGroupAdmin) {
         return extra.reply(
-          '❌ ERROR\n\nOnly ' + teamKey + ' admins can deny applications, ' + pick(SLANG.friend)
+          '❌ ERROR\n\nOnly ' + teamKey + ' admins can deny applications'
         );
       }
 

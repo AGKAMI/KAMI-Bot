@@ -87,7 +87,7 @@ module.exports = {
       // ── Permission: owner or team admin ────────────────────
       if (!extra.isOwner && !database.isTeamAdmin(extra.sender)) {
         return extra.reply(
-          `❌ ERROR\n\nOnly the owner or team admins can use this command ${pick(SLANG.friend)}`
+          `❌ ERROR\n\nOnly the owner or team admins can use this command`
         );
       }
 

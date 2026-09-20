@@ -119,7 +119,7 @@ module.exports = {
 
       // ── Check for active giveaway ───────────────────────
       if (activeGiveaways.has(from)) {
-        return extra.reply(`❌ *ERROR*\n\nA giveaway is already running, ${pick(SLANG.friend)}`);
+        return extra.reply(`❌ *ERROR*\n\nA giveaway is already running`);
       }
 
       if (!fullArgs.trim()) {

@@ -37,7 +37,7 @@ module.exports = {
       );
 
       if (foundParticipant) {
-        return extra.reply(`*🚫 CAN'T WARN AN ADMIN*\n\n_Nice try though ${pick(SLANG.friend)}_`);
+        return extra.reply(`*🚫 CAN'T WARN AN ADMIN*\n\n_Nice try though_`);
       }
 
       const warnings = database.addWarning(extra.from, target, reason, extra.sender);

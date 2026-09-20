@@ -187,7 +187,7 @@ const templates = {
    * Permission denied
    */
   permDenied: (role = 'owner') => {
-    return `${bold('NO ACCESS')} — this one's for the ${role} only, ${pick(SLANG.friend)}`;
+    return `${bold('NO ACCESS')} — this one's for the ${role} only`;
   },
 
   /**
@@ -201,7 +201,7 @@ const templates = {
    * Admin-only command
    */
   adminOnly: () => {
-    return `${bold('Admins only')} — you need to be an admin for this, ${pick(SLANG.friend)}`;
+    return `${bold('Admins only')} — you need to be an admin for this`;
   },
 };
 

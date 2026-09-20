@@ -33,7 +33,7 @@ module.exports = {
 
     if (activeDownloads >= MAX_CONCURRENT) {
       const pos = downloadQueue.length + 1;
-      return extra.reply(`❌ _video queue full ${pick(SLANG.friend)} (${activeDownloads} active) — try again in ~30s_`);
+      return extra.reply(`❌ _video queue full (${activeDownloads} active) — try again in ~30s_`);
     }
 
     const doDownload = async () => {
