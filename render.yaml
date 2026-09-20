@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: kami-cloud-api
-    runtime: node
-    buildCommand: npm install
-    startCommand: node cloud-api/server.js
