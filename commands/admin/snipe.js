@@ -24,7 +24,7 @@ module.exports = {
 
       // --- .snipe list — show all stored deleted messages ---
       if (sub === 'list') {
-        return this.showList(msg, args, extra);
+        return this.showList(sock, msg, args, extra);
       }
 
       // --- .snipe [n] — show nth most recent ---
@@ -48,14 +48,14 @@ module.exports = {
         );
       }
 
-      return this.showEntry(msg, entry, extra.from, targetIndex + 1, extra);
+      return this.showEntry(sock, msg, entry, extra.from, targetIndex + 1, extra);
 
     } catch (error) {
       await extra.reply(`❌ *ERROR*\n\n_${error.message}_`);
     }
   },
 
-  async showList(msg, args, extra) {
+  async showList(sock, msg, args, extra) {
     const entries = snipeStore.list(extra.from);
 
     if (entries.length === 0) {
@@ -90,7 +90,7 @@ module.exports = {
     }, { quoted: msg });
   },
 
-  async showEntry(msg, entry, from, number, extra) {
+  async showEntry(sock, msg, entry, from, number, extra) {
     const timeAgo = getTimeAgo(entry.time);
     const senderNum = entry.sender.split('@')[0];
     const emoji = typeEmoji(entry.type);

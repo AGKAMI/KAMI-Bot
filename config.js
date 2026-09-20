@@ -54,12 +54,32 @@ welcome: false,
       antiflood: false, // Anti-spam/flood protection
       antifloodLimit: 5, // Max messages in time window
       antifloodWindow: 10, // Time window in seconds
-      antifloodAction: 'warn', // 'warn', 'kick', 'mute'
+      antifloodAction: 'warn', // 'warn', 'delete', 'kick'
       antibadword: false, // Auto-delete messages with bad words
       badwords: [], // List of banned words
+      badwordAction: 'delete', // 'warn', 'delete', 'kick'
       slowmode: 0, // Slowmode in seconds (0 = off)
       lock: false // Lock group settings (only admins can change name/desc/pp)
     },
+
+    // Default SA slur + profanity seed list (case-insensitive matched)
+    // Loaded into groups when antibadword is first enabled, and always available via getBadwords()
+    defaultBadwords: [
+      // SA township / racial slurs
+      'kaffir', 'kafir', 'k*****', 'hotnot', 'hottentot', 'makwerekwere', 'mkwerekwere',
+      'koelie', 'coolie', 'rooinek', 'gammat', 'gam', 'bushman', 'coloured monkey',
+      // Authority/context slurs
+      'bobbejaan', 'babalaas', 'nsimbi', 'inyathi', 'pampiri',
+      // English profanity
+      'fuck', 'fucking', 'fuk', 'fck', 'shit', 'shitt', 'bitch', 'bxtch', 'biatch',
+      'asshole', 'aashole', 'arsehole', 'cunt', 'c*nt', 'dick', 'cock', 'pussy',
+      'bastard', 'motherfucker', 'muthafucka', 'mf', 'nigg', 'nigga', 'nigger',
+      'whore', 'slut', 'hoe', 'faggot', 'fag', 'twat', 'prick', 'wanker', 'wtf',
+      'stfu', 'gtfo', 'fml', 'son of a bitch', 'goddamn', 'damn', 'hell no',
+      'rape', 'rapist', 'retard', 'retarded', 'idiot', 'stupid bitch',
+      // Extended variants to catch smart ones
+      's hit', 'f uck', 'b itch', 'c unt', 'sh1t', 'fuck1', 'sht', 'fk'
+    ],
     
     // API Keys (add your own)
     apiKeys: {
@@ -84,6 +104,15 @@ welcome: false,
     
     // Timezone
     timezone: 'Africa/Johannesburg',
+
+    // Security team groups (JID + invite link). Used for .crew apply routing,
+    // admin notification, auto-add on accept, and hired DM invite link.
+    crewTeams: {
+      'SSRS': { name: 'Royal Security', jid: '120363402129417473@g.us', invite: 'DIOeUd6Fz1vIN5CNKf8tRB' },
+      'KSSPS': { name: 'Private Security', jid: '120363409819775730@g.us', invite: 'Ls0VolQePSk1kSlV5scXpD' },
+      'KSSMP': { name: 'Metro Police', jid: '120363421626159074@g.us', invite: 'D6LGiNbZaSEAm4KS2kErwx' },
+      'KSSMS': { name: 'Maganyeni Security', jid: '120363423238834158@g.us', invite: 'J5SDntb5MBt8xOC5FbUujv' }
+    },
     
     // Limits
     maxWarnings: 3,

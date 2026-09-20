@@ -15,7 +15,7 @@ module.exports = {
 
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
-        text: `❌ ERROR\n\nNmsebenzisa: *.crew event <name> <time>*\nExample: *.crew event Friday Drift 20:30*\n\nUsitshele igama ledrift nemva kwesikhathi.`
+        text: `❌ *ERROR*\n\nUsage: *.crew event <name> <time>*\nExample: *.crew event Friday Drift 20:30*\n\nGive us the event name and the time, ${pick(SLANG.friend)}.`
       });
     }
 
@@ -24,7 +24,7 @@ module.exports = {
 
     if (!/^\d{1,2}:\d{2}$/.test(time)) {
       return sock.sendMessage(jid, {
-        text: `❌ ERROR\n\nIsikhathi kufanele sibe muhle: *HH:MM*\nExample: *20:30*\n\nWakwenzela: *${time}*`
+        text: `❌ *ERROR*\n\nTime must be in *HH:MM* format\nExample: *20:30*\n\nYou sent: *${time}*`
       });
     }
 
@@ -43,13 +43,13 @@ module.exports = {
     const creatorName = member ? member.name : sender.split('@')[0];
 
     return sock.sendMessage(jid, {
-      text: `📅 EVENT CREATED\n\n` +
-        `🏎️ *Igama:* ${name}\n` +
-        `⏰ *Isikhathi:* ${time}\n` +
-        `👤 *Umdalile:* ${creatorName}\n` +
+      text: `📅 *EVENT CREATED*\n\n` +
+        `🏎️ *Name:* ${name}\n` +
+        `⏰ *Time:* ${time}\n` +
+        `👤 *Created by:* ${creatorName}\n` +
         `🆔 *Event ID:* ${eventId}\n\n` +
-        `Buka yonke imihlangano nge: *.crew events*\n` +
-        `Abantu bangadlala nge: *.crew attend ${eventId}*`
+        `See all events with: *.crew events*\n` +
+        `Members can RSVP with: *.crew attend ${eventId}*`
     });
   }
 };

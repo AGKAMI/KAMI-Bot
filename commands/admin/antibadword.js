@@ -32,10 +32,17 @@ module.exports = {
             `_Already on, ${pick(SLANG.vibe)}_`
           );
         }
-        database.updateGroupSettings(extra.from, { antibadword: true });
+        // Seed defaults so the filter works out of the box
+        const config = require('../../config');
+        const seeded = [...(settings.badwords || [])];
+        const defaults = config.defaultBadwords || [];
+        for (const w of defaults) {
+          if (!seeded.includes(w)) seeded.push(w);
+        }
+        database.updateGroupSettings(extra.from, { antibadword: true, badwords: seeded });
         return extra.reply(
           `✅ *ANTIBADWORD ON*\n\n` +
-          `_Bad word filter activated, ${pick(SLANG.good)}!_`
+          `_Bad word filter activated with ${seeded.length} patterns, ${pick(SLANG.good)}!_`
         );
       }
 
@@ -44,6 +51,25 @@ module.exports = {
         return extra.reply(
           `✅ *ANTIBADWORD OFF*\n\n` +
           `_Bad word filter disabled_`
+        );
+      }
+
+      if (sub === 'set') {
+        const action = (args[1] || '').toLowerCase();
+        if (!['warn', 'delete', 'kick'].includes(action)) {
+          return extra.reply(
+            `❌ *ERROR*\n\n` +
+            `${bold('Usage:')} .antibadword set <warn|delete|kick>${pick(SLANG.vibe)}\n\n` +
+            `• _warn_ — warn the user but don't delete\n` +
+            `• _delete_ — delete the bad message\n` +
+            `• _kick_ — delete + kick the user`
+          );
+        }
+        database.updateGroupSettings(extra.from, { badwordAction: action });
+        return extra.reply(
+          `✅ *ANTIBADWORD SET*\n\n` +
+          `🔨 *Action:* ${action}\n\n` +
+          `_${pick(SLANG.good)}, bad word action updated!_`
         );
       }
 
@@ -116,20 +142,23 @@ function buildStatus(settings) {
   const phrases = words.filter(w => w.startsWith('"') && w.endsWith('"')).length;
   const simple = words.length - wildcards - phrases;
   const exempt = settings.badwordExempt || [];
+  const action = settings.badwordAction || 'delete';
 
   return (
     `🛡️ *ANTIBADWORD STATUS*\n\n` +
     `⚡ *Status:* ${status}\n` +
+    `🔨 *Action:* ${action} (warn/delete/kick)\n` +
     `📝 *Patterns:* ${wildcards} wildcards, ${phrases} phrases, ${simple} simple\n` +
     `📊 *Total:* ${words.length} patterns\n` +
     `👥 *Exempt:* ${exempt.length} users + admins\n\n` +
     `📱 *Commands:*\n` +
-    `• _.antibadword on_\n` +
+    `• _.antibadword on_ — enable (auto-seeds SA slurs)\n` +
     `• _.antibadword off_\n` +
+    `• _.antibadword set <warn|delete|kick>_\n` +
     `• _.addbadword <pattern>_\n` +
     `• _.delbadword <pattern>_\n` +
     `• _.antibadword exempt @user_\n` +
     `• _.antibadword exceptions_\n\n` +
-    `💡 _Patterns: *bad* = wildcard, "bad word" = phrase, bad = simple_`
+    `💡 _Patterns: *bad* = wildcard, "bad word" = phrase, bad = simple. Matching is case-insensitive._`
   );
 }

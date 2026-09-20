@@ -886,25 +886,49 @@ const handleMessage = async (sock, msg) => {
       }
     }
 
-    // Antibadword — auto-delete messages with banned words
-    if (isGroup && !msg.key.fromMe) {
-      try {
-        const groupSettings = database.getGroupSettings(from);
-        if (groupSettings.antibadword && groupSettings.badwords && groupSettings.badwords.length > 0 && body) {
-          const lowerBody = body.toLowerCase();
-          for (const word of groupSettings.badwords) {
-            if (lowerBody.includes(word.toLowerCase())) {
-              await sock.sendMessage(from, { delete: msg.key });
-              await sock.sendMessage(from, {
-                text: `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _your message was deleted — bad word detected_`,
-                mentions: [sender]
-              });
-              return;
+    // Antibadword — handle messages with banned words (warn/delete/kick per setting)
+        if (isGroup && !msg.key.fromMe) {
+          try {
+            const groupSettings = database.getGroupSettings(from);
+            const badwords = (groupSettings.badwords || []).concat(config.defaultBadwords || []);
+            if (groupSettings.antibadword && badwords.length > 0 && body) {
+              const lowerBody = body.toLowerCase();
+              // Remove spaces so "f u c k" / "s h i t" variants still match seeded patterns
+              const compact = lowerBody.replace(/[\s.]/g, '');
+              for (const word of badwords) {
+                const wl = word.toLowerCase().trim();
+                if (!wl) continue;
+                const hit = wl.includes('*')
+                  ? (lowerBody.includes(wl.replace(/\*/g, '')))
+                  : (lowerBody.includes(wl) || compact.includes(wl.replace(/[\s.]/g, '')));
+                if (hit) {
+                  const action = groupSettings.badwordAction || 'delete';
+                  // Delete the bad message first for delete/kick
+                  try {
+                    if (action !== 'warn') await sock.sendMessage(from, { delete: msg.key });
+                  } catch (e) {}
+                  if (action === 'warn' || action === 'delete') {
+                    await sock.sendMessage(from, {
+                      text: action === 'warn'
+                        ? `⚠️ *BAD WORD*\n\n@${sender.split('@')[0]} _that word's not allowed here, ${pick(SLANG.vibe)}_`
+                        : `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _your message was deleted — bad word detected_`,
+                      mentions: [sender]
+                    });
+                  } else if (action === 'kick') {
+                    await sock.sendMessage(from, {
+                      text: `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _kicked — bad word detected_`,
+                      mentions: [sender]
+                    });
+                    try {
+                      await sock.groupParticipantsUpdate(from, [sender], 'remove');
+                    } catch (e) {}
+                  }
+                  return;
+                }
+              }
             }
-          }
+          } catch (e) {}
         }
-      } catch (e) {}
-    }
 
     // Antiflood — auto-warn/kick spammers
     if (isGroup && !msg.key.fromMe) {
@@ -929,16 +953,20 @@ const handleMessage = async (sock, msg) => {
                   text: `🚫 *FLOOD DETECTED*\n\n@${sender.split('@')[0]} _kicked for spamming_`,
                   mentions: [sender]
                 });
-                await sock.sendMessage(from, { protocolMessage: { type: 0 } }); // request group leave
-                await sock.groupParticipantsUpdate(from, [sender], 'remove');
-              } else if (action === 'mute') {
+                try {
+                  await sock.groupParticipantsUpdate(from, [sender], 'remove');
+                } catch (e) {}
+              } else if (action === 'delete') {
+                // Delete the offending messages
+                try {
+                  await sock.sendMessage(from, { delete: msg.key });
+                } catch (e) {}
                 await sock.sendMessage(from, {
-                  text: `🔇 *FLOOD DETECTED*\n\n@${sender.split('@')[0]} _muted for spamming_`,
+                  text: `🗑️ *FLOOD CLEANED*\n\n@${sender.split('@')[0]} _stop spamming — your messages got cleaned_`,
                   mentions: [sender]
                 });
-                await sock.sendMessage(from, { groupMute: { mute: true, participants: [sender] } });
               } else {
-                // warn
+                // warn — warn the spammer directly (DM them + group notice)
                 try {
                   const warnCmd = commands.get('warn');
                   if (warnCmd) {
@@ -950,12 +978,16 @@ const handleMessage = async (sock, msg) => {
                       reply: (text) => sock.sendMessage(from, { text }, { quoted: msg })
                     });
                   }
-                } catch (e) {
-                  await sock.sendMessage(from, {
-                    text: `⚠️ *FLOOD WARNING*\n\n@${sender.split('@')[0]} _stop spamming or you'll be kicked_`,
-                    mentions: [sender]
+                } catch (e) {}
+                // Direct DM to the spammer so THEY get the warning personally
+                try {
+                  const targetJid = sender.startsWith('@lid') || sender.includes('@g.us')
+                    ? sender.split('@')[0] + '@s.whatsapp.net'
+                    : sender;
+                  await sock.sendMessage(targetJid, {
+                    text: `⚠️ *FLOOD WARNING*\n\nHey, ${pick(SLANG.friend)} — slow down. You\'re spamming too fast in the group.\n\n_One more burst and you\'re getting kicked, ${pick(SLANG.vibe)}_`
                   });
-                }
+                } catch (e) {}
               }
               return;
             }
@@ -964,7 +996,7 @@ const handleMessage = async (sock, msg) => {
       } catch (e) {}
     }
 
-    // Slowmode enforcement (group messages only)
+// Slowmode enforcement (group messages only)
     if (isGroup && slowmodeModule && !msg.key.fromMe) {
       const slowSettings = database.getGroupSettings(from);
       const slowSec = slowSettings.slowmode || 0;

@@ -54,7 +54,7 @@ module.exports = {
             `_${pick(SLANG.vibe)}:_\n` +
             `• _Limit = max messages in window_\n` +
             `• _Window = time in seconds_\n` +
-            `• _Action = warn / kick / mute_\n\n` +
+            `• _Action = warn / delete / kick_\n\n` +
             `_Example: .antiflood set 5 10s warn_`
           );
         }
@@ -78,10 +78,10 @@ module.exports = {
           );
         }
 
-        if (!['warn', 'kick', 'mute'].includes(action)) {
+        if (!['warn', 'delete', 'kick'].includes(action)) {
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Invalid action — choose warn, kick, or mute_`
+            `_Invalid action — choose warn, delete, or kick_`
           );
         }
 
@@ -210,6 +210,6 @@ function buildStatus(settings) {
     `• _.antiflood exempt @user_\n` +
     `• _.antiflood unexempt @user_\n` +
     `• _.antiflood exemptlist_\n\n` +
-    `_Actions: warn, kick, mute_`
+    `_Actions: warn, delete, kick_`
   );
 }

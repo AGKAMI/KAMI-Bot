@@ -15,7 +15,7 @@ module.exports = {
 
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
-        text: `❌ ERROR\n\nNmsebenzisa: *.crew result <event-id> <winner>*\nExample: *.crew result evt_1234567890 Mfowethu*\n\nUkubhala imiphumela yomhlangano.`
+        text: `❌ *ERROR*\n\nUsage: *.crew result <event-id> <winner>*\nExample: *.crew result evt_1234567890 Mfowethu*\n\nLog the results of the event, ${pick(SLANG.friend)}.`
       });
     }
 
@@ -25,7 +25,7 @@ module.exports = {
     const team = database.getTeam(jid);
     if (!team || !team.events || !team.events[eventId]) {
       return sock.sendMessage(jid, {
-        text: `❌ ERROR\n\nMehlangano leyo: *${eventId}* ayikho.\nBuka yonke imihlangano nge: *.crew events*`
+        text: `❌ *ERROR*\n\nThat event: *${eventId}* doesn't exist.\nSee all events with: *.crew events*`
       });
     }
 
@@ -33,7 +33,7 @@ module.exports = {
 
     if (event.status === 'completed') {
       return sock.sendMessage(jid, {
-        text: `❌ ERROR\n\nMehlangano leyo iseqedile. Imiphumela isibhalwe.\n\n🏆 Umphumela: *${event.winner}*`
+        text: `❌ *ERROR*\n\nThat event is already done. Results are already logged.\n\n🏆 *Winner:* ${event.winner}`
       });
     }
 
@@ -46,13 +46,13 @@ module.exports = {
     const winnerDisplay = winnerMember ? winnerMember.name : winner;
 
     return sock.sendMessage(jid, {
-      text: `🏁 EVENT RESULT\n\n` +
-        `🏆 *UMPHUMELELI:* ${winnerDisplay}\n\n` +
-        `🏎️ *Mehlangano:* ${event.name}\n` +
-        `⏰ *Isikhathi:* ${event.time}\n` +
-        `👥 *Abadlalayo:* ${event.attendees ? event.attendees.length : 0}\n` +
-        `📅 *Isiqedile:* ${new Date().toLocaleString()}\n\n` +
-        `Hamba kahle mfowethu! 🏎️💨`
+      text: `🏁 *EVENT RESULT*\n\n` +
+        `🏆 *Winner:* ${winnerDisplay}\n\n` +
+        `🏎️ *Event:* ${event.name}\n` +
+        `⏰ *Time:* ${event.time}\n` +
+        `👥 *Attending:* ${event.attendees ? event.attendees.length : 0}\n` +
+        `📅 *Completed:* ${new Date().toLocaleString()}\n\n` +
+        `_Lekka one, mfowethu! 🏎️💨_`
     });
   }
 };

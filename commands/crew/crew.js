@@ -88,20 +88,24 @@ module.exports = {
         }
       } else {
         // Subcommand without team — check if we're in a crew group
-        if (!extra.from.endsWith('@g.us')) {
-          return extra.reply(
-            `❌ ERROR\n\nFrom DMs, you must specify a team\n\n` +
-            `Usage: .crew <team> ${sub} [args]\n` +
-            `Example: .crew ssrs ${sub}\n\n` +
-            `Use .crew teams to see abbreviations`
-          );
-        }
-        // Check if this group is a crew group
-        if (!inCrewGroup) {
-          return extra.reply(
-            `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
-            `Your group: ${extra.from.split('@')[0]}`
-          );
+        // apply/applied are the on-ramp: usable from ANY Slammed Society group,
+        // so they bypass the crew-group requirement below.
+        if (sub !== 'apply' && sub !== 'applied') {
+          if (!extra.from.endsWith('@g.us')) {
+            return extra.reply(
+              `❌ ERROR\n\nFrom DMs, you must specify a team\n\n` +
+              `Usage: .crew <team> ${sub} [args]\n` +
+              `Example: .crew ssrs ${sub}\n\n` +
+              `Use .crew teams to see abbreviations`
+            );
+          }
+          // Check if this group is a crew group
+          if (!inCrewGroup) {
+            return extra.reply(
+              `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
+              `Your group: ${extra.from.split('@')[0]}`
+            );
+          }
         }
       }
 
@@ -214,10 +218,11 @@ async function showHelp(sock, msg, extra) {
     `• .crew result <event-id> <winner>`,
     ``,
     `📋 *RECRUITMENT*`,
-    `• .crew apply [team]`,
-    `• .crew accept @user`,
-    `• .crew deny @user [reason]`,
-    `• .crew applicants`,
+    `• .crew apply <team> — get the application form in DMs`,
+    `• .crew applied <team> <answers> — submit your application`,
+    `• .crew applicants — view pending apps (with IDs)`,
+    `• .crew accept <appUid> — accept an applicant`,
+    `• .crew deny <appUid> <reason> — reject an applicant`,
     ``,
     `🏷️ *TEAMS*`,
     `• .crew teams — list all abbreviations`,

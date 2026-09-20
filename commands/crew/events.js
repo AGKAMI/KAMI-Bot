@@ -16,11 +16,10 @@ module.exports = {
 
     if (!allEvents || Object.keys(allEvents).length === 0) {
       return sock.sendMessage(jid, {
-        text: `❌ ERROR\n\nAkukho mehlangano ezayo khona manje.\nUmdalile ngenye nge: *.crew event <name> <time>*`
+        text: `❌ *ERROR*\n\nNo upcoming events right now ${pick(SLANG.vibe)}\nMake one with: *.crew event <name> <time>*`
       });
     }
 
-    const now = new Date();
     const upcomingEvents = Object.entries(allEvents)
       .filter(([id, evt]) => evt.status === 'upcoming')
       .sort((a, b) => {
@@ -31,24 +30,24 @@ module.exports = {
 
     if (upcomingEvents.length === 0) {
       return sock.sendMessage(jid, {
-        text: `❌ ERROR\n\nAkukho mehlangano ezayo khona manje.\nUmdalile ngenye nge: *.crew event <name> <time>*`
+        text: `❌ *ERROR*\n\nNo upcoming events right now ${pick(SLANG.vibe)}\nMake one with: *.crew event <name> <time>*`
       });
     }
 
-    let response = `📅 UPCOMING EVENTS\n\n`;
+    let response = `📅 *UPCOMING EVENTS*\n\n`;
 
     upcomingEvents.forEach(([id, evt], index) => {
       const attendeeCount = evt.attendees ? evt.attendees.length : 0;
       response += `🗓️ *${evt.name}*\n`;
-      response += `   ⏰ Isikhathi: *${evt.time}*\n`;
-      response += `   👥 Abadlalayo: *${attendeeCount}*\n`;
+      response += `   ⏰ Time: *${evt.time}*\n`;
+      response += `   👥 Attending: *${attendeeCount}*\n`;
       response += `   🆔 ID: *${id}*\n`;
       if (index < upcomingEvents.length - 1) {
         response += `\n`;
       }
     });
 
-    response += `\nQhafaza kumhlangano nge: *.crew attend <event-id>*`;
+    response += `\nRSVP to an event with: *.crew attend <event-id>*`;
 
     return sock.sendMessage(jid, { text: response });
   }

@@ -311,16 +311,42 @@ const removeCrewEvent = (groupJid, eventId) => {
   return updateTeam(groupJid, team);
 };
 
-// Add applicant to a specific group
+// Add applicant to a specific group (keyed by short unique UID)
 const addApplicant = (groupJid, applicantJid, data) => {
   const team = getTeam(groupJid);
   if (!team.applicants) team.applicants = {};
-  team.applicants[applicantJid] = {
+  const uid = data.appUid || generateAppUid();
+  team.applicants[uid] = {
+    jid: applicantJid,
+    groupJid: groupJid,
+    team: data.team,
     answers: data.answers,
     appliedAt: Date.now(),
-    status: 'pending'
+    status: 'pending',
+    appUid: uid
   };
-  return updateTeam(groupJid, team);
+  updateTeam(groupJid, team);
+  return team.applicants[uid];
+};
+
+// Generate a short unique application ID (e.g. SS-4FK2X)
+const generateAppUid = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 confusion
+  let uid;
+  do {
+    uid = 'SS-' + Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  } while (getApplicantByUid(uid));
+  return uid;
+};
+
+// Look up an application by UID across all teams
+const getApplicantByUid = (uid) => {
+  const crew = getCrew();
+  const key = uid.toUpperCase();
+  for (const [groupJid, team] of Object.entries(crew.groups || {})) {
+    if (team.applicants && team.applicants[key]) return team.applicants[key];
+  }
+  return null;
 };
 
 // Get applicants for a specific group
@@ -329,11 +355,11 @@ const getApplicants = (groupJid) => {
   return team.applicants || {};
 };
 
-// Remove applicant from a specific group
-const removeApplicant = (groupJid, applicantJid) => {
+// Remove applicant by key within a group
+const removeApplicant = (groupJid, applicantKey) => {
   const team = getTeam(groupJid);
-  if (!team.applicants || !team.applicants[applicantJid]) return false;
-  delete team.applicants[applicantJid];
+  if (!team.applicants || !team.applicants[applicantKey]) return false;
+  delete team.applicants[applicantKey];
   return updateTeam(groupJid, team);
 };
 
@@ -440,9 +466,11 @@ module.exports = {
   getCrewEvents,
   removeCrewEvent,
   addApplicant,
-  getApplicants,
-  removeApplicant,
-  getAllTeams,
+    getApplicants,
+    removeApplicant,
+    getAllTeams,
+    generateAppUid,
+    getApplicantByUid,
 
   // Custom roles
   getCustomRoles,
