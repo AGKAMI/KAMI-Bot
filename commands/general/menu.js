@@ -76,14 +76,33 @@ module.exports = {
 
       // Check for custom menu image
       const imagePath = path.join(__dirname, '../../utils/bot_image.jpg');
+      const newsletterJid = config.newsletterJid || '';
+      const newsletterCtx = newsletterJid ? {
+        contextInfo: {
+          forwardingScore: 1,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid,
+            newsletterName: config.botName || 'KAMI Bot',
+            serverMessageId: -1,
+          },
+        },
+      } : {};
+
       if (fs.existsSync(imagePath)) {
         const imageBuffer = fs.readFileSync(imagePath);
         await sock.sendMessage(extra.from, {
           image: imageBuffer,
-          caption: text
+          caption: text,
+          mentions: [extra.sender],
+          ...newsletterCtx,
         }, { quoted: msg });
       } else {
-        await sock.sendMessage(extra.from, { text: text }, { quoted: msg });
+        await sock.sendMessage(extra.from, {
+          text: text,
+          mentions: [extra.sender],
+          ...newsletterCtx,
+        }, { quoted: msg });
       }
 
     } catch (error) {
