@@ -824,7 +824,7 @@ const handleMessage = async (sock, msg) => {
                 });
                 return; // Don't process as command after auto-converting
               }
-            } catch (error) {
+  } catch (error) {
               console.error('[AutoSticker Error]:', error);
               // Continue to normal processing if autosticker fails
             }
@@ -1189,6 +1189,34 @@ const handleGroupUpdate = async (sock, update) => {
       return;
     }
     
+    // Crew sync — auto-add/remove from crew DB based on group membership.
+    // Runs BEFORE the welcome/goodbye early-return so it always fires.
+    try {
+      if (action === 'add' || action === 'remove') {
+        for (const participant of participants) {
+          const jid = typeof participant === 'string' ? participant : (participant.id || participant.jid || participant.participant);
+          if (!jid || jid === sock.user?.id) continue;
+          if (action === 'add') {
+            if (!database.getCrewMember(id, jid)) {
+              database.addCrewMember(id, jid, {
+                role: 'member',
+                joined: Date.now(),
+                addedBy: 'auto-sync',
+              });
+              console.log(`[CREW SYNC] Auto-added ${jid.split('@')[0]} to ${id}`);
+            }
+          } else if (action === 'remove') {
+            if (database.getCrewMember(id, jid)) {
+              database.removeCrewMember(id, jid);
+              console.log(`[CREW SYNC] Auto-removed ${jid.split('@')[0]} from ${id}`);
+            }
+          }
+        }
+      }
+    } catch (crewErr) {
+      console.error('[CREW SYNC] Error:', crewErr.message);
+    }
+    
     const groupSettings = database.getGroupSettings(id);
     
     if (!groupSettings.welcome && !groupSettings.goodbye) return;
@@ -1412,38 +1440,6 @@ const handleGroupUpdate = async (sock, update) => {
           });
         }
       }
-    }
-
-    // Crew sync — auto-add/remove from crew DB based on group membership
-    try {
-      const crewTeam = database.getTeam(id);
-      if (crewTeam && Object.keys(crewTeam.members || {}).length > 0) {
-        if (action === 'add') {
-          // Auto-add new members to crew DB
-          for (const participant of participants) {
-            const jid = typeof participant === 'string' ? participant : participant.id;
-            if (jid && !database.getCrewMember(id, jid)) {
-              database.addCrewMember(id, jid, {
-                role: 'member',
-                joined: Date.now(),
-                addedBy: 'auto-sync',
-              });
-              console.log(`[CREW SYNC] Auto-added ${jid.split('@')[0]} to ${id}`);
-            }
-          }
-        } else if (action === 'remove') {
-          // Auto-remove leaving members from crew DB
-          for (const participant of participants) {
-            const jid = typeof participant === 'string' ? participant : participant.id;
-            if (jid && database.getCrewMember(id, jid)) {
-              database.removeCrewMember(id, jid);
-              console.log(`[CREW SYNC] Auto-removed ${jid.split('@')[0]} from ${id}`);
-            }
-          }
-        }
-      }
-    } catch (crewErr) {
-      console.error('[CREW SYNC] Error:', crewErr.message);
     }
 
   } catch (error) {

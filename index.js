@@ -383,6 +383,7 @@ async function startBot() {
         const crewData = db.getCrew();
         const teamMap = crewData.teamMap || {};
         let synced = 0;
+        let pruned = 0;
 
         for (const [abbrev, info] of Object.entries(teamMap)) {
           try {
@@ -390,6 +391,20 @@ async function startBot() {
             if (!groupMeta || !groupMeta.participants) continue;
 
             const team = db.getTeam(info.jid);
+            const currentJids = new Set(groupMeta.participants.map(p => p.id).filter(Boolean));
+
+            // Prune: remove crew members who are no longer in the group
+            const members = db.getCrewMembers(info.jid) || {};
+            for (const memberJid of Object.keys(members)) {
+              if (memberJid === sock.user?.id) continue;
+              if (!currentJids.has(memberJid)) {
+                db.removeCrewMember(info.jid, memberJid);
+                pruned++;
+                console.log(`[CREW SYNC] Pruned ${memberJid.split('@')[0]} (left ${abbrev})`);
+              }
+            }
+
+            // Add: current non-admin participants who aren't in the crew DB yet
             for (const p of groupMeta.participants) {
               const jid = p.id;
               if (!jid) continue;
@@ -414,6 +429,9 @@ async function startBot() {
 
         if (synced > 0) {
           console.log(`[CREW SYNC] Auto-added ${synced} existing members to crew DB`);
+        }
+        if (pruned > 0) {
+          console.log(`[CREW SYNC] Pruned ${pruned} members no longer in their teams`);
         }
       } catch (e) {}
 
