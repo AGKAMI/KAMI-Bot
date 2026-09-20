@@ -1303,13 +1303,11 @@ const handleGroupUpdate = async (sock, update) => {
               console.log(`[MEMBER PROTECTION] Protected admin ${jid.split('@')[0]} rejoined ${id} — auto-promoting`);
               try {
                 await sock.groupParticipantsUpdate(id, [jid], 'promote');
-                // DM them
-                const memberNum = jid.split(':')[0].split('@')[0];
                 await sock.sendMessage(jid, {
                   text:
                     `👑 *WELCOME BACK*\n\n` +
-                    `You've been automatically re-promoted to admin in this group\n` +
-                    `The owner promoted you — that hasn't changed`,
+                    `You're the admin again\n` +
+                    `_KAMI doesn't forget who the owner picked_`,
                 });
               } catch (e) {
                 console.error(`[MEMBER PROTECTION] Failed to auto-promote ${jid.split('@')[0]}:`, e.message);
@@ -1345,10 +1343,10 @@ const handleGroupUpdate = async (sock, update) => {
                 if (reAdded) {
                   await sock.sendMessage(jid, {
                     text:
-                      `🛡️ *YOU ARE PROTECTED*\n\n` +
-                      `You were kicked from a crew group\n\n` +
-                      `✅ You have been automatically re-added\n` +
-                      `_The owner's people are always welcome here_ 👑`,
+                      `🛡️ *YOU GOOD*\n\n` +
+                      `Someone kicked you from a crew group\n` +
+                      `KAMI brought you back\n\n` +
+                      `_The owner's people stay_ 👑`,
                   });
                 } else {
                   // Re-add failed — send invite link
@@ -1360,12 +1358,12 @@ const handleGroupUpdate = async (sock, update) => {
 
                   await sock.sendMessage(jid, {
                     text:
-                      `🛡️ *YOU ARE PROTECTED*\n\n` +
-                      `You were kicked from a crew group\n\n` +
-                      `I tried to re-add you but couldn't (privacy settings)\n` +
+                      `🛡️ *YOU GOOD*\n\n` +
+                      `Someone kicked you from a crew group\n` +
+                      `KAMI tried bringing you back but couldn't\n\n` +
                       (inviteLink
-                        ? `🔗 *Rejoin here:*\n${inviteLink}\n\nWhen you rejoin, I'll auto-promote you back to admin`
-                        : `Contact the owner to be re-added`),
+                        ? `🔗 *Jump back in:*\n${inviteLink}\n\nWhen you're back, you'll be admin again`
+                        : `Hit up the owner to get back in`),
                   });
                 }
               } catch (e) {}
@@ -1377,13 +1375,12 @@ const handleGroupUpdate = async (sock, update) => {
                   const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
                   await sock.sendMessage(ownerJid, {
                     text:
-                      `🛡️ *MEMBER PROTECTION*\n\n` +
-                      `@${memberNum} was kicked from a crew group\n` +
-                      `They were added/promoted by you and are *protected*\n\n` +
+                      `🛡️ *PROTECTION*\n\n` +
+                      `@${memberNum} got kicked from a crew group\n\n` +
                       (reAdded
-                        ? `✅ They have been automatically re-added`
-                        : `⚠️ Couldn't re-add them — sent them the invite link\nThey'll be auto-promoted when they rejoin`) +
-                      `\n⚠️ Check who kicked them`,
+                        ? `KAMI brought them back ${pick(SLANG.vibe)}`
+                        : `Couldn't re-add — sent them the invite link\nThey'll be admin again when they join`) +
+                      `\nCheck who did it`,
                     mentions: [jid],
                   });
                 } catch (e) {}

@@ -20,6 +20,7 @@ module.exports = {
     
     // Bot Behavior
     selfMode: false, // Private mode - only owner can use commands
+    buttonMode: true, // Enable interactive quick-reply buttons (falls back to text when off)
     autoRead: false,
     autoTyping: false,
     autoBio: false,

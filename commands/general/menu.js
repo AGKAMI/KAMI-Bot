@@ -1,8 +1,83 @@
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { sendButtons, onButton, isButtonModeOn } = require('../../utils/buttonHelper');
 const fs = require('fs');
 const path = require('path');
+
+const categoryMeta = {
+  general:   { emoji: '🏠', label: 'General' },
+  ai:        { emoji: '🤖', label: 'AI' },
+  media:     { emoji: '🎬', label: 'Media' },
+  fun:       { emoji: '🎉', label: 'Fun' },
+  games:     { emoji: '🎮', label: 'Games' },
+  utility:   { emoji: '🔧', label: 'Utility' },
+  anime:     { emoji: '⛩️', label: 'Anime' },
+  textmaker: { emoji: '✨', label: 'Text Maker' },
+  admin:     { emoji: '🛡️', label: 'Admin' },
+  crew:      { emoji: '🔰', label: 'Crew' },
+  owner:     { emoji: '👑', label: 'Owner' },
+};
+
+const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'crew', 'owner'];
+
+function buildCategoryText(cat) {
+  const prefix = config.prefix || '.';
+  const commands = loadCommands();
+  const meta = categoryMeta[cat] || { emoji: '📁', label: cat };
+  const items = [];
+  commands.forEach((cmd, name) => {
+    if (cmd.name === name && cmd.category === cat) items.push(cmd);
+  });
+  items.sort((a, b) => a.name.localeCompare(b.name));
+
+  let text = `${meta.emoji} *${meta.label.toUpperCase()}*\n`;
+  text += `----------\n`;
+  for (const cmd of items) {
+    text += `${prefix}${cmd.name}${cmd.description ? ` — \`${cmd.description}\`` : ''}\n`;
+  }
+  if (items.length === 0) text += `_No commands here yet, ${pick(SLANG.vibe)}_`;
+  text += `\n----------\n_Use ${prefix}help <cmd> for info_`;
+  return text;
+}
+
+function buildFullMenu(pushName) {
+  const prefix = config.prefix || '.';
+  const commands = loadCommands();
+  const categories = {};
+  commands.forEach((cmd, name) => {
+    if (cmd.name === name) {
+      if (!categories[cmd.category]) categories[cmd.category] = [];
+      categories[cmd.category].push(cmd);
+    }
+  });
+  const total = commands.size;
+  const line = () => '----------';
+
+  let text = '';
+  text += `*KAMI BOT*\n`;
+  text += `${line(20)}\n\n`;
+  text += `*HOWZIT* ${pushName || 'User'}! 👋\n`;
+  text += `${total} *commands* available\n`;
+  text += `Prefix: ${bold(prefix)}\n\n`;
+
+  for (const cat of order) {
+    const list = categories[cat];
+    if (!list || list.length === 0) continue;
+    const meta = categoryMeta[cat];
+    const sorted = list.filter(item => item.name).sort((a, b) => a.name.localeCompare(b.name));
+    text += `${meta.emoji} *${meta.label.toUpperCase()}*\n`;
+    text += `${line(15)}\n`;
+    for (const cmd of sorted) {
+      text += `${prefix}${cmd.name}${cmd.description ? ` — \`${cmd.description}\`` : ''}\n`;
+    }
+    text += '\n';
+  }
+
+  text += `${line(20)}\n`;
+  text += `_Use ${prefix}help <cmd> for info_`;
+  return text;
+}
 
 module.exports = {
   name: 'menu',
@@ -13,68 +88,7 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
     try {
-      const commands = loadCommands();
-      const categories = {};
-
-      commands.forEach((cmd, name) => {
-        if (cmd.name === name) {
-          if (!categories[cmd.category]) categories[cmd.category] = [];
-          categories[cmd.category].push(cmd);
-        }
-      });
-
       const prefix = config.prefix || '.';
-      const total = commands.size;
-
-      const categoryMeta = {
-        general:   { emoji: '🏠', label: 'General' },
-        ai:        { emoji: '🤖', label: 'AI' },
-        media:     { emoji: '🎬', label: 'Media' },
-        fun:       { emoji: '🎉', label: 'Fun' },
-        games:     { emoji: '🎮', label: 'Games' },
-        utility:   { emoji: '🔧', label: 'Utility' },
-        anime:     { emoji: '⛩️', label: 'Anime' },
-        textmaker: { emoji: '✨', label: 'Text Maker' },
-        admin:     { emoji: '🛡️', label: 'Admin' },
-        crew:      { emoji: '🔰', label: 'Crew' },
-        owner:     { emoji: '👑', label: 'Owner' },
-      };
-
-      const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'crew', 'owner'];
-
-      const line = () => '----------';
-
-      let text = '';
-      text += `*KAMI BOT*\n`;
-      text += `${line(20)}\n\n`;
-      text += `*HOWZIT* ${extra.pushName || 'User'}! 👋\n`;
-      text += `${total} *commands* available\n`;
-      text += `Prefix: ${bold(prefix)}\n\n`;
-
-      for (const cat of order) {
-        const list = categories[cat];
-        if (!list || list.length === 0) continue;
-
-        const meta = categoryMeta[cat];
-        const sorted = list
-          .filter(item => item.name)
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        text += `${meta.emoji} *${meta.label.toUpperCase()}*\n`;
-        text += `${line(15)}\n`;
-
-        for (const cmd of sorted) {
-          const desc = cmd.description ? ` — \`${cmd.description}\`` : '';
-          text += `${prefix}${cmd.name}${desc}\n`;
-        }
-
-        text += '\n';
-      }
-
-      text += `${line(20)}\n`;
-      text += `_Use ${prefix}help <cmd> for info_`;
-
-      // Check for custom menu image
       const imagePath = path.join(__dirname, '../../utils/bot_image.jpg');
       const newsletterJid = config.newsletterJid || '';
       const newsletterCtx = newsletterJid ? {
@@ -89,6 +103,54 @@ module.exports = {
         },
       } : {};
 
+      // .menu <category> → show just that category
+      const requested = (args[0] || '').toLowerCase();
+      if (requested && requested !== 'all' && categoryMeta[requested]) {
+        return extra.reply(buildCategoryText(requested));
+      }
+
+      // Button mode ON → compact menu + category buttons (easier to use)
+      if (isButtonModeOn() && requested !== 'all') {
+        const summary = [
+          `*KAMI BOT* ${pick(SLANG.greeting)}! 👋`,
+          ``,
+          `🤖 ${pick(SLANG.friend)}, tap a button to see that section's commands 👇`,
+          ``,
+          `📖 Full list: *${prefix}menu all*`,
+        ].join('\n');
+
+        const buttons = [
+          { id: 'menu:admin', text: '🛡️ Admin' },
+          { id: 'menu:crew',  text: '🔰 Crew' },
+          { id: 'menu:owner', text: '👑 Owner' },
+        ];
+
+        if (fs.existsSync(imagePath)) {
+          const imageBuffer = fs.readFileSync(imagePath);
+          await sock.sendMessage(extra.from, {
+            image: imageBuffer,
+            caption: summary,
+            mentions: [extra.sender],
+            ...newsletterCtx,
+          }, { quoted: msg });
+          // Buttons can't attach to the image message, so send a follow-up interactive row
+          await sendButtons(sock, extra.from, {
+            text: `_${prefix}menu <category>_ also works as text`,
+            footer: config.botName || 'KAMI Bot',
+            buttons,
+          }, msg);
+        } else {
+          await sendButtons(sock, extra.from, {
+            text: summary,
+            footer: config.botName || 'KAMI Bot',
+            buttons,
+          }, msg);
+        }
+        return;
+      }
+
+      // Button mode OFF → full text menu (original behavior)
+      const text = buildFullMenu(extra.pushName);
       if (fs.existsSync(imagePath)) {
         const imageBuffer = fs.readFileSync(imagePath);
         await sock.sendMessage(extra.from, {
@@ -111,3 +173,14 @@ module.exports = {
     }
   }
 };
+
+// Register category button handlers (runs once at command load)
+onButton('menu:admin', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('admin') });
+});
+onButton('menu:crew', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('crew') });
+});
+onButton('menu:owner', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('owner') });
+});

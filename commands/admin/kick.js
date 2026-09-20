@@ -1,13 +1,9 @@
 /**
- * Kick Command
- * Remove mentioned or replied users from the group
- *
- * Protection: if target was added/promoted by owner, block the kick
- * and warn the person attempting it — in the group AND via DM.
+ * Kick Command — Remove mentioned or replied users from the group
+ * Protection: owner-added/promoted members can't be kicked by others
  */
 
 const database = require('../../database');
-const handler = require('../../handler');
 const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 
@@ -36,7 +32,7 @@ module.exports = {
 
       if (usersToKick.length === 0) {
         return extra.reply(
-          `👤 *KICK*\n\nTag or reply to the ${pick(SLANG.friend)} you wanna kick`
+          `❌ ERROR\n\nTag or reply to the ${pick(SLANG.friend)} you wanna kick`
         );
       }
 
@@ -53,53 +49,49 @@ module.exports = {
       );
 
       if (isTryingToKickBot) {
-        await extra.reply(`❌ ERROR\n\nCan't kick myself ${pick(SLANG.friend)}`);
-        return;
+        return extra.reply(`❌ ERROR\n\nCan't kick myself ${pick(SLANG.friend)}`);
       }
 
-      // ── Owner protection check (BEFORE kicking) ───────────
+      // ── Owner protection check ────────────────────────────
       if (!extra.isOwner) {
         for (const target of usersToKick) {
           if (database.isOwnerProtected(chatId, target)) {
             const targetNum = target.split(':')[0].split('@')[0];
             const kickerNum = extra.sender.split(':')[0].split('@')[0];
 
-            // Block the kick — don't do it
+            // Block — group message
             await sock.sendMessage(chatId, {
               text:
-                `🚨 *ACCESS DENIED*\n\n` +
-                `@${kickerNum} — you cannot kick @${targetNum}\n\n` +
-                `This member was personally added/promoted by the owner\n` +
-                `Only the owner can remove them\n\n` +
-                `⚠️ This incident has been logged`,
+                `🚫 *ACCESS DENIED*\n\n` +
+                `@${kickerNum} — nah you can't kick @${targetNum}\n\n` +
+                `That's the owner's person ${pick(SLANG.friend)}\n` +
+                `Only KAMI can remove them`,
               mentions: [target, extra.sender],
             });
 
-            // DM the violator
-            try {
-              await sock.sendMessage(extra.sender, {
-                text:
-                  `🚨 *ADMIN WARNING*\n\n` +
-                  `You tried to kick a protected member in *${chatId.split('@')[0]}*\n\n` +
-                  `This member was added/promoted by the owner\n` +
-                  `Only the owner can remove people they've added\n\n` +
-                  `⚠️ Do not attempt this again`,
-              });
-            } catch (e) {}
-
-            // DM the victim — let them know they're protected
+            // DM victim
             try {
               await sock.sendMessage(target, {
                 text:
-                  `🛡️ *YOU ARE PROTECTED*\n\n` +
-                  `@${kickerNum} tried to kick you from *${chatId.split('@')[0]}*\n\n` +
-                  `The attempt was blocked — you're staying\n` +
-                  `Only the owner can remove you`,
+                  `🛡️ *YOU GOOD*\n\n` +
+                  `@${kickerNum} tried to kick you\n` +
+                  `Blocked — you're staying ${pick(SLANG.vibe)}`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
 
-            // DM the owner
+            // DM violator
+            try {
+              await sock.sendMessage(extra.sender, {
+                text:
+                  `🚫 *Oi*\n\n` +
+                  `You just tried kicking someone the owner added\n` +
+                  `That's not happening ${pick(SLANG.friend)}\n\n` +
+                  `Don't try that again`,
+              });
+            } catch (e) {}
+
+            // DM owner
             const ownerNumbers = config.ownerNumber || [];
             for (const ownerNum of ownerNumbers) {
               try {
@@ -108,17 +100,15 @@ module.exports = {
                   : `${ownerNum}@s.whatsapp.net`;
                 await sock.sendMessage(ownerJid, {
                   text:
-                    `🛡️ *MEMBER PROTECTION*\n\n` +
-                    `@${kickerNum} tried to kick @${targetNum}\n` +
-                    `in *${chatId.split('@')[0]}*\n\n` +
-                    `The kick was blocked\n` +
-                    `This member was added/promoted by you and is protected`,
+                    `🛡️ *PROTECTION*\n\n` +
+                    `@${kickerNum} tried kicking @${targetNum}\n` +
+                    `Blocked ${pick(SLANG.vibe)}`,
                   mentions: [target, extra.sender],
                 });
               } catch (e) {}
             }
 
-            return; // Don't kick
+            return;
           }
         }
       }
@@ -127,14 +117,17 @@ module.exports = {
       await sock.groupParticipantsUpdate(chatId, usersToKick, 'remove');
 
       const usernames = usersToKick.map((jid) => `@${jid.split(':')[0].split('@')[0]}`);
-      const text = `🔨 KICKED\n\n${usernames.join(', ')} has been kicked ${pick(SLANG.good)}`;
+      await sock.sendMessage(chatId, {
+        text:
+          `🔨 KICKED\n\n` +
+          `${usernames.join(', ')} has been kicked\n\n` +
+          `_${pick(SLANG.vibe)}_`,
+        mentions: usersToKick,
+      }, { quoted: msg });
 
-      await sock.sendMessage(extra.from, { text, mentions: usersToKick }, { quoted: msg });
     } catch (error) {
       console.error('Kick command error:', error);
-      await extra.reply(
-        `❌ ERROR\n\nCouldn't kick — check if I'm admin ${pick(SLANG.vibe)}`
-      );
+      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't kick`);
     }
   },
 };

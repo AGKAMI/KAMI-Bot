@@ -1,80 +1,102 @@
 /**
- * Button Helper — Send interactive buttons via nativeFlowMessage (Baileys v7)
+ * Button Helper — interactive quick-reply buttons via Baileys nativeFlowMessage.
+ * When button mode is OFF (or no buttons passed) it falls back to plain text,
+ * so the bot keeps working on clients that don't render interactive messages.
  *
- * Supports:
- *   - quick_reply: clickable buttons that route to bot commands
- *   - cta_url: buttons that open a URL
- *
- * Usage:
- *   const { sendButtons } = require('./utils/buttonHelper');
- *
- *   await sendButtons(sock, jid, {
- *     text: 'Choose an option:',
- *     footer: 'KAMI Bot',
- *     buttons: [
- *       { id: 'btn_ping', text: 'Ping' },           // quick_reply
- *       { id: 'btn_menu', text: 'Menu' },            // quick_reply
- *       { url: 'https://youtube.com', text: 'YouTube' }, // cta_url
- *     ],
- *   }, { quoted: msg });
+ * Button presses arrive as buttonsResponseMessage / interactiveResponseMessage
+ * with an id. Register handlers with onButton(id, fn) and route them in
+ * handler.handleMessage via handleButtonResponse().
  */
 
-const { proto } = require('@whiskeysockets/baileys/WAProto');
+const config = require('../config');
+
+const buttonHandlers = new Map();
+
+// Button mode toggle — read from config.buttonMode
+function isButtonModeOn() {
+  return config.buttonMode === true || config.buttonMode === 'on';
+}
 
 /**
- * Send a message with interactive buttons
+ * Send a message with interactive quick-reply buttons.
  * @param {object} sock - Baileys socket
- * @param {string} jid - Chat JID
- * @param {object} opts
- * @param {string} opts.text - Message body text
- * @param {string} [opts.footer] - Footer text
- * @param {Array} opts.buttons - Array of button objects
- * @param {string} opts.buttons[].id - Button ID (for quick_reply)
- * @param {string} opts.buttons[].text - Button display text
- * @param {string} [opts.buttons[].url] - URL (for cta_url buttons)
- * @param {object} [msgOpts] - Additional sendMessage options (quoted, mentions, etc.)
+ * @param {string} jid - chat JID
+ * @param {object} opts - { text, footer, buttons: [{ id, text }] }
+ * @param {object} quoted - message to quote (optional)
  */
-async function sendButtons(sock, jid, opts, msgOpts = {}) {
-  const buttons = (opts.buttons || []).map(btn => {
-    if (btn.url) {
-      // CTA URL button
-      return {
-        name: 'cta_url',
-        buttonParamsJson: JSON.stringify({
-          display_text: btn.text,
-          url: btn.url,
-          merchant_id: btn.merchantId || '',
-        }),
-      };
-    } else {
-      // Quick reply button
-      return {
-        name: 'quick_reply',
-        buttonParamsJson: JSON.stringify({
-          display_text: btn.text,
-          id: btn.id,
-        }),
-      };
-    }
-  });
+async function sendButtons(sock, jid, opts, quoted) {
+  const { text, footer = '', buttons = [] } = opts;
 
-  const message = {
-    viewOnceMessage: {
-      message: {
-        messageContextInfo: {
-          deviceListMetadata: {},
-          deviceListMetadataVersion: 2,
-        },
-        interactiveMessage: proto.Message.InteractiveMessage.create({
-          body: { text: opts.text || '' },
-          footer: opts.footer ? { text: opts.footer } : undefined,
-          nativeFlowMessage: { buttons },
-        }),
-      },
+  // Fallback: button mode off, or no buttons → plain text
+  if (!isButtonModeOn() || buttons.length === 0) {
+    return quoted
+      ? sock.sendMessage(jid, { text }, { quoted })
+      : sock.sendMessage(jid, { text });
+  }
+
+  // Baileys caps quick-reply buttons at 3 per message
+  const rows = buttons.slice(0, 3).map(b => ({
+    name: 'quick_reply',
+    buttonParamsJson: JSON.stringify({
+      display_text: String(b.text || b.label || b.id),
+      id: b.id,
+    }),
+  }));
+
+  const content = {
+    interactiveMessage: {
+      body: { text },
+      ...(footer ? { footer: { text: footer } } : {}),
+      nativeFlowMessage: { buttons: rows },
     },
   };
 
-  return sock.sendMessage(jid, message, msgOpts);
+  return quoted
+    ? sock.sendMessage(jid, content, { quoted })
+    : sock.sendMessage(jid, content);
 }
 
-module.exports = { sendButtons };
+// Register a handler for a button id
+function onButton(id, handler) {
+  buttonHandlers.set(id, handler);
+}
+
+/**
+ * Handle an incoming button press. Call this early in handleMessage.
+ * @returns {boolean} true if a registered button was handled
+ */
+function handleButtonResponse(sock, msg) {
+  try {
+    const br =
+      msg.message?.buttonsResponseMessage ||
+      msg.message?.interactiveResponseMessage ||
+      null;
+    if (!br) return false;
+
+    const from = msg.key.remoteJid;
+    const sender = msg.key.participant || from;
+
+    let btnId = br.selectedButtonId || null;
+
+    // nativeFlowResponseMessage.paramsJson is a JSON string: {"id":"..."}
+    if (!btnId && br.nativeFlowResponseMessage?.paramsJson) {
+      try {
+        btnId = JSON.parse(br.nativeFlowResponseMessage.paramsJson).id;
+      } catch (e) {}
+    }
+
+    if (!btnId) return false;
+
+    const handler = buttonHandlers.get(btnId);
+    if (handler) {
+      handler(sock, msg, from, sender, br);
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.error('[BUTTON] handle error:', e.message);
+    return false;
+  }
+}
+
+module.exports = { sendButtons, onButton, handleButtonResponse, isButtonModeOn };

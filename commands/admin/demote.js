@@ -1,11 +1,9 @@
 /**
  * Demote Command — Demote someone from WhatsApp group admin
  *
- * Protection system:
- * - If the target was promoted by the owner, only the owner can demote them
- * - 1st attempt → warning in group + DM
- * - 2nd attempt → violator gets demoted, protected admin re-promoted
- * - Owner can always demote freely
+ * Protection: owner-promoted admins can only be demoted by the owner
+ * 1st attempt → blocked + warned
+ * 2nd attempt → violator demoted, protected admin re-promoted
  */
 
 const database = require('../../database');
@@ -48,61 +46,56 @@ module.exports = {
       const targetNum = target.split(':')[0].split('@')[0];
       const demoterNum = extra.sender.split(':')[0].split('@')[0];
 
-      // ── Owner-Promoted Admin Protection (BEFORE demoting) ──
+      // ── Owner-Promoted Admin Protection ────────────────────
       const isProtected = database.isOwnerPromotedAdmin(extra.from, target);
 
       if (isProtected) {
         if (extra.isOwner) {
-          // Owner can always demote — remove protection and proceed
+          // Owner can always demote
           database.removeOwnerPromotedAdmin(extra.from, target);
         } else {
-          // Non-owner trying to demote a protected admin
           const record = database.getOwnerPromotedAdmin(extra.from, target);
           const attempts = record?.demoteAttempts || 0;
 
           if (attempts === 0) {
-            // 1st attempt → warn + block
+            // 1st attempt — warn + block
             database.incrementDemoteAttempts(extra.from, target);
 
-            // Block the demotion — show authority in group
+            // Group — show authority
             await sock.sendMessage(extra.from, {
               text:
-                `🚨 *ACCESS DENIED*\n\n` +
-                `@${demoterNum} — you cannot demote @${targetNum}\n\n` +
-                `This admin was promoted by the owner and is *protected*\n` +
-                `Only the owner can demote them\n\n` +
-                `⚠️ WARNING: Attempting this again will result in your demotion\n` +
-                `This incident has been logged`,
+                `🚫 *NAH*\n\n` +
+                `@${demoterNum} tried demoting @${targetNum}\n\n` +
+                `That's the owner's admin ${pick(SLANG.friend)}\n` +
+                `You can't touch them\n\n` +
+                `_Try that again and see what happens_`,
               mentions: [target, extra.sender],
             });
 
-            // DM the violator
-            try {
-              await sock.sendMessage(extra.sender, {
-                text:
-                  `🚨 *ADMIN WARNING*\n\n` +
-                  `You tried to demote a protected admin in *${extra.from.split('@')[0]}*\n\n` +
-                  `This admin was promoted by the owner\n` +
-                  `Only the owner can demote them\n\n` +
-                  `⚠️ If you try this again, you will be demoted yourself\n` +
-                  `Do not attempt this again`,
-              });
-            } catch (e) {}
-
-            // DM the protected admin — VIP treatment
+            // DM victim
             try {
               await sock.sendMessage(target, {
                 text:
-                  `🛡️ *YOU ARE PROTECTED*\n\n` +
-                  `@${demoterNum} tried to demote you in *${extra.from.split('@')[0]}*\n\n` +
-                  `The attempt was blocked — you're staying as admin\n` +
-                  `Only the owner can demote you\n\n` +
-                  `_You were promoted by the owner — act like it_ 👑`,
+                  `🛡️ *YOU GOOD*\n\n` +
+                  `@${demoterNum} tried demoting you\n` +
+                  `Blocked — you're still the admin\n` +
+                  `_The owner put you there, nobody else decides_ 👑`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
 
-            // DM the owner
+            // DM violator
+            try {
+              await sock.sendMessage(extra.sender, {
+                text:
+                  `🚫 *Oi*\n\n` +
+                  `You just tried demoting someone the owner promoted\n` +
+                  `That's not how this works ${pick(SLANG.friend)}\n\n` +
+                  `One more time and you're losing your admin too`,
+              });
+            } catch (e) {}
+
+            // DM owner
             const ownerNumbers = config.ownerNumber || [];
             for (const ownerNum of ownerNumbers) {
               try {
@@ -111,12 +104,9 @@ module.exports = {
                   : `${ownerNum}@s.whatsapp.net`;
                 await sock.sendMessage(ownerJid, {
                   text:
-                    `🛡️ *ADMIN PROTECTION*\n\n` +
-                    `@${demoterNum} tried to demote @${targetNum}\n` +
-                    `in *${extra.from.split('@')[0]}*\n\n` +
-                    `The demotion was blocked\n` +
-                    `This admin was promoted by you and is protected\n` +
-                    `If they try again, they will be demoted automatically`,
+                    `🛡️ *PROTECTION*\n\n` +
+                    `@${demoterNum} tried demoting @${targetNum}\n` +
+                    `Blocked ${pick(SLANG.vibe)}`,
                   mentions: [target, extra.sender],
                 });
               } catch (e) {}
@@ -124,53 +114,49 @@ module.exports = {
 
             return;
           } else {
-            // 2nd attempt → demote the violator, re-promote protected admin
-
-            // Re-promote the protected admin
+            // 2nd attempt — demote violator, re-promote protected admin
             try {
               await sock.groupParticipantsUpdate(extra.from, [target], 'promote');
             } catch (e) {}
 
-            // Demote the violator
             try {
               await sock.groupParticipantsUpdate(extra.from, [extra.sender], 'demote');
             } catch (e) {}
 
-            // Remove protection record
             database.removeOwnerPromotedAdmin(extra.from, target);
 
-            // Announce in group — show authority
+            // Group — show who's boss
             await sock.sendMessage(extra.from, {
               text:
-                `🚨 *ADMIN PROTECTION — ACTION TAKEN*\n\n` +
-                `@${demoterNum} has been *demoted* for repeatedly trying to demote a protected admin\n\n` +
-                `@${targetNum} has been re-promoted ✅\n\n` +
-                `_Only the owner decides who stays as admin_ 👑`,
+                `🚨 *ADMIN PROTECTION*\n\n` +
+                `@${demoterNum} got demoted\n` +
+                `Kept trying to touch the owner's admin\n\n` +
+                `@${targetNum} back where they belong\n\n` +
+                `_KAMI doesn't play_ 👑`,
               mentions: [target, extra.sender],
             });
 
-            // DM the violator
-            try {
-              await sock.sendMessage(extra.sender, {
-                text:
-                  `🚨 *YOU HAVE BEEN DEMOTED*\n\n` +
-                  `You repeatedly tried to demote a protected admin\n` +
-                  `in *${extra.from.split('@')[0]}*\n\n` +
-                  `This is your consequence\n` +
-                  `Only the owner can demote people they've promoted`,
-              });
-            } catch (e) {}
-
-            // DM the protected admin — VIP outcome
+            // DM victim
             try {
               await sock.sendMessage(target, {
                 text:
-                  `🛡️ *PROTECTION SERVED*\n\n` +
-                  `@${demoterNum} tried to demote you twice in *${extra.from.split('@')[0]}*\n\n` +
-                  `They have been *demoted* as a result\n` +
-                  `You have been re-promoted ✅\n\n` +
+                  `🛡️ *SORTED*\n\n` +
+                  `@${demoterNum} tried demoting you twice\n` +
+                  `They got demoted for it\n` +
+                  `You're back as admin\n\n` +
                   `_The owner's word is final_ 👑`,
                 mentions: [extra.sender],
+              });
+            } catch (e) {}
+
+            // DM violator
+            try {
+              await sock.sendMessage(extra.sender, {
+                text:
+                  `🚨 *YOU GOT DEMOTED*\n\n` +
+                  `Kept trying to demote the owner's admin\n` +
+                  `Now you're regular ${pick(SLANG.vibe)}\n\n` +
+                  `_Should've left it alone_`,
               });
             } catch (e) {}
 
@@ -185,13 +171,17 @@ module.exports = {
       setTimeout(() => handler._botDemoted.delete(target), 5000);
 
       await sock.sendMessage(extra.from, {
-        text: `✅ SUCCESS\n\n⬇️ DEMOTED\n\n@${targetNum} is no longer a group admin`,
+        text:
+          `✅ SUCCESS\n\n` +
+          `⬇️ DEMOTED\n\n` +
+          `@${targetNum} is no longer a group admin\n\n` +
+          `_${pick(SLANG.vibe)}_`,
         mentions: [target],
       }, { quoted: msg });
 
     } catch (error) {
       console.error('Demote error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't demote`);
     }
   },
 };
