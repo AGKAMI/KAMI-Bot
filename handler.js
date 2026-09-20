@@ -1135,9 +1135,9 @@ const handleMessage = async (sock, msg) => {
         return sock.sendMessage(from, {
           text: `❌ ERROR\n\n` +
                 `As a team admin you're only allowed to accept or deny pending applications from DMs\n\n` +
-                `✅ Accept: *.crew accept <App ID>*\n` +
-                `❌ Deny: *.crew deny <App ID> <reason>*\n` +
-                `📋 View pending: *.crew applicants <team>*`
+                `✅ Accept: \`.crew accept <App ID>\`\n` +
+                `❌ Deny: \`.crew deny <App ID> <reason>\`\n` +
+                `📋 View pending: \`.crew applicants <team>\``
         }, { quoted: msg });
       }
     }
@@ -1154,7 +1154,7 @@ const handleMessage = async (sock, msg) => {
                 `You have a pending application being reviewed by an admin.\n` +
                 `Wait for an admin to accept or deny your application.\n\n` +
                 `❌ You cannot use other commands while your application is being reviewed.\n\n` +
-                `💡 You can apply to other teams with: *.crew apply <team>*`
+                `💡 You can apply to other teams with: \`.crew apply <team>\``
         }, { quoted: msg });
       }
     }

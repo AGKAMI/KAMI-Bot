@@ -118,7 +118,7 @@ module.exports = {
         `🆔 *App ID:* ${app.appUid}\n\n` +
         `📲 I've DM'd you the application form.\n\n` +
         `✍️ Answer all questions and post them here with:\n` +
-        `*.crew applied ${teamKey} <your answers>*\n\n` +
+        `\`.crew applied ${teamKey} <your answers>\`\n\n` +
         `_${pick(SLANG.greeting)}, good luck!_`;
 
       await sock.sendMessage(extra.from, {

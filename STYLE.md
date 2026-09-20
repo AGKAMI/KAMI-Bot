@@ -119,11 +119,25 @@ _{tsotsitaal closer}_
 | Italic | `_text_` | `_lekke_` |
 | Strikethrough | `~text~` | `~removed~` |
 | Mention | `@number` | `@27833882383` |
+| Code/Command | `` `text` `` | `` `.crew accept <UID>` `` |
 
 **NEVER use:**
 - `**bold**` (Markdown — WhatsApp doesn't render it)
 - `_italic_` with double underscores
 - Box-drawing characters (`│`, `═`, `╔`) — they render as `????` on Android WhatsApp
+
+### Command References
+
+When a message instructs the user to run a command, always use backtick code blocks — NOT bold:
+
+```
+✅ Accept: `.crew accept SS-4FK2X`
+❌ Deny: `.crew deny SS-4FK2X <reason>`
+```
+
+**NEVER use bold for command references:**
+- ❌ `*.crew accept <UID>*` — bold looks like regular emphasized text
+- ✅ `` `.crew accept <UID>` `` — backticks render as monospace, visually distinct as a command
 
 ### Separators
 

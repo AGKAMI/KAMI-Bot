@@ -21,7 +21,7 @@ module.exports = {
       const allEvents = database.getCrewEvents(jid);
       if (!allEvents || Object.keys(allEvents).length === 0) {
         return sock.sendMessage(jid, {
-          text: `❌ *ERROR*\n\nNo upcoming events right now ${pick(SLANG.vibe)}\nMake one with: *.crew event <name> <time>*`
+          text: `❌ *ERROR*\n\nNo upcoming events right now ${pick(SLANG.vibe)}\nMake one with: \`.crew event <name> <time>\``
         });
       }
 
@@ -35,7 +35,7 @@ module.exports = {
 
       if (upcoming.length === 0) {
         return sock.sendMessage(jid, {
-          text: `❌ *ERROR*\n\nNo upcoming events right now ${pick(SLANG.vibe)}\nMake one with: *.crew event <name> <time>*`
+          text: `❌ *ERROR*\n\nNo upcoming events right now ${pick(SLANG.vibe)}\nMake one with: \`.crew event <name> <time>\``
         });
       }
 
@@ -45,7 +45,7 @@ module.exports = {
     const team = database.getTeam(jid);
     if (!team || !team.events || !team.events[eventId]) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nThat event: *${eventId}* doesn't exist.\nSee all events with: *.crew events*`
+        text: `❌ *ERROR*\n\nThat event: *${eventId}* doesn't exist.\nSee all events with: \`.crew events\``
       });
     }
 
@@ -53,7 +53,7 @@ module.exports = {
 
     if (event.status !== 'upcoming') {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nThat event is done or already finished.\nSee all events with: *.crew events*`
+        text: `❌ *ERROR*\n\nThat event is done or already finished.\nSee all events with: \`.crew events\``
       });
     }
 

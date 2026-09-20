@@ -60,9 +60,9 @@ const buildFormMessage = (teamKey) => {
     `━━━━━━━━━━━━━━━━\n\n` +
     `✍️ *HOW TO SUBMIT:*\n` +
     `Go to any Slammed Society group and reply:\n` +
-    `*${'.'}crew applied ${teamKey} <your answer here>*\n\n` +
+    `\`.crew applied ${teamKey} <your answer here>\`\n\n` +
     `Example:\n` +
-    `${'.'}crew applied ${teamKey} 1) 3 hours 2) 18 3) yes did vip before 4) yes 5) active 6) i move the vip to safe zone\n\n` +
+    `\`.crew applied ${teamKey} 1) 3 hours 2) 18 3) yes did vip before 4) yes 5) active 6) i move the vip to safe zone\`\n\n` +
     (crewTeam ? `You'll get an application ID to track it. ` : ``) +
     `_${pickGood()}, good luck with the tryout!_`;
 };
@@ -112,8 +112,8 @@ const buildAdminNotice = (app) => {
     `👤 *Applicant:* ${num}\n\n` +
     `📝 *ANSWERS:*\n${app.answers || '(not provided)'}\n\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
-    `✅ Accept: *.crew accept ${app.appUid}*\n` +
-    `❌ Deny: *.crew deny ${app.appUid} <reason>*\n\n` +
+    `✅ Accept: \`.crew accept ${app.appUid}\`\n` +
+    `❌ Deny: \`.crew deny ${app.appUid} <reason>\`\n\n` +
     `_Reply from any Slammed Society group or directly from DM._`;
 };
 
@@ -122,4 +122,53 @@ const pickGood = () => {
   return opts[Math.floor(Math.random() * opts.length)];
 };
 
-module.exports = { TEAMS, getQuestions, buildFormMessage, buildHiredMessage, buildDeniedMessage, buildAdminNotice };
+// Format raw applicant answers into a clean numbered list
+// Handles: 1. / 1) / 1: / 1️⃣ / 1️⃣. / 1️⃣: / - / • / inline numbering
+const formatAnswers = (raw) => {
+  if (!raw || typeof raw !== 'string') return raw;
+
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const answers = [];
+  let current = '';
+
+  // Regex: optional whitespace, then a numbering prefix, then separator, then answer text
+  // Matches: 1. answer / 1) answer / 1: answer / 1️⃣ answer / 1️⃣. answer / 1️⃣: answer / - answer / • answer
+  const prefixRe = /^(?:\d{1,2}[.):]|[1-6][\uFE0F\u20E3]|[-•])\s*/;
+
+  for (const line of lines) {
+    const cleaned = line.replace(prefixRe, '').trim();
+    if (cleaned && prefixRe.test(line)) {
+      // This line starts with a numbering prefix — it's a new answer
+      if (current) answers.push(current);
+      current = cleaned;
+    } else if (current) {
+      // No prefix — continuation of previous answer
+      current += ' ' + cleaned;
+    } else {
+      // No prefix and no current answer — check for inline numbering
+      // e.g. "3 hours 18 yes did vip before yes active i move the vip to safe zone"
+      // Only split inline if we detect the pattern "answer answer" without newlines
+      // For now, treat as a single answer block
+      current = cleaned;
+    }
+  }
+  if (current) answers.push(current);
+
+  // If no prefixes were detected at all (all lines ended up in one answer),
+  // try splitting by inline numbering like "1. answer 2. answer"
+  if (answers.length <= 1 && lines.length === 1) {
+    const inlineSplit = lines[0]
+      .replace(/\d{1,2}[.):]\s*/g, '\n')
+      .replace(/[1-6][\uFE0F\u20E3]\s*/g, '\n')
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean);
+    if (inlineSplit.length > 1) {
+      return inlineSplit.map((a, i) => `${i + 1}. ${a}`).join('\n\n');
+    }
+  }
+
+  return answers.map((a, i) => `${i + 1}. ${a}`).join('\n\n');
+};
+
+module.exports = { TEAMS, getQuestions, buildFormMessage, buildHiredMessage, buildDeniedMessage, buildAdminNotice, formatAnswers };

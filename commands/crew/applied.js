@@ -8,7 +8,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
-const { TEAMS, buildAdminNotice } = require('./crewForms');
+const { TEAMS, buildAdminNotice, formatAnswers } = require('./crewForms');
 
 module.exports = {
   subName: 'applied',
@@ -57,6 +57,9 @@ module.exports = {
           `Re-run with your full answers`
         );
       }
+
+      // Normalize answer formatting — handles all numbering styles
+      answers = formatAnswers(answers);
 
       const sender = msg.key.participant || msg.key.remoteJid;
       const applicantJid = sender.includes('@g.us') ? (msg.key.participant || extra.sender) : sender;

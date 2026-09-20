@@ -118,8 +118,8 @@ module.exports = {
           `----------\n\n` +
           lines.join('\n\n') +
           `\n\n----------\n\n` +
-          `Use ${bold('.crew accept <UID>')} to hire\n` +
-          `Use ${bold('.crew deny <UID> <reason>')} to reject`,
+          `Use \`.crew accept <UID>\` to hire\n` +
+          `Use \`.crew deny <UID> <reason>\` to reject`,
         mentions,
       }, { quoted: msg });
 
