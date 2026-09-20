@@ -11,6 +11,14 @@ const handler = require('../../handler');
 const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 
+function getOwnerJid(sock) {
+  const botId = sock.user?.id || '';
+  const botNum = botId.includes(':') ? botId.split(':')[0] : botId.split('@')[0];
+  const ownerNum = (config.ownerNumber || []).find(n => n !== botNum);
+  if (!ownerNum) return null;
+  return ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
+}
+
 module.exports = {
   name: 'demote',
   category: 'admin',
@@ -56,8 +64,8 @@ module.exports = {
         } else {
           const record = database.getOwnerPromotedAdmin(extra.from, target);
           const attempts = record?.demoteAttempts || 0;
-          const ownerNum = (config.ownerNumber || [])[0] || '';
-          const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
+          const ownerJid = getOwnerJid(sock);
+          const ownerNum = ownerJid ? ownerJid.split(':')[0].split('@')[0] : '';
 
           if (attempts === 0) {
             // 1st attempt — warn + block
@@ -68,10 +76,14 @@ module.exports = {
               text:
                 `🚫 *NAH*\n\n` +
                 `@${demoterNum} tried demoting @${targetNum}\n\n` +
-                `That's @${ownerNum.split(':')[0].split('@')[0]}'s admin ${pick(SLANG.friend)}\n` +
+                (ownerNum
+                  ? `That's @${ownerNum}'s admin ${pick(SLANG.friend)}\n`
+                  : `That's KAMI's admin ${pick(SLANG.friend)}\n`) +
                 `You can't touch them\n\n` +
                 `_Try that again and see what happens_`,
-              mentions: [target, extra.sender, ownerJid],
+              mentions: ownerNum
+                ? [target, extra.sender, ownerJid]
+                : [target, extra.sender],
             });
 
             // DM victim
@@ -130,10 +142,14 @@ module.exports = {
               text:
                 `🚨 *ADMIN PROTECTION*\n\n` +
                 `@${demoterNum} got demoted\n` +
-                `Kept trying to touch ${ownerNum.split(':')[0].split('@')[0]}'s admin\n\n` +
+                (ownerNum
+                  ? `Kept trying to touch @${ownerNum}'s admin\n\n`
+                  : `Kept trying to touch KAMI's admin\n\n`) +
                 `@${targetNum} back where they belong\n\n` +
                 `_KAMI-Bot doesn't play_ 👑`,
-              mentions: [target, extra.sender, ownerJid],
+              mentions: ownerNum
+                ? [target, extra.sender, ownerJid]
+                : [target, extra.sender],
             });
 
             // DM victim

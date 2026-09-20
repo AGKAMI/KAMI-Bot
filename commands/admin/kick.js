@@ -66,17 +66,21 @@ module.exports = {
           if (database.isOwnerProtected(chatId, target)) {
             const targetNum = target.split(':')[0].split('@')[0];
             const kickerNum = extra.sender.split(':')[0].split('@')[0];
-            const ownerNum = (config.ownerNumber || [])[0] || '';
-            const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
+            const ownerJid = getOwnerJid(sock);
+            const ownerNum = ownerJid ? ownerJid.split(':')[0].split('@')[0] : '';
 
             // Block — group message (mention owner)
             await sock.sendMessage(chatId, {
               text:
                 `🚫 *ACCESS DENIED*\n\n` +
                 `@${kickerNum} — nah you can't kick @${targetNum}\n\n` +
-                `That's @${ownerNum.split(':')[0].split('@')[0]}'s person ${pick(SLANG.friend)}\n` +
+                (ownerNum
+                  ? `That's @${ownerNum}'s person ${pick(SLANG.friend)}\n`
+                  : `That's KAMI's person ${pick(SLANG.friend)}\n`) +
                 `Only KAMI-Bot can remove them`,
-              mentions: [target, extra.sender, ownerJid],
+              mentions: ownerNum
+                ? [target, extra.sender, ownerJid]
+                : [target, extra.sender],
             });
 
             // DM victim
