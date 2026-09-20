@@ -392,6 +392,30 @@ const isUrl = (text) => {
 };
 
 // Format raw number to +country code format (e.g. +27 83 388 2383)
+// Normalize text for bad-word matching: lowercase, leetspeak → letters,
+// collapse repeated chars (fuckkk → fuck), strip separators (f u c k → fuck).
+const normalizeBadword = (text) => {
+  if (!text) return '';
+  let t = text.toLowerCase()
+    .replace(/0/g, 'o')
+    .replace(/1/g, 'i')
+    .replace(/2/g, 'z')
+    .replace(/3/g, 'e')
+    .replace(/4/g, 'a')
+    .replace(/5/g, 's')
+    .replace(/6/g, 'g')
+    .replace(/7/g, 't')
+    .replace(/8/g, 'b')
+    .replace(/9/g, 'g')
+    .replace(/@/g, 'a')
+    .replace(/\$/g, 's')
+    .replace(/!/g, 'i')
+    .replace(/[\s.\-_*,|\\/]+/g, '');
+  // Collapse runs of the same char so fffuuuck → fuck
+  t = t.replace(/(.)\1+/g, '$1');
+  return t;
+};
+
 const formatPhone = (raw) => {
   if (!raw) return '';
   // Reject @lid JIDs — not real phone numbers
@@ -472,21 +496,34 @@ const handleMessage = async (sock, msg) => {
             const dmGlobal = database.getGlobalSettings();
             const dmSender = msg.key.fromMe ? (sock.user.id.split(':')[0] + '@s.whatsapp.net') : (msg.key.participant || msg.key.remoteJid);
             if (dmGlobal.selfMode && !msg.key.fromMe && !isOwner(dmSender) && !database.isApprovedNumber(dmSender)) {
-              try {
-                await sock.sendMessage(from, {
-                  text: `🚫 *DO NOT TEXT THIS NUMBER* — this is a *bot* account 🤖\n` +
-                        `📲 *Message me on:* 084 082 0712\n` +
-                        `⚠️ *Your number will be BLOCKED after this message* ⛔🔒`
-                });
-              } catch (warnErr) {
-                console.error('[DMBLOCKER] warning send failed:', warnErr.message);
+              // Exempt pending applicants (application window) and the apply/applied on-ramp commands
+              const dmText =
+                (msg.message?.conversation) ||
+                (msg.message?.extendedTextMessage?.text) ||
+                (msg.message?.imageMessage?.caption) ||
+                (msg.message?.videoMessage?.caption) ||
+                '';
+              const dmBody = (dmText || '').trim().toLowerCase();
+              const isApplyCmd = dmBody.startsWith('.crew apply') || dmBody.startsWith('.crew applied');
+              if (database.hasPendingApplication(dmSender) || isApplyCmd) {
+                // Let the applicant through — skip blocking
+              } else {
+                try {
+                  await sock.sendMessage(from, {
+                    text: `🚫 *DO NOT TEXT THIS NUMBER* — this is a *bot* account 🤖\n` +
+                          `📲 *Message me on:* 084 082 0712\n` +
+                          `⚠️ *Your number will be BLOCKED after this message* ⛔🔒`
+                  });
+                } catch (warnErr) {
+                  console.error('[DMBLOCKER] warning send failed:', warnErr.message);
+                }
+                try {
+                  await sock.updateBlockStatus(dmSender, 'block');
+                } catch (blockErr) {
+                  console.error('[DMBLOCKER] block failed:', blockErr.message);
+                }
+                return;
               }
-              try {
-                await sock.updateBlockStatus(dmSender, 'block');
-              } catch (blockErr) {
-                console.error('[DMBLOCKER] block failed:', blockErr.message);
-              }
-              return;
             }
           } catch (dmErr) {
             console.error('[DMBLOCKER] early check error:', dmErr.message);
@@ -892,15 +929,17 @@ const handleMessage = async (sock, msg) => {
             const groupSettings = database.getGroupSettings(from);
             const badwords = (groupSettings.badwords || []).concat(config.defaultBadwords || []);
             if (groupSettings.antibadword && badwords.length > 0 && body) {
-              const lowerBody = body.toLowerCase();
-              // Remove spaces so "f u c k" / "s h i t" variants still match seeded patterns
-              const compact = lowerBody.replace(/[\s.]/g, '');
+              // Normalize once: lowercase, leetspeak, collapse repeats, strip separators.
+              const normBody = normalizeBadword(body);
               for (const word of badwords) {
                 const wl = word.toLowerCase().trim();
                 if (!wl) continue;
-                const hit = wl.includes('*')
-                  ? (lowerBody.includes(wl.replace(/\*/g, '')))
-                  : (lowerBody.includes(wl) || compact.includes(wl.replace(/[\s.]/g, '')));
+                const normWord = normalizeBadword(wl).replace(/\*/g, '');
+                if (!normWord) continue;
+                const isWildcard = wl.includes('*');
+                const hit = isWildcard
+                  ? normBody.includes(normWord)
+                  : (normBody.includes(normWord));
                 if (hit) {
                   const action = groupSettings.badwordAction || 'delete';
                   // Delete the bad message first for delete/kick
@@ -1039,8 +1078,9 @@ const handleMessage = async (sock, msg) => {
     if (!command) return;
     
     // Check self mode (private mode) - only owner/approved can use commands (DMs ONLY, groups unaffected)
+    // Pending applicants are exempt so the .crew apply / .crew applied flow works in DMs.
     const globalSettings = database.getGlobalSettings();
-    if (!isGroup && globalSettings.selfMode && !isOwner(sender) && !database.isApprovedNumber(sender)) {
+    if (!isGroup && globalSettings.selfMode && !isOwner(sender) && !database.isApprovedNumber(sender) && !database.hasPendingApplication(sender)) {
       // Send warning then block (owner can never reach here due to isOwner check above)
       try {
         await sock.sendMessage(from, {

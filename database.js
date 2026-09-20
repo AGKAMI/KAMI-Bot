@@ -363,6 +363,24 @@ const removeApplicant = (groupJid, applicantKey) => {
   return updateTeam(groupJid, team);
 };
 
+// Does this user have any pending application anywhere?
+// Used to exempt applicants from the DM blocker during the application window.
+const hasPendingApplication = (jid) => {
+  const crew = getCrew();
+  if (!jid) return false;
+  const jidKey = jid.includes('@') ? jid : jid + '@s.whatsapp.net';
+  const jidNum = jid.split('@')[0];
+  for (const team of Object.values(crew.groups || {})) {
+    if (!team.applicants) continue;
+    for (const app of Object.values(team.applicants)) {
+      if (app.status === 'pending' && (app.jid === jidKey || app.jid === jid || app.jid?.split('@')[0] === jidNum)) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
 // Get all teams overview
 const getAllTeams = () => {
   const crew = getCrew();
@@ -468,6 +486,7 @@ module.exports = {
   addApplicant,
     getApplicants,
     removeApplicant,
+    hasPendingApplication,
     getAllTeams,
     generateAppUid,
     getApplicantByUid,

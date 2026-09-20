@@ -68,8 +68,8 @@ welcome: false,
       // SA township / racial slurs
       'kaffir', 'kafir', 'k*****', 'hotnot', 'hottentot', 'makwerekwere', 'mkwerekwere',
       'koelie', 'coolie', 'rooinek', 'gammat', 'gam', 'bushman', 'coloured monkey',
-      // Authority/context slurs
-      'bobbejaan', 'babalaas', 'nsimbi', 'inyathi', 'pampiri',
+      'bobbejaan', 'babalaas', 'nsimbi', 'inyathi', 'pampiri', 'amakwerekwere',
+      'venolia', 'boesman', 'swart gevaar', 'mateketa', 'marabunta',
       // English profanity
       'fuck', 'fucking', 'fuk', 'fck', 'shit', 'shitt', 'bitch', 'bxtch', 'biatch',
       'asshole', 'aashole', 'arsehole', 'cunt', 'c*nt', 'dick', 'cock', 'pussy',
@@ -77,6 +77,9 @@ welcome: false,
       'whore', 'slut', 'hoe', 'faggot', 'fag', 'twat', 'prick', 'wanker', 'wtf',
       'stfu', 'gtfo', 'fml', 'son of a bitch', 'goddamn', 'damn', 'hell no',
       'rape', 'rapist', 'retard', 'retarded', 'idiot', 'stupid bitch',
+      'dumbass', 'dumb ass', 'fuckwad', 'douchebag', 'douche bag', 'skank',
+      'hooligan', 'skollie', 'bergie', 'otsotsi', 'tsotsi', 'skelm', 'boer',
+      'jaap', 'rooinek', 'engelsman', 'amakipkip',
       // Extended variants to catch smart ones
       's hit', 'f uck', 'b itch', 'c unt', 'sh1t', 'fuck1', 'sht', 'fk'
     ],
