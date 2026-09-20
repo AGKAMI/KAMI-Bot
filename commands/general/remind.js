@@ -185,15 +185,16 @@ module.exports = {
                 timeout
             });
 
-            await extra.reply(
-                `✅ *SUCCESS*\n\n` +
-                `⏰ *Reminder Set*\n` +
-                `👤 *Who:* ${targetJids.map(j => `@${j.split('@')[0]}`).join(', ')}\n` +
-                `⏳ *When:* ${amount} ${fullUnit} from now\n` +
-                `📝 *Message:* ${cleanMessage}\n\n` +
-                `_I'll ping ${targetJids.length > 1 ? 'them' : 'you'}, ${pick(SLANG.vibe)} 🫡_`,
-                targetJids
-            );
+            await sock.sendMessage(from, {
+                text:
+                  `✅ *SUCCESS*\n\n` +
+                  `⏰ *Reminder Set*\n` +
+                  `👤 *Who:* ${targetJids.map(j => `@${j.split('@')[0]}`).join(', ')}\n` +
+                  `⏳ *When:* ${amount} ${fullUnit} from now\n` +
+                  `📝 *Message:* ${cleanMessage}\n\n` +
+                  `_I'll ping ${targetJids.length > 1 ? 'them' : 'you'}, ${pick(SLANG.vibe)} 🫡_`,
+                mentions: targetJids
+              }, { quoted: msg });
 
         } catch (error) {
             await extra.reply(`❌ *ERROR*\n\n💡 ${pick(SLANG.error)} — ${error.message}`);
