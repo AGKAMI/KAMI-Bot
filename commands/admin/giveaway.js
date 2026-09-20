@@ -126,79 +126,84 @@ module.exports = {
         return extra.reply(
           `❌ *ERROR*\n\n` +
           `💡 *Usage:*\n` +
-          `• .giveaway <prize> | <time> | <winners>n\n` +
-          `• .giveaway <prize> 3 10m\n` +
-          `• Reply to an image/video + .giveaway <prize>\n\n` +
-          `⏱️ *Time formats:* 30s, 5m, 1h, 1h30m\n` +
-          `🎯 *Winners:* 1n = 1 winner, 3n = 3 winners\n` +
-          `📋 *Min entries:* min 5 = extend if under 5 entries\n\n` +
+          `• \`.giveaway <prize> <time> winners <n>\`\n` +
+          `• Reply to an image/video + \`.giveaway <prize>\`\n\n` +
+          `⏱️ *Time:* 30s, 5m, 1h, 1h30m\n` +
+          `🎯 *Winners:* winners 3 (default: 1)\n` +
+          `📋 *Min entries:* min 5\n\n` +
           `*Examples:*\n` +
-          `• \`.giveaway iPhone 15 | 1h | 3n\`\n` +
-          `• \`.giveaway Airtime R50 2 30m\`\n` +
-          `• \`.giveaway Voucher | 45m | 1n | min 10\``
+          `• \`.giveaway ADT Jeep SRT 1h winners 1\`\n` +
+          `• \`.giveaway Airtime R50 30m winners 2\`\n` +
+          `• \`.giveaway Voucher 45m winners 1 min 10\`\n` +
+          `• Reply to photo + \`.giveaway iPhone 1h winners 3\``
         );
       }
 
       // ── Parse arguments ─────────────────────────────────
+      // Supports both pipe and space formats:
+      //   .giveaway prize | 1h | winners 3 | min 5
+      //   .giveaway prize 1h winners 3 min 5
+      //   .giveaway ADT Jeep SRT 1h winners 1
+      let rawParts;
+      if (fullArgs.includes('|')) {
+        rawParts = fullArgs.split('|').map(p => p.trim()).filter(Boolean);
+      } else {
+        // Split into tokens, then group: time tokens, keyword tokens, prize tokens
+        rawParts = [fullArgs];
+      }
+
       let prize = fullArgs;
       let durationMs = 5 * 60 * 1000; // default 5 min
       let numWinners = 1;
       let minEntries = 0;
 
-      if (fullArgs.includes('|')) {
-        const parts = fullArgs.split('|').map(p => p.trim());
-        prize = parts[0];
+      // Extract known keywords from the full string
+      const cleaned = fullArgs;
 
-        for (let i = 1; i < parts.length; i++) {
-          const p = parts[i];
-          // Time: 1h30m, 30m, 45s, 1h
-          const timeVal = parseTime(p);
-          if (timeVal && !p.toLowerCase().startsWith('min')) {
-            durationMs = timeVal;
-            continue;
-          }
-          // Winners: 3n
-          const winMatch = p.match(/^(\d+)n$/i);
-          if (winMatch) {
-            numWinners = parseInt(winMatch[1]);
-            continue;
-          }
-          // Min entries: min 5
-          const minMatch = p.match(/^min\s+(\d+)$/i);
-          if (minMatch) {
-            minEntries = parseInt(minMatch[1]);
-            continue;
+      // Extract winners: "winners 3", "winner 3", "3n"
+      let winMatch = cleaned.match(/(?:winners?|win)\s+(\d+)/i);
+      if (winMatch) {
+        numWinners = parseInt(winMatch[1]);
+      } else {
+        // Fallback: "3n" format
+        winMatch = cleaned.match(/(\d+)n\b/i);
+        if (winMatch) numWinners = parseInt(winMatch[1]);
+      }
+
+      // Extract min entries: "min 5"
+      const minMatch = cleaned.match(/\bmin\s+(\d+)/i);
+      if (minMatch) {
+        minEntries = parseInt(minMatch[1]);
+      }
+
+      // Extract time: first token matching time pattern (h/m/s), not preceded by "min"
+      const timeTokens = cleaned.match(/\b(\d+[hms](?:\d+[hms])*)\b/gi);
+      if (timeTokens && timeTokens.length > 0) {
+        // Take the first valid time token
+        for (const t of timeTokens) {
+          const val = parseTime(t);
+          if (val) {
+            durationMs = val;
+            break;
           }
         }
       } else {
-        // Positional: .giveaway <prize> <winners> <time>
-        const tokens = fullArgs.split(/\s+/);
-        const trailing = [];
-        let i = tokens.length - 1;
-        while (i >= 0 && (/^\d+[hms]?$/i.test(tokens[i]) || /^\d+n$/i.test(tokens[i]))) {
-          trailing.unshift(tokens.pop());
-          i--;
+        // Fallback: plain number at end = minutes
+        const plainNum = cleaned.match(/\b(\d+)\s*$/);
+        if (plainNum && !cleaned.match(/(?:winners?|win)\s+\d+$/i)) {
+          durationMs = parseInt(plainNum[1]) * 60 * 1000;
         }
-
-        // Identify time vs winners from trailing tokens
-        for (const t of trailing) {
-          const timeVal = parseTime(t);
-          if (timeVal) {
-            durationMs = timeVal;
-          } else if (/^\d+n$/i.test(t)) {
-            numWinners = parseInt(t);
-          } else if (/^\d+$/.test(t)) {
-            // Plain number — last = time (minutes), second-last = winners
-            if (trailing.indexOf(t) === trailing.length - 1) {
-              durationMs = parseInt(t) * 60 * 1000;
-            } else {
-              numWinners = parseInt(t);
-            }
-          }
-        }
-
-        prize = tokens.join(' ').trim() || fullArgs;
       }
+
+      // Prize = everything minus extracted keywords
+      prize = fullArgs
+        .replace(/\|/g, '')
+        .replace(/(?:winners?|win)\s+\d+/gi, '')
+        .replace(/\d+n\b/gi, '')
+        .replace(/\bmin\s+\d+/gi, '')
+        .replace(/\b\d+[hms](?:\d+[hms])*\b/gi, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim() || fullArgs;
 
       // ── Validate ────────────────────────────────────────
       if (durationMs < 1000 || durationMs > 3 * 60 * 60 * 1000) {
