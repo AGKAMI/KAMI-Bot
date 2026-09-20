@@ -1297,59 +1297,38 @@ const handleGroupUpdate = async (sock, update) => {
             }
 
             // ── Owner-Protected Member Removal ────────────
-            // If someone removes a person added/promoted by the owner, remove them + DM
-            if (database.isOwnerProtected(id, jid)) {
-              // Skip if bot did it (via .kick command) or owner did it
-              if (!_botKicked.has(jid)) {
-                console.log(`[MEMBER PROTECTION] Protected member ${jid.split('@')[0]} removed from ${id} — re-adding and removing kicker`);
+            // If someone removes a person added/promoted by the owner, re-add them
+            if (database.isOwnerProtected(id, jid) && !_botKicked.has(jid)) {
+              console.log(`[MEMBER PROTECTION] Protected member ${jid.split('@')[0]} removed from ${id} — re-adding`);
 
-                // Re-add the protected member
-                try {
-                  await sock.groupParticipantsUpdate(id, [jid], 'add');
-                } catch (e) {
-                  console.error(`[MEMBER PROTECTION] Failed to re-add ${jid.split('@')[0]}:`, e.message);
-                }
-
-                // Try to identify and remove the person who did the kick
-                // We can't know who did external kicks, so remove ALL non-owner, non-bot admins
-                // as a deterrent — only the owner should kick protected members
-                try {
-                  const meta = await sock.groupMetadata(id).catch(() => null);
-                  if (meta && meta.participants) {
-                    const ownerNumbers = (config.ownerNumber || []).map(n => n.replace(/\D/g, ''));
-                    const botNumber = (sock.user?.id || '').split(':')[0].split('@')[0];
-
-                    for (const p of meta.participants) {
-                      const pJid = p.id || p.jid;
-                      const pNum = pJid.split('@')[0].split(':')[0];
-
-                      // Skip owner, bot, and the protected member themselves
-                      if (pJid === jid) continue;
-                      if (ownerNumbers.includes(pNum)) continue;
-                      if (pNum === botNumber) continue;
-
-                      // If this person is an admin, they could have done the kick
-                      if (p.admin === 'admin' || p.admin === 'superadmin') {
-                        try {
-                          await sock.groupParticipantsUpdate(id, [pJid], 'demote');
-                          // DM them
-                          const dmJid = pNum + '@s.whatsapp.net';
-                          await sock.sendMessage(dmJid, {
-                            text: `🚨 *ADMIN PROTECTION*\n\nYou were demoted in *${meta.subject || 'a crew group'}*\n\nYou kicked someone the owner personally added/promoted.\n\nOnly the owner can remove people they've added. Don't do it again.`
-                          });
-                          console.log(`[MEMBER PROTECTION] Demoted ${pNum} for kicking protected member`);
-                        } catch (e) {}
-                      }
-                    }
-                  }
-                } catch (e) {
-                  console.error('[MEMBER PROTECTION] Kicker identification error:', e.message);
-                }
-
-                // Clean up protection record
-                database.removeOwnerAddedMember(id, jid);
-                database.removeOwnerPromotedAdmin(id, jid);
+              // Re-add the protected member
+              try {
+                await sock.groupParticipantsUpdate(id, [jid], 'add');
+              } catch (e) {
+                console.error(`[MEMBER PROTECTION] Failed to re-add ${jid.split('@')[0]}:`, e.message);
               }
+
+              // DM the owner — they can sort out who did it
+              const memberNum = jid.split('@')[0];
+              const ownerNumbers = config.ownerNumber || [];
+              for (const ownerNum of ownerNumbers) {
+                try {
+                  const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
+                  await sock.sendMessage(ownerJid, {
+                    text:
+                      `🚨 *MEMBER PROTECTION*\n\n` +
+                      `@${memberNum} was kicked from a crew group\n` +
+                      `They were added/promoted by you and are *protected*\n\n` +
+                      `✅ They have been automatically re-added\n` +
+                      `⚠️ Check who kicked them`,
+                    mentions: [jid],
+                  });
+                } catch (e) {}
+              }
+
+              // Clean up protection record
+              database.removeOwnerAddedMember(id, jid);
+              database.removeOwnerPromotedAdmin(id, jid);
             }
           }
         }
@@ -1429,7 +1408,8 @@ const handleGroupUpdate = async (sock, update) => {
                       }
                       continue; // Skip teamAdmin sync — we just re-promoted
                     }
-                    // If owner did it via .demote, the command already removed the protection
+                    // Owner did it via .demote — command already removed protection
+                    database.removeOwnerPromotedAdmin(id, jid);
                   }
 
                   // Removed as admin — check if still admin in ANY crew group
