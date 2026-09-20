@@ -10,14 +10,15 @@ const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 const { TEAMS, buildFormMessage } = require('./crewForms');
+const { resolveUser } = require('./crewHelpers');
 
 module.exports = {
   subName: 'apply',
   name: null,
   aliases: ['tryout'],
   category: 'crew',
-  description: 'Start a crew application (bot DMs you the form)',
-  usage: '.crew apply <team>',
+  description: 'Start a crew application (bot DMs you or the applicant the form)',
+  usage: '.crew apply <team> [@mention|number]',
   groupOnly: false,
   ownerOnly: false,
 
@@ -26,7 +27,10 @@ module.exports = {
       if (!args || args.length === 0) {
         return extra.reply(
           `❌ ERROR\n\nProvide a team ${pick(SLANG.friend)}\n\n` +
-          `Usage: .crew apply <team>\n` +
+          `Usage:\n` +
+          `• \`.crew apply <team>\` — apply for yourself\n` +
+          `• \`.crew apply <team> @user\` — apply for someone\n` +
+          `• \`.crew apply <team> 0833882383\` — apply for someone by number\n\n` +
           `Teams: ${Object.keys(TEAMS).join(', ')}`
         );
       }
@@ -39,14 +43,33 @@ module.exports = {
         );
       }
 
-      const sender = msg.key.participant || msg.key.remoteJid;
-      const applicantJid = sender.includes('@g.us') ? (msg.key.participant || extra.sender) : sender;
+      // Resolve applicant — could be the sender or someone they're applying for
+      const ctx = msg.message?.extendedTextMessage?.contextInfo;
+      const mentioned = ctx?.mentionedJid || [];
+      const resolved = resolveUser(args.slice(1), mentioned, ctx);
+
+      let applicantJid;
+      let applyingForSomeone = false;
+
+      if (resolved.jid) {
+        // Applying for someone else
+        applicantJid = resolved.jid;
+        applyingForSomeone = true;
+      } else {
+        // Applying for yourself
+        const sender = msg.key.participant || msg.key.remoteJid;
+        applicantJid = sender.includes('@g.us') ? (msg.key.participant || extra.sender) : sender;
+      }
+
+      const applicantNum = applicantJid.split('@')[0];
       const teamGroupJid = config.crewTeams[teamKey].jid;
 
       // --- Already in the crew DB for this team? ---
       if (database.getCrewMember(teamGroupJid, applicantJid)) {
         return extra.reply(
-          `❌ ERROR\n\nYou're already part of ${TEAMS[teamKey].label} ${pick(SLANG.vibe)}`
+          applyingForSomeone
+            ? `❌ ERROR\n\n@${applicantNum} is already part of ${TEAMS[teamKey].label} ${pick(SLANG.vibe)}`
+            : `❌ ERROR\n\nYou're already part of ${TEAMS[teamKey].label} ${pick(SLANG.vibe)}`
         );
       }
 
@@ -60,8 +83,9 @@ module.exports = {
           );
           if (alreadyIn) {
             return extra.reply(
-              `❌ ERROR\n\nYou're already in the ${teamKey} group 🤨\n` +
-              `Why apply for a group you're already in?`
+              applyingForSomeone
+                ? `❌ ERROR\n\n@${applicantNum} is already in the ${teamKey} group 🤨\nWhy apply for a group they're already in?`
+                : `❌ ERROR\n\nYou're already in the ${teamKey} group 🤨\nWhy apply for a group you're already in?`
             );
           }
         }
@@ -72,8 +96,9 @@ module.exports = {
       const dup = Object.values(existingApps).find(a => a.jid === applicantJid && a.status === 'pending');
       if (dup) {
         return extra.reply(
-          `❌ ERROR\n\nYou already have a pending ${teamKey} application ${pick(SLANG.vibe)}\n` +
-          `App ID: ${dup.appUid}\n\nWait for review or hit an admin`
+          applyingForSomeone
+            ? `❌ ERROR\n\n@${applicantNum} already has a pending ${teamKey} application ${pick(SLANG.vibe)}\nApp ID: ${dup.appUid}\n\nWait for review or hit an admin`
+            : `❌ ERROR\n\nYou already have a pending ${teamKey} application ${pick(SLANG.vibe)}\nApp ID: ${dup.appUid}\n\nWait for review or hit an admin`
         );
       }
 
@@ -106,8 +131,9 @@ module.exports = {
       } catch (dmErr) {
         console.error('[CREW APPLY] form DM failed:', dmErr.message);
         return extra.reply(
-          `❌ ERROR\n\nCouldn't DM you the application form ${pick(SLANG.error)}\n` +
-          `Check if you have DMs open from this bot`
+          applyingForSomeone
+            ? `❌ ERROR\n\nCouldn't DM @${applicantNum} the application form ${pick(SLANG.error)}\nCheck if they have DMs open from this bot`
+            : `❌ ERROR\n\nCouldn't DM you the application form ${pick(SLANG.error)}\nCheck if you have DMs open from this bot`
         );
       }
 
@@ -116,7 +142,9 @@ module.exports = {
         `✅ *APPLICATION STARTED*\n\n` +
         `🏢 Team: *${teamKey}* — ${TEAMS[teamKey].label}\n` +
         `🆔 *App ID:* ${app.appUid}\n\n` +
-        `📲 I've DM'd you the application form.\n\n` +
+        (applyingForSomeone
+          ? `📲 I've DM'd @${applicantNum} the application form.\n\n`
+          : `📲 I've DM'd you the application form.\n\n`) +
         `✍️ Answer all questions and post them here with:\n` +
         `\`.crew applied ${teamKey} <your answers>\`\n\n` +
         `_${pick(SLANG.greeting)}, good luck!_`;
