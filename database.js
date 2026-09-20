@@ -14,6 +14,7 @@ const WARNINGS_DB = path.join(DB_PATH, 'warnings.json');
 const MODS_DB = path.join(DB_PATH, 'mods.json');
 const CREW_DB = path.join(DB_PATH, 'crew.json');
 const GLOBAL_DB = path.join(DB_PATH, 'global.json');
+const OWNER_PROMOTED_DB = path.join(DB_PATH, 'ownerPromotedAdmins.json');
 
 // Initialize database directory
 if (!fs.existsSync(DB_PATH)) {
@@ -33,6 +34,7 @@ initDB(WARNINGS_DB, {});
 initDB(MODS_DB, { moderators: [] });
 initDB(CREW_DB, { groups: {}, teamMap: {} });
 initDB(GLOBAL_DB, { selfMode: false, approvedNumbers: [] });
+initDB(OWNER_PROMOTED_DB, {});
 
 // Read database
 const readDB = (filePath) => {
@@ -674,6 +676,56 @@ const setCustomRoles = (groupJid, roles) => {
   return updateTeam(groupJid, team);
 };
 
+// ── Owner-Promoted Admin Protection ──────────────────────────
+// Structure: { "groupJid": { "adminJid": { promotedBy, demoteAttempts, date } } }
+
+const getOwnerPromotedAdmins = (groupJid) => {
+  const data = readDB(OWNER_PROMOTED_DB);
+  return data[groupJid] || {};
+};
+
+const addOwnerPromotedAdmin = (groupJid, adminJid, ownerJid) => {
+  const data = readDB(OWNER_PROMOTED_DB);
+  if (!data[groupJid]) data[groupJid] = {};
+  data[groupJid][adminJid] = {
+    promotedBy: ownerJid,
+    demoteAttempts: 0,
+    date: Date.now(),
+  };
+  return writeDB(OWNER_PROMOTED_DB, data);
+};
+
+const isOwnerPromotedAdmin = (groupJid, adminJid) => {
+  const data = readDB(OWNER_PROMOTED_DB);
+  return !!(data[groupJid] && data[groupJid][adminJid]);
+};
+
+const getOwnerPromotedAdmin = (groupJid, adminJid) => {
+  const data = readDB(OWNER_PROMOTED_DB);
+  return data[groupJid]?.[adminJid] || null;
+};
+
+const incrementDemoteAttempts = (groupJid, adminJid) => {
+  const data = readDB(OWNER_PROMOTED_DB);
+  if (data[groupJid]?.[adminJid]) {
+    data[groupJid][adminJid].demoteAttempts++;
+    writeDB(OWNER_PROMOTED_DB, data);
+    return data[groupJid][adminJid].demoteAttempts;
+  }
+  return 0;
+};
+
+const removeOwnerPromotedAdmin = (groupJid, adminJid) => {
+  const data = readDB(OWNER_PROMOTED_DB);
+  if (data[groupJid]) {
+    delete data[groupJid][adminJid];
+    if (Object.keys(data[groupJid]).length === 0) {
+      delete data[groupJid];
+    }
+    writeDB(OWNER_PROMOTED_DB, data);
+  }
+};
+
 module.exports = {
   getGroupSettings,
   updateGroupSettings,
@@ -743,5 +795,13 @@ module.exports = {
 
   // Auto-detect team admins
   syncTeamAdminsFromGroup,
-  pruneTeamAdmins
+  pruneTeamAdmins,
+
+  // Owner-promoted admin protection
+  getOwnerPromotedAdmins,
+  addOwnerPromotedAdmin,
+  isOwnerPromotedAdmin,
+  getOwnerPromotedAdmin,
+  incrementDemoteAttempts,
+  removeOwnerPromotedAdmin,
 };

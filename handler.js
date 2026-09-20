@@ -180,6 +180,9 @@ const isMod = (sender) => {
 // LID mapping cache
 const lidMappingCache = new Map();
 
+// Track bot-initiated demotes to skip protection handler
+const _botDemoted = new Set();
+
 // Helper to normalize JID to just the number part
 const normalizeJid = (jid) => {
   if (!jid) return null;
@@ -1338,6 +1341,38 @@ const handleGroupUpdate = async (sock, update) => {
                     } catch (e) {}
                   }
                 } else if (action === 'demote') {
+                  // ── Owner-Promoted Admin Protection ────────
+                  // Check if the demoted person is a protected admin (promoted by owner)
+                  // For external demotes (not via .demote command), auto-repromote
+                  if (database.isOwnerPromotedAdmin(id, jid)) {
+                    const record = database.getOwnerPromotedAdmin(id, jid);
+                    // Skip if the owner did this demotion (check via botDemoted tracking)
+                    if (!module.exports._botDemoted.has(jid)) {
+                      console.log(`[ADMIN PROTECTION] External demote of protected admin ${number} in ${id} — re-promoting`);
+                      try {
+                        await sock.groupParticipantsUpdate(id, [jid], 'promote');
+                      } catch (e) {}
+                      // Notify owner(s)
+                      const ownerNumbers = config.ownerNumber || [];
+                      for (const ownerNum of ownerNumbers) {
+                        try {
+                          const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
+                          await sock.sendMessage(ownerJid, {
+                            text:
+                              `🛡️ *ADMIN PROTECTION*\n\n` +
+                              `@${number} was demoted in a crew group\n` +
+                              `They were promoted by you and are *protected*\n\n` +
+                              `✅ They have been automatically re-promoted\n` +
+                              `⚠️ If this keeps happening, check who is demoting admins`,
+                            mentions: [jid],
+                          });
+                        } catch (e) {}
+                      }
+                      continue; // Skip teamAdmin sync — we just re-promoted
+                    }
+                    // If owner did it via .demote, the command already removed the protection
+                  }
+
                   // Removed as admin — check if still admin in ANY crew group
                   let stillAdminAnywhere = false;
                   const allTeams = { ...teamMap };
@@ -1923,5 +1958,6 @@ module.exports = {
   isBotAdmin,
   isMod,
   getGroupMetadata,
-  findParticipant
+  findParticipant,
+  _botDemoted,
 };
