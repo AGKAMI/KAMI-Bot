@@ -1,12 +1,15 @@
 /**
  * Kick Command
  * Remove mentioned or replied users from the group
- * Includes robust self-kick prevention for PN/LID IDs
+ *
+ * Protection: if target was added/promoted by owner, block the kick
+ * and warn the person attempting it — in the group AND via DM.
  */
 
-const config = require('../../config');
+const database = require('../../database');
 const handler = require('../../handler');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const config = require('../../config');
+const { pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'kick',
@@ -17,102 +20,109 @@ module.exports = {
   groupOnly: true,
   adminOnly: true,
   botAdminNeeded: true,
-  
+
   async execute(sock, msg, args, extra) {
     try {
       const chatId = extra.from;
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
       let usersToKick = [];
-      
+
       if (mentioned && mentioned.length > 0) {
         usersToKick = mentioned;
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         usersToKick = [ctx.participant];
       }
-      
+
       if (usersToKick.length === 0) {
-        return extra.reply(`👤 *KICK*\n\nTag or reply to the ${pick(SLANG.friend)} you wanna kick`);
-      }
-      
-      const botId = sock.user?.id || '';
-      const botLid = sock.user?.lid || '';
-      const botPhoneNumber = botId.includes(':') ? botId.split(':')[0] : (botId.includes('@') ? botId.split('@')[0] : botId);
-      const botIdFormatted = botPhoneNumber + '@s.whatsapp.net';
-      const botLidNumeric = botLid.includes(':') ? botLid.split(':')[0] : (botLid.includes('@') ? botLid.split('@')[0] : botLid);
-      const botLidWithoutSuffix = botLid.includes('@') ? botLid.split('@')[0] : botLid;
-      
-      const metadata = await sock.groupMetadata(chatId);
-      const participants = metadata.participants || [];
-      
-      const isTryingToKickBot = usersToKick.some((userId) => {
-        const userPhoneNumber = userId.includes(':') ? userId.split(':')[0] : (userId.includes('@') ? userId.split('@')[0] : userId);
-        const userLidNumeric = userId.includes('@lid') ? userId.split('@')[0].split(':')[0] : '';
-        
-        const directMatch = (
-          userId === botId ||
-          userId === botLid ||
-          userId === botIdFormatted ||
-          userPhoneNumber === botPhoneNumber ||
-          (userLidNumeric && botLidNumeric && userLidNumeric === botLidNumeric)
+        return extra.reply(
+          `👤 *KICK*\n\nTag or reply to the ${pick(SLANG.friend)} you wanna kick`
         );
-        
-        if (directMatch) return true;
-        
-        const participantMatch = participants.some((p) => {
-          const pPhoneNumber = p.phoneNumber ? p.phoneNumber.split('@')[0] : '';
-          const pId = p.id ? p.id.split('@')[0] : '';
-          const pLid = p.lid ? p.lid.split('@')[0] : '';
-          const pFullId = p.id || '';
-          const pFullLid = p.lid || '';
-          const pLidNumeric = pLid.includes(':') ? pLid.split(':')[0] : pLid;
-          
-          const isThisParticipantBot = (
-            pFullId === botId ||
-            pFullLid === botLid ||
-            pLidNumeric === botLidNumeric ||
-            pPhoneNumber === botPhoneNumber ||
-            pId === botPhoneNumber ||
-            p.phoneNumber === botIdFormatted ||
-            (botLid && pLid && botLidWithoutSuffix === pLid)
-          );
-          
-          if (!isThisParticipantBot) return false;
-          
-          return (
-            userId === pFullId ||
-            userId === pFullLid ||
-            userPhoneNumber === pPhoneNumber ||
-            userPhoneNumber === pId ||
-            userId === p.phoneNumber ||
-            (pLid && userLidNumeric && userLidNumeric === pLidNumeric) ||
-            (userLidNumeric && pLidNumeric && userLidNumeric === pLidNumeric)
-          );
-        });
-        
-        return participantMatch;
-      });
-      
+      }
+
+      // ── Self-kick prevention ──────────────────────────────
+      const botId = sock.user?.id || '';
+      const botPhoneNumber = botId.includes(':')
+        ? botId.split(':')[0]
+        : botId.includes('@')
+          ? botId.split('@')[0]
+          : botId;
+
+      const isTryingToKickBot = usersToKick.some(
+        (userId) => userId.split(':')[0].split('@')[0] === botPhoneNumber
+      );
+
       if (isTryingToKickBot) {
         await extra.reply(`❌ ERROR\n\nCan't kick myself ${pick(SLANG.friend)}`);
         return;
       }
-      
+
+      // ── Owner protection check (BEFORE kicking) ───────────
+      if (!extra.isOwner) {
+        for (const target of usersToKick) {
+          if (database.isOwnerProtected(chatId, target)) {
+            const targetNum = target.split(':')[0].split('@')[0];
+            const kickerNum = extra.sender.split(':')[0].split('@')[0];
+
+            // Block the kick — don't do it
+            await sock.sendMessage(chatId, {
+              text:
+                `🚨 *ACCESS DENIED*\n\n` +
+                `@${kickerNum} — you cannot kick @${targetNum}\n\n` +
+                `This member was personally added/promoted by the owner\n` +
+                `Only the owner can remove them\n\n` +
+                `⚠️ This incident has been logged`,
+              mentions: [target, extra.sender],
+            });
+
+            // DM the violator
+            try {
+              await sock.sendMessage(extra.sender, {
+                text:
+                  `🚨 *ADMIN WARNING*\n\n` +
+                  `You tried to kick a protected member in *${chatId.split('@')[0]}*\n\n` +
+                  `This member was added/promoted by the owner\n` +
+                  `Only the owner can remove people they've added\n\n` +
+                  `⚠️ Do not attempt this again`,
+              });
+            } catch (e) {}
+
+            // DM the owner
+            const ownerNumbers = config.ownerNumber || [];
+            for (const ownerNum of ownerNumbers) {
+              try {
+                const ownerJid = ownerNum.includes('@')
+                  ? ownerNum
+                  : `${ownerNum}@s.whatsapp.net`;
+                await sock.sendMessage(ownerJid, {
+                  text:
+                    `🛡️ *MEMBER PROTECTION*\n\n` +
+                    `@${kickerNum} tried to kick @${targetNum}\n` +
+                    `in *${chatId.split('@')[0]}*\n\n` +
+                    `The kick was blocked\n` +
+                    `This member was added/promoted by you and is protected`,
+                  mentions: [target, extra.sender],
+                });
+              } catch (e) {}
+            }
+
+            return; // Don't kick
+          }
+        }
+      }
+
+      // ── Safe to kick ─────────────────────────────────────
       await sock.groupParticipantsUpdate(chatId, usersToKick, 'remove');
 
-      // Mark as bot-initiated so handler.js skips member protection
-      for (const u of usersToKick) {
-        handler._botKicked.add(u);
-        setTimeout(() => handler._botKicked.delete(u), 5000);
-      }
-      
-      const usernames = usersToKick.map((jid) => `@${jid.split('@')[0]}`);
+      const usernames = usersToKick.map((jid) => `@${jid.split(':')[0].split('@')[0]}`);
       const text = `🔨 KICKED\n\n${usernames.join(', ')} has been kicked ${pick(SLANG.good)}`;
-      
+
       await sock.sendMessage(extra.from, { text, mentions: usersToKick }, { quoted: msg });
     } catch (error) {
       console.error('Kick command error:', error);
-      await extra.reply(`❌ ERROR\n\nCouldn't kick — check if I'm admin ${pick(SLANG.vibe)}`);
+      await extra.reply(
+        `❌ ERROR\n\nCouldn't kick — check if I'm admin ${pick(SLANG.vibe)}`
+      );
     }
   },
 };

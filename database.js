@@ -699,20 +699,34 @@ const addOwnerPromotedAdmin = (groupJid, adminJid, ownerJid) => {
 
 const isOwnerPromotedAdmin = (groupJid, adminJid) => {
   const data = readDB(OWNER_PROMOTED_DB);
-  return !!(data[groupJid] && data[groupJid][adminJid]);
+  const group = data[groupJid];
+  if (!group) return false;
+  const num = _normalizeJid(adminJid);
+  return Object.keys(group).some(k => _normalizeJid(k) === num);
 };
 
 const getOwnerPromotedAdmin = (groupJid, adminJid) => {
   const data = readDB(OWNER_PROMOTED_DB);
-  return data[groupJid]?.[adminJid] || null;
+  const group = data[groupJid];
+  if (!group) return null;
+  const num = _normalizeJid(adminJid);
+  for (const [key, val] of Object.entries(group)) {
+    if (_normalizeJid(key) === num) return val;
+  }
+  return null;
 };
 
 const incrementDemoteAttempts = (groupJid, adminJid) => {
   const data = readDB(OWNER_PROMOTED_DB);
-  if (data[groupJid]?.[adminJid]) {
-    data[groupJid][adminJid].demoteAttempts++;
-    writeDB(OWNER_PROMOTED_DB, data);
-    return data[groupJid][adminJid].demoteAttempts;
+  const group = data[groupJid];
+  if (!group) return 0;
+  const num = _normalizeJid(adminJid);
+  for (const [key, val] of Object.entries(group)) {
+    if (_normalizeJid(key) === num) {
+      val.demoteAttempts = (val.demoteAttempts || 0) + 1;
+      writeDB(OWNER_PROMOTED_DB, data);
+      return val.demoteAttempts;
+    }
   }
   return 0;
 };
@@ -720,7 +734,12 @@ const incrementDemoteAttempts = (groupJid, adminJid) => {
 const removeOwnerPromotedAdmin = (groupJid, adminJid) => {
   const data = readDB(OWNER_PROMOTED_DB);
   if (data[groupJid]) {
-    delete data[groupJid][adminJid];
+    const num = _normalizeJid(adminJid);
+    for (const key of Object.keys(data[groupJid])) {
+      if (_normalizeJid(key) === num) {
+        delete data[groupJid][key];
+      }
+    }
     if (Object.keys(data[groupJid]).length === 0) {
       delete data[groupJid];
     }
@@ -732,9 +751,18 @@ const removeOwnerPromotedAdmin = (groupJid, adminJid) => {
 // Tracks anyone added by the owner (via .crew accept, .crew add, .promote)
 // Structure: { "groupJid": { "memberJid": { addedBy, date } } }
 
+// Normalize JID to phone number for comparison (handles 12345:12@, 12345@, 12345@lid)
+const _normalizeJid = (jid) => {
+  if (!jid) return '';
+  return jid.split(':')[0].split('@')[0].replace(/\D/g, '');
+};
+
 const isOwnerAddedMember = (groupJid, memberJid) => {
   const data = readDB(OWNER_ADDED_DB);
-  return !!(data[groupJid] && data[groupJid][memberJid]);
+  const group = data[groupJid];
+  if (!group) return false;
+  const num = _normalizeJid(memberJid);
+  return Object.keys(group).some(k => _normalizeJid(k) === num);
 };
 
 const addOwnerAddedMember = (groupJid, memberJid, ownerJid) => {
@@ -750,7 +778,12 @@ const addOwnerAddedMember = (groupJid, memberJid, ownerJid) => {
 const removeOwnerAddedMember = (groupJid, memberJid) => {
   const data = readDB(OWNER_ADDED_DB);
   if (data[groupJid]) {
-    delete data[groupJid][memberJid];
+    const num = _normalizeJid(memberJid);
+    for (const key of Object.keys(data[groupJid])) {
+      if (_normalizeJid(key) === num) {
+        delete data[groupJid][key];
+      }
+    }
     if (Object.keys(data[groupJid]).length === 0) {
       delete data[groupJid];
     }
