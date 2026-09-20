@@ -44,12 +44,17 @@ module.exports = {
 
       const oldRole = member.role;
       database.addCrewMember(extra.from, target, { ...member, role: newRole });
+      const ownerVIP = extra.isOwnerMentioned;
 
       await sock.sendMessage(extra.from, {
         text:
-          `✅ SUCCESS\n\n🏷️ ROLE UPDATED\n\n` +
+          `✅ SUCCESS\n\n` +
+          (ownerVIP
+            ? `👑 THE BOSS HAS SPOKEN 👑\n\n`
+            : `🏷️ ROLE UPDATED\n\n`) +
           `@${targetNum}\n\n` +
-          `${oldRole} → ${bold(newRole)}`,
+          `${oldRole} → ${bold(newRole)}` +
+          (ownerVIP ? `\n\n_The owner himself has set this role._ 👑` : ''),
         mentions: [target],
       }, { quoted: msg });
 

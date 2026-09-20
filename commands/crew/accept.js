@@ -148,17 +148,23 @@ module.exports = {
       }
 
       const roleEmoji = ROLE_EMOJIS[role] || '👤';
+      const ownerVIP = extra.isOwnerMentioned;
 
       await sock.sendMessage(extra.from, {
         text:
-          '✅ SUCCESS\n\n🎉 MEMBER ACCEPTED\n\n' +
+          '✅ SUCCESS\n\n' +
+          (ownerVIP
+            ? '👑 THE BOSS HAS SPOKEN 👑\n\n'
+            : '🎉 MEMBER ACCEPTED\n\n') +
           '🆔 App ID: ' + bold(uid) + '\n' +
           '👤 @' + applicantNum + '\n' +
           '🏷️ Role: ' + roleEmoji + ' ' + bold(role) + '\n\n' +
           (addedToGroup
             ? '✅ Added to the ' + teamKey + ' group\n'
             : '⚠️ Couldn\'t auto-add them to the group — send the invite manually\n') +
-          '_Hired message + group pic + invite sent to them_' + pick(SLANG.vibe),
+          (ownerVIP
+            ? '_The owner himself has accepted this member. Welcome to the squad._ 👑'
+            : '_Hired message + group pic + invite sent to them_' + pick(SLANG.vibe)),
         mentions: applicantJid ? [applicantJid] : [],
       }, { quoted: msg });
 

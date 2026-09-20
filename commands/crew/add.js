@@ -106,10 +106,11 @@ module.exports = {
       }
 
       // Add to WhatsApp group first
+      let groupAddFailed = false;
       try {
         await sock.groupParticipantsUpdate(extra.from, [target], 'add');
       } catch (e) {
-        // If add fails (e.g. privacy settings), still add to DB
+        groupAddFailed = true;
         console.error('[CREW ADD] WhatsApp add failed:', e.message);
       }
 
@@ -121,15 +122,22 @@ module.exports = {
       });
 
       const roleEmoji = ROLE_EMOJIS[role] || '👤';
+      const ownerVIP = extra.isOwnerMentioned;
 
       await sock.sendMessage(extra.from, {
         text:
           `✅ SUCCESS\n\n` +
-          `👤 MEMBER ADDED\n\n` +
+          (ownerVIP
+            ? `👑 THE BOSS HAS SPOKEN 👑\n\n`
+            : `👤 MEMBER ADDED\n\n`) +
           `${roleEmoji} @${targetNum}\n\n` +
           `🏷️ Role: ${bold(role)}\n` +
           `📅 Joined: ${new Date().toLocaleDateString('en-ZA')}\n\n` +
-          `_Added to group + crew roster_`,
+          (ownerVIP
+            ? `_The owner himself has added this member. Show respect._ 👑`
+            : groupAddFailed
+              ? `_Added to crew roster — couldn't add to WhatsApp group (privacy settings or bot not admin)_`
+            : `_Added to group + crew roster_`),
         mentions: [target],
       }, { quoted: msg });
 

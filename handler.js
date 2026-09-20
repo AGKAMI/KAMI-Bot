@@ -1192,6 +1192,10 @@ const handleMessage = async (sock, msg) => {
       await sock.sendPresenceUpdate('composing', from);
     }
     
+    // Detect owner mentions in the message
+    const msgMentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+    const ownerMentioned = msgMentions.some(jid => isOwner(jid));
+    
     // Execute command
     console.log(`Executing command: ${commandName} from ${sender}`);
     
@@ -1201,6 +1205,8 @@ const handleMessage = async (sock, msg) => {
       isGroup,
       groupMetadata,
       isOwner: isOwner(sender),
+      isOwnerMentioned: ownerMentioned,
+      ownerMentions: msgMentions.filter(jid => isOwner(jid)),
       isAdmin: await isAdmin(sock, sender, from, groupMetadata),
       isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
       isMod: isMod(sender),
@@ -1463,19 +1469,35 @@ const handleGroupUpdate = async (sock, update) => {
           let bgBuffer = null;
           const customWelcomePath = path.join(__dirname, 'utils/welcome_image.jpg');
           
-          // Priority: custom image > group profile pic > fallback local image
-          if (fs.existsSync(customWelcomePath)) {
-            bgBuffer = fs.readFileSync(customWelcomePath);
-          } else {
+          // Security groups always use group PP — skip custom image
+          const isSecurityGroup = Object.values(config.crewTeams || {}).some(t => t.jid === id);
+          
+          if (isSecurityGroup) {
+            // Security group: group PP only
             try {
               const groupPicUrl = await sock.profilePictureUrl(id, 'image');
               const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer' });
               bgBuffer = Buffer.from(groupPicRes.data);
             } catch (e) {
-              // Group has no profile pic — use fallback image
               const fallbackPath = path.join(__dirname, 'Picsart_25-11-17_09-42-48-275.png');
               if (fs.existsSync(fallbackPath)) {
                 bgBuffer = fs.readFileSync(fallbackPath);
+              }
+            }
+          } else {
+            // Other groups: custom image > group pic > fallback
+            if (fs.existsSync(customWelcomePath)) {
+              bgBuffer = fs.readFileSync(customWelcomePath);
+            } else {
+              try {
+                const groupPicUrl = await sock.profilePictureUrl(id, 'image');
+                const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer' });
+                bgBuffer = Buffer.from(groupPicRes.data);
+              } catch (e) {
+                const fallbackPath = path.join(__dirname, 'Picsart_25-11-17_09-42-48-275.png');
+                if (fs.existsSync(fallbackPath)) {
+                  bgBuffer = fs.readFileSync(fallbackPath);
+                }
               }
             }
           }
@@ -1559,9 +1581,11 @@ const handleGroupUpdate = async (sock, update) => {
           let bgBuffer = null;
           const customGoodbyePath = path.join(__dirname, 'utils/goodbye_image.jpg');
           
-          if (fs.existsSync(customGoodbyePath)) {
-            bgBuffer = fs.readFileSync(customGoodbyePath);
-          } else {
+          // Security groups always use group PP — skip custom image
+          const isSecurityGroupGbye = Object.values(config.crewTeams || {}).some(t => t.jid === id);
+          
+          if (isSecurityGroupGbye) {
+            // Security group: group PP only
             try {
               const groupPicUrl = await sock.profilePictureUrl(id, 'image');
               const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer' });
@@ -1570,6 +1594,22 @@ const handleGroupUpdate = async (sock, update) => {
               const fallbackPath = path.join(__dirname, 'Picsart_25-11-17_09-42-48-275.png');
               if (fs.existsSync(fallbackPath)) {
                 bgBuffer = fs.readFileSync(fallbackPath);
+              }
+            }
+          } else {
+            // Other groups: custom image > group pic > fallback
+            if (fs.existsSync(customGoodbyePath)) {
+              bgBuffer = fs.readFileSync(customGoodbyePath);
+            } else {
+              try {
+                const groupPicUrl = await sock.profilePictureUrl(id, 'image');
+                const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer' });
+                bgBuffer = Buffer.from(groupPicRes.data);
+              } catch (e) {
+                const fallbackPath = path.join(__dirname, 'Picsart_25-11-17_09-42-48-275.png');
+                if (fs.existsSync(fallbackPath)) {
+                  bgBuffer = fs.readFileSync(fallbackPath);
+                }
               }
             }
           }

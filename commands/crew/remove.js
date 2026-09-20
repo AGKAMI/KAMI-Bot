@@ -57,15 +57,20 @@ module.exports = {
         console.error('[CREW REMOVE] WhatsApp kick failed:', kickErr.message);
       }
 
+      const ownerVIP = extra.isOwnerMentioned;
+
       await sock.sendMessage(extra.from, {
         text:
           `✅ SUCCESS\n\n` +
-          `👤 MEMBER REMOVED\n\n` +
+          (ownerVIP
+            ? `👑 THE BOSS HAS SPOKEN 👑\n\n`
+            : `👤 MEMBER REMOVED\n\n`) +
           `@${targetNum} has been removed\n\n` +
           `🏷️ Was: ${member.role}\n` +
           (kickedFromGroup
             ? `✅ Removed from the WhatsApp group`
-            : `⚠️ Removed from crew DB but couldn't kick from group`),
+            : `⚠️ Removed from crew DB but couldn't kick from group`) +
+          (ownerVIP ? `\n\n_The owner himself has removed this member. It's done._ 👑` : ''),
         mentions: [target],
       }, { quoted: msg });
 

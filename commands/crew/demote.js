@@ -49,14 +49,18 @@ module.exports = {
 
       const newRole = validRoles[idx - 1];
       database.addCrewMember(extra.from, target, { ...member, role: newRole });
+      const ownerVIP = extra.isOwnerMentioned;
 
       await sock.sendMessage(extra.from, {
         text:
           '✅ SUCCESS\n\n' +
-          '⬇️ DEMOTED\n\n' +
+          (ownerVIP
+            ? '👑 THE BOSS HAS SPOKEN 👑\n\n'
+            : '⬇️ DEMOTED\n\n') +
           '@' + targetNum + '\n\n' +
           (ROLE_EMOJIS[oldRole] || '👤') + ' ' + oldRole + ' → ' +
-          (ROLE_EMOJIS[newRole] || '👤') + ' ' + bold(newRole),
+          (ROLE_EMOJIS[newRole] || '👤') + ' ' + bold(newRole) +
+          (ownerVIP ? '\n\n_The owner himself has demoted this member._ 👑' : ''),
         mentions: [target],
       }, { quoted: msg });
 

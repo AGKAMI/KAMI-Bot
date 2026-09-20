@@ -93,13 +93,20 @@ module.exports = {
         console.error('[CREW DENY] denial DM failed:', dmErr.message);
       }
 
+      const ownerVIP = extra.isOwnerMentioned;
+
       await sock.sendMessage(extra.from, {
         text:
-          '✅ SUCCESS\n\n❌ APPLICATION DENIED\n\n' +
+          '✅ SUCCESS\n\n' +
+          (ownerVIP
+            ? '👑 THE BOSS HAS SPOKEN 👑\n\n'
+            : '❌ APPLICATION DENIED\n\n') +
           '🆔 App ID: ' + bold(uid) + '\n' +
           '👤 @' + applicantNum + '\n' +
           '📝 Reason: ' + reason + '\n\n' +
-          '_Denial sent to them_' + pick(SLANG.vibe),
+          (ownerVIP
+            ? '_The owner himself has denied this application. The verdict is final._ 👑'
+            : '_Denial sent to them_' + pick(SLANG.vibe)),
         mentions: applicantJid ? [applicantJid] : [],
       }, { quoted: msg });
 
