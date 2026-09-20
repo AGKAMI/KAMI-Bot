@@ -87,24 +87,47 @@ module.exports = {
           );
         }
       } else {
-        // Subcommand without team — check if we're in a crew group
-        // apply/applied are the on-ramp: usable from ANY Slammed Society group,
-        // so they bypass the crew-group requirement below.
-        if (sub !== 'apply' && sub !== 'applied') {
-          if (!extra.from.endsWith('@g.us')) {
-            return extra.reply(
-              `❌ ERROR\n\nFrom DMs, you must specify a team\n\n` +
-              `Usage: .crew <team> ${sub} [args]\n` +
-              `Example: .crew ssrs ${sub}\n\n` +
-              `Use .crew teams to see abbreviations`
-            );
+        // Subcommand without team abbreviation
+        const isDM = !extra.from.endsWith('@g.us');
+        const isTeamAdmin = database.isTeamAdmin(extra.sender);
+        const isOwner = !!extra.isOwner;
+
+        if (isDM) {
+          // DM context — enforce team-admin access rules
+          if (sub === 'accept' || sub === 'deny') {
+            // accept/deny from DM: owner or team admin only
+            if (!isOwner && !isTeamAdmin) {
+              return extra.reply(
+                `❌ ERROR\n\nOnly SS team admins or the owner can accept/deny applications from DMs`
+              );
+            }
+            // allowed — route to handler below
+          } else if (sub !== 'apply' && sub !== 'applied') {
+            // Any other crew command in DM
+            if (!isOwner) {
+              if (isTeamAdmin) {
+                return extra.reply(
+                  `❌ ERROR\n\nAs a team admin you're only allowed to accept or deny pending applications from DMs`
+                );
+              }
+              return extra.reply(
+                `❌ ERROR\n\nFrom DMs, you must specify a team\n\n` +
+                `Usage: .crew <team> ${sub} [args]\n` +
+                `Example: .crew ssrs ${sub}\n\n` +
+                `Use .crew teams to see abbreviations`
+              );
+            }
+            // owner in DM can run anything — continue
           }
-          // Check if this group is a crew group
-          if (!inCrewGroup) {
-            return extra.reply(
-              `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
-              `Your group: ${extra.from.split('@')[0]}`
-            );
+        } else {
+          // Group context
+          if (sub !== 'apply' && sub !== 'applied') {
+            if (!inCrewGroup) {
+              return extra.reply(
+                `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
+                `Your group: ${extra.from.split('@')[0]}`
+              );
+            }
           }
         }
       }

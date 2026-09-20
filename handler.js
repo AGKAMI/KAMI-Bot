@@ -495,7 +495,7 @@ const handleMessage = async (sock, msg) => {
           try {
             const dmGlobal = database.getGlobalSettings();
             const dmSender = msg.key.fromMe ? (sock.user.id.split(':')[0] + '@s.whatsapp.net') : (msg.key.participant || msg.key.remoteJid);
-            if (dmGlobal.selfMode && !msg.key.fromMe && !isOwner(dmSender) && !database.isApprovedNumber(dmSender)) {
+            if (dmGlobal.selfMode && !msg.key.fromMe && !isOwner(dmSender) && !database.isApprovedNumber(dmSender) && !database.isTeamAdmin(dmSender)) {
               // Exempt pending applicants (application window) and the apply/applied on-ramp commands
               const dmText =
                 (msg.message?.conversation) ||
@@ -1078,9 +1078,9 @@ const handleMessage = async (sock, msg) => {
     if (!command) return;
     
     // Check self mode (private mode) - only owner/approved can use commands (DMs ONLY, groups unaffected)
-    // Pending applicants are exempt so the .crew apply / .crew applied flow works in DMs.
+    // Pending applicants and team admins are exempt so the .crew apply / accept / deny flow works in DMs.
     const globalSettings = database.getGlobalSettings();
-    if (!isGroup && globalSettings.selfMode && !isOwner(sender) && !database.isApprovedNumber(sender) && !database.hasPendingApplication(sender)) {
+    if (!isGroup && globalSettings.selfMode && !isOwner(sender) && !database.isApprovedNumber(sender) && !database.isTeamAdmin(sender) && !database.hasPendingApplication(sender)) {
       // Send warning then block (owner can never reach here due to isOwner check above)
       try {
         await sock.sendMessage(from, {
@@ -1093,6 +1093,21 @@ const handleMessage = async (sock, msg) => {
         console.error('[DMBLOCKER] block failed:', e.message);
       }
       return;
+    }
+    
+    // Team admin DM restriction — can ONLY accept/deny applications from DMs.
+    // Owner keeps universal access.
+    if (!isGroup && database.isTeamAdmin(sender) && !isOwner(sender)) {
+      const lowerBody = (body || '').trim().toLowerCase();
+      const isAcceptDeny = new RegExp('^\\' + config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') +
+        'crew\\s+(accept|deny|hire|reject|fire)\\b').test(lowerBody);
+      if (!isAcceptDeny) {
+        return sock.sendMessage(from, {
+          text: `❌ *ERROR*\n\nAs a team admin you're only allowed to accept or deny pending applications from DMs\n\n` +
+                `✅ Accept: *.crew accept <App ID>*\n` +
+                `❌ Deny: *.crew deny <App ID> <reason>*`
+        }, { quoted: msg });
+      }
     }
     
     // Permission checks

@@ -221,6 +221,46 @@ const isApprovedNumber = (jid) => {
   return approved.includes(number) || approved.includes(rawNumber);
 };
 
+// ==================== Team Admin Approval ====================
+// SEPARATE from the DM-blocker "approve" list. This grants SS team group admins
+// DM access to ONLY .crew accept / .crew deny while applications are pending.
+// The owner always counts as a team admin.
+
+const getTeamAdmins = () => {
+  const settings = getGlobalSettings();
+  return settings.teamAdmins || [];
+};
+
+const addTeamAdmin = (number) => {
+  const settings = getGlobalSettings();
+  if (!settings.teamAdmins) settings.teamAdmins = [];
+  const normalized = number.replace(/[\+\-\s]/g, '');
+  if (!settings.teamAdmins.includes(normalized)) {
+    settings.teamAdmins.push(normalized);
+    return writeDB(GLOBAL_DB, settings);
+  }
+  return false;
+};
+
+const removeTeamAdmin = (number) => {
+  const settings = getGlobalSettings();
+  if (!settings.teamAdmins) return false;
+  const normalized = number.replace(/[\+\-\s]/g, '');
+  settings.teamAdmins = settings.teamAdmins.filter(n => n !== normalized);
+  return writeDB(GLOBAL_DB, settings);
+};
+
+const isTeamAdmin = (jid) => {
+  if (!jid) return false;
+  // Owner always counts
+  const number = (jid || '').replace(/@.*$/, '');
+  const raw = (jid || '').replace(/@.*$/, '');
+  const ownerNumbers = (config.ownerNumber || []).map(n => n.replace(/[\+\-\s]/g, ''));
+  if (ownerNumbers.includes(number) || ownerNumbers.includes(raw)) return true;
+  const admins = getTeamAdmins();
+  return admins.includes(number) || admins.includes(raw);
+};
+
 // ==================== Crew Functions ====================
 
 const getCrew = () => readDB(CREW_DB);
@@ -470,6 +510,10 @@ module.exports = {
   addApprovedNumber,
   removeApprovedNumber,
   isApprovedNumber,
+  getTeamAdmins,
+  addTeamAdmin,
+  removeTeamAdmin,
+  isTeamAdmin,
 
   // Crew functions
   getCrew,

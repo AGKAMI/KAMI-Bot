@@ -41,22 +41,23 @@ module.exports = {
       const applicantJid = app.jid;
       const applicantNum = applicantJid ? applicantJid.split('@')[0] : 'unknown';
 
-      // Permission: owner or an admin of the team's group
-      let isTeamAdmin = false;
-      if (!extra.isOwner) {
+      // Permission: owner, a team admin (DM-approved), or a group admin of the team's group
+      let isTeamAdmin = database.isTeamAdmin(extra.sender);
+      let isGroupAdmin = false;
+      if (!extra.isOwner && !isTeamAdmin) {
         try {
           const meta = await sock.groupMetadata(teamGroupJid).catch(() => null);
           if (meta && meta.participants) {
-            isTeamAdmin = meta.participants.some(p =>
+            isGroupAdmin = meta.participants.some(p =>
               p.id === extra.sender && (p.admin === 'admin' || p.admin === 'superadmin')
             );
           }
         } catch (e) {}
-        if (!isTeamAdmin) {
-          return extra.reply(
-            '❌ ERROR\n\nOnly ' + teamKey + ' admins can deny applications, ' + pick(SLANG.friend)
-          );
-        }
+      }
+      if (!extra.isOwner && !isTeamAdmin && !isGroupAdmin) {
+        return extra.reply(
+          '❌ ERROR\n\nOnly ' + teamKey + ' admins can deny applications, ' + pick(SLANG.friend)
+        );
       }
 
       const reason = args.slice(1).join(' ').trim() || 'No reason given';
