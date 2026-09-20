@@ -112,8 +112,8 @@ welcome: false,
     // admin notification, auto-add on accept, and hired DM invite link.
     crewTeams: {
       'SSRS': { name: 'Royal Security', jid: '120363402129417473@g.us', invite: 'DIOeUd6Fz1vIN5CNKf8tRB' },
-      'KSSPS': { name: 'Private Security', jid: '120363421626159074@g.us', invite: 'D6LGiNbZaSEAm4KS2kErwx' },
-      'KSSMP': { name: 'Metro Police', jid: '120363409819775730@g.us', invite: 'Ls0VolQePSk1kSlV5scXpD' },
+      'KSSPS': { name: 'Private Security', jid: '120363409819775730@g.us', invite: 'Ls0VolQePSk1kSlV5scXpD' },
+      'KSSMP': { name: 'Metro Police', jid: '120363421626159074@g.us', invite: 'D6LGiNbZaSEAm4KS2kErwx' },
       'KSSMS': { name: 'Maganyeni Security', jid: '120363423238834158@g.us', invite: 'J5SDntb5MBt8xOC5FbUujv' }
     },
     
