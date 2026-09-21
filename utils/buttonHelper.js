@@ -88,6 +88,9 @@ function normalizeButton(b) {
 
 /**
  * Send a message with interactive buttons.
+ * Uses generateWAMessageFromContent + relayMessage because Baileys'
+ * sock.sendMessage() mangles/drops the interactiveMessage type
+ * (generateWAMessageContent has no branch for it).
  * @param {object} sock
  * @param {string} jid
  * @param {object} opts - { text, footer, header, buttons, thumbnail }
@@ -136,15 +139,24 @@ async function sendButtons(sock, jid, opts, quoted) {
     },
   };
 
+  // Build the proto message directly and relay it — this is the path that
+  // actually works for interactiveMessage in Baileys v7.
+  const { generateWAMessageFromContent } = require('@whiskeysockets/baileys/lib/Utils/messages.js');
   try {
-    return quoted
-      ? await sock.sendMessage(jid, content, { quoted })
-      : await sock.sendMessage(jid, content);
+    const built = generateWAMessageFromContent(jid, content, {
+      userJid: sock.user?.id,
+      quoted,
+      timestamp: new Date(),
+    });
+    await sock.relayMessage(jid, built.message, {
+      messageId: built.key.id,
+    });
+    return built;
   } catch (err) {
     console.error('[BUTTON] send failed, falling back to text:', err.message);
     return quoted
       ? sock.sendMessage(jid, { text }, { quoted })
-      : sock.sendMessage(jid, text);
+      : sock.sendMessage(jid, { text });
   }
 }
 
