@@ -494,12 +494,18 @@ const isSystemJid = (jid) => {
 // Main message handler
 const handleMessage = async (sock, msg) => {
   try {
-    // Debug logging to see all messages
-    // Debug log removed
-    
-    if (!msg.message) return;
-    
     const from = msg.key.remoteJid;
+    const isBtnTap = !!(msg.message?.templateButtonReplyMessage || msg.message?.buttonsResponseMessage || msg.message?.interactiveResponseMessage);
+    if (isBtnTap) {
+      console.log('[HANDLER] Button tap detected from', from, 'keys:', Object.keys(msg.message || {}).join(', '));
+    }
+
+    if (!msg.message) {
+      // Button taps might not have msg.message — check anyway
+      const { handleButtonResponse } = require('./utils/buttonHelper');
+      if (handleButtonResponse(sock, msg)) return;
+      return;
+    }
     
         // System message filter - ignore broadcast/status/newsletter messages
         if (isSystemJid(from)) {

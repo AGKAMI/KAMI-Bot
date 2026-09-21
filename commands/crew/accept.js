@@ -202,7 +202,8 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew accept error:', error);
-      await extra.reply('❌ ERROR\n\n' + pick(SLANG.error) + ' — couldn\'t accept applicant');
+      console.error('Crew accept error stack:', error.stack);
+      await extra.reply('❌ ERROR\n\n' + pick(SLANG.error) + ' — couldn\'t accept applicant\n\n`' + error.message + '`');
     }
   },
 };

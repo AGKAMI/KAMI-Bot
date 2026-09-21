@@ -159,7 +159,10 @@ function onButton(id, handler) {
 function handleButtonResponse(sock, msg) {
   try {
     const m = msg.message;
-    if (!m) return false;
+    if (!m) {
+      console.log('[BUTTON] msg.message is null/undefined');
+      return false;
+    }
 
     const from = msg.key.remoteJid;
     const sender = msg.key.participant || from;
@@ -169,19 +172,26 @@ function handleButtonResponse(sock, msg) {
     // Baileys v7: button taps arrive here
     if (m.templateButtonReplyMessage?.selectedId) {
       btnId = m.templateButtonReplyMessage.selectedId;
+      console.log('[BUTTON] templateButtonReply:', btnId);
     }
     // Older Baileys / some clients
     else if (m.buttonsResponseMessage?.selectedButtonId) {
       btnId = m.buttonsResponseMessage.selectedButtonId;
+      console.log('[BUTTON] buttonsResponse:', btnId);
     }
     // nativeFlowResponseMessage fallback
     else if (m.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson) {
       try {
         btnId = JSON.parse(m.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson).id;
+        console.log('[BUTTON] nativeFlowResponse:', btnId);
       } catch (e) {}
     }
 
-    if (!btnId) return false;
+    if (!btnId) {
+      // Log all message keys to help debug
+      console.log('[BUTTON] no btnId found. msg keys:', Object.keys(m).join(', '));
+      return false;
+    }
 
     // Exact match first
     let handler = buttonHandlers.get(btnId);
