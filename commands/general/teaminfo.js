@@ -46,28 +46,27 @@ function buildTeamText(teamKey, opts = {}) {
   const prefix = config.prefix || '.';
 
   let text =
-    `━━━━━━━━━━━━━━━━\n` +
     `${emoji} *${team.name.toUpperCase()}*\n` +
-    `${meta.role}\n` +
-    `━━━━━━━━━━━━━━━━\n\n`;
+    `----------\n\n`;
+
+  text += `🏢 *Role:* ${meta.role}\n`;
 
   if (team.description) {
-    text += `${team.description}\n\n`;
+    text += `📝 *Info:* ${team.description}\n`;
   }
 
   if (team.cars) {
-    text += `🚗 *Team Cars:* ${team.cars}\n\n`;
+    text += `🚗 *Cars:* ${team.cars}\n`;
   }
 
   if (ranks.length > 0) {
-    text += `🔰 *RANKS (lowest → highest):*\n`;
+    text += `\n🔰 *RANKS (lowest → highest):*\n`;
     ranks.forEach((r, i) => {
-      text += `  ${i + 1}. ${r.charAt(0).toUpperCase() + r.slice(1)}\n`;
+      text += `• ${r.charAt(0).toUpperCase() + r.slice(1)}\n`;
     });
-    text += `\n`;
   }
 
-  text += `_Type ${prefix}teaminfo <team> for details — or tap Apply below_`;
+  text += `\n_Type ${prefix}teaminfo <team> for more_`;
 
   return text;
 }

@@ -43,11 +43,12 @@ function getTeamImage(teamKey) {
 function buildTeamCaption(teamKey) {
   const team = config.crewTeams[teamKey];
   const meta = TEAMS[teamKey];
-  return (
-    `${TEAM_EMOJI[teamKey]} *${team.name}*\n` +
-    `${meta.role}\n` +
-    (team.cars ? `🚗 ${team.cars}` : '')
-  );
+  let text = `${TEAM_EMOJI[teamKey]} *${team.name.toUpperCase()}*\n`;
+  text += `----------\n`;
+  text += `🏢 *Role:* ${meta.role}\n`;
+  if (team.description) text += `📝 *Info:* ${team.description}\n`;
+  if (team.cars) text += `🚗 *Cars:* ${team.cars}`;
+  return text;
 }
 
 // ── Send the 4 team cards (filtered by user's existing membership) ──
@@ -112,9 +113,11 @@ async function sendConfirmation(sock, from, teamKey) {
   const emoji = TEAM_EMOJI[teamKey];
 
   const text =
-    `${emoji} *Are you sure you want to apply for ${team.name}?*\n\n` +
-    `${meta.role}\n` +
-    (team.cars ? `🚗 ${team.cars}` : '');
+    `${emoji} *${team.name.toUpperCase()}*\n` +
+    `----------\n\n` +
+    `🏢 *Role:* ${meta.role}\n` +
+    (team.cars ? `🚗 *Cars:* ${team.cars}\n\n` : '\n') +
+    `_Apply for ${team.name}?_`;
 
   await sendButtons(sock, from, {
     text,
@@ -143,8 +146,9 @@ module.exports = {
 
       // Welcome text
       const summary =
-        `*KAMI BOT* ${pick(SLANG.greeting)}! 👋\n\n` +
-        `Welcome to the Slammed Society.\n` +
+        `👋 *KAMI BOT*\n` +
+        `----------\n\n` +
+        `Welcome to the Slammed Society, ${pick(SLANG.greeting)}\n\n` +
         `Tap a button to get started 👇`;
 
       // Send bot image + buttons
@@ -185,9 +189,10 @@ onButton('start:menu', async (sock, msg, from) => {
   const menuCmd = require('./menu');
   // Build and send the menu text (button mode version)
   const summary =
-    `*KAMI BOT* ${pick(SLANG.greeting)}! 👋\n\n` +
+    `👋 *KAMI BOT*\n` +
+    `----------\n\n` +
     `🤖 Tap a button to see that section's commands 👇\n\n` +
-    `📖 Full list: *${prefix}menu all*`;
+    `_Full list: ${prefix}menu all_`;
 
   await sendButtons(sock, from, {
     text: summary,
@@ -235,7 +240,7 @@ onButton('start:confirm:', async (sock, msg, from, sender, btnId) => {
     await sock.sendMessage(from, {
       text:
         `✅ *APPLICATION STARTED*\n\n` +
-        `🏢 Team: *${teamKey}* — ${config.crewTeams[teamKey].name}\n` +
+        `🏷️ *Team:* ${teamKey} — ${config.crewTeams[teamKey].name}\n` +
         `🆔 *App ID:* ${result.app.appUid}\n\n` +
         `📲 I've DM'd you the application form.\n\n` +
         `_${pick(SLANG.greeting)}, good luck!_`,
