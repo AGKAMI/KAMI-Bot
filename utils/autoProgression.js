@@ -29,8 +29,9 @@ const getThresholds = (index, total) => {
 };
 
 // WhatsApp admin threshold — rank index must be >= this
+// SSGENERAL: no auto-admin (loyalty ranks ≠ authority)
 const getAdminThresholdIndex = (teamKey) => {
-  if (teamKey === 'SSGENERAL') return 3; // moderator+ gets admin
+  if (teamKey === 'SSGENERAL') return 99; // never auto-admin
   if (teamKey === 'KSSMP') return 3; // inspector+ (metro police)
   return 3; // grade b / shift supervisor+ for security teams
 };
