@@ -134,7 +134,7 @@ module.exports = {
 
       // DM the applicant: App ID + choice of Typing vs Buttons
       try {
-        await sock.sendMessage(applicantJid, {
+        await sendButtons(sock, applicantJid, {
           text:
             `━━━━━━━━━━━━━━━━\n` +
             `*${TEAMS[teamKey].label.toUpperCase()} APPLICATION*\n` +
@@ -142,10 +142,6 @@ module.exports = {
             `━━━━━━━━━━━━━━━━\n\n` +
             `🆔 *YOUR APPLICATION ID:* ${app.appUid}\n\n` +
             `How would you like to answer the questions?`,
-        });
-        // Send the choice buttons
-        await sendButtons(sock, applicantJid, {
-          text: `Pick how you want to apply:`,
           footer: `${teamKey} Application`,
           buttons: [
             { id: `cwiz:choice:btn:${teamKey}:${app.appUid}`, text: '🔘 Use Buttons' },
@@ -200,7 +196,7 @@ onButton('cwiz:choice:', async (sock, msg, from, sender, btnId) => {
     });
     await startWizard(sock, from, teamKey, appUid, from, false, from);
   } else {
-    // Send the text form
+    // Send the text form + submission instructions in one message
     const { buildFormMessage } = require('./crewForms');
     const prefix = config.prefix || '.';
     const formText = buildFormMessage(teamKey);
@@ -209,10 +205,9 @@ onButton('cwiz:choice:', async (sock, msg, from, sender, btnId) => {
         `━━━━━━━━━━━━━━━━\n` +
         `*TYPE MODE*\n` +
         `━━━━━━━━━━━━━━━━\n\n` +
-        formText,
-    });
-    await sock.sendMessage(from, {
-      text: `✍️ *HOW TO SUBMIT:*\n\nGo to any SS group and send:\n\`${prefix}crew applied ${teamKey} <your answers>\`\n\nPut each answer on its own line.`,
+        formText + `\n\n` +
+        `━━━━━━━━━━━━━━━━\n\n` +
+        `✍️ *HOW TO SUBMIT:*\n\nGo to any SS group and send:\n\`${prefix}crew applied ${teamKey} <your answers>\`\n\nPut each answer on its own line.`,
     });
   }
 });

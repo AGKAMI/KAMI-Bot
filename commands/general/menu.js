@@ -129,27 +129,20 @@ module.exports = {
 
         if (fs.existsSync(imagePath)) {
           const imageBuffer = fs.readFileSync(imagePath);
+          // Send image alone (buttons can't attach to image messages)
           await sock.sendMessage(extra.from, {
             image: imageBuffer,
-            caption: summary,
             mentions: [extra.sender],
             ...newsletterCtx,
           }, { quoted: msg });
-          // Buttons can't attach to the image message, so send a follow-up interactive row
-          await sendButtons(sock, extra.from, {
-            text: `📖 Full list: *${prefix}menu all*`,
-            footer: btnFooter,
-            header: 'KAMI BOT',
-            buttons,
-          }, msg);
-        } else {
-          await sendButtons(sock, extra.from, {
-            text: summary,
-            footer: btnFooter,
-            header: 'KAMI BOT',
-            buttons,
-          }, msg);
         }
+        // Always send buttons with text (for image case: follow-up; for no-image case: the only message)
+        await sendButtons(sock, extra.from, {
+          text: summary,
+          footer: btnFooter,
+          header: 'KAMI BOT',
+          buttons,
+        }, msg);
         return;
       }
 
