@@ -1364,6 +1364,31 @@ const handleGroupUpdate = async (sock, update) => {
               console.log(`[CREW SYNC] Auto-removed ${jid.split('@')[0]} from ${id}`);
             }
 
+            // ── Owner Kick Protection ──────────────────────
+            // If someone external kicked the owner, re-add them
+            const isOwnerKicked = (config.ownerNumber || []).some(n => {
+              const ownerNum = n.replace(/\D/g, '');
+              return (jid.split(':')[0].split('@')[0].replace(/\D/g, '') === ownerNum);
+            });
+            if (isOwnerKicked && !_botKicked.has(jid)) {
+              console.log(`[OWNER PROTECTION] External kick of owner ${jid.split('@')[0]} from ${id} — re-adding`);
+              let reAdded = false;
+              try {
+                await sock.groupParticipantsUpdate(id, [jid], 'add');
+                reAdded = true;
+              } catch (e) {
+                console.error(`[OWNER PROTECTION] Failed to re-add owner:`, e.message);
+              }
+              database.logProtection({
+                action: 'kick',
+                target: jid,
+                triggeredBy: 'unknown',
+                group: id,
+                result: reAdded ? 'owner-re-added' : 'failed',
+              });
+              continue; // Skip other protection checks
+            }
+
             // ── Owner-Protected Member Removal ────────────
             if (database.isOwnerProtected(id, jid) && !_botKicked.has(jid)) {
               console.log(`[MEMBER PROTECTION] Protected member ${jid.split('@')[0]} removed from ${id} — attempting re-add`);
@@ -1475,6 +1500,27 @@ const handleGroupUpdate = async (sock, update) => {
                   }
                   console.log(`[TEAM ADMIN SYNC] Auto-added ${number} (promoted in ${id})`);
                 } else if (action === 'demote') {
+                  // ── Owner Demote Protection ────────────────
+                  // If someone external demoted the owner, re-promote them
+                  const isTargetOwner = (config.ownerNumber || []).some(n => {
+                    const ownerNum = n.replace(/\D/g, '');
+                    return number === ownerNum;
+                  });
+                  if (isTargetOwner && !module.exports._botDemoted.has(jid)) {
+                    console.log(`[OWNER PROTECTION] External demote of owner ${number} in ${id} — re-promoting`);
+                    try {
+                      await sock.groupParticipantsUpdate(id, [jid], 'promote');
+                    } catch (e) {}
+                    database.logProtection({
+                      action: 'demote',
+                      target: jid,
+                      triggeredBy: 'unknown',
+                      group: id,
+                      result: 'owner-re-promoted',
+                    });
+                    continue; // Skip all other demote processing
+                  }
+
                   // ── Owner-Promoted Admin Protection ────────
                   // Check if the demoted person is a protected admin (promoted by owner)
                   // For external demotes (not via .demote command), auto-repromote

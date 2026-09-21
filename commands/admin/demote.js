@@ -54,6 +54,35 @@ module.exports = {
       const targetNum = target.split(':')[0].split('@')[0];
       const demoterNum = extra.sender.split(':')[0].split('@')[0];
 
+      // ── Owner Demote Protection ────────────────────────────
+      // Nobody can demote the owner — block silently
+      if (!extra.isOwner && extra.isOwnerMentioned) {
+        // Target is the owner (they were mentioned)
+        await sock.sendMessage(extra.from, {
+          text:
+            `🚫 *NAH*\n\n` +
+            `@${demoterNum} — you can't demote the owner\n` +
+            `That's not happening`,
+          mentions: [extra.sender],
+        });
+        return;
+      }
+      // Also check by JID match
+      const isTargetOwner = (config.ownerNumber || []).some(n => {
+        const ownerNum = n.replace(/\D/g, '');
+        return targetNum === ownerNum;
+      });
+      if (!extra.isOwner && isTargetOwner) {
+        await sock.sendMessage(extra.from, {
+          text:
+            `🚫 *NAH*\n\n` +
+            `@${demoterNum} — you can't demote the owner\n` +
+            `That's not happening`,
+          mentions: [extra.sender],
+        });
+        return;
+      }
+
       // ── Owner-Promoted Admin Protection ────────────────────
       const isProtected = database.isOwnerPromotedAdmin(extra.from, target);
 
@@ -185,6 +214,22 @@ module.exports = {
                   `_Should've left it alone_`,
               });
             } catch (e) {}
+
+            // DM owner
+            const ownerNumbers2 = config.ownerNumber || [];
+            for (const oNum of ownerNumbers2) {
+              try {
+                const oJid2 = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
+                await sock.sendMessage(oJid2, {
+                  text:
+                    `🛡️ *ADMIN PROTECTION*\n\n` +
+                    `@${demoterNum} tried demoting @${targetNum} twice\n` +
+                    `They got demoted for it\n` +
+                    `@${targetNum} back where they belong`,
+                  mentions: [target, extra.sender],
+                });
+              } catch (e) {}
+            }
 
             return;
           }

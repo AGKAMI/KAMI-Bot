@@ -60,6 +60,29 @@ module.exports = {
         return extra.reply(`❌ ERROR\n\nCan't kick myself`);
       }
 
+      // ── Owner Kick Protection ────────────────────────────
+      // Nobody can kick the owner via .kick command
+      if (!extra.isOwner) {
+        for (const target of usersToKick) {
+          const targetNum = target.split(':')[0].split('@')[0].replace(/\D/g, '');
+          const isTargetOwner = (config.ownerNumber || []).some(n => {
+            const ownerNum = n.replace(/\D/g, '');
+            return targetNum === ownerNum;
+          });
+          if (isTargetOwner) {
+            const kickerNum = extra.sender.split(':')[0].split('@')[0];
+            await sock.sendMessage(chatId, {
+              text:
+                `🚫 *NAH*\n\n` +
+                `@${kickerNum} — you can't kick the owner\n` +
+                `That's not happening`,
+              mentions: [extra.sender],
+            });
+            return;
+          }
+        }
+      }
+
       // ── Owner protection check ────────────────────────────
       if (!extra.isOwner) {
         for (const target of usersToKick) {
