@@ -224,9 +224,12 @@ module.exports = {
         `⏳ Keep this App ID — an admin will accept or reject you with it.\n\n` +
         `_${pick(SLANG.greeting)}, good luck!_`;
 
-      return sock.sendMessage(extra.from, {
+      return sendButtons(sock, extra.from, {
         text: confirm,
-        mentions: [applicantJid],
+        footer: `${teamKey} Application`,
+        buttons: [
+          { id: `crew:cancel:${teamKey}:${app.appUid}`, text: '🚫 Cancel Application' },
+        ],
       }, { quoted: msg });
 
     } catch (error) {
@@ -273,6 +276,20 @@ onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
   }
   await sock.sendMessage(from, {
     text: `❌ *Deny Application*\n\nType a reason to deny *${uid}*:\n\`${prefix}crew deny ${uid} <reason>\``,
+  });
+});
+
+onButton('crew:cancel', async (sock, msg, from, sender, btnId) => {
+  const parts = btnId.replace('crew:cancel:', '').split(':');
+  const teamKey = parts[0];
+  const uid = parts[1];
+  if (!uid) return;
+  const withdrawCmd = require('./withdraw');
+  await withdrawCmd.execute(sock, msg, [uid], {
+    from, sender,
+    isGroup: false,
+    isOwner: false,
+    reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
   });
 });
 
