@@ -483,6 +483,14 @@ async function startBot() {
         }
       } catch (e) {}
 
+      // Start auto-progression engine (auto-promotes members based on activity)
+      try {
+        const autoProgression = require('./utils/autoProgression');
+        autoProgression.startProgressionEngine(sock);
+      } catch (e) {
+        console.error('[AUTO-PROGRESSION] Failed to start engine:', e.message);
+      }
+
       // Initialize anti-call feature
       handler.initializeAntiCall(sock, handler.isOwner);
 
