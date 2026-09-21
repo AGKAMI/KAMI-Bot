@@ -721,7 +721,7 @@ const pruneTeamAdmins = (currentAdminsByGroup) => {
 // Get custom roles for a group (ordered by hierarchy)
 const getCustomRoles = (groupJid) => {
   // 1. Check config.crewTeams for team-specific ranks (keyed by teamKey)
-  const configTeams = require('../config').crewTeams || {};
+  const configTeams = require('./config').crewTeams || {};
   for (const [key, info] of Object.entries(configTeams)) {
     if (info.jid === groupJid && info.ranks && info.ranks.length > 0) {
       return info.ranks;
