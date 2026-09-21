@@ -47,12 +47,12 @@ module.exports = {
 
       // No args → show help
       if (!sub || sub === 'help') {
-        return showHelp(sock, msg, extra);
+        return showHelp(sock, msg, extra, prefix);
       }
 
       // .crew teams — show all team abbreviations
       if (sub === 'teams') {
-        return showTeams(sock, msg, extra);
+        return showTeams(sock, msg, extra, prefix);
       }
 
       // Group whitelist check — only work in Slammed Society groups
@@ -67,7 +67,7 @@ module.exports = {
             `Your group: ${extra.from.split('@')[0]}`
           );
         }
-        return setTeam(sock, msg, subArgs, extra);
+        return setTeam(sock, msg, subArgs, extra, prefix);
       }
 
       // Determine if first arg is a team abbreviation or a subcommand
@@ -181,7 +181,7 @@ module.exports = {
   }
 };
 
-async function setTeam(sock, msg, args, extra) {
+async function setTeam(sock, msg, args, extra, prefix) {
   const abbrev = (args[0] || '').toUpperCase();
   const teamName = args.slice(1).join(' ') || abbrev;
 
@@ -204,7 +204,7 @@ async function setTeam(sock, msg, args, extra) {
   }, { quoted: msg });
 }
 
-async function showTeams(sock, msg, extra) {
+async function showTeams(sock, msg, extra, prefix) {
   const teamMap = database.getTeamMap();
   const teams = Object.entries(teamMap);
 
@@ -226,7 +226,7 @@ async function showTeams(sock, msg, extra) {
   await sock.sendMessage(extra.from, { text }, { quoted: msg });
 }
 
-async function showHelp(sock, msg, extra) {
+async function showHelp(sock, msg, extra, prefix) {
   const text = [
     `🔰 *SLAMMED SOCIETY CREW*`,
     ``,
