@@ -119,11 +119,13 @@ const REQUIREMENTS = [
 ];
 
 // Build the pending-application notice sent to the team's group admins
+// Returns { text, buttons } for use with sendButtons()
 const buildAdminNotice = (app) => {
   const team = TEAMS[app.team];
   const num = app.jid ? app.jid.split('@')[0] : 'unknown';
   const teamQuestions = getQuestionsForAdmin(app.team);
-  return `━━━━━━━━━━━━━━━━\n` +
+  const prefix = config.prefix || '.';
+  const text = `━━━━━━━━━━━━━━━━\n` +
     `*NEW ${app.team} APPLICATION* ${team ? team.emoji : ''}\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `🆔 *App ID:* ${app.appUid}\n` +
@@ -134,10 +136,18 @@ const buildAdminNotice = (app) => {
     `📋 *MINIMUM REQUIREMENTS:*\n` +
     REQUIREMENTS.map(r => `• ${r}`).join('\n') + '\n\n' +
     `━━━━━━━━━━━━━━━━\n\n` +
-    `✅ Accept: \`${prefix}crew accept ${app.appUid}\`\n` +
-    `❌ Deny: \`${prefix}crew deny ${app.appUid} <reason>\`\n` +
-    `📋 View pending: \`${prefix}crew applicants ${app.team}\`\n\n` +
-    `_Reply from any Slammed Society group or directly from DM._`;
+    `_Tap a button below or type manually:_\n` +
+    `✅ \`${prefix}crew accept ${app.appUid}\`\n` +
+    `❌ \`${prefix}crew deny ${app.appUid} <reason>\`\n` +
+    `📋 \`${prefix}crew applicants ${app.team}\``;
+
+  const buttons = [
+    { id: `crew:accept:${app.appUid}`, text: `✅ Accept ${num}` },
+    { id: `crew:deny:${app.appUid}`, text: `❌ Deny ${num}` },
+    { id: `crew:pending:${app.team}`, text: `📋 View Pending` },
+  ];
+
+  return { text, buttons };
 };
 
 // Format questions with numbered list for admin review

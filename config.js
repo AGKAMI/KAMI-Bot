@@ -140,7 +140,7 @@ welcome: false,
         name: 'Slammed Society General',
         jid: '120363417242897528@g.us',
         invite: '',
-        ranks: ['newcomer', 'regular', 'veteran', 'loyal', 'legend', 'og'],
+        ranks: ['member', 'senior member', 'moderator', 'admin', 'co-leader', 'leader'],
       },
     },
     

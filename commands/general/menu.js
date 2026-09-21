@@ -122,7 +122,7 @@ module.exports = {
         const buttons = [
           { id: 'menu:admin', text: '🛡️ Admin' },
           { id: 'menu:crew',  text: '🔰 Crew' },
-          { id: 'menu:owner', text: '👑 Owner' },
+          { id: 'menu:more',  text: '📂 More Categories' },
         ];
 
         const btnFooter = config.botName || 'KAMI Bot';
@@ -187,4 +187,27 @@ onButton('menu:crew', (sock, msg, from) => {
 });
 onButton('menu:owner', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('owner') });
+});
+onButton('menu:more', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  const prefix = config.prefix || '.';
+  await sendBtns(sock, from, {
+    text: `📂 *MORE CATEGORIES*\n\nTap to see commands:`,
+    footer: config.botName || 'KAMI Bot',
+    header: 'KAMI BOT',
+    buttons: [
+      { id: 'menu:media',   text: '🎬 Media' },
+      { id: 'menu:fun',     text: '🎉 Fun' },
+      { id: 'menu:games',   text: '🎮 Games' },
+    ],
+  });
+});
+onButton('menu:media', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('media') });
+});
+onButton('menu:fun', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('fun') });
+});
+onButton('menu:games', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('games') });
 });

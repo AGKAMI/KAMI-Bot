@@ -10,6 +10,7 @@ const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 const { TEAMS, buildAdminNotice, formatAnswers } = require('./crewForms');
 const { buildComparableIds } = require('../../utils/jidHelper');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 module.exports = {
   subName: 'applied',
@@ -169,7 +170,7 @@ module.exports = {
       let adminMsg = null;
       if (teamGroupJid) {
         try {
-          const notice = buildAdminNotice({
+          const { text: noticeText, buttons: noticeButtons } = buildAdminNotice({
             ...app,
             team: teamKey,
             answers,
@@ -186,7 +187,11 @@ module.exports = {
             let dmed = 0;
             for (const adminJid of admins) {
               try {
-                await sock.sendMessage(adminJid, { text: notice });
+                await sendButtons(sock, adminJid, {
+                  text: noticeText,
+                  footer: `${teamKey} Applications`,
+                  buttons: noticeButtons,
+                });
                 dmed++;
               } catch (e) {
                 console.error(`[CREW APPLIED] admin DM failed ${adminJid}:`, e.message);
@@ -195,7 +200,11 @@ module.exports = {
             adminMsg = dmed > 0;
           } else {
             // No admins resolvable — post in the team group as fallback
-            await sock.sendMessage(teamGroupJid, { text: notice });
+            await sendButtons(sock, teamGroupJid, {
+              text: noticeText,
+              footer: `${teamKey} Applications`,
+              buttons: noticeButtons,
+            });
             adminMsg = true;
           }
         } catch (e) {
@@ -229,3 +238,33 @@ module.exports = {
     }
   },
 };
+
+// ── Button Handlers ──────────────────────────────────────────
+// Registered when this module loads. Handles taps on accept/deny/pending buttons
+// sent in the admin application notice.
+const { onButton } = require('../../utils/buttonHelper');
+const prefix = config.prefix || '.';
+
+onButton('crew:accept', async (sock, msg, from, sender, btnId) => {
+  const uid = btnId.replace('crew:accept:', '');
+  if (!uid) return;
+  await sock.sendMessage(from, {
+    text: `✅ *ACCEPT APPLICATION*\n\nApp ID: *${uid}*\n\nType:\n\`${prefix}crew accept ${uid}\`\n\nOr add a role:\n\`${prefix}crew accept ${uid} member\``,
+  });
+});
+
+onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
+  const uid = btnId.replace('crew:deny:', '');
+  if (!uid) return;
+  await sock.sendMessage(from, {
+    text: `❌ *DENY APPLICATION*\n\nApp ID: *${uid}*\n\nType:\n\`${prefix}crew deny ${uid} <reason>\`\n\nExample:\n\`${prefix}crew deny ${uid} Not active enough\``,
+  });
+});
+
+onButton('crew:pending', async (sock, msg, from, sender, btnId) => {
+  const team = btnId.replace('crew:pending:', '');
+  if (!team) return;
+  await sock.sendMessage(from, {
+    text: `📋 *PENDING APPLICATIONS*\n\nType:\n\`${prefix}crew applicants ${team}\``,
+  });
+});

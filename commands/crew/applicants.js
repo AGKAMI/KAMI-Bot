@@ -8,6 +8,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 const { TEAMS } = require('./crewForms');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 module.exports = {
   subName: 'applicants',
@@ -132,17 +133,33 @@ module.exports = {
         if (app.jid) mentions.push(app.jid);
       }
 
-      await sock.sendMessage(extra.from, {
-        text:
-          `📋 PENDING APPLICATIONS\n\n` +
-          `👥 Total: *${entries.length}*\n\n` +
-          `----------\n\n` +
-          lines.join('\n\n') +
-          `\n\n----------\n\n` +
-          `Use \`${prefix}crew accept <UID>\` to hire\n` +
-          `Use \`${prefix}crew deny <UID> <reason>\` to reject`,
-        mentions,
-      }, { quoted: msg });
+      const text =
+        `📋 PENDING APPLICATIONS\n\n` +
+        `👥 Total: *${entries.length}*\n\n` +
+        `----------\n\n` +
+        lines.join('\n\n') +
+        `\n\n----------\n\n` +
+        `Use \`${prefix}crew accept <UID>\` to hire\n` +
+        `Use \`${prefix}crew deny <UID> <reason>\` to reject`;
+
+      // Add quick buttons for the first pending applicant
+      const firstUid = entries[0]?.[0];
+      const firstApp = entries[0]?.[1];
+      const buttons = firstUid ? [
+        { id: `crew:accept:${firstUid}`, text: `✅ Accept ${firstUid}` },
+        { id: `crew:deny:${firstUid}`, text: `❌ Deny ${firstUid}` },
+        { id: `crew:pending:${teamLabel}`, text: `🔄 Refresh` },
+      ] : [];
+
+      if (buttons.length > 0) {
+        await sendButtons(sock, extra.from, {
+          text,
+          footer: `${teamLabel} Applications`,
+          buttons,
+        }, { quoted: msg });
+      } else {
+        await sock.sendMessage(extra.from, { text, mentions }, { quoted: msg });
+      }
 
     } catch (error) {
       console.error('Crew applicants error:', error);

@@ -173,7 +173,7 @@ module.exports = {
             database.logProtection({
               action: 'demote',
               target: target,
-              targetName: targetName || null,
+              targetName: null,
               triggeredBy: extra.sender,
               group: extra.from,
               result: 'demoted-violator',

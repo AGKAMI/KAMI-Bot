@@ -4,6 +4,7 @@
  */
 
 const database = require('../../database');
+const handler = require('../../handler');
 const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 
@@ -135,7 +136,7 @@ module.exports = {
             database.logProtection({
               action: 'kick',
               target: target,
-              targetName: targetName || null,
+              targetName: null,
               triggeredBy: extra.sender,
               group: chatId,
               result: 'blocked',
@@ -163,6 +164,12 @@ module.exports = {
       }
 
       // ── Safe to kick ─────────────────────────────────────
+      // Mark targets so handler protection doesn't re-add them
+      for (const t of usersToKick) handler._botKicked.add(t);
+      setTimeout(() => {
+        for (const t of usersToKick) handler._botKicked.delete(t);
+      }, 5000);
+
       await sock.groupParticipantsUpdate(chatId, usersToKick, 'remove');
 
       const usernames = usersToKick.map((jid) => `@${jid.split(':')[0].split('@')[0]}`);
