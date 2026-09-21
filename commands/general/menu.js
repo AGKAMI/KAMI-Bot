@@ -185,9 +185,9 @@ module.exports = {
 };
 
 // Register category button handlers (runs once at command load)
-// Layout: each sub-page = msg1 (2 categories) + msg2 (More + Back)
+// Layout: msg1 = 3 buttons (2 categories + More), msg2 = Back (separate message)
+// Last page: Owner + Back in one message (2 buttons)
 // Category detail views = plain text, no buttons
-// Last page: Owner + Back in one message (fits within 3-button limit)
 
 const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
 const mainText = `*KAMI BOT* ${pick(SLANG.greeting)}! 👋\n\n🤖 Tap a button to see that section's commands 👇\n\n📖 Full list: *${config.prefix || '.'}menu all*`;
@@ -205,7 +205,7 @@ onButton('menu:crew', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('crew') });
 });
 
-// ── Page 2: General, AI ──────────────────────────────
+// ── Page 2: General, AI, More → then Back ────────────
 onButton('menu:more1', async (sock, msg, from) => {
   await sendBtns(sock, from, {
     text: `📂 *GENERAL / AI*\n\nTap to see commands:`,
@@ -213,17 +213,10 @@ onButton('menu:more1', async (sock, msg, from) => {
     buttons: [
       { id: 'menu:general', text: '🏠 General' },
       { id: 'menu:ai',      text: '🤖 AI' },
+      { id: 'menu:more2',   text: '📂 More' },
     ],
   });
-  // Second message: More + Back
-  await sendBtns(sock, from, {
-    text: '',
-    footer: config.botName || 'KAMI Bot',
-    buttons: [
-      { id: 'menu:more2',      text: '📂 More' },
-      { id: 'menu:back:main',  text: '⬅️ Back' },
-    ],
-  });
+  await sendBtns(sock, from, { text: '', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
 });
 onButton('menu:general', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('general') });
@@ -232,7 +225,7 @@ onButton('menu:ai', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('ai') });
 });
 
-// ── Page 3: Media, Fun ───────────────────────────────
+// ── Page 3: Media, Fun, More → then Back ─────────────
 onButton('menu:more2', async (sock, msg, from) => {
   await sendBtns(sock, from, {
     text: `📂 *MEDIA / FUN*\n\nTap to see commands:`,
@@ -240,17 +233,10 @@ onButton('menu:more2', async (sock, msg, from) => {
     buttons: [
       { id: 'menu:media',  text: '🎬 Media' },
       { id: 'menu:fun',    text: '🎉 Fun' },
+      { id: 'menu:more3',  text: '📂 More' },
     ],
   });
-  // Second message: More + Back
-  await sendBtns(sock, from, {
-    text: '',
-    footer: config.botName || 'KAMI Bot',
-    buttons: [
-      { id: 'menu:more3',      text: '📂 More' },
-      { id: 'menu:back:main',  text: '⬅️ Back' },
-    ],
-  });
+  await sendBtns(sock, from, { text: '', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
 });
 onButton('menu:media', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('media') });
@@ -259,7 +245,7 @@ onButton('menu:fun', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('fun') });
 });
 
-// ── Page 4: Games, Utility ───────────────────────────
+// ── Page 4: Games, Utility, More → then Back ─────────
 onButton('menu:more3', async (sock, msg, from) => {
   await sendBtns(sock, from, {
     text: `📂 *GAMES / UTILITY*\n\nTap to see commands:`,
@@ -267,17 +253,10 @@ onButton('menu:more3', async (sock, msg, from) => {
     buttons: [
       { id: 'menu:games',    text: '🎮 Games' },
       { id: 'menu:utility',  text: '🔧 Utility' },
+      { id: 'menu:more4',    text: '📂 More' },
     ],
   });
-  // Second message: More + Back
-  await sendBtns(sock, from, {
-    text: '',
-    footer: config.botName || 'KAMI Bot',
-    buttons: [
-      { id: 'menu:more4',      text: '📂 More' },
-      { id: 'menu:back:main',  text: '⬅️ Back' },
-    ],
-  });
+  await sendBtns(sock, from, { text: '', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
 });
 onButton('menu:games', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('games') });
@@ -286,7 +265,7 @@ onButton('menu:utility', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('utility') });
 });
 
-// ── Page 5: Anime, Textmaker ─────────────────────────
+// ── Page 5: Anime, Textmaker, More → then Back ───────
 onButton('menu:more4', async (sock, msg, from) => {
   await sendBtns(sock, from, {
     text: `📂 *ANIME / TEXTMAKER*\n\nTap to see commands:`,
@@ -294,17 +273,10 @@ onButton('menu:more4', async (sock, msg, from) => {
     buttons: [
       { id: 'menu:anime',     text: '⛩️ Anime' },
       { id: 'menu:textmaker', text: '✨ Textmaker' },
+      { id: 'menu:more5',     text: '📂 More' },
     ],
   });
-  // Second message: More + Back
-  await sendBtns(sock, from, {
-    text: '',
-    footer: config.botName || 'KAMI Bot',
-    buttons: [
-      { id: 'menu:more5',      text: '📂 More' },
-      { id: 'menu:back:main',  text: '⬅️ Back' },
-    ],
-  });
+  await sendBtns(sock, from, { text: '', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
 });
 onButton('menu:anime', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('anime') });
@@ -313,7 +285,7 @@ onButton('menu:textmaker', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('textmaker') });
 });
 
-// ── Page 6: Owner + Back (last page, fits in one msg) ──
+// ── Page 6: Owner, Back (last page, one message) ─────
 onButton('menu:more5', async (sock, msg, from) => {
   await sendBtns(sock, from, {
     text: `📂 *OWNER*\n\nTap to see commands:`,
