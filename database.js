@@ -408,6 +408,34 @@ const removeApplicant = (groupJid, applicantKey) => {
   return updateTeam(groupJid, team);
 };
 
+// Track a processed (accepted/denied) application so we can tell admins what happened
+const trackProcessedApp = (groupJid, appUid, data) => {
+  const team = getTeam(groupJid);
+  if (!team.processedApps) team.processedApps = {};
+  team.processedApps[appUid] = {
+    action: data.action,       // 'accepted' or 'denied'
+    admin: data.admin,         // JID of admin who processed it
+    role: data.role || null,   // role assigned (accept only)
+    reason: data.reason || null, // reason (deny only)
+    processedAt: Date.now(),
+    applicantJid: data.applicantJid,
+    team: data.team,
+  };
+  return updateTeam(groupJid, team);
+};
+
+// Look up a processed application by UID across all groups
+const getProcessedApp = (uid) => {
+  const crew = getCrew();
+  const key = uid.toUpperCase();
+  for (const [groupJid, team] of Object.entries(crew.groups || {})) {
+    if (team.processedApps && team.processedApps[key]) {
+      return { ...team.processedApps[key], groupJid };
+    }
+  }
+  return null;
+};
+
 // Does this user have any pending application anywhere?
 // Used to exempt applicants from the DM blocker during the application window.
 const hasPendingApplication = (jid) => {
@@ -835,6 +863,8 @@ module.exports = {
   addApplicant,
     getApplicants,
     removeApplicant,
+    trackProcessedApp,
+    getProcessedApp,
     hasPendingApplication,
     getAllTeams,
     generateAppUid,

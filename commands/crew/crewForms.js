@@ -59,10 +59,16 @@ const buildFormMessage = (teamKey) => {
     `${questions}\n\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `✍️ *HOW TO SUBMIT:*\n` +
-    `Go to any Slammed Society group and reply:\n` +
-    `\`.crew applied ${teamKey} <your answer here>\`\n\n` +
-    `Example:\n` +
-    `\`.crew applied ${teamKey} 1) 3 hours 2) 18 3) yes did vip before 4) yes 5) active 6) i move the vip to safe zone\`\n\n` +
+    `Go to any Slammed Society group and send:\n\n` +
+    `\`.crew applied ${teamKey} <your answers>\`\n\n` +
+    `Put each answer on its own line. Example:\n\n` +
+    `\`.crew applied ${teamKey}\`\n` +
+    `\`1) 3 hours\`\n` +
+    `\`2) 18\`\n` +
+    `\`3) yes did vip before\`\n` +
+    `\`4) yes\`\n` +
+    `\`5) active on whatsapp\`\n` +
+    `\`6) i move the vip to safe zone\`\n\n` +
     (crewTeam ? `You'll get an application ID to track it. ` : ``) +
     `_Good luck with the tryout!_`;
 };
@@ -128,7 +134,8 @@ const buildAdminNotice = (app) => {
     REQUIREMENTS.map(r => `• ${r}`).join('\n') + '\n\n' +
     `━━━━━━━━━━━━━━━━\n\n` +
     `✅ Accept: \`${prefix}crew accept ${app.appUid}\`\n` +
-    `❌ Deny: \`${prefix}crew deny ${app.appUid} <reason>\`\n\n` +
+    `❌ Deny: \`${prefix}crew deny ${app.appUid} <reason>\`\n` +
+    `📋 View pending: \`${prefix}crew applicants ${app.team}\`\n\n` +
     `_Reply from any Slammed Society group or directly from DM._`;
 };
 

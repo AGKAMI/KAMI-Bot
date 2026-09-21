@@ -27,14 +27,31 @@ module.exports = {
       const uid = (args[0] || '').toUpperCase();
       if (!uid) {
         return extra.reply(
-          `❌ ERROR\n\nProvide the applicant's App ID\n\nUsage: ${prefix}crew deny SS-XXXXX <reason>`
+          `❌ ERROR\n\nProvide the applicant's App ID\n\nUsage: \`${prefix}crew deny SS-XXXXX <reason>\``
         );
       }
 
       const app = database.getApplicantByUid(uid);
       if (!app) {
+        // Check if it was already processed
+        const processed = database.getProcessedApp(uid);
+        if (processed) {
+          const adminNum = processed.admin ? processed.admin.split('@')[0] : 'unknown';
+          const time = new Date(processed.processedAt).toLocaleString('en-ZA');
+          if (processed.action === 'accepted') {
+            return extra.reply(
+              `❌ ERROR\n\nApplication *${uid}* was already *accepted* by @${adminNum} on ${time}` +
+              (processed.role ? `\n🏷️ Role given: ${processed.role}` : '')
+            );
+          } else {
+            return extra.reply(
+              `❌ ERROR\n\nApplication *${uid}* was already *denied* by @${adminNum} on ${time}` +
+              (processed.reason ? `\n📝 Reason: ${processed.reason}` : '')
+            );
+          }
+        }
         return extra.reply(
-          '❌ ERROR\n\nNo application found for ' + uid + '\nCheck the App ID and try again'
+          `❌ ERROR\n\nNo application found for *${uid}*\nCheck the App ID and try again`
         );
       }
 
@@ -63,6 +80,15 @@ module.exports = {
       }
 
       const reason = args.slice(1).join(' ').trim() || 'No reason given';
+
+      // Track as processed before removing
+      database.trackProcessedApp(teamGroupJid, app.appUid, {
+        action: 'denied',
+        admin: extra.sender,
+        reason,
+        applicantJid,
+        team: teamKey,
+      });
 
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
