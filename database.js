@@ -983,6 +983,77 @@ const setPrefix = (newPrefix) => {
   return true;
 };
 
+// ── Member Lifecycle ──────────────────────────────────────
+
+// Get activity stats for a member in a group
+const getMemberActivity = (groupJid, memberJid) => {
+  const statsPath = path.join(DB_PATH, 'groupStats.json');
+  let stats;
+  try {
+    stats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
+  } catch {
+    return { totalMessages: 0, daysActive: 0, lastActive: null, avgPerDay: 0 };
+  }
+
+  const groupStats = stats[groupJid];
+  if (!groupStats) return { totalMessages: 0, daysActive: 0, lastActive: null, avgPerDay: 0 };
+
+  let totalMessages = 0;
+  let daysActive = 0;
+  let lastActive = null;
+
+  for (const [date, dayData] of Object.entries(groupStats)) {
+    if (dayData.users && dayData.users[memberJid]) {
+      const count = dayData.users[memberJid];
+      totalMessages += count;
+      daysActive++;
+      const dateTs = new Date(date).getTime();
+      if (!lastActive || dateTs > lastActive) {
+        lastActive = dateTs;
+      }
+    }
+  }
+
+  const avgPerDay = daysActive > 0 ? (totalMessages / daysActive).toFixed(1) : 0;
+
+  return { totalMessages, daysActive, lastActive, avgPerDay: Number(avgPerDay) };
+};
+
+// Get all members with their activity stats for a group
+const getGroupMemberActivity = (groupJid) => {
+  const team = getTeam(groupJid);
+  const members = team.members || {};
+  const result = {};
+
+  for (const [memberJid, memberData] of Object.entries(members)) {
+    const activity = getMemberActivity(groupJid, memberJid);
+    result[memberJid] = {
+      ...memberData,
+      ...activity,
+      inactive: activity.lastActive
+        ? (Date.now() - activity.lastActive) > (30 * 24 * 60 * 60 * 1000) // 30 days
+        : true,
+    };
+  }
+
+  return result;
+};
+
+// Get inactive members (no messages in X days)
+const getInactiveMembers = (groupJid, days = 30) => {
+  const all = getGroupMemberActivity(groupJid);
+  const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
+  const inactive = {};
+
+  for (const [jid, data] of Object.entries(all)) {
+    if (!data.lastActive || data.lastActive < cutoff) {
+      inactive[jid] = data;
+    }
+  }
+
+  return inactive;
+};
+
 module.exports = {
   getGroupSettings,
   updateGroupSettings,
@@ -1081,4 +1152,9 @@ module.exports = {
   // Prefix persistence
   getPrefix,
   setPrefix,
+
+  // Member lifecycle
+  getMemberActivity,
+  getGroupMemberActivity,
+  getInactiveMembers,
 };

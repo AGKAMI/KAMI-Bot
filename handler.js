@@ -1461,6 +1461,25 @@ const handleGroupUpdate = async (sock, update) => {
                 } catch (e) {}
               }
             }
+
+            // ── Protected Member Left Tracker ──────────────
+            // If a protected member left voluntarily (not kicked by bot), notify owner
+            if (database.isOwnerProtected(id, jid) && !_botKicked.has(jid)) {
+              const memberNum = jid.split(':')[0].split('@')[0];
+              const ownerNumbers = config.ownerNumber || [];
+              for (const ownerNum of ownerNumbers) {
+                try {
+                  const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
+                  await sock.sendMessage(ownerJid, {
+                    text:
+                      `👋 *MEMBER LEFT*\n\n` +
+                      `@${memberNum} left a crew group\n\n` +
+                      `_If they should stay, get KAMI to add them back_`,
+                    mentions: [jid],
+                  });
+                } catch (e) {}
+              }
+            }
           }
         }
       }
