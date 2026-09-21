@@ -64,7 +64,7 @@ module.exports = {
           { text: 'Visit Bot Repo', url: config.social?.github || 'https://github.com/AGKAMI' },
           { text: 'Join Channel', url: 'https://whatsapp.com/channel/0029VbAHHdPElah0PDVXGq3n' },
         ]
-      }, { quoted: msg });
+      }, msg);
       
     } catch (err) {
       console.error('list.js error:', err);

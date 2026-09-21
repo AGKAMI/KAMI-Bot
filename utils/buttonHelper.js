@@ -1,16 +1,25 @@
 /**
  * Button Helper — interactive buttons via Baileys nativeFlowMessage.
- * Supports quick_reply (tappable) and cta_url (opens link) buttons.
+ * Supports quick_reply (tappable), cta_url, cta_call, cta_copy buttons.
  * Falls back to plain text when button mode is OFF or on error.
  *
+ * Send path (the ONLY one that works in Baileys v7.0.0-rc.9):
+ * sock.sendMessage()/generateWAMessage() both route through
+ * generateWAMessageContent, which has no interactiveMessage branch —
+ * it falls into prepareWAMessageMedia and throws "Invalid media type".
+ * So we build the proto with generateWAMessageFromContent and relay it,
+ * passing the biz/interactive native_flow node that WhatsApp requires
+ * to actually render the buttons.
+ *
+ * Structure verified against kango-wa v1.0.4 (working on mobile):
+ * - header { title, subtitle: '', hasMediaAttachment: false } when set
+ * - NO messageVersion, NO messageParamsJson, NO contextInfo/externalAdReply
+ *
  * Button presses arrive as templateButtonReplyMessage.selectedId
- * (Baileys v7), or buttonsResponseMessage / nativeFlowResponseMessage
- * on older versions.
+ * (Baileys v7), or buttonsResponseMessage on older versions.
  */
 
 const config = require('../config');
-const fs = require('fs');
-const path = require('path');
 
 const buttonHandlers = new Map();
 
@@ -18,28 +27,12 @@ function isButtonModeOn() {
   return config.buttonMode === true || config.buttonMode === 'on';
 }
 
-function loadThumbnail() {
-  try {
-    const candidates = [
-      path.join(__dirname, 'bot_image.jpg'),
-      path.join(__dirname, '..', 'commands', 'general', 'bot_image.jpg'),
-      path.join(__dirname, '..', 'utils', 'bot_image.jpg'),
-    ];
-    for (const p of candidates) {
-      if (fs.existsSync(p)) {
-        return fs.readFileSync(p);
-      }
-    }
-  } catch (e) {}
-  return null;
-}
-
 /**
  * Normalize a button to nativeFlowMessage format.
  * - { id, text }           → quick_reply (tappable, sends id back)
- * - { text, url }          → cta_url (opens URL in browser)
- * - { text, phone }        → cta_call (initiates call)
- * - { text, displayText }  → cta_copy (copies text to clipboard)
+ * - { text, url }          → cta_url (opens link in browser)
+ * - { text, phone }         → cta_call (initiates call)
+ * - { text, displayText }   → cta_copy (copies text to clipboard)
  */
 function normalizeButton(b) {
   if (b.url) {
@@ -86,77 +79,71 @@ function normalizeButton(b) {
  * Send a message with interactive buttons.
  * @param {object} sock
  * @param {string} jid
- * @param {object} opts - { text, footer, header, buttons, thumbnail }
- * @param {object} quoted - message to quote (optional)
+ * @param {object} opts - { text, footer, header, buttons }
+ * @param {object} quoted - message to quote (optional, must have .key)
  */
 async function sendButtons(sock, jid, opts, quoted) {
   const { text, footer = '', buttons = [], header = '' } = opts;
 
-  if (!isButtonModeOn() || buttons.length === 0) {
-    return quoted
-      ? sock.sendMessage(jid, { text }, { quoted })
-      : sock.sendMessage(jid, { text });
-  }
+  // Guard: some callers pass { quoted: msg } by mistake — only real
+  // WAMessage objects (with .key) are usable as a quote.
+  const safeQuoted = quoted && quoted.key ? quoted : undefined;
 
-  if (!opts.thumbnail) {
-    opts.thumbnail = loadThumbnail();
+  if (!isButtonModeOn() || buttons.length === 0) {
+    return safeQuoted
+      ? sock.sendMessage(jid, { text }, { quoted: safeQuoted })
+      : sock.sendMessage(jid, { text });
   }
 
   const rows = buttons.slice(0, 3).map(normalizeButton);
 
-  // Build the interactiveMessage content
   const interactiveMsg = {
-    ...(header ? { header: { title: header, hasMediaAttachment: false } } : {}),
+    ...(header ? { header: { title: header, subtitle: '', hasMediaAttachment: false } } : {}),
     body: { text },
     ...(footer ? { footer: { text: footer } } : {}),
-    nativeFlowMessage: {
-      messageVersion: 1,
-      messageParamsJson: '',
-      buttons: rows,
-    },
+    nativeFlowMessage: { buttons: rows },
   };
 
-  // Add contextInfo with externalAdReply (thumbnail card)
-  if (opts.thumbnail || header || footer) {
-    interactiveMsg.contextInfo = {
-      mentionedJid: [],
-      forwardingScore: 0,
-      isForwarded: false,
-      externalAdReply: {
-        showAdAttribution: true,
-        renderLargerThumbnail: false,
-        mediaType: 1,
-        title: header || config.botName || 'KAMI Bot',
-        body: footer || text.substring(0, 60),
-        ...(opts.thumbnail ? { thumbnail: opts.thumbnail } : {}),
-        sourceUrl: '',
-        containsAutoReply: false,
+  let userJid = sock.user?.id;
+  if (typeof userJid === 'string') {
+    userJid = userJid.replace(/:\d+(?=@)/, '');
+  }
+
+  const { generateWAMessageFromContent } = require('@whiskeysockets/baileys');
+  try {
+    const built = generateWAMessageFromContent(
+      jid,
+      { interactiveMessage: interactiveMsg },
+      { userJid, quoted: safeQuoted, timestamp: new Date() }
+    );
+
+    // biz/interactive native_flow node — without this WhatsApp renders
+    // only the body text and drops the buttons.
+    const additionalNodes = [
+      {
+        tag: 'biz',
+        attrs: {},
+        content: [
+          {
+            tag: 'interactive',
+            attrs: { type: 'native_flow', v: '1' },
+            content: [{ tag: 'native_flow', attrs: { name: 'mixed', v: '9' } }],
+          },
+        ],
       },
-    };
-  }
+    ];
 
-  // Try sending via sock.sendMessage — Baileys handles proto encoding internally
-  try {
-    const result = await sock.sendMessage(jid, { interactiveMessage: interactiveMsg }, quoted ? { quoted } : {});
-    return result;
-  } catch (err) {
-    console.error('[BUTTON] interactiveMessage failed:', err.message);
-  }
-
-  // Fallback: try generateWAMessage + relayMessage
-  try {
-    const { generateWAMessage } = require('@whiskeysockets/baileys');
-    const userJid = sock.user?.id?.replace(/:\d+/, '')?.replace(/@lid/, '@s.whatsapp.net') || '';
-    const built = await generateWAMessage(jid, { interactiveMessage: interactiveMsg }, { userJid });
-    await sock.relayMessage(jid, built.message, { messageId: built.key.id });
+    await sock.relayMessage(jid, built.message, {
+      messageId: built.key.id,
+      additionalNodes,
+    });
     return built;
   } catch (err) {
-    console.error('[BUTTON] relayMessage failed:', err.message);
+    console.error('[BUTTON] relay failed:', err.message);
   }
 
-  // Final fallback: plain text
-  return quoted
-    ? sock.sendMessage(jid, { text }, { quoted })
+  return safeQuoted
+    ? sock.sendMessage(jid, { text }, { quoted: safeQuoted })
     : sock.sendMessage(jid, { text });
 }
 
