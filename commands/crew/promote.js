@@ -67,6 +67,27 @@ module.exports = {
       }
 
       const oldRole = member.role;
+
+      // Prevent promoting to same role
+      if (newRole === oldRole) {
+        return extra.reply(`❌ ERROR\n\n${mention(target)} is already *${newRole}*`);
+      }
+
+      // Prevent promoting to a lower role (that's a demote)
+      const oldIdx = validRoles.indexOf(oldRole);
+      const newIdx = validRoles.indexOf(newRole);
+      if (newIdx < oldIdx) {
+        return extra.reply(
+          `❌ ERROR\n\n${mention(target)} is already *${oldRole}* — ` +
+          `that's higher than *${newRole}*\n\nUse \`${prefix}crew demote\` to move them down`
+        );
+      }
+
+      // Prevent promoting past the top rank
+      if (newIdx === validRoles.length - 1 && oldIdx === validRoles.length - 1) {
+        return extra.reply(`❌ ERROR\n\n${mention(target)} is already at the *highest rank*`);
+      }
+
       database.addCrewMember(extra.from, target, { ...member, role: newRole });
       const ownerVIP = extra.isOwnerMentioned;
 
