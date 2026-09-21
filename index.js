@@ -660,6 +660,15 @@ async function startBot() {
 }
 // Start the bot
 console.log('🚀 Starting WhatsApp MD Bot...\n');
+
+// Load saved prefix from database (overrides config.js default)
+const database = require('./database');
+const savedPrefix = database.getPrefix();
+if (savedPrefix) {
+  config.prefix = savedPrefix;
+  console.log(`📌 Loaded saved prefix: ${savedPrefix}`);
+}
+
 console.log(`📦 Bot Name: ${config.botName}`);
 console.log(`⚡ Prefix: ${config.prefix}`);
 const ownerNames = Array.isArray(config.ownerName) ? config.ownerName.join(',') : config.ownerName;

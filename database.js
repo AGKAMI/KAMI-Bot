@@ -968,6 +968,21 @@ const getAdminActivity = (days = 7) => {
   return activity;
 };
 
+// ── Prefix Persistence ────────────────────────────────────
+// Saves prefix to database so it survives git reset on deploy
+
+const getPrefix = () => {
+  const settings = readDB(GLOBAL_DB);
+  return settings.prefix || null; // null = use config.js default
+};
+
+const setPrefix = (newPrefix) => {
+  const settings = readDB(GLOBAL_DB);
+  settings.prefix = newPrefix;
+  writeDB(GLOBAL_DB, settings);
+  return true;
+};
+
 module.exports = {
   getGroupSettings,
   updateGroupSettings,
@@ -1062,4 +1077,8 @@ module.exports = {
   logAdminAction,
   getAuditLog,
   getAdminActivity,
+
+  // Prefix persistence
+  getPrefix,
+  setPrefix,
 };
