@@ -64,7 +64,7 @@ module.exports = {
         if (!inCrewGroup) {
           return extra.reply(
             `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
-            `Your group: ${extra.from.split('@')[0]}`
+            `Your group: ${extra.from.split(':')[0].split('@')[0]}`
           );
         }
         return setTeam(sock, msg, subArgs, extra);
@@ -138,10 +138,10 @@ module.exports = {
             if (!inCrewGroup && !isOwner) {
               return extra.reply(
                 `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
-                `Your group: ${extra.from.split('@')[0]}`
-              );
-            }
-          }
+            `Your group: ${extra.from.split(':')[0].split('@')[0]}`
+          );
+        }
+      }
         }
       }
 
@@ -209,7 +209,7 @@ async function setTeam(sock, msg, args, extra) {
     text: `✅ SUCCESS\n\n🏷️ TEAM MAPPED\n\n` +
           `Abbreviation: ${bold(abbrev)}\n` +
           `Team: ${bold(teamName)}\n` +
-          `Group: ${extra.from.split('@')[0]}\n\n` +
+          `Group: ${extra.from.split(':')[0].split('@')[0]}\n\n` +
           `Now you can use: ${prefix}crew ${abbrev.toLowerCase()} <command>`
   }, { quoted: msg });
 }
@@ -227,7 +227,7 @@ async function showTeams(sock, msg, extra) {
   } else {
     for (const [abbrev, data] of teams) {
       text += `\n• ${bold(abbrev)} — ${data.name}`;
-      text += `\n  📍 ${data.jid.split('@')[0]}`;
+      text += `\n  📍 ${data.jid.split(':')[0].split('@')[0]}`;
     }
     text += `\n----------\n`;
     text += `\nUsage: ${prefix}crew <abbrev> <command>`;

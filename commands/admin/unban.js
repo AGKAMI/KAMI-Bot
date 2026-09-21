@@ -4,7 +4,7 @@
  */
 
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, mention } = require('../../utils/format');
 
 const parseNumber = (input) => {
   if (!input) return null;
@@ -56,7 +56,7 @@ module.exports = {
       }
 
       await sock.sendMessage(from, {
-        text: `✅ *UNBANNED*\n\n@${target.split('@')[0]} _has been unbanned, ${pick(SLANG.good)}!_`,
+        text: `✅ *UNBANNED*\n\n${mention(target)} _has been unbanned, ${pick(SLANG.good)}!_`,
         mentions: [target]
       }, { quoted: msg });
 

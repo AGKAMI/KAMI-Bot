@@ -5,6 +5,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'autosticker',
@@ -21,15 +22,21 @@ module.exports = {
     try {
       if (!args[0]) {
         const settings = database.getGroupSettings(extra.from);
-        const status = settings.autosticker ? 'ON' : 'OFF';
-        return extra.reply(
-          `📌 AUTOSTICKER STATUS\n\n` +
+        const isOn = settings.autosticker;
+        const status = isOn ? 'ON' : 'OFF';
+        const statusText = `📌 AUTOSTICKER STATUS\n\n` +
           `*Status*: ${status}\n\n` +
           `When enabled, all images and videos go straight to sticker ${pick(SLANG.vibe)}\n\n` +
           `📱 *Usage*:\n` +
           `• ${prefix}autosticker on\n` +
-          `• ${prefix}autosticker off`
-        );
+          `• ${prefix}autosticker off`;
+        return sendButtons(sock, extra.from, {
+          text: statusText,
+          footer: 'Autosticker Settings',
+          buttons: isOn
+            ? [{ id: 'admin:autosticker:off', text: '🚫 Disable Autosticker' }]
+            : [{ id: 'admin:autosticker:on', text: '📌 Enable Autosticker' }],
+        }, { quoted: msg });
       }
       
       const opt = args[0].toLowerCase();
@@ -57,4 +64,21 @@ module.exports = {
     }
   }
 };
+
+// Button handlers
+onButton('admin:autosticker:on', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { autosticker: true });
+  await sock.sendMessage(from, {
+    text: `✅ AUTOSTICKER ON\n\n_Autosticker turned ON — every image and video goes straight to sticker_`,
+  });
+});
+
+onButton('admin:autosticker:off', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { autosticker: false });
+  await sock.sendMessage(from, {
+    text: `✅ AUTOSTICKER OFF\n\n_Autosticker turned OFF_`,
+  });
+});
 

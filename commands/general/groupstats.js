@@ -2,7 +2,7 @@
 
 const config = require('../../config');
 const { getStats } = require('../../utils/groupstats');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
     name: 'groupstats',
@@ -29,7 +29,7 @@ module.exports = {
                 .slice(0, 5);
 
             let topText = sortedUsers.length
-                ? sortedUsers.map(([id, count], i) => `${i + 1}) @${id.split('@')[0]} — ${count} msgs`).join('\n')
+                ? sortedUsers.map(([id, count], i) => `${i + 1}) ${mention(id)} — ${count} msgs`).join('\n')
                 : 'No active users yet.';
 
             const text = `

@@ -4,7 +4,8 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'antiflood',
@@ -24,7 +25,15 @@ module.exports = {
       const settings = database.getGroupSettings(extra.from);
 
       if (!sub || sub === 'status') {
-        return extra.reply(buildStatus(settings, prefix));
+        const statusText = buildStatus(settings, prefix);
+        const isOn = settings.antiflood;
+        return sendButtons(sock, extra.from, {
+          text: statusText,
+          footer: 'Antiflood Settings',
+          buttons: isOn
+            ? [{ id: 'admin:antiflood:off', text: '🚫 Disable Protection' }]
+            : [{ id: 'admin:antiflood:on', text: '🛡️ Enable Protection' }],
+        }, { quoted: msg });
       }
 
       if (sub === 'on') {
@@ -105,8 +114,8 @@ module.exports = {
       }
 
       if (sub === 'exempt') {
-        const mention = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-        if (!mention) {
+        const exemptJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+        if (!exemptJid) {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to exempt, ${pick(SLANG.vibe)}_\n\n` +
@@ -115,28 +124,28 @@ module.exports = {
         }
 
         const exempt = settings.antifloodExempt || [];
-        if (exempt.includes(mention)) {
+        if (exempt.includes(exemptJid)) {
           return extra.reply(
             `⚠️ *ALREADY EXEMPT*\n\n` +
-            `@${mention.split('@')[0]} _is already exempt from flood detection_`
+            `${mention(exemptJid)} _is already exempt from flood detection_`
           );
         }
 
-        exempt.push(mention);
+        exempt.push(exemptJid);
         database.updateGroupSettings(extra.from, { antifloodExempt: exempt });
 
         return extra.reply(
           `✅ *USER EXEMPTED*\n\n` +
-          `👤 *User:* @${mention.split('@')[0]}\n` +
+          `👤 *User:* ${mention(exemptJid)}\n` +
           `🛡️ *Status:* Bypasses flood detection\n\n` +
           `_${pick(SLANG.good)}, exempted!_`,
-          [mention]
+          [exemptJid]
         );
       }
 
       if (sub === 'unexempt') {
-        const mention = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-        if (!mention) {
+        const exemptJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+        if (!exemptJid) {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to unexempt, ${pick(SLANG.vibe)}_\n\n` +
@@ -145,21 +154,21 @@ module.exports = {
         }
 
         const exempt = settings.antifloodExempt || [];
-        if (!exempt.includes(mention)) {
+        if (!exempt.includes(exemptJid)) {
           return extra.reply(
             `❌ *NOT EXEMPT*\n\n` +
-            `@${mention.split('@')[0]} _is not in the exemption list_`
+            `${mention(exemptJid)} _is not in the exemption list_`
           );
         }
 
-        const updated = exempt.filter(j => j !== mention);
+        const updated = exempt.filter(j => j !== exemptJid);
         database.updateGroupSettings(extra.from, { antifloodExempt: updated });
 
         return extra.reply(
           `✅ *EXEMPTION REMOVED*\n\n` +
-          `👤 *User:* @${mention.split('@')[0]}\n` +
+          `👤 *User:* ${mention(exemptJid)}\n` +
           `_Now subject to flood detection again_`,
-          [mention]
+          [exemptJid]
         );
       }
 
@@ -172,7 +181,7 @@ module.exports = {
           );
         }
 
-        const list = exempt.map((j, i) => `${i + 1}. @${j.split('@')[0]}`).join('\n');
+        const list = exempt.map((j, i) => `${i + 1}. ${mention(j)}`).join('\n');
         return extra.reply(
           `📋 *EXEMPT LIST*\n\n` +
           `👥 *Exempt users (${exempt.length}):*\n${list}\n\n` +
@@ -216,3 +225,20 @@ function buildStatus(settings, prefix) {
     `_Actions: warn, delete, kick_`
   );
 }
+
+// Button handlers
+onButton('admin:antiflood:on', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antiflood: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTIFLOOD ON*\n\n_Anti-flood protection activated_`,
+  });
+});
+
+onButton('admin:antiflood:off', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antiflood: false });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTIFLOOD OFF*\n\n_Anti-flood protection disabled_`,
+  });
+});

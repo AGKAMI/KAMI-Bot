@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 const afkUsers = new Map();
 const afkHistory = new Map();
@@ -72,7 +72,7 @@ module.exports = {
                 const mentions = [];
                 for (const [jid, data] of allAfk) {
                     if (data.from !== from) continue;
-                    const tag = `@${jid.split('@')[0]}`;
+                    const tag = mention(jid);
                     mentions.push(jid);
                     const duration = formatDuration(Date.now() - data.since);
                     const reasonText = data.reason ? ` — ${data.reason}` : '';
@@ -156,7 +156,7 @@ module.exports = {
                 text: [
                     `💤 *AFK MODE ON*`,
                     ``,
-                    `👤 *User:* @${sender.split('@')[0]}`,
+                    `👤 *User:* ${mention(sender)}`,
                     reasonLine,
                     ``,
                     `_I'll let them know you're away, ${pick(SLANG.vibe)} 🫡_`

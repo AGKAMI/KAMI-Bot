@@ -1,5 +1,5 @@
 // commands/fun/gayrate.js
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 module.exports = {
   name: 'gayrate',
   aliases: ['gay'],
@@ -16,7 +16,7 @@ module.exports = {
       else if (ctx.participant) targetId = ctx.participant;
       else targetId = extra.sender;
 
-      const targetTag = `@${(targetId || extra.sender).split('@')[0]}`;
+      const targetTag = mention(targetId || extra.sender);
 
       // deterministic-ish but random: base on id to make repeatable so it's less spammy
       const base = (targetId || extra.sender).toString().split('').reduce((s,c)=> s + c.charCodeAt(0), 0);

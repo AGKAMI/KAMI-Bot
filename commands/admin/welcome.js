@@ -4,6 +4,7 @@
 
 const db = require('../../database');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'welcome',
@@ -21,9 +22,15 @@ module.exports = {
       
       if (!action || !['on', 'off'].includes(action)) {
         const groupSettings = db.getGroupSettings(groupId);
-        const status = groupSettings.welcome ? '✅ Enabled' : '❌ Disabled';
-        return await sock.sendMessage(groupId, {
-          text: `👋 WELCOME MESSAGES\n\n*Status*: ${status}\n*Message*: ${groupSettings.welcomeMessage}\n\n📱 *Usage*: .welcome on/off\n💡 *Customize*: .setwelcome <message>`
+        const isOn = groupSettings.welcome;
+        const status = isOn ? '✅ Enabled' : '❌ Disabled';
+        const statusText = `👋 WELCOME MESSAGES\n\n*Status*: ${status}\n*Message*: ${groupSettings.welcomeMessage}\n\n📱 *Usage*: .welcome on/off\n💡 *Customize*: .setwelcome <message>`;
+        return sendButtons(sock, groupId, {
+          text: statusText,
+          footer: 'Welcome Settings',
+          buttons: isOn
+            ? [{ id: 'admin:welcome:off', text: '🚫 Disable Welcome' }]
+            : [{ id: 'admin:welcome:on', text: '👋 Enable Welcome' }],
         }, { quoted: msg });
       }
       
@@ -42,3 +49,20 @@ module.exports = {
     }
   }
 };
+
+// Button handlers
+onButton('admin:welcome:on', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { welcome: true });
+  await sock.sendMessage(from, {
+    text: `✅ WELCOME ON\n\n_Welcome messages enabled_`,
+  });
+});
+
+onButton('admin:welcome:off', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { welcome: false });
+  await sock.sendMessage(from, {
+    text: `✅ WELCOME OFF\n\n_Welcome messages disabled_`,
+  });
+});

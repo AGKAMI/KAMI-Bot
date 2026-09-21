@@ -14,7 +14,11 @@ const bold = (text) => `*${text}*`;
 const italic = (text) => `_${text}_`;
 const strike = (text) => `~${text}~`;
 const mono = (text) => '`' + text + '`';
-const mention = (jid) => `@${jid.split('@')[0]}`;
+const { normalizeJidWithLid } = require('./jidHelper');
+const mention = (jid) => {
+  const resolved = normalizeJidWithLid(jid);
+  return `@${resolved.split(':')[0].split('@')[0]}`;
+};
 
 // ─── Separators ───────────────────────────────────────────────────────────────
 

@@ -8,7 +8,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, mention } = require('../../utils/format');
 const { TEAMS, buildFormMessage } = require('./crewForms');
 const { resolveUser } = require('./crewHelpers');
 const { buildComparableIds } = require('../../utils/jidHelper');
@@ -66,14 +66,13 @@ module.exports = {
         applicantJid = sender.includes('@g.us') ? (msg.key.participant || extra.sender) : sender;
       }
 
-      const applicantNum = applicantJid.split('@')[0];
       const teamGroupJid = config.crewTeams[teamKey].jid;
 
       // --- Already in the crew DB for this team? ---
       if (database.getCrewMember(teamGroupJid, applicantJid)) {
         return extra.reply(
           applyingForSomeone
-            ? `❌ ERROR\n\n@${applicantNum} is already part of ${TEAMS[teamKey].label} ${pick(SLANG.vibe)}`
+            ? `❌ ERROR\n\n${mention(applicantJid)} is already part of ${TEAMS[teamKey].label} ${pick(SLANG.vibe)}`
             : `❌ ERROR\n\nYou're already part of ${TEAMS[teamKey].label} ${pick(SLANG.vibe)}`
         );
       }
@@ -89,7 +88,7 @@ module.exports = {
           if (alreadyIn) {
             return extra.reply(
               applyingForSomeone
-                ? `❌ ERROR\n\n@${applicantNum} is already in the ${teamKey} group 🤨\nWhy apply for a group they're already in?`
+                ? `❌ ERROR\n\n${mention(applicantJid)} is already in the ${teamKey} group 🤨\nWhy apply for a group they're already in?`
                 : `❌ ERROR\n\nYou're already in the ${teamKey} group 🤨\nWhy apply for a group you're already in?`
             );
           }
@@ -111,7 +110,7 @@ module.exports = {
         } else {
           return extra.reply(
             applyingForSomeone
-              ? `❌ ERROR\n\n@${applicantNum} already has a pending ${teamKey} application ${pick(SLANG.vibe)}\nApp ID: *${dup.appUid}*\n\nWait for review or hit an admin`
+              ? `❌ ERROR\n\n${mention(applicantJid)} already has a pending ${teamKey} application ${pick(SLANG.vibe)}\nApp ID: *${dup.appUid}*\n\nWait for review or hit an admin`
               : `❌ ERROR\n\nYou already have a pending ${teamKey} application ${pick(SLANG.vibe)}\nApp ID: *${dup.appUid}*\n\nWait for review or hit an admin`
           );
         }
@@ -154,7 +153,7 @@ module.exports = {
         database.removeApplicant(teamGroupJid, app.appUid);
         return extra.reply(
           applyingForSomeone
-            ? `❌ ERROR\n\nCouldn't DM @${applicantNum} the application form ${pick(SLANG.error)}\nCheck if they have DMs open from this bot\n\n_The application was not created — they need to open their DMs first._`
+            ? `❌ ERROR\n\nCouldn't DM ${mention(applicantJid)} the application form ${pick(SLANG.error)}\nCheck if they have DMs open from this bot\n\n_The application was not created — they need to open their DMs first._`
             : `❌ ERROR\n\nCouldn't DM you the application form ${pick(SLANG.error)}\nCheck if you have DMs open from this bot\n\n_The application was not created — open your DMs and try again._`
         );
       }
@@ -165,7 +164,7 @@ module.exports = {
         `🏢 Team: *${teamKey}* — ${TEAMS[teamKey].label}\n` +
         `🆔 *App ID:* ${app.appUid}\n\n` +
         (applyingForSomeone
-          ? `📲 I've DM'd @${applicantNum} the application form.\n\n`
+          ? `📲 I've DM'd ${mention(applicantJid)} the application form.\n\n`
           : `📲 I've DM'd you the application form.\n\n`) +
         `_${pick(SLANG.greeting)}, good luck!_`;
 

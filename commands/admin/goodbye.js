@@ -4,6 +4,7 @@
 
 const db = require('../../database');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'goodbye',
@@ -21,9 +22,15 @@ module.exports = {
       
       if (!action || !['on', 'off'].includes(action)) {
         const groupSettings = db.getGroupSettings(groupId);
-        const status = groupSettings.goodbye ? '✅ Enabled' : '❌ Disabled';
-        return await sock.sendMessage(groupId, {
-          text: `👋 GOODBYE MESSAGES\n\n*Status*: ${status}\n*Message*: ${groupSettings.goodbyeMessage}\n\n📱 *Usage*: .goodbye on/off\n💡 *Customize*: .setgoodbye <message>`
+        const isOn = groupSettings.goodbye;
+        const status = isOn ? '✅ Enabled' : '❌ Disabled';
+        const statusText = `👋 GOODBYE MESSAGES\n\n*Status*: ${status}\n*Message*: ${groupSettings.goodbyeMessage}\n\n📱 *Usage*: .goodbye on/off\n💡 *Customize*: .setgoodbye <message>`;
+        return sendButtons(sock, groupId, {
+          text: statusText,
+          footer: 'Goodbye Settings',
+          buttons: isOn
+            ? [{ id: 'admin:goodbye:off', text: '🚫 Disable Goodbye' }]
+            : [{ id: 'admin:goodbye:on', text: '👋 Enable Goodbye' }],
         }, { quoted: msg });
       }
       
@@ -42,3 +49,20 @@ module.exports = {
     }
   }
 };
+
+// Button handlers
+onButton('admin:goodbye:on', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { goodbye: true });
+  await sock.sendMessage(from, {
+    text: `✅ GOODBYE ON\n\n_Goodbye messages enabled_`,
+  });
+});
+
+onButton('admin:goodbye:off', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { goodbye: false });
+  await sock.sendMessage(from, {
+    text: `✅ GOODBYE OFF\n\n_Goodbye messages disabled_`,
+  });
+});

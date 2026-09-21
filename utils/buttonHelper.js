@@ -20,11 +20,25 @@
  */
 
 const config = require('../config');
+const { generateWAMessageFromContent } = require('@whiskeysockets/baileys');
 
 const buttonHandlers = new Map();
 
+// ── Rate limiter: WhatsApp throttles interactive messages ──────────
+// Only allow 1 interactive message per JID every COOLDOWN_MS.
+// After that, fall back to plain text.
+const COOLDOWN_MS = 2000; // 2 seconds between interactive messages per chat
+const lastInteractive = new Map(); // jid → timestamp
+
 function isButtonModeOn() {
   return config.buttonMode === true || config.buttonMode === 'on';
+}
+
+function canSendInteractive(jid) {
+  const last = lastInteractive.get(jid) || 0;
+  if (Date.now() - last < COOLDOWN_MS) return false;
+  lastInteractive.set(jid, Date.now());
+  return true;
 }
 
 /**
@@ -83,7 +97,7 @@ function normalizeButton(b) {
  * @param {object} quoted - message to quote (optional, must have .key)
  */
 async function sendButtons(sock, jid, opts, quoted) {
-  const { text, footer = '', buttons = [], header = '' } = opts;
+  const { text, footer = '', buttons = [], header = '', mentions = [] } = opts;
 
   // Guard: some callers pass { quoted: msg } by mistake — only real
   // WAMessage objects (with .key) are usable as a quote.
@@ -91,8 +105,18 @@ async function sendButtons(sock, jid, opts, quoted) {
 
   if (!isButtonModeOn() || buttons.length === 0) {
     return safeQuoted
-      ? sock.sendMessage(jid, { text }, { quoted: safeQuoted })
-      : sock.sendMessage(jid, { text });
+      ? sock.sendMessage(jid, { text, mentions }, { quoted: safeQuoted })
+      : sock.sendMessage(jid, { text, mentions });
+  }
+
+  // ── Rate limit: if we sent an interactive message recently, fall back to plain text ──
+  if (!canSendInteractive(jid)) {
+    // Append button labels as text so user still sees options
+    const btnLabels = buttons.slice(0, 3).map((b, i) => `  ${i + 1}. ${b.text}`).join('\n');
+    const fallback = `${text}\n\n📱 *Quick Actions:*\n${btnLabels}`;
+    return safeQuoted
+      ? sock.sendMessage(jid, { text: fallback, mentions }, { quoted: safeQuoted })
+      : sock.sendMessage(jid, { text: fallback, mentions });
   }
 
   const rows = buttons.slice(0, 3).map(normalizeButton);
@@ -109,7 +133,6 @@ async function sendButtons(sock, jid, opts, quoted) {
     userJid = userJid.replace(/:\d+(?=@)/, '');
   }
 
-  const { generateWAMessageFromContent } = require('@whiskeysockets/baileys');
   try {
     const built = generateWAMessageFromContent(
       jid,
@@ -143,8 +166,8 @@ async function sendButtons(sock, jid, opts, quoted) {
   }
 
   return safeQuoted
-    ? sock.sendMessage(jid, { text }, { quoted: safeQuoted })
-    : sock.sendMessage(jid, { text });
+    ? sock.sendMessage(jid, { text, mentions }, { quoted: safeQuoted })
+    : sock.sendMessage(jid, { text, mentions });
 }
 
 function onButton(id, handler) {
@@ -159,8 +182,10 @@ function onButton(id, handler) {
 function handleButtonResponse(sock, msg) {
   try {
     const m = msg.message;
-    if (!m) {
-      console.log('[BUTTON] msg.message is null/undefined');
+    if (!m) return false;
+
+    // Fast path: skip entirely if this message isn't a button tap at all
+    if (!m.templateButtonReplyMessage && !m.buttonsResponseMessage && !m.interactiveResponseMessage) {
       return false;
     }
 
@@ -172,26 +197,19 @@ function handleButtonResponse(sock, msg) {
     // Baileys v7: button taps arrive here
     if (m.templateButtonReplyMessage?.selectedId) {
       btnId = m.templateButtonReplyMessage.selectedId;
-      console.log('[BUTTON] templateButtonReply:', btnId);
     }
     // Older Baileys / some clients
     else if (m.buttonsResponseMessage?.selectedButtonId) {
       btnId = m.buttonsResponseMessage.selectedButtonId;
-      console.log('[BUTTON] buttonsResponse:', btnId);
     }
     // nativeFlowResponseMessage fallback
     else if (m.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson) {
       try {
         btnId = JSON.parse(m.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson).id;
-        console.log('[BUTTON] nativeFlowResponse:', btnId);
       } catch (e) {}
     }
 
-    if (!btnId) {
-      // Log all message keys to help debug
-      console.log('[BUTTON] no btnId found. msg keys:', Object.keys(m).join(', '));
-      return false;
-    }
+    if (!btnId) return false;
 
     // Exact match first
     let handler = buttonHandlers.get(btnId);

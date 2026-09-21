@@ -5,6 +5,13 @@ const { sendButtons, onButton, isButtonModeOn } = require('../../utils/buttonHel
 const fs = require('fs');
 const path = require('path');
 
+// Cache commands — only scan filesystem once at module load
+let _cachedCommands = null;
+const getCommands = () => {
+  if (!_cachedCommands) _cachedCommands = loadCommands();
+  return _cachedCommands;
+};
+
 const categoryMeta = {
   general:   { emoji: '🏠', label: 'General' },
   ai:        { emoji: '🤖', label: 'AI' },
@@ -23,7 +30,7 @@ const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'te
 
 function buildCategoryText(cat) {
   const prefix = config.prefix || '.';
-  const commands = loadCommands();
+  const commands = getCommands();
   const meta = categoryMeta[cat] || { emoji: '📁', label: cat };
   const items = [];
   commands.forEach((cmd, name) => {
@@ -43,7 +50,7 @@ function buildCategoryText(cat) {
 
 function buildFullMenu(pushName) {
   const prefix = config.prefix || '.';
-  const commands = loadCommands();
+  const commands = getCommands();
   const categories = {};
   commands.forEach((cmd, name) => {
     if (cmd.name === name) {
@@ -122,21 +129,19 @@ module.exports = {
         const buttons = [
           { id: 'menu:admin', text: '🛡️ Admin' },
           { id: 'menu:crew',  text: '🔰 Crew' },
-          { id: 'menu:more',  text: '📂 More Categories' },
+          { id: 'menu:more1', text: '📂 More' },
         ];
 
         const btnFooter = config.botName || 'KAMI Bot';
 
         if (fs.existsSync(imagePath)) {
           const imageBuffer = fs.readFileSync(imagePath);
-          // Send image alone (buttons can't attach to image messages)
           await sock.sendMessage(extra.from, {
             image: imageBuffer,
             mentions: [extra.sender],
             ...newsletterCtx,
           }, { quoted: msg });
         }
-        // Always send buttons with text (for image case: follow-up; for no-image case: the only message)
         await sendButtons(sock, extra.from, {
           text: summary,
           footer: btnFooter,
@@ -172,35 +177,184 @@ module.exports = {
 };
 
 // Register category button handlers (runs once at command load)
-onButton('menu:admin', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('admin') });
-});
-onButton('menu:crew', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('crew') });
-});
-onButton('menu:owner', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('owner') });
-});
-onButton('menu:more', async (sock, msg, from) => {
+
+// ── Page 1: Main Menu ────────────────────────────────
+onButton('menu:admin', async (sock, msg, from) => {
   const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
-  const prefix = config.prefix || '.';
   await sendBtns(sock, from, {
-    text: `📂 *MORE CATEGORIES*\n\nTap to see commands:`,
+    text: buildCategoryText('admin'),
+    footer: config.botName || 'KAMI Bot',
+    buttons: [{ id: 'menu:back:main', text: '⬅️ Back to Menu' }],
+  });
+});
+onButton('menu:crew', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: buildCategoryText('crew'),
+    footer: config.botName || 'KAMI Bot',
+    buttons: [{ id: 'menu:back:main', text: '⬅️ Back to Menu' }],
+  });
+});
+
+// ── Page 2: General, AI, Media + Back ────────────────
+onButton('menu:more1', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: `📂 *GENERAL / AI / MEDIA*\n\nTap to see commands:`,
     footer: config.botName || 'KAMI Bot',
     header: 'KAMI BOT',
     buttons: [
+      { id: 'menu:general', text: '🏠 General' },
+      { id: 'menu:ai',      text: '🤖 AI' },
       { id: 'menu:media',   text: '🎬 Media' },
-      { id: 'menu:fun',     text: '🎉 Fun' },
-      { id: 'menu:games',   text: '🎮 Games' },
     ],
   });
 });
-onButton('menu:media', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('media') });
+onButton('menu:general', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: buildCategoryText('general'),
+    footer: config.botName || 'KAMI Bot',
+    buttons: [{ id: 'menu:back:more1', text: '⬅️ Back' }],
+  });
 });
-onButton('menu:fun', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('fun') });
+onButton('menu:ai', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: buildCategoryText('ai'),
+    footer: config.botName || 'KAMI Bot',
+    buttons: [{ id: 'menu:back:more1', text: '⬅️ Back' }],
+  });
 });
-onButton('menu:games', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('games') });
+
+// ── Page 3: Fun, Games, Utility + Back ───────────────
+onButton('menu:more2', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: `📂 *FUN / GAMES / UTILITY*\n\nTap to see commands:`,
+    footer: config.botName || 'KAMI Bot',
+    header: 'KAMI BOT',
+    buttons: [
+      { id: 'menu:fun',      text: '🎉 Fun' },
+      { id: 'menu:games',    text: '🎮 Games' },
+      { id: 'menu:utility',  text: '🔧 Utility' },
+    ],
+  });
+});
+onButton('menu:fun', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: buildCategoryText('fun'),
+    footer: config.botName || 'KAMI Bot',
+    buttons: [{ id: 'menu:back:more2', text: '⬅️ Back' }],
+  });
+});
+onButton('menu:games', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: buildCategoryText('games'),
+    footer: config.botName || 'KAMI Bot',
+    buttons: [{ id: 'menu:back:more2', text: '⬅️ Back' }],
+  });
+});
+onButton('menu:utility', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: buildCategoryText('utility'),
+    footer: config.botName || 'KAMI Bot',
+    buttons: [{ id: 'menu:back:more2', text: '⬅️ Back' }],
+  });
+});
+
+// ── Page 4: Anime, Textmaker, Owner + Back ───────────
+onButton('menu:more3', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: `📂 *ANIME / TEXTMAKER / OWNER*\n\nTap to see commands:`,
+    footer: config.botName || 'KAMI Bot',
+    header: 'KAMI BOT',
+    buttons: [
+      { id: 'menu:anime',     text: '⛩️ Anime' },
+      { id: 'menu:textmaker', text: '✨ Textmaker' },
+      { id: 'menu:owner',     text: '👑 Owner' },
+    ],
+  });
+});
+onButton('menu:anime', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: buildCategoryText('anime'),
+    footer: config.botName || 'KAMI Bot',
+    buttons: [{ id: 'menu:back:more3', text: '⬅️ Back' }],
+  });
+});
+onButton('menu:textmaker', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: buildCategoryText('textmaker'),
+    footer: config.botName || 'KAMI Bot',
+    buttons: [{ id: 'menu:back:more3', text: '⬅️ Back' }],
+  });
+});
+onButton('menu:owner', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: buildCategoryText('owner'),
+    footer: config.botName || 'KAMI Bot',
+    buttons: [{ id: 'menu:back:more3', text: '⬅️ Back' }],
+  });
+});
+
+// ── Back Navigation Handlers ─────────────────────────
+onButton('menu:back:main', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: `*KAMI BOT* ${pick(SLANG.greeting)}! 👋\n\n🤖 Tap a button to see that section's commands 👇\n\n📖 Full list: *${config.prefix || '.'}menu all*`,
+    footer: config.botName || 'KAMI Bot',
+    header: 'KAMI BOT',
+    buttons: [
+      { id: 'menu:admin', text: '🛡️ Admin' },
+      { id: 'menu:crew',  text: '🔰 Crew' },
+      { id: 'menu:more1', text: '📂 More' },
+    ],
+  });
+});
+onButton('menu:back:more1', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: `📂 *GENERAL / AI / MEDIA*\n\nTap to see commands:`,
+    footer: config.botName || 'KAMI Bot',
+    header: 'KAMI BOT',
+    buttons: [
+      { id: 'menu:general', text: '🏠 General' },
+      { id: 'menu:ai',      text: '🤖 AI' },
+      { id: 'menu:media',   text: '🎬 Media' },
+    ],
+  });
+});
+onButton('menu:back:more2', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: `📂 *FUN / GAMES / UTILITY*\n\nTap to see commands:`,
+    footer: config.botName || 'KAMI Bot',
+    header: 'KAMI BOT',
+    buttons: [
+      { id: 'menu:fun',      text: '🎉 Fun' },
+      { id: 'menu:games',    text: '🎮 Games' },
+      { id: 'menu:utility',  text: '🔧 Utility' },
+    ],
+  });
+});
+onButton('menu:back:more3', async (sock, msg, from) => {
+  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  await sendBtns(sock, from, {
+    text: `📂 *ANIME / TEXTMAKER / OWNER*\n\nTap to see commands:`,
+    footer: config.botName || 'KAMI Bot',
+    header: 'KAMI BOT',
+    buttons: [
+      { id: 'menu:anime',     text: '⛩️ Anime' },
+      { id: 'menu:textmaker', text: '✨ Textmaker' },
+      { id: 'menu:owner',     text: '👑 Owner' },
+    ],
+  });
 });

@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 const getRoleEmoji = (role, roles) => {
@@ -41,11 +41,10 @@ module.exports = {
       }
 
       const target = resolved.jid;
-      const targetNum = target.split('@')[0];
 
       const member = database.getCrewMember(extra.from, target);
       if (!member) {
-        return extra.reply(`❌ ERROR\n\n@${targetNum} is not in this crew`);
+        return extra.reply(`❌ ERROR\n\n${mention(target)} is not in this crew`);
       }
 
       // Get custom roles for this group
@@ -77,7 +76,7 @@ module.exports = {
           (ownerVIP
             ? `👑 THE BOSS HAS SPOKEN 👑\n\n`
             : `⬆️ PROMOTED\n\n`) +
-          `@${targetNum}\n\n` +
+          `${mention(target)}\n\n` +
           `${getRoleEmoji(oldRole, validRoles)} ${oldRole} → ${getRoleEmoji(newRole, validRoles)} ${bold(newRole)}` +
           (ownerVIP ? `\n\n_The owner himself has promoted this member._ 👑` : ''),
         mentions: [target],

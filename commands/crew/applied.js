@@ -260,6 +260,7 @@ onButton('crew:accept', async (sock, msg, from, sender, btnId) => {
     reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
   });
 });
+});
 
 onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
   const uid = btnId.replace('crew:deny:', '');

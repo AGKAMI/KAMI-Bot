@@ -259,12 +259,13 @@ const removeTeamAdmin = (number) => {
 const isTeamAdmin = (jid) => {
   if (!jid) return false;
   // Owner always counts
-  const number = (jid || '').replace(/@.*$/, '');
-  const raw = (jid || '').replace(/@.*$/, '');
+  const fullNumber = (jid || '').split('@')[0];        // 1234567890:0
+  const bareNumber = fullNumber.split(':')[0];           // 1234567890
   const ownerNumbers = (config.ownerNumber || []).map(n => n.replace(/[\+\-\s]/g, ''));
-  if (ownerNumbers.includes(number) || ownerNumbers.includes(raw)) return true;
+  if (ownerNumbers.includes(fullNumber) || ownerNumbers.includes(bareNumber)) return true;
   const admins = getTeamAdmins();
-  return admins.includes(number) || admins.includes(raw);
+  // Check both formats — teamAdmins may store with or without :device suffix
+  return admins.includes(fullNumber) || admins.includes(bareNumber);
 };
 
 // ==================== Crew Functions ====================

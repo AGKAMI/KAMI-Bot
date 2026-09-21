@@ -5,7 +5,7 @@
 
 const snipeStore = require('../../utils/snipeStore');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const SnipeStoreClass = snipeStore.constructor;
 const typeEmoji = SnipeStoreClass.typeEmoji;
 
@@ -79,7 +79,7 @@ module.exports = {
         ? entry.content.substring(0, 40) + (entry.content.length > 40 ? '...' : '')
         : `_${emoji} ${entry.type}_`;
       text += `\n${emoji} *#${i + 1}* — ${preview}\n`;
-      text += `   👤 @${entry.sender.split('@')[0]} | ⏰ ${timeAgo}\n`;
+      text += `   👤 ${mention(entry.sender)} | ⏰ ${timeAgo}\n`;
     });
 
     text += `----------\n`;
@@ -95,7 +95,7 @@ module.exports = {
 
   async showEntry(sock, msg, entry, from, number, extra) {
     const timeAgo = getTimeAgo(entry.time);
-    const senderNum = entry.sender.split('@')[0];
+    const senderNum = entry.sender;
     const emoji = typeEmoji(entry.type);
     const date = new Date(entry.time).toLocaleString('en-ZA', {
       day: '2-digit',
@@ -106,8 +106,8 @@ module.exports = {
     });
 
     let text = `${emoji} *SNIPE #${number}*\n\n`;
-    text += `👤 *Deleted by:* @${entry.deletedBy.split('@')[0]}\n`;
-    text += `👤 *Original sender:* @${senderNum}\n`;
+    text += `👤 *Deleted by:* ${mention(entry.deletedBy)}\n`;
+    text += `👤 *Original sender:* ${mention(senderNum)}\n`;
     text += `💬 *Message:* ${entry.content || `_${emoji} ${entry.type}_`}\n`;
     text += `🏷️ *Type:* ${entry.type}\n`;
     text += `⏰ *When:* ${date} (${timeAgo})\n`;

@@ -36,7 +36,7 @@ module.exports = {
       }
 
       const target = resolved.jid;
-      const targetNum = target.split('@')[0];
+      const targetNum = target.split(':')[0].split('@')[0];
 
       const member = database.getCrewMember(extra.from, target);
       if (!member) {

@@ -3,7 +3,7 @@
  * Supports time periods: today, week, month, all-time
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const fs = require('fs');
 const path = require('path');
 
@@ -111,7 +111,7 @@ module.exports = {
             for (let i = 0; i < sorted.length; i++) {
                 const [jid, count] = sorted[i];
                 const medal = i < 3 ? medals[i] : `${i + 1}.`;
-                const tag = `@${jid.split('@')[0]}`;
+                const tag = mention(jid);
                 lines.push(`${medal} ${tag} — *${count}* msgs`);
             }
 

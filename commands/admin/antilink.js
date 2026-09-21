@@ -4,6 +4,7 @@
 
 const database = require('../../database');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'antilink',
@@ -19,19 +20,15 @@ module.exports = {
     try {
       if (!args[0]) {
         const settings = database.getGroupSettings(extra.from);
-        const status = settings.antilink ? 'ON' : 'OFF';
-        const action = settings.antilinkAction || 'delete';
-        return extra.reply(
-          `🔗 ANTILINK STATUS\n\n` +
-          `*Status*: ${status}\n` +
-          `*Action*: ${action}\n\n` +
-          `📱 *Usage*:\n` +
-          `• .antilink on\n` +
-          `• .antilink off\n` +
-          `• .antilink set delete | kick | warn\n` +
-          `• .antilink get\n\n` +
-          `💡 Warn = warn 3 times then auto-kick ${pick(SLANG.vibe)}`
-        );
+        const statusText = buildStatus(settings);
+        const isOn = settings.antilink;
+        return sendButtons(sock, extra.from, {
+          text: statusText,
+          footer: 'Antilink Settings',
+          buttons: isOn
+            ? [{ id: 'admin:antilink:off', text: '🚫 Disable Antilink' }]
+            : [{ id: 'admin:antilink:set:warn', text: '🛡️ Enable + Warn' }, { id: 'admin:antilink:set:delete', text: '🗑️ Enable + Delete' }, { id: 'admin:antilink:set:kick', text: '👢 Enable + Kick' }],
+        }, { quoted: msg });
       }
       
       const opt = args[0].toLowerCase();
@@ -80,3 +77,56 @@ module.exports = {
     }
   }
 };
+
+function buildStatus(settings) {
+  const status = settings.antilink ? 'ON' : 'OFF';
+  const action = settings.antilinkAction || 'delete';
+
+  return (
+    `🔗 *ANTILINK STATUS*\n\n` +
+    `⚡ *Status:* ${status}\n` +
+    `🔨 *Action:* ${action} (warn/delete/kick)\n\n` +
+    `💡 _Warn = warn 3 times then auto-kick_`
+  );
+}
+
+// Button handlers
+onButton('admin:antilink:on', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antilink: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTILINK ON*\n\n_Antilink protection activated_`,
+  });
+});
+
+onButton('admin:antilink:off', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antilink: false });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTILINK OFF*\n\n_Antilink protection disabled_`,
+  });
+});
+
+onButton('admin:antilink:set:warn', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antilinkAction: 'warn', antilink: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTILINK ACTION*\n\n_Action set to warn_`,
+  });
+});
+
+onButton('admin:antilink:set:delete', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antilinkAction: 'delete', antilink: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTILINK ACTION*\n\n_Action set to delete_`,
+  });
+});
+
+onButton('admin:antilink:set:kick', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antilinkAction: 'kick', antilink: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTILINK ACTION*\n\n_Action set to kick_`,
+  });
+});

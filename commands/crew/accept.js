@@ -8,8 +8,9 @@
 const database = require('../../database');
 const config = require('../../config');
 const axios = require('axios');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { TEAMS, buildHiredMessage } = require('./crewForms');
+const { buildComparableIds } = require('../../utils/jidHelper');
 
 // Dynamic emoji mapping — first role gets 👤, last gets 👑
 const getRoleEmoji = (role, roles) => {
@@ -46,16 +47,15 @@ module.exports = {
         // Check if it was already processed
         const processed = database.getProcessedApp(uid);
         if (processed) {
-          const adminNum = processed.admin ? processed.admin.split('@')[0] : 'unknown';
           const time = new Date(processed.processedAt).toLocaleString('en-ZA');
           if (processed.action === 'accepted') {
             return extra.reply(
-              `❌ ERROR\n\nApplication *${uid}* was already *accepted* by @${adminNum} on ${time}` +
+              `❌ ERROR\n\nApplication *${uid}* was already *accepted* by ${mention(processed.admin)} on ${time}` +
               (processed.role ? `\n🏷️ Role given: ${processed.role}` : '')
             );
           } else {
             return extra.reply(
-              `❌ ERROR\n\nApplication *${uid}* was already *denied* by @${adminNum} on ${time}` +
+              `❌ ERROR\n\nApplication *${uid}* was already *denied* by ${mention(processed.admin)} on ${time}` +
               (processed.reason ? `\n📝 Reason: ${processed.reason}` : '')
             );
           }
@@ -68,7 +68,6 @@ module.exports = {
       const teamKey = app.team;
       const teamGroupJid = app.groupJid || config.crewTeams[teamKey]?.jid;
       const applicantJid = app.jid;
-      const applicantNum = applicantJid ? applicantJid.split('@')[0] : 'unknown';
 
       // Permission: owner, a team admin (DM-approved), or a group admin of the team's group
       let isTeamAdmin = database.isTeamAdmin(extra.sender);
@@ -140,12 +139,28 @@ module.exports = {
 
       // Add the applicant to the team's WhatsApp group
       let addedToGroup = false;
+      let addErrorMsg = '';
       if (teamGroupJid) {
         try {
           await sock.groupParticipantsUpdate(teamGroupJid, [applicantJid], 'add');
           addedToGroup = true;
         } catch (addErr) {
-          console.error('[CREW ACCEPT] group add failed:', addErr.message);
+          addErrorMsg = addErr.message || 'unknown error';
+          console.error('[CREW ACCEPT] group add failed:', addErrorMsg);
+
+          // Retry with normalized JID (LID → PN or PN → LID)
+          try {
+            const variants = buildComparableIds(applicantJid);
+            for (const variant of variants) {
+              if (variant === applicantJid) continue;
+              try {
+                await sock.groupParticipantsUpdate(teamGroupJid, [variant], 'add');
+                addedToGroup = true;
+                addErrorMsg = '';
+                break;
+              } catch (e) { /* try next variant */ }
+            }
+          } catch (e) { /* all variants failed */ }
         }
       }
 
@@ -188,11 +203,13 @@ module.exports = {
             ? '👑 THE BOSS HAS SPOKEN 👑\n\n'
             : '🎉 MEMBER ACCEPTED\n\n') +
           '🆔 App ID: ' + bold(uid) + '\n' +
-          '👤 @' + applicantNum + '\n' +
+          '👤 ' + mention(applicantJid) + '\n' +
           '🏷️ Role: ' + roleEmoji + ' ' + bold(role) + '\n\n' +
           (addedToGroup
             ? '✅ Added to the ' + teamKey + ' group\n'
-            : '⚠️ Couldn\'t auto-add them to the group — send the invite manually\n') +
+            : '⚠️ Couldn\'t auto-add them to the group' +
+              (addErrorMsg ? ` (${addErrorMsg})` : '') +
+              '\nSend the invite manually: https://chat.whatsapp.com/' + (config.crewTeams[teamKey]?.invite || '???')) +
           roleWarn + '\n' +
           (ownerVIP
             ? '_The owner himself has accepted this member. Welcome to the squad._ 👑'

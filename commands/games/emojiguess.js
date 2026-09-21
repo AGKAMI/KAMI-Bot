@@ -1,4 +1,4 @@
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 const rounds = [
   { emojis: '🐱👻🍕', answer: 'cat ghost pizza' },
   { emojis: '🌞🎸🎸', answer: 'sun guitar guitar' },
@@ -31,7 +31,7 @@ module.exports = {
     const g = active.get(ctx.from);
     if (g && guess) {
       if (guess === g.answer) {
-        const winner = ctx.sender.split('@')[0];
+        const winner = mention(ctx.sender);
         active.delete(ctx.from);
         return ctx.reply(`🎉 ${pick(SLANG.good)}, ${winner} guessed it! ${g.answer}`);
       }

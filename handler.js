@@ -12,6 +12,7 @@ const path = require('path');
 const axios = require('axios');
 const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG } = require('./utils/format');
 const { buildImage } = require('./utils/imageText');
+const { handleButtonResponse } = require('./utils/buttonHelper');
 
 // Slowmode enforcement (in-memory cooldown tracking)
 let slowmodeModule;
@@ -495,14 +496,9 @@ const isSystemJid = (jid) => {
 const handleMessage = async (sock, msg) => {
   try {
     const from = msg.key.remoteJid;
-    const isBtnTap = !!(msg.message?.templateButtonReplyMessage || msg.message?.buttonsResponseMessage || msg.message?.interactiveResponseMessage);
-    if (isBtnTap) {
-      console.log('[HANDLER] Button tap detected from', from, 'keys:', Object.keys(msg.message || {}).join(', '));
-    }
 
     if (!msg.message) {
       // Button taps might not have msg.message — check anyway
-      const { handleButtonResponse } = require('./utils/buttonHelper');
       if (handleButtonResponse(sock, msg)) return;
       return;
     }
@@ -515,7 +511,6 @@ const handleMessage = async (sock, msg) => {
         // Interactive button responses — route to registered button handlers
         // BEFORE the DM blocker / prefix gate so button presses always work.
         try {
-          const { handleButtonResponse } = require('./utils/buttonHelper');
           if (handleButtonResponse(sock, msg)) return;
         } catch (btnErr) {
           if (!btnErr.message?.includes('Cannot find module')) {
@@ -595,10 +590,6 @@ const handleMessage = async (sock, msg) => {
     
         // Auto-React System
     try {
-      // Clear cache to get fresh config values
-      delete require.cache[require.resolve('./config')];
-      const config = require('./config');
-
       if (config.autoReact && msg.message && !msg.key.fromMe) {
         const content = msg.message.ephemeralMessage?.message || msg.message;
         const text =
@@ -1333,7 +1324,23 @@ const handleGroupUpdate = async (sock, update) => {
           
           // Build JID variants for matching (handle LID/PN)
           const jidVariants = buildComparableIds(jid);
-          const isInCrew = jidVariants.some(v => database.getCrewMember(id, v));
+          let isInCrew = jidVariants.some(v => database.getCrewMember(id, v));
+
+          // Also check if ANY existing crew member matches this person's phone number
+          // (covers LID↔PN mismatch when mapping files are missing)
+          if (!isInCrew) {
+            const incomingNum = jid.split(':')[0].split('@')[0].replace(/\D/g, '');
+            if (incomingNum) {
+              const teamMembers = database.getTeam(id).members || {};
+              for (const [memberJid] of Object.entries(teamMembers)) {
+                const memberNum = memberJid.split(':')[0].split('@')[0].replace(/\D/g, '');
+                if (memberNum && memberNum === incomingNum) {
+                  isInCrew = true;
+                  break;
+                }
+              }
+            }
+          }
           
           if (action === 'add') {
             if (!isInCrew) {

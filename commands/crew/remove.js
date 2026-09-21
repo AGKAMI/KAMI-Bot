@@ -7,7 +7,7 @@
 const database = require('../../database');
 const handler = require('../../handler');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 module.exports = {
@@ -39,13 +39,12 @@ module.exports = {
       }
 
       const target = resolved.jid;
-      const targetNum = target.split('@')[0];
 
       const member = database.getCrewMember(extra.from, target);
       if (!member) {
         return extra.reply(
           `❌ ERROR\n\n` +
-          `@${targetNum} is not in this crew`
+          `${mention(target)} is not in this crew`
         );
       }
 
@@ -73,7 +72,7 @@ module.exports = {
           (ownerVIP
             ? `👑 THE BOSS HAS SPOKEN 👑\n\n`
             : `👤 MEMBER REMOVED\n\n`) +
-          `@${targetNum} has been removed\n\n` +
+          `${mention(target)} has been removed\n\n` +
           `🏷️ Was: ${member.role}\n` +
           (kickedFromGroup
             ? `✅ Removed from the WhatsApp group`

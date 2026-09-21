@@ -4,7 +4,8 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'warn',
@@ -46,12 +47,12 @@ module.exports = {
       const remaining = config.maxWarnings - warnings.count;
 
       let text = `⚠️ *WARNING ${warnings.count}/${config.maxWarnings}*\n\n`;
-      text += `👤 @${target.split('@')[0]}\n`;
+      text += `👤 ${mention(target)}\n`;
       text += `📝 *Reason:* ${reason}\n`;
 
       if (warnings.count >= config.maxWarnings) {
         text += `❌ *MAX WARNINGS HIT*\n\n`;
-        text += `@${target.split('@')[0]} _is being removed from the group_${pick(SLANG.vibe)}`;
+        text += `${mention(target)} _is being removed from the group_${pick(SLANG.vibe)}`;
 
         await sock.sendMessage(extra.from, {
           text,
@@ -62,7 +63,7 @@ module.exports = {
           try {
             await sock.groupParticipantsUpdate(extra.from, [target], 'remove');
             await sock.sendMessage(extra.from, {
-              text: `*🔨 KICKED*\n\n@${target.split('@')[0]} _has been removed for exceeding max warnings_`,
+              text: `*🔨 KICKED*\n\n${mention(target)} _has been removed for exceeding max warnings_`,
               mentions: [target]
             });
           } catch (e) {
@@ -73,9 +74,14 @@ module.exports = {
       } else {
         text += `⚠️ *${remaining} more ${remaining === 1 ? 'strike' : 'strikes'} and you're out*`;
 
-        await sock.sendMessage(extra.from, {
+        await sendButtons(sock, extra.from, {
           text,
-          mentions: [target]
+          footer: `${remaining} strikes left`,
+          mentions: [target],
+          buttons: [
+            { id: `admin:undowarn:${target.split(':')[0].split('@')[0]}`, text: '↩️ Undo Warning' },
+            { id: `admin:kick:${target.split(':')[0].split('@')[0]}`, text: '🔨 Kick Now' },
+          ],
         }, { quoted: msg });
       }
 
@@ -84,3 +90,33 @@ module.exports = {
     }
   }
 };
+
+// Button handlers
+onButton('admin:undowarn', async (sock, msg, from, sender, btnId) => {
+  const num = btnId.replace('admin:undowarn:', '');
+  if (!num) return;
+  const target = `${num}@s.whatsapp.net`;
+  const database = require('../../database');
+  database.removeWarning(from, target);
+  await sock.sendMessage(from, {
+    text: `✅ *WARNING REMOVED*\n\n${mention(target)} _has been cleared of their last warning_`,
+    mentions: [target],
+  });
+});
+
+onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
+  const num = btnId.replace('admin:kick:', '');
+  if (!num) return;
+  const target = `${num}@s.whatsapp.net`;
+  try {
+    await sock.groupParticipantsUpdate(from, [target], 'remove');
+    await sock.sendMessage(from, {
+      text: `*🔨 KICKED*\n\n${mention(target)} _has been removed from the group_`,
+      mentions: [target],
+    });
+    const database = require('../../database');
+    database.clearWarnings(from, target);
+  } catch (e) {
+    await sock.sendMessage(from, { text: `*❌ KICK FAILED*\n\n_Couldn't remove the user — check if I'm admin_` });
+  }
+});

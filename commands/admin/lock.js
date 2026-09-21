@@ -2,8 +2,9 @@
  * Lock Command - Granular lock/unlock for group name, desc, pp
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const database = require('../../database');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 const config = require('../../config');
 module.exports = {
@@ -26,7 +27,21 @@ module.exports = {
       const settings = database.getGroupSettings(from);
 
       if (sub === 'status' || sub === '') {
-        return extra.reply(buildStatus(settings, prefix));
+        const statusText = buildStatus(settings, prefix);
+        const anyLocked = settings.lockName || settings.lockDesc || settings.lockPp;
+        return sendButtons(sock, extra.from, {
+          text: statusText,
+          footer: 'Lock Settings',
+          mentions: [extra.sender],
+          buttons: anyLocked
+            ? [
+                { id: 'admin:unlockall', text: '🔓 Unlock All' },
+                { id: 'admin:lockall', text: '🔒 Lock All' },
+              ]
+            : [
+                { id: 'admin:lockall', text: '🔒 Lock All' },
+              ],
+        }, { quoted: msg });
       }
 
       if (sub === 'on' || sub === 'lock') {
@@ -47,7 +62,7 @@ module.exports = {
           `🔒 Name\n` +
           `🔒 Description\n` +
           `🔒 Profile pic\n\n` +
-          `👤 *By:* @${extra.sender.split('@')[0]}\n\n` +
+          `👤 *By:* ${mention(extra.sender)}\n\n` +
           `_${pick(SLANG.good)}, group secured!_`,
           [extra.sender]
         );
@@ -68,7 +83,7 @@ module.exports = {
         return extra.reply(
           `🔓 *GROUP UNLOCKED*\n\n` +
           `🔓 *All settings unlocked*\n\n` +
-          `👤 *By:* @${extra.sender.split('@')[0]}\n\n` +
+          `👤 *By:* ${mention(extra.sender)}\n\n` +
           `_${pick(SLANG.vibe)}, group opened up_`,
           [extra.sender]
         );
@@ -84,7 +99,7 @@ module.exports = {
           return extra.reply(
             `🔓 *${sub.toUpperCase()} UNLOCKED*\n\n` +
             `✅ *${sub.charAt(0).toUpperCase() + sub.slice(1)} can now be changed by anyone*\n\n` +
-            `👤 *By:* @${extra.sender.split('@')[0]}`,
+            `👤 *By:* ${mention(extra.sender)}`,
             [extra.sender]
           );
         }
@@ -94,7 +109,7 @@ module.exports = {
         return extra.reply(
           `🔒 *${sub.toUpperCase()} LOCKED*\n\n` +
           `✅ *${sub.charAt(0).toUpperCase() + sub.slice(1)} can only be changed by admins*\n\n` +
-          `👤 *By:* @${extra.sender.split('@')[0]}`,
+          `👤 *By:* ${mention(extra.sender)}`,
           [extra.sender]
         );
       }
@@ -135,3 +150,22 @@ function buildStatus(settings, prefix) {
     `• _${prefix}lock name off / desc off / pp off_ — unlock individual`
   );
 }
+
+// Button handlers
+onButton('admin:lockall', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { lock: true, lockName: true, lockDesc: true, lockPp: true });
+  try { await sock.groupSettingUpdate(from, 'announcement'); } catch (e) {}
+  await sock.sendMessage(from, {
+    text: `🔒 *GROUP LOCKED*\n\n✅ *All settings locked:*\n🔒 Name\n🔒 Description\n🔒 Profile pic`,
+  });
+});
+
+onButton('admin:unlockall', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { lock: false, lockName: false, lockDesc: false, lockPp: false });
+  try { await sock.groupSettingUpdate(from, 'not_announcement'); } catch (e) {}
+  await sock.sendMessage(from, {
+    text: `🔓 *GROUP UNLOCKED*\n\n🔓 *All settings unlocked*`,
+  });
+});

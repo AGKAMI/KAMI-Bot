@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
   name: 'stats',
@@ -46,12 +46,11 @@ module.exports = {
       targetJid = `${num}@s.whatsapp.net`;
     }
 
-    const targetNum = targetJid.split(':')[0].split('@')[0].replace(/\D/g, '');
     const member = database.getCrewMember(from, targetJid);
 
     if (!member) {
       return extra.reply(
-        `❌ ERROR\n\n@${targetNum} isn't a member of ${teamKey}`,
+        `❌ ERROR\n\n${mention(targetJid)} isn't a member of ${teamKey}`,
         { mentions: [targetJid] }
       );
     }
@@ -96,7 +95,7 @@ module.exports = {
     let text =
       `📊 *MEMBER STATS*\n` +
       `━━━━━━━━━━━━━━━━\n` +
-      `👤 @${targetNum}\n` +
+      `👤 ${mention(targetJid)}\n` +
       `🏢 Team: *${teamKey}*\n` +
       `🏷️ Role: *${member.role}*\n` +
       `📅 Joined: *${daysSinceJoined} days ago*\n\n`;

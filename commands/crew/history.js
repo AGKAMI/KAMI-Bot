@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { TEAMS } = require('./crewForms');
 
 const ACTION_EMOJI = {
@@ -71,13 +71,12 @@ module.exports = {
         const emoji = ACTION_EMOJI[app.action] || '❓';
         const adminDisplay = app.admin === 'system'
           ? 'system'
-          : app.admin ? '@' + app.admin.split('@')[0] : '—';
-        const applicantNum = app.applicantJid ? app.applicantJid.split('@')[0] : '—';
+          : app.admin ? mention(app.admin) : '—';
         const time = app.processedAt ? new Date(app.processedAt).toLocaleString('en-ZA') : '—';
 
         lines.push(
           `${emoji} *${uid}* — ${app.action.toUpperCase()}\n` +
-          `   👤 @${applicantNum} | 🏢 ${teamKey} | 👮 ${adminDisplay}\n` +
+          `   👤 ${app.applicantJid ? mention(app.applicantJid) : '—'} | 🏢 ${teamKey} | 👮 ${adminDisplay}\n` +
           `   🕐 ${time}` +
           (app.role ? ` | 🏷️ ${app.role}` : '') +
           (app.reason ? `\n   📝 ${app.reason}` : '')

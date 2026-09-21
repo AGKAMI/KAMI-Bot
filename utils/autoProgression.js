@@ -41,9 +41,6 @@ const CHECK_INTERVAL = 60 * 60 * 1000;
 // Cooldown per member — don't re-check same member within this window
 const MEMBER_COOLDOWN = 24 * 60 * 60 * 1000; // 24 hours
 
-// Track last check time per member to avoid spam
-const lastCheck = new Map();
-
 /**
  * Get rank hierarchy for a team from config
  */
@@ -66,10 +63,8 @@ const checkGroup = async (sock, groupJid, teamKey) => {
   const adminThreshold = getAdminThresholdIndex(teamKey);
 
   for (const [memberJid, data] of Object.entries(allActivity)) {
-    // Skip if cooldown active
-    const cooldownKey = `${groupJid}:${memberJid}`;
-    const lastCheckTime = lastCheck.get(cooldownKey) || 0;
-    if (Date.now() - lastCheckTime < MEMBER_COOLDOWN) continue;
+    // Cooldown: check DB timestamp — survives bot restarts (in-memory Map was lost on restart)
+    if (data.lastPromoted && (Date.now() - data.lastPromoted) < MEMBER_COOLDOWN) continue;
 
     // Find current rank in hierarchy
     const currentRankIndex = ranks.indexOf(data.role);
@@ -87,7 +82,8 @@ const checkGroup = async (sock, groupJid, teamKey) => {
         const member = database.getCrewMember(groupJid, memberJid);
         if (!member) continue;
 
-        database.addCrewMember(groupJid, memberJid, { ...member, role: nextRank });
+        // Update role + persist cooldown timestamp in DB (survives restarts)
+        database.addCrewMember(groupJid, memberJid, { ...member, role: nextRank, lastPromoted: Date.now() });
 
         // Promote to WhatsApp admin if reaching threshold
         const nextRankIndex = currentRankIndex + 1;
@@ -135,9 +131,6 @@ const checkGroup = async (sock, groupJid, teamKey) => {
       } catch (e) {
         console.error(`[AUTO-PROGRESSION] Failed to promote ${memberJid}:`, e.message);
       }
-
-      // Set cooldown
-      lastCheck.set(cooldownKey, Date.now());
     }
   }
 

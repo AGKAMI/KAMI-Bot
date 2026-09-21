@@ -2,7 +2,7 @@
  * Report Command - DM reports to admins, block admin reports
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 const reportStore = new Map();
 const reportCounters = new Map();
@@ -54,7 +54,7 @@ module.exports = {
 
                 for (const r of pending) {
                     lines.push(`*#${r.number}* — ${r.status.toUpperCase()}`);
-                    lines.push(`👤 @${r.reportedBy.split('@')[0]}`);
+                    lines.push(`👤 ${mention(r.reportedBy)}`);
                     lines.push(`📝 ${r.reason}`);
                     lines.push(`----------`);
                 }
@@ -199,14 +199,14 @@ module.exports = {
 
             const reporterLine = isAnonymous
                 ? `👤 Reported by: Anonymous`
-                : `👤 Reported by: @${sender.split('@')[0]}`;
+                : `👤 Reported by: ${mention(sender)}`;
 
             const reportText = [
                 `🚨 *REPORT #${reportNum}*`,
                 ``,
                 `📍 Group: ${metadata.subject}`,
                 reporterLine,
-                `📌 Reported user: @${reportedBy.split('@')[0]}`,
+                `📌 Reported user: ${mention(reportedBy)}`,
                 `⏰ Time: ${reportTime}`,
                 `📝 Reason: ${reason}`,
                 `📊 Status: PENDING`,

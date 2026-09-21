@@ -4,7 +4,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
   name: 'resetwarn',
@@ -35,14 +35,14 @@ module.exports = {
       const currentWarnings = database.getWarnings(extra.from, target);
 
       if (currentWarnings.count === 0) {
-        return extra.reply(`*✅ NO WARNINGS*\n\n@${target.split('@')[0]} _has no warnings to reset_`, { mentions: [target] });
+        return extra.reply(`*✅ NO WARNINGS*\n\n${mention(target)} _has no warnings to reset_`, { mentions: [target] });
       }
 
       database.clearWarnings(extra.from, target);
 
       await sock.sendMessage(extra.from, {
         text: `*✅ WARNINGS RESET*\n\n` +
-              `👤 @${target.split('@')[0]}\n` +
+              `👤 ${mention(target)}\n` +
               `📝 *Cleared:* ${currentWarnings.count} warnings\n\n` +
               `_Clean slate, ${pick(SLANG.good)}!_`,
         mentions: [target]

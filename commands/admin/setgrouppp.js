@@ -3,7 +3,7 @@
  */
 
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const database = require('../../database');
 
 const config = require('../../config');
@@ -78,7 +78,7 @@ module.exports = {
         `✅ *PROFILE PICTURE UPDATED*`,
         '',
         `- 🖼️ ${bold('New profile picture set')}`,
-        `- 👤 ${bold('Changed by')} @${extra.sender.split('@')[0]}`,
+        `- 👤 ${bold('Changed by')} ${mention(extra.sender)}`,
         "",
         `_${pick(SLANG.good)} — group looking fresh, ${pick(SLANG.vibe)}_`
       ].join('\n');

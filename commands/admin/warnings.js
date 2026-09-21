@@ -5,7 +5,8 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'warnings',
@@ -45,7 +46,7 @@ module.exports = {
       if (count === 0) {
         return sock.sendMessage(extra.from, {
           text: `✅ *CLEAN RECORD*\n\n` +
-                `👤 @${target.split('@')[0]}\n` +
+                `👤 ${mention(target)}\n` +
                 `📊 *Warnings:* 0/${max}\n` +
                 `🟩🟩🟩🟩🟩\n\n` +
                 `_${pick(SLANG.good)}, they clean hey!_`,
@@ -60,7 +61,7 @@ module.exports = {
       const progressBar = progressFull + progressRed + progressEmpty;
 
       let text = `⚠️ *WARNINGS*\n\n`;
-      text += `👤 @${target.split('@')[0]}\n`;
+      text += `👤 ${mention(target)}\n`;
       text += `📊 *Count:* ${count}/${max}\n`;
       text += `${progressBar}\n`;
       text += `💀 *Remaining:* ${remaining} ${remaining === 1 ? 'strike' : 'strikes'}\n`;
@@ -77,7 +78,7 @@ module.exports = {
           hour: '2-digit',
           minute: '2-digit'
         });
-        const warnedBy = w.warnedBy ? ` by @${w.warnedBy.split('@')[0]}` : '';
+        const warnedBy = w.warnedBy ? ` by ${mention(w.warnedBy)}` : '';
         text += `⚠️ *#${i + 1}* — ${w.reason}\n`;
         text += `   📅 ${date} at ${time}${warnedBy}\n`;
       });
@@ -96,9 +97,15 @@ module.exports = {
         text += `\n_${remaining} more and they're gone_\n`;
       }
 
-      await sock.sendMessage(extra.from, {
+      const targetNum = target.split(':')[0].split('@')[0];
+
+      await sendButtons(sock, extra.from, {
         text,
-        mentions: [target]
+        mentions: [target],
+        footer: 'Warning Management',
+        buttons: [
+          { id: `admin:clearwarnings:${targetNum}`, text: '🗑️ Clear All' },
+        ],
       }, { quoted: msg });
 
     } catch (error) {
@@ -106,3 +113,19 @@ module.exports = {
     }
   }
 };
+
+// Button handlers
+onButton('admin:clearwarnings', async (sock, msg, from, sender, btnId) => {
+  const num = btnId.replace('admin:clearwarnings:', '');
+  if (!num) return;
+  const target = `${num}@s.whatsapp.net`;
+  try {
+    database.clearWarnings(from, target);
+    await sock.sendMessage(from, {
+      text: `✅ *WARNINGS CLEARED*\n\n${mention(target)} _has been cleared of all warnings_`,
+      mentions: [target],
+    });
+  } catch (e) {
+    await sock.sendMessage(from, { text: `❌ *CLEAR FAILED*\n\n_Couldn't clear warnings_` });
+  }
+});

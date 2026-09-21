@@ -5,7 +5,8 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, mention } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'promote',
@@ -44,8 +45,6 @@ module.exports = {
         );
       }
 
-      const targetNum = target.split('@')[0];
-
       await sock.groupParticipantsUpdate(extra.from, [target], 'promote');
 
       // Track owner-promoted admins for protection
@@ -55,9 +54,13 @@ module.exports = {
         protectionNote = '\n\n🛡️ This admin is now *protected* — only you can demote them';
       }
 
-      await sock.sendMessage(extra.from, {
-        text: `✅ SUCCESS\n\n⬆️ PROMOTED\n\n@${targetNum} is now a group admin${protectionNote}`,
+      await sendButtons(sock, extra.from, {
+        text: `✅ SUCCESS\n\n⬆️ PROMOTED\n\n${mention(target)} is now a group admin${protectionNote}`,
         mentions: [target],
+        footer: 'Admin Actions',
+        buttons: [
+          { id: `admin:demote:${target.split(':')[0].split('@')[0]}`, text: '⬇️ Demote' },
+        ],
       }, { quoted: msg });
 
     } catch (error) {
@@ -66,3 +69,19 @@ module.exports = {
     }
   },
 };
+
+// Button handlers
+onButton('admin:demote', async (sock, msg, from, sender, btnId) => {
+  const num = btnId.replace('admin:demote:', '');
+  if (!num) return;
+  const target = `${num}@s.whatsapp.net`;
+  try {
+    await sock.groupParticipantsUpdate(from, [target], 'demote');
+    await sock.sendMessage(from, {
+      text: `⬇️ *DEMOTED*\n\n${mention(target)} _has been removed from admin_`,
+      mentions: [target],
+    });
+  } catch (e) {
+    await sock.sendMessage(from, { text: `❌ *DEMOTE FAILED*\n\n_Couldn't demote — check if I'm admin_` });
+  }
+});

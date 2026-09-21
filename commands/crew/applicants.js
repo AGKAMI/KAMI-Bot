@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { TEAMS } = require('./crewForms');
 const { sendButtons } = require('../../utils/buttonHelper');
 
@@ -118,14 +118,13 @@ module.exports = {
       const mentions = [];
 
       for (const [uid, app] of entries) {
-        const num = app.jid ? app.jid.split('@')[0] : 'unknown';
         const teamDisplay = TEAMS[app.team]?.label || app.team || '—';
         const date = new Date(app.appliedAt).toLocaleDateString('en-ZA');
         const hasAnswers = app.answers ? '✅' : '⏳';
 
         lines.push(
           `🆔 *${uid}*\n` +
-          `   👤 @${num}\n` +
+          `   👤 ${app.jid ? mention(app.jid) : 'unknown'}\n` +
           `   🏢 Team: *${app.team || '—'}* — ${teamDisplay}\n` +
           `   📅 Applied: ${date}\n` +
           `   📝 Answers: ${hasAnswers}`

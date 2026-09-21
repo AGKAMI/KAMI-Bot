@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 module.exports = {
@@ -33,11 +33,10 @@ module.exports = {
       }
 
       const target = resolved.jid;
-      const targetNum = target.split('@')[0];
 
       const member = database.getCrewMember(extra.from, target);
       if (!member) {
-        return extra.reply(`❌ ERROR\n\n@${targetNum} is not in this crew`);
+        return extra.reply(`❌ ERROR\n\n${mention(target)} is not in this crew`);
       }
 
       const newRole = resolved.args.join(' ').trim();
@@ -55,7 +54,7 @@ module.exports = {
           (ownerVIP
             ? `👑 THE BOSS HAS SPOKEN 👑\n\n`
             : `🏷️ ROLE UPDATED\n\n`) +
-          `@${targetNum}\n\n` +
+          `${mention(target)}\n\n` +
           `${oldRole} → ${bold(newRole)}` +
           (ownerVIP ? `\n\n_The owner himself has set this role._ 👑` : ''),
         mentions: [target],

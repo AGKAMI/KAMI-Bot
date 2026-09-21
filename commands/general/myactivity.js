@@ -1,7 +1,7 @@
 // commands/general/myactivity.js
 
 const { getStats } = require('../../utils/groupstats');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
     name: 'myactivity',
@@ -34,7 +34,7 @@ module.exports = {
             const text = `
 📊 *YOUR ACTIVITY TODAY*
 
-👤 *User:* @${sender.split('@')[0]}
+👤 *User:* ${mention(sender)}
 📝 *Messages Sent:* ${userCount}
 📈 *Your Share:* ${percentage}%
 🏆 *Rank:* #${rank} of ${sortedUsers.length}

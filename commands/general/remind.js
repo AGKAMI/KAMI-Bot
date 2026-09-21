@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 const activeReminders = new Map();
 const MAX_REMINDERS = 5;
@@ -47,7 +47,7 @@ module.exports = {
 
                 for (let i = 0; i < groupReminders.length; i++) {
                     const r = groupReminders[i];
-                    const senderTag = `@${r.sender.split('@')[0]}`;
+                    const senderTag = mention(r.sender);
                     lines.push(`*#${i + 1}* ${senderTag} — ${r.message}`);
                     lines.push(`⏰ Fires in ${r.timeLabel}`);
                 }
@@ -157,7 +157,7 @@ module.exports = {
               .replace(/@\d+/g, '')
               .replace(/@lid/g, '')
               .replace(/\s+/g, ' ')
-              .trim() || `Reminder for @${targetJid.split('@')[0]}`;
+              .trim() || `Reminder for ${mention(targetJid)}`;
 
             const timeout = setTimeout(async () => {
                 const idx = groupReminders.findIndex(r => r.id === reminderId);
@@ -168,7 +168,7 @@ module.exports = {
                         text: [
                             `⏰ *REMINDER TIME!*`,
                             ``,
-                            `👤 *For:* ${targetJids.map(j => `@${j.split('@')[0]}`).join(', ')}`,
+                            `👤 *For:* ${targetJids.map(j => mention(j)).join(', ')}`,
                             `📝 *Message:* ${cleanMessage}`,
                             ``,
                             `_Set ${amount} ${fullUnit} ago — ${pick(SLANG.vibe)}_`
@@ -192,7 +192,7 @@ module.exports = {
                 text:
                   `✅ *SUCCESS*\n\n` +
                   `⏰ *Reminder Set*\n` +
-                  `👤 *Who:* ${targetJids.map(j => `@${j.split('@')[0]}`).join(', ')}\n` +
+                  `👤 *Who:* ${targetJids.map(j => mention(j)).join(', ')}\n` +
                   `⏳ *When:* ${amount} ${fullUnit} from now\n` +
                   `📝 *Message:* ${cleanMessage}\n\n` +
                   `_I'll ping ${targetJids.length > 1 ? 'them' : 'you'}, ${pick(SLANG.vibe)} 🫡_`,

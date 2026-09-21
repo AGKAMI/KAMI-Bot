@@ -7,7 +7,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
   subName: 'reroll',
@@ -55,7 +55,6 @@ module.exports = {
 
       const teamKey = processed.team;
       const applicantJid = processed.applicantJid;
-      const applicantNum = applicantJid ? applicantJid.split('@')[0] : 'unknown';
       const teamGroupJid = processed.groupJid || config.crewTeams[teamKey]?.jid;
 
       // Remove the processed record
@@ -89,7 +88,7 @@ module.exports = {
       await extra.reply(
         `✅ REROLLED\n\n` +
         `🆔 App ID: *${uid}*\n` +
-        `👤 @${applicantNum}\n` +
+        `👤 ${mention(applicantJid)}\n` +
         `🏢 Team: *${teamKey}*\n` +
         `📋 Previous action: *${processed.action}*\n\n` +
         `_Processed record cleared. Applicant can reapply._`

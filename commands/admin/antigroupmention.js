@@ -5,6 +5,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'antigroupmention',
@@ -21,19 +22,15 @@ module.exports = {
     try {
       if (!args[0]) {
         const settings = database.getGroupSettings(extra.from);
-        const status = settings.antigroupmention ? 'ON' : 'OFF';
-        const action = settings.antigroupmentionAction || 'delete';
-        return extra.reply(
-          `🛡️ ANTIGROUPMENTION STATUS\n\n` +
-          `*Status*: ${status}\n` +
-          `*Action*: ${action}\n\n` +
-          `📱 *Usage*:\n` +
-          `• ${prefix}antigroupmention on\n` +
-          `• ${prefix}antigroupmention off\n` +
-          `• ${prefix}antigroupmention set delete | kick | warn\n` +
-          `• ${prefix}antigroupmention get\n\n` +
-          `💡 Warn = warn 3 times then auto-kick ${pick(SLANG.vibe)}`
-        );
+        const statusText = buildStatus(settings);
+        const isOn = settings.antigroupmention;
+        return sendButtons(sock, extra.from, {
+          text: statusText,
+          footer: 'Antigroupmention Settings',
+          buttons: isOn
+            ? [{ id: 'admin:antigroupmention:off', text: '🚫 Disable Antigroupmention' }]
+            : [{ id: 'admin:antigroupmention:set:warn', text: '🛡️ Enable + Warn' }, { id: 'admin:antigroupmention:set:delete', text: '🗑️ Enable + Delete' }, { id: 'admin:antigroupmention:set:kick', text: '👢 Enable + Kick' }],
+        }, { quoted: msg });
       }
       
       const opt = args[0].toLowerCase();
@@ -82,3 +79,56 @@ module.exports = {
     }
   }
 };
+
+function buildStatus(settings) {
+  const status = settings.antigroupmention ? 'ON' : 'OFF';
+  const action = settings.antigroupmentionAction || 'delete';
+
+  return (
+    `🛡️ *ANTIGROUPMENTION STATUS*\n\n` +
+    `⚡ *Status:* ${status}\n` +
+    `🔨 *Action:* ${action} (warn/delete/kick)\n\n` +
+    `💡 _Warn = warn 3 times then auto-kick_`
+  );
+}
+
+// Button handlers
+onButton('admin:antigroupmention:on', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antigroupmention: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTIGROUPMENTION ON*\n\n_Anti-group mention protection activated_`,
+  });
+});
+
+onButton('admin:antigroupmention:off', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antigroupmention: false });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTIGROUPMENTION OFF*\n\n_Anti-group mention protection disabled_`,
+  });
+});
+
+onButton('admin:antigroupmention:set:warn', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antigroupmentionAction: 'warn', antigroupmention: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTIGROUPMENTION ACTION*\n\n_Action set to warn_`,
+  });
+});
+
+onButton('admin:antigroupmention:set:delete', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antigroupmentionAction: 'delete', antigroupmention: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTIGROUPMENTION ACTION*\n\n_Action set to delete_`,
+  });
+});
+
+onButton('admin:antigroupmention:set:kick', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antigroupmentionAction: 'kick', antigroupmention: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTIGROUPMENTION ACTION*\n\n_Action set to kick_`,
+  });
+});

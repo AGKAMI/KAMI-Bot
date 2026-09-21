@@ -12,7 +12,7 @@
 
 const config = require('../../config');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, mention } = require('../../utils/format');
 
 const activeGiveaways = new Map();
 const lastGiveaway = new Map();
@@ -81,7 +81,7 @@ module.exports = {
 
         const shuffled = [...last.entries].sort(() => Math.random() - 0.5);
         const rerollWinners = shuffled.slice(0, last.winners.length);
-        const winnerMentions = rerollWinners.map(w => `@${w.split('@')[0]}`).join('\n');
+        const winnerMentions = rerollWinners.map(w => mention(w)).join('\n');
 
         const rerollMsg = {
           text: [
@@ -396,7 +396,7 @@ async function pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuf
 
   const shuffled = [...entryList].sort(() => Math.random() - 0.5);
   const winners = shuffled.slice(0, numWinners);
-  const winnerMentions = winners.map(w => `@${w.split('@')[0]}`).join('\n');
+  const winnerMentions = winners.map(w => mention(w)).join('\n');
 
   lastGiveaway.set(from, { winners, entries: entryList, prize, mediaBuffer });
 

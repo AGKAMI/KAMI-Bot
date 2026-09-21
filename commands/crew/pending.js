@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { TEAMS } = require('./crewForms');
 
 module.exports = {
@@ -88,12 +88,11 @@ module.exports = {
         lines.push(`${team ? team.emoji : ''} *${teamKey}* — ${team ? team.label : 'Unknown'} (${apps.length})`);
 
         for (const { uid, app } of apps) {
-          const num = app.jid ? app.jid.split('@')[0] : 'unknown';
           const hasAnswers = app.answers ? '✅' : '⏳';
           const date = new Date(app.appliedAt).toLocaleDateString('en-ZA');
           const daysAgo = Math.floor((Date.now() - app.appliedAt) / (1000 * 60 * 60 * 24));
 
-          let line = `  🆔 *${uid}* — @${num} — ${hasAnswers} — ${date}`;
+          let line = `  🆔 *${uid}* — ${app.jid ? mention(app.jid) : 'unknown'} — ${hasAnswers} — ${date}`;
           if (daysAgo > 0) line += ` — _${daysAgo}d ago_`;
 
           // Owner gets answers preview

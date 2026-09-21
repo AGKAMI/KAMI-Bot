@@ -3,7 +3,8 @@
  */
 
 const database = require('../../database');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'antibadword',
@@ -23,7 +24,15 @@ module.exports = {
 
       if (!sub || sub === 'status') {
         const settings = database.getGroupSettings(extra.from);
-        return extra.reply(buildStatus(settings, prefix));
+        const statusText = buildStatus(settings, prefix);
+        const isOn = settings.antibadword;
+        return sendButtons(sock, extra.from, {
+          text: statusText,
+          footer: 'Antibadword Settings',
+          buttons: isOn
+            ? [{ id: 'admin:antibadword:off', text: '🚫 Disable Filter' }]
+            : [{ id: 'admin:antibadword:on', text: '🛡️ Enable Filter' }],
+        }, { quoted: msg });
       }
 
       if (sub === 'on') {
@@ -76,8 +85,8 @@ module.exports = {
       }
 
       if (sub === 'exempt') {
-        const mention = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-        if (!mention) {
+        const exemptJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+        if (!exemptJid) {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to exempt, ${pick(SLANG.vibe)}_\n\n` +
@@ -87,22 +96,22 @@ module.exports = {
 
         const settings = database.getGroupSettings(extra.from);
         const exempt = settings.badwordExempt || [];
-        if (exempt.includes(mention)) {
+        if (exempt.includes(exemptJid)) {
           return extra.reply(
             `⚠️ *ALREADY EXEMPT*\n\n` +
-            `@${mention.split('@')[0]} _is already exempt from bad word filter_`
+            `${mention(exemptJid)} _is already exempt from bad word filter_`
           );
         }
 
-        exempt.push(mention);
+        exempt.push(exemptJid);
         database.updateGroupSettings(extra.from, { badwordExempt: exempt });
 
         return extra.reply(
           `✅ *USER EXEMPTED*\n\n` +
-          `👤 *User:* @${mention.split('@')[0]}\n` +
+          `👤 *User:* ${mention(exemptJid)}\n` +
           `🛡️ *Status:* Bypasses bad word filter\n\n` +
           `_${pick(SLANG.good)}, exempted!_`,
-          [mention]
+          [exemptJid]
         );
       }
 
@@ -117,7 +126,7 @@ module.exports = {
           );
         }
 
-        const list = exempt.map((j, i) => `${i + 1}. @${j.split('@')[0]}`).join('\n');
+        const list = exempt.map((j, i) => `${i + 1}. ${mention(j)}`).join('\n');
         return extra.reply(
           `📋 *BADWORD EXCEPTIONS*\n\n` +
           `👑 *Admins:* Always exempt\n` +
@@ -164,3 +173,25 @@ function buildStatus(settings, prefix) {
     `💡 _Patterns: *bad* = wildcard, "bad word" = phrase, bad = simple. Matching is case-insensitive._`
   );
 }
+
+// Button handlers
+onButton('admin:antibadword:on', async (sock, msg, from) => {
+  const database = require('../../database');
+  const config = require('../../config');
+  const settings = database.getGroupSettings(from);
+  const seeded = [...(settings.badwords || [])];
+  const defaults = config.defaultBadwords || [];
+  for (const w of defaults) { if (!seeded.includes(w)) seeded.push(w); }
+  database.updateGroupSettings(from, { antibadword: true, badwords: seeded });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTIBADWORD ON*\n\n_Bad word filter activated with ${seeded.length} patterns_`,
+  });
+});
+
+onButton('admin:antibadword:off', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antibadword: false });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTIBADWORD OFF*\n\n_Bad word filter disabled_`,
+  });
+});

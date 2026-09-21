@@ -6,6 +6,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'antitag',
@@ -22,18 +23,15 @@ module.exports = {
     try {
       if (!args[0]) {
         const settings = database.getGroupSettings(extra.from);
-        const status = settings.antitag ? 'ON' : 'OFF';
-        const action = settings.antitagAction || 'delete';
-        return extra.reply(
-          `📛 ANTITAG STATUS\n\n` +
-          `*Status*: ${status}\n` +
-          `*Action*: ${action}\n\n` +
-          `📱 *Usage*:\n` +
-          `• ${prefix}antitag on\n` +
-          `• ${prefix}antitag off\n` +
-          `• ${prefix}antitag set delete | kick\n` +
-          `• ${prefix}antitag get`
-        );
+        const statusText = buildStatus(settings);
+        const isOn = settings.antitag;
+        return sendButtons(sock, extra.from, {
+          text: statusText,
+          footer: 'Antitag Settings',
+          buttons: isOn
+            ? [{ id: 'admin:antitag:off', text: '🚫 Disable Antitag' }]
+            : [{ id: 'admin:antitag:set:delete', text: '🗑️ Enable + Delete' }, { id: 'admin:antitag:set:kick', text: '👢 Enable + Kick' }],
+        }, { quoted: msg });
       }
       
       const opt = args[0].toLowerCase();
@@ -82,3 +80,47 @@ module.exports = {
     }
   }
 };
+
+function buildStatus(settings) {
+  const status = settings.antitag ? 'ON' : 'OFF';
+  const action = settings.antitagAction || 'delete';
+
+  return (
+    `📛 *ANTITAG STATUS*\n\n` +
+    `⚡ *Status:* ${status}\n` +
+    `🔨 *Action:* ${action} (delete/kick)\n`
+  );
+}
+
+// Button handlers
+onButton('admin:antitag:on', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antitag: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTITAG ON*\n\n_Anti-tag protection activated_`,
+  });
+});
+
+onButton('admin:antitag:off', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antitag: false });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTITAG OFF*\n\n_Anti-tag protection disabled_`,
+  });
+});
+
+onButton('admin:antitag:set:delete', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antitagAction: 'delete', antitag: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTITAG ACTION*\n\n_Action set to delete_`,
+  });
+});
+
+onButton('admin:antitag:set:kick', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { antitagAction: 'kick', antitag: true });
+  await sock.sendMessage(from, {
+    text: `✅ *ANTITAG ACTION*\n\n_Action set to kick_`,
+  });
+});

@@ -6,7 +6,8 @@
 const database = require('../../database');
 const handler = require('../../handler');
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, mention } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 function getOwnerJid(sock) {
   const botId = sock.user?.id || '';
@@ -71,11 +72,10 @@ module.exports = {
             return targetNum === ownerNum;
           });
           if (isTargetOwner) {
-            const kickerNum = extra.sender.split(':')[0].split('@')[0];
             await sock.sendMessage(chatId, {
               text:
                 `🚫 *YOH THE AUDACITY* 💀\n\n` +
-                `@${kickerNum} — you really just tried to kick KAMI??\n\n` +
+                `${mention(extra.sender)} — you really just tried to kick KAMI??\n\n` +
                 `No way you tryna kick the owner bru 😭\n` +
                 `Don't act like a laaitie man, ${pick(SLANG.dismiss)}`,
               mentions: [extra.sender],
@@ -89,22 +89,19 @@ module.exports = {
       if (!extra.isOwner) {
         for (const target of usersToKick) {
           if (database.isOwnerProtected(chatId, target)) {
-            const targetNum = target.split(':')[0].split('@')[0];
-            const kickerNum = extra.sender.split(':')[0].split('@')[0];
             const ownerJid = getOwnerJid(sock);
-            const ownerNum = ownerJid ? ownerJid.split(':')[0].split('@')[0] : '';
 
             // Block — group message
             await sock.sendMessage(chatId, {
               text:
                 `🚫 *NAH BRU* 💀\n\n` +
-                `@${kickerNum} — you really thought you could kick @${targetNum}??\n\n` +
-                (ownerNum
-                  ? `That's @${ownerNum}'s person wena 💀\n`
+                `${mention(extra.sender)} — you really thought you could kick ${mention(target)}??\n\n` +
+                (ownerJid
+                  ? `That's ${mention(ownerJid)}'s person wena 💀\n`
                   : `That's KAMI's person wena 💀\n`) +
                 `Only KAMI-Bot decides who stays and who goes\n\n` +
                 `${pick(SLANG.roast)}`,
-              mentions: ownerNum
+              mentions: ownerJid
                 ? [target, extra.sender, ownerJid]
                 : [target, extra.sender],
             });
@@ -114,7 +111,7 @@ module.exports = {
               await sock.sendMessage(target, {
                 text:
                   `🛡️ *YOU GOOD* 💪\n\n` +
-                  `@${kickerNum} tried kicking you hey 💀\n` +
+                  `${mention(extra.sender)} tried kicking you hey 💀\n` +
                   `Sorted — you're not going anywhere\n\n` +
                   `${pick(SLANG.protected)}`,
                 mentions: [extra.sender],
@@ -150,7 +147,7 @@ module.exports = {
                 await sock.sendMessage(oJid, {
                   text:
                     `🛡️ *PROTECTION* 💀\n\n` +
-                    `@${kickerNum} tried kicking @${targetNum}\n` +
+                    `${mention(extra.sender)} tried kicking ${mention(target)}\n` +
                     `Blocked — they really thought they could tho 😭\n\n` +
                     `${pick(SLANG.roast)}`,
                   mentions: [target, extra.sender],
@@ -172,13 +169,20 @@ module.exports = {
 
       await sock.groupParticipantsUpdate(chatId, usersToKick, 'remove');
 
-      const usernames = usersToKick.map((jid) => `@${jid.split(':')[0].split('@')[0]}`);
-      await sock.sendMessage(chatId, {
+      const usernames = usersToKick.map((jid) => mention(jid));
+      const primaryTarget = usersToKick[0];
+      const targetNum = primaryTarget.split(':')[0].split('@')[0];
+
+      await sendButtons(sock, chatId, {
         text:
           `🔨 KICKED\n\n` +
           `${usernames.join(', ')} has been kicked\n\n` +
           `_${pick(SLANG.vibe)}_`,
         mentions: usersToKick,
+        footer: 'Kick Management',
+        buttons: [
+          { id: `admin:readd:${targetNum}`, text: '🔄 Re-add User' },
+        ],
       }, { quoted: msg });
 
     } catch (error) {
@@ -187,3 +191,19 @@ module.exports = {
     }
   },
 };
+
+// Button handlers
+onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
+  const num = btnId.replace('admin:readd:', '');
+  if (!num) return;
+  const target = `${num}@s.whatsapp.net`;
+  try {
+    await sock.groupParticipantsUpdate(from, [target], 'add');
+    await sock.sendMessage(from, {
+      text: `✅ *RE-ADDED*\n\n${mention(target)} _has been re-added to the group_`,
+      mentions: [target],
+    });
+  } catch (e) {
+    await sock.sendMessage(from, { text: `❌ *RE-ADD FAILED*\n\n_Couldn't add the user back_` });
+  }
+});

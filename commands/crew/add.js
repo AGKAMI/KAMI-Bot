@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 const getRoleEmoji = (role, roles) => {
@@ -85,15 +85,13 @@ module.exports = {
         );
       }
 
-      const targetNum = target.split('@')[0];
-
       const validRoles = database.getCustomRoles(extra.from);
 
       // Check if already in crew DB
       const existing = database.getCrewMember(extra.from, target);
       if (existing) {
         return extra.reply(
-          `❌ ERROR\n\n@${targetNum} is already in the crew\n` +
+          `❌ ERROR\n\n${mention(target)} is already in the crew\n` +
           `Role: ${getRoleEmoji(existing.role, validRoles)} ${existing.role}`
         );
       }
@@ -138,7 +136,7 @@ module.exports = {
           (ownerVIP
             ? `👑 THE BOSS HAS SPOKEN 👑\n\n`
             : `👤 MEMBER ADDED\n\n`) +
-          `${roleEmoji} @${targetNum}\n\n` +
+          `${roleEmoji} ${mention(target)}\n\n` +
           `🏷️ Role: ${bold(role)}\n` +
           `📅 Joined: ${new Date().toLocaleDateString('en-ZA')}\n\n` +
           (ownerVIP

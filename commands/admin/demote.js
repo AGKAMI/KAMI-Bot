@@ -9,7 +9,8 @@
 const database = require('../../database');
 const handler = require('../../handler');
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, mention } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 function getOwnerJid(sock) {
   const botId = sock.user?.id || '';
@@ -246,13 +247,17 @@ module.exports = {
       await sock.groupParticipantsUpdate(extra.from, [target], 'demote');
       setTimeout(() => handler._botDemoted.delete(target), 5000);
 
-      await sock.sendMessage(extra.from, {
+      await sendButtons(sock, extra.from, {
         text:
           `✅ SUCCESS\n\n` +
           `⬇️ DEMOTED\n\n` +
-          `@${targetNum} is no longer a group admin\n\n` +
+          `${mention(target)} is no longer a group admin\n\n` +
           `_${pick(SLANG.vibe)}_`,
         mentions: [target],
+        footer: 'Admin Actions',
+        buttons: [
+          { id: `admin:promote:${target.split(':')[0].split('@')[0]}`, text: '⬆️ Promote Back' },
+        ],
       }, { quoted: msg });
 
     } catch (error) {
@@ -261,3 +266,19 @@ module.exports = {
     }
   },
 };
+
+// Button handlers
+onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
+  const num = btnId.replace('admin:promote:', '');
+  if (!num) return;
+  const target = `${num}@s.whatsapp.net`;
+  try {
+    await sock.groupParticipantsUpdate(from, [target], 'promote');
+    await sock.sendMessage(from, {
+      text: `⬆️ *PROMOTED*\n\n${mention(target)} _is now a group admin_`,
+      mentions: [target],
+    });
+  } catch (e) {
+    await sock.sendMessage(from, { text: `❌ *PROMOTE FAILED*\n\n_Couldn't promote — check if I'm admin_` });
+  }
+});

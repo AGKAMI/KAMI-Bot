@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
   subName: 'cancel',
@@ -34,7 +34,7 @@ module.exports = {
         if (processed) {
           return extra.reply(
             `❌ ERROR\n\nApplication *${uid}* was already *${processed.action}*` +
-            (processed.admin ? ` by ${processed.admin === 'system' ? 'system (expired)' : '@' + processed.admin.split('@')[0]}` : '')
+            (processed.admin ? ` by ${processed.admin === 'system' ? 'system (expired)' : mention(processed.admin)}` : '')
           );
         }
         return extra.reply(
@@ -45,7 +45,6 @@ module.exports = {
       const teamKey = app.team;
       const teamGroupJid = app.groupJid || config.crewTeams[teamKey]?.jid;
       const applicantJid = app.jid;
-      const applicantNum = applicantJid ? applicantJid.split('@')[0] : 'unknown';
       const reason = args.slice(1).join(' ').trim();
 
       // Track as cancelled
@@ -85,7 +84,7 @@ module.exports = {
       await extra.reply(
         `✅ CANCELLED\n\n` +
         `🆔 App ID: *${uid}*\n` +
-        `👤 @${applicantNum}\n` +
+        `👤 ${mention(applicantJid)}\n` +
         `🏢 Team: *${teamKey}*\n` +
         (reason ? `📝 Reason: ${reason}\n` : '') +
         `\n_Applicant has been notified._`

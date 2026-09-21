@@ -4,7 +4,8 @@
  */
 
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, mention } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 const parseNumber = (input) => {
   if (!input) return null;
@@ -71,9 +72,13 @@ module.exports = {
       }
 
       // Confirm in chat
-      await sock.sendMessage(from, {
-        text: `🔨 *BANNED*\n\n@${target.split('@')[0]} _has been banned, ${pick(SLANG.good)}!_`,
-        mentions: [target]
+      await sendButtons(sock, from, {
+        text: `🔨 *BANNED*\n\n${mention(target)} _has been banned, ${pick(SLANG.good)}!_`,
+        mentions: [target],
+        footer: 'Ban Management',
+        buttons: [
+          { id: `admin:unban:${target.split(':')[0].split('@')[0]}`, text: '♻️ Unban User' },
+        ],
       }, { quoted: msg });
 
     } catch (error) {
@@ -81,3 +86,19 @@ module.exports = {
     }
   }
 };
+
+// Button handlers
+onButton('admin:unban', async (sock, msg, from, sender, btnId) => {
+  const num = btnId.replace('admin:unban:', '');
+  if (!num) return;
+  const target = `${num}@s.whatsapp.net`;
+  try {
+    await sock.updateBlockStatus(target, 'unblock');
+    await sock.sendMessage(from, {
+      text: `✅ *UNBANNED*\n\n${mention(target)} _has been unbanned_`,
+      mentions: [target],
+    });
+  } catch (e) {
+    await sock.sendMessage(from, { text: `❌ *UNBAN FAILED*\n\n_Couldn't unblock the user_` });
+  }
+});

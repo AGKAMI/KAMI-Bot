@@ -71,7 +71,7 @@ module.exports = {
       database.updateTeam(jid, team);
 
       const member = database.getCrewMember(jid, sender);
-      const name = member ? member.name : sender.split('@')[0];
+      const name = member ? member.name : sender.split(':')[0].split('@')[0];
 
       return sock.sendMessage(jid, {
         text: `✅ *SUCCESS*\n\n*${name}* unregistered from the event\n\n🏎️ *Event:* ${event.name}\n⏰ *Time:* ${event.time}\n👥 *Attending:* ${event.attendees.length}`
@@ -81,7 +81,7 @@ module.exports = {
       database.updateTeam(jid, team);
 
       const member = database.getCrewMember(jid, sender);
-      const name = member ? member.name : sender.split('@')[0];
+      const name = member ? member.name : sender.split(':')[0].split('@')[0];
 
       return sock.sendMessage(jid, {
         text: `✅ *SUCCESS*\n\n*${name}* is in for this one!\n\n🏎️ *Event:* ${event.name}\n⏰ *Time:* ${event.time}\n👥 *Attending:* ${event.attendees.length}`

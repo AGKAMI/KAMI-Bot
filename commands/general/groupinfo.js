@@ -2,7 +2,7 @@
  * Group Info Command - Display group information
  */
 
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
     name: 'groupinfo',
@@ -32,7 +32,7 @@ module.exports = {
                 text += `👑 *Admins List*\n`;
         
                 admins.forEach((admin, index) => {
-                  text += `${index + 1}. @${admin.id.split('@')[0]}\n`;
+                  text += `${index + 1}. ${mention(admin.id)}\n`;
                 });
         
                 text += `\n_KAMI Bot_`;

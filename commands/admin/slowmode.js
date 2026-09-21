@@ -2,8 +2,9 @@
  * Slowmode Command - Set message cooldown per user with bypass system
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const database = require('../../database');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 const config = require('../../config');
 const lastMessageTime = new Map();
@@ -29,7 +30,15 @@ module.exports = {
       const settings = database.getGroupSettings(from);
 
       if (sub === 'status' || sub === '') {
-        return extra.reply(buildStatus(settings, extra, prefix));
+        const statusText = buildStatus(settings, extra, prefix);
+        const isOn = (settings.slowmode || 0) > 0;
+        return sendButtons(sock, extra.from, {
+          text: statusText,
+          footer: 'Slowmode Settings',
+          buttons: isOn
+            ? [{ id: 'admin:slowmode:off', text: '🚫 Disable Slowmode' }]
+            : [{ id: 'admin:slowmode:10s', text: '⏱️ Set 10s' }, { id: 'admin:slowmode:30s', text: '⏱️ Set 30s' }],
+        }, { quoted: msg });
       }
 
       if (sub === 'on') {
@@ -53,15 +62,15 @@ module.exports = {
         return extra.reply(
           `🐢 *SLOWMODE OFF*\n\n` +
           `✅ *Slowmode disabled*\n` +
-          `👤 *Changed by:* @${sender.split('@')[0]}\n\n` +
+          `👤 *Changed by:* ${mention(sender)}\n\n` +
           `_${pick(SLANG.vibe)} — free messages for everyone_`,
           [sender]
         );
       }
 
       if (sub === 'bypass') {
-        const mention = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-        if (!mention) {
+        const bypassJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+        if (!bypassJid) {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to bypass, ${pick(SLANG.vibe)}_\n\n` +
@@ -70,28 +79,28 @@ module.exports = {
         }
 
         const bypass = settings.slowmodeBypass || [];
-        if (bypass.includes(mention)) {
+        if (bypass.includes(bypassJid)) {
           return extra.reply(
             `⚠️ *ALREADY BYPASSED*\n\n` +
-            `@${mention.split('@')[0]} _already bypasses slowmode_`
+            `${mention(bypassJid)} _already bypasses slowmode_`
           );
         }
 
-        bypass.push(mention);
+        bypass.push(bypassJid);
         database.updateGroupSettings(from, { slowmodeBypass: bypass });
 
         return extra.reply(
           `✅ *SLOWMODE BYPASS*\n\n` +
-          `👤 *User:* @${mention.split('@')[0]}\n` +
+          `👤 *User:* ${mention(bypassJid)}\n` +
           `🐢 *Status:* Bypasses slowmode\n\n` +
           `_${pick(SLANG.good)}, exempted!_`,
-          [mention]
+          [bypassJid]
         );
       }
 
       if (sub === 'unbypass') {
-        const mention = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-        if (!mention) {
+        const bypassJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+        if (!bypassJid) {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to remove bypass, ${pick(SLANG.vibe)}_\n\n` +
@@ -100,21 +109,21 @@ module.exports = {
         }
 
         const bypass = settings.slowmodeBypass || [];
-        if (!bypass.includes(mention)) {
+        if (!bypass.includes(bypassJid)) {
           return extra.reply(
             `❌ *NOT BYPASSED*\n\n` +
-            `@${mention.split('@')[0]} _is not in the bypass list_`
+            `${mention(bypassJid)} _is not in the bypass list_`
           );
         }
 
-        const updated = bypass.filter(j => j !== mention);
+        const updated = bypass.filter(j => j !== bypassJid);
         database.updateGroupSettings(from, { slowmodeBypass: updated });
 
         return extra.reply(
           `✅ *BYPASS REMOVED*\n\n` +
-          `👤 *User:* @${mention.split('@')[0]}\n` +
+          `👤 *User:* ${mention(bypassJid)}\n` +
           `_Now subject to slowmode again_`,
-          [mention]
+          [bypassJid]
         );
       }
 
@@ -164,7 +173,7 @@ module.exports = {
       return extra.reply(
         `🐢 *SLOWMODE ENABLED*\n\n` +
         `⏱️ *Cooldown:* ${cooldownLabel}\n` +
-        `👤 *Set by:* @${sender.split('@')[0]}\n` +
+        `👤 *Set by:* ${mention(sender)}\n` +
         `⚠️ *Rule:* Members must wait ${cooldownLabel} between messages\n` +
         `👑 *Admins:* Always bypass\n\n` +
         `_${pick(SLANG.good)}, keeping the chat clean!_`,
@@ -209,3 +218,28 @@ function buildStatus(settings, extra, prefix) {
     `• _${prefix}slowmode unbypass @user_`
   );
 }
+
+// Button handlers
+onButton('admin:slowmode:off', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { slowmode: 0 });
+  await sock.sendMessage(from, {
+    text: `✅ *SLOWMODE OFF*\n\n_Message cooldown disabled_`,
+  });
+});
+
+onButton('admin:slowmode:10s', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { slowmode: 10 });
+  await sock.sendMessage(from, {
+    text: `✅ *SLOWMODE ON*\n\n⏱️ *Cooldown:* 10s\n_Everyone must wait 10s between messages_`,
+  });
+});
+
+onButton('admin:slowmode:30s', async (sock, msg, from) => {
+  const database = require('../../database');
+  database.updateGroupSettings(from, { slowmode: 30 });
+  await sock.sendMessage(from, {
+    text: `✅ *SLOWMODE ON*\n\n⏱️ *Cooldown:* 30s\n_Everyone must wait 30s between messages_`,
+  });
+});

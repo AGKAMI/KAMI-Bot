@@ -1,4 +1,4 @@
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 const games = new Map();
 module.exports = {
   name: 'groupguess',
@@ -21,7 +21,7 @@ module.exports = {
     const g = games.get(ctx.from);
     if (!g) return ctx.reply(`❌ _no active game — .gguess start_`);
     if (n === g.target) {
-      const winner = ctx.sender.split('@')[0];
+      const winner = mention(ctx.sender);
       games.delete(ctx.from);
       return ctx.reply(`🎉 ${pick(SLANG.good)}, ${winner} got it! Number was ${g.target}. Attempts: ${g.attempts}`);
     }

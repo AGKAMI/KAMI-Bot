@@ -1,5 +1,5 @@
 // commands/fun/ship.js
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 module.exports = {
   name: 'ship',
   aliases: ['shipit','match'],
@@ -48,7 +48,7 @@ module.exports = {
       }
 
       // names (friendly)
-      const nameOf = id => `@${id.split('@')[0]}`;
+      const nameOf = id => mention(id);
 
       // create a deterministic percent from concatenated ids
       const seed = (a + b).split('').reduce((s,c)=> s + c.charCodeAt(0), 0);

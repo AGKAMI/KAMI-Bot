@@ -1,5 +1,5 @@
 // commands/fun/insult.js
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 module.exports = {
   name: 'insult',
   aliases: ['insultme','burn'],
@@ -16,7 +16,7 @@ module.exports = {
       else if (ctx.participant) targetId = ctx.participant;
       else targetId = extra.sender;
 
-      const targetTag = `@${(targetId || extra.sender).split('@')[0]}`;
+      const targetTag = mention(targetId || extra.sender);
 
       const insults = [
         "You're as useful as a white crayon.",

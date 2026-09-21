@@ -2,7 +2,7 @@
  * Admins Command - List all group admins
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
   name: 'admins',
@@ -37,8 +37,7 @@ module.exports = {
       for (let i = 0; i < admins.length; i++) {
         const admin = admins[i];
         const jid = admin.id || admin.jid;
-        const number = jid.split('@')[0];
-        const tag = `@${number}`;
+        const tag = mention(jid);
         const role = admin.admin === 'superadmin' ? '👑 Superadmin' : '🛡️ Admin';
 
         lines.push(`${i + 1}. ${tag} — ${role}`);

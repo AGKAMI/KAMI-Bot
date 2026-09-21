@@ -7,7 +7,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { buildDeniedMessage } = require('./crewForms');
 
 module.exports = {
@@ -36,16 +36,15 @@ module.exports = {
         // Check if it was already processed
         const processed = database.getProcessedApp(uid);
         if (processed) {
-          const adminNum = processed.admin ? processed.admin.split('@')[0] : 'unknown';
           const time = new Date(processed.processedAt).toLocaleString('en-ZA');
           if (processed.action === 'accepted') {
             return extra.reply(
-              `❌ ERROR\n\nApplication *${uid}* was already *accepted* by @${adminNum} on ${time}` +
+              `❌ ERROR\n\nApplication *${uid}* was already *accepted* by ${mention(processed.admin)} on ${time}` +
               (processed.role ? `\n🏷️ Role given: ${processed.role}` : '')
             );
           } else {
             return extra.reply(
-              `❌ ERROR\n\nApplication *${uid}* was already *denied* by @${adminNum} on ${time}` +
+              `❌ ERROR\n\nApplication *${uid}* was already *denied* by ${mention(processed.admin)} on ${time}` +
               (processed.reason ? `\n📝 Reason: ${processed.reason}` : '')
             );
           }
@@ -58,7 +57,6 @@ module.exports = {
       const teamKey = app.team;
       const teamGroupJid = app.groupJid || config.crewTeams[teamKey]?.jid;
       const applicantJid = app.jid;
-      const applicantNum = applicantJid ? applicantJid.split('@')[0] : 'unknown';
 
       // Permission: owner, a team admin (DM-approved), or a group admin of the team's group
       let isTeamAdmin = database.isTeamAdmin(extra.sender);
@@ -121,7 +119,7 @@ module.exports = {
             ? '👑 THE BOSS HAS SPOKEN 👑\n\n'
             : '❌ APPLICATION DENIED\n\n') +
           '🆔 App ID: ' + bold(uid) + '\n' +
-          '👤 @' + applicantNum + '\n' +
+          '👤 ' + mention(applicantJid) + '\n' +
           '📝 Reason: ' + reason + '\n\n' +
           (ownerVIP
             ? '_The owner himself has denied this application. The verdict is final._ 👑'

@@ -1,4 +1,4 @@
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 module.exports = {
   name: 'tictactoe',
   description: 'Play tic tac toe in a group',
@@ -48,7 +48,7 @@ const config = require('../../config');
     if (!expectedPlayer) {
       g.players[token] = sender;
     } else if (expectedPlayer !== sender) {
-      return ctx.reply('not your turn — waiting for @' + expectedPlayer.split('@')[0]);
+      return ctx.reply('not your turn — waiting for ' + mention(expectedPlayer));
     }
 
     g.board[pos] = token;
@@ -63,7 +63,7 @@ const config = require('../../config');
 
     if (winner) {
       games.ttt.delete(boardKey);
-      return ctx.reply(`🎉 @${sender.split('@')[0]} ${pick(SLANG.good)}! wins with ${token}!\n\n${formatBoard(g.board)}`);
+      return ctx.reply(`🎉 ${mention(sender)} ${pick(SLANG.good)}! wins with ${token}!\n\n${formatBoard(g.board)}`);
     }
     if (full) {
       games.ttt.delete(boardKey);
@@ -72,7 +72,7 @@ const config = require('../../config');
 
     g.turn = token === 'X' ? 'O' : 'X';
     const next = g.players[g.turn];
-    const nextMention = next ? '@' + next.split('@')[0] : 'next player';
+    const nextMention = next ? mention(next) : 'next player';
     return ctx.reply(`${nextMention} (${g.turn}) your turn\n\n${formatBoard(g.board)}`);
   }
 };

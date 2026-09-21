@@ -43,7 +43,7 @@ module.exports = {
     });
 
     const member = database.getCrewMember(jid, sender);
-    const creatorName = member ? member.name : sender.split('@')[0];
+    const creatorName = member ? member.name : sender.split(':')[0].split('@')[0];
 
     return sock.sendMessage(jid, {
       text: `📅 *EVENT CREATED*\n\n` +

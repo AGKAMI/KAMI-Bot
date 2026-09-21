@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
   name: 'getpp',
@@ -47,7 +47,7 @@ module.exports = {
         // Send the profile picture
         await sock.sendMessage(extra.from, { 
           image: buffer,
-          caption: `*Profile picture* of @${targetUser.split('@')[0]}`,
+          caption: `*Profile picture* of ${mention(targetUser)}`,
           mentions: [targetUser]
         }, { quoted: msg });
         

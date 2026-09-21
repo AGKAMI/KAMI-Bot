@@ -4,7 +4,7 @@
  */
 
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, mention } = require('../../utils/format');
 
 function phoneToJid(phone) {
   if (!phone) return null;
@@ -56,12 +56,10 @@ module.exports = {
         return extra.reply(`❌ ERROR\n\nInvalid phone number: ${fullPhone}`);
       }
 
-      const targetNum = target.split('@')[0];
-
       await sock.groupParticipantsUpdate(extra.from, [target], 'add');
 
       await sock.sendMessage(extra.from, {
-        text: `✅ SUCCESS\n\n➕ ADDED\n\n@${targetNum} has been added to the group`,
+        text: `✅ SUCCESS\n\n➕ ADDED\n\n${mention(target)} has been added to the group`,
         mentions: [target],
       }, { quoted: msg });
 

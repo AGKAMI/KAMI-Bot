@@ -122,7 +122,7 @@ const REQUIREMENTS = [
 // Returns { text, buttons } for use with sendButtons()
 const buildAdminNotice = (app) => {
   const team = TEAMS[app.team];
-  const num = app.jid ? app.jid.split('@')[0] : 'unknown';
+  const num = app.jid ? app.jid.split(':')[0].split('@')[0] : 'unknown';
   const teamQuestions = getQuestionsForAdmin(app.team);
   const prefix = config.prefix || '.';
   const text = `━━━━━━━━━━━━━━━━\n` +

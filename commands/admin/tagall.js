@@ -2,7 +2,7 @@
  * Tag All Command - Mention all group members
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
     name: 'tagall',
@@ -25,7 +25,7 @@ module.exports = {
         text += `👥 *Tagged Members*:\n`;
         
         participants.forEach((participant, index) => {
-          text += `${index + 1}. @${participant.split('@')[0]}\n`;
+          text += `${index + 1}. ${mention(participant)}\n`;
         });
         
         await sock.sendMessage(extra.from, {
