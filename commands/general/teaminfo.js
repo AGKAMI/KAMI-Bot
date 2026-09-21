@@ -25,7 +25,11 @@ const TEAM_ORDER = ['KSSMP', 'KSSPS', 'SSRS', 'KSSMS'];
 
 function getTeamImage(teamKey) {
   const imgPath = config.crewTeams?.[teamKey]?.image;
-  if (imgPath && fs.existsSync(imgPath)) return imgPath;
+  if (imgPath) {
+    const resolved = path.resolve(imgPath);
+    if (fs.existsSync(resolved)) return resolved;
+    if (fs.existsSync(imgPath)) return imgPath;
+  }
   const localPath = path.join(TEAM_IMAGES_DIR, `${teamKey.toLowerCase()}.jpg`);
   if (fs.existsSync(localPath)) return localPath;
   return BOT_IMAGE;

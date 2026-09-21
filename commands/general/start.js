@@ -31,7 +31,12 @@ const BOT_IMAGE = path.join(__dirname, '../../utils/bot_image.jpg');
 
 function getTeamImage(teamKey) {
   const imgPath = config.crewTeams?.[teamKey]?.image;
-  if (imgPath && fs.existsSync(imgPath)) return imgPath;
+  if (imgPath) {
+    // Resolve relative to project root (config stores ./utils/...)
+    const resolved = path.resolve(imgPath);
+    if (fs.existsSync(resolved)) return resolved;
+    if (fs.existsSync(imgPath)) return imgPath;
+  }
   return BOT_IMAGE;
 }
 
