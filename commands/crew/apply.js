@@ -13,6 +13,7 @@ const { TEAMS, buildFormMessage } = require('./crewForms');
 const { resolveUser } = require('./crewHelpers');
 const { buildComparableIds } = require('../../utils/jidHelper');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { startWizard } = require('./applyInteractive');
 
 module.exports = {
   subName: 'apply',
@@ -131,25 +132,24 @@ module.exports = {
         await sock.updateBlockStatus(applicantJid, 'unblock');
       } catch (e) {}
 
-      // DM the applicant the form + their App ID
-      const formText = buildFormMessage(teamKey);
-
+      // DM the applicant: App ID + choice of Typing vs Buttons
       try {
         await sock.sendMessage(applicantJid, {
           text:
             `━━━━━━━━━━━━━━━━\n` +
-            `🆔 *YOUR APPLICATION ID:* ${app.appUid}\n` +
+            `*${TEAMS[teamKey].label.toUpperCase()} APPLICATION*\n` +
+            `${TEAMS[teamKey].emoji} ${TEAMS[teamKey].role.toUpperCase()} ${TEAMS[teamKey].emoji}\n` +
             `━━━━━━━━━━━━━━━━\n\n` +
-            formText,
+            `🆔 *YOUR APPLICATION ID:* ${app.appUid}\n\n` +
+            `How would you like to answer the questions?`,
         });
-        // Send quick buttons for activity level after the form
+        // Send the choice buttons
         await sendButtons(sock, applicantJid, {
-          text: `⏱️ *Quick pick your activity level:*`,
+          text: `Pick how you want to apply:`,
           footer: `${teamKey} Application`,
           buttons: [
-            { id: `crew:apply:activity:1-2`, text: '1-2 hrs/day' },
-            { id: `crew:apply:activity:3-4`, text: '3-4 hrs/day' },
-            { id: `crew:apply:activity:5+`,  text: '5+ hrs/day' },
+            { id: `cwiz:choice:btn:${teamKey}:${app.appUid}`, text: '🔘 Use Buttons' },
+            { id: `cwiz:choice:txt:${teamKey}:${app.appUid}`, text: '✍️ Type Answers' },
           ],
         });
       } catch (dmErr) {
@@ -171,24 +171,12 @@ module.exports = {
         (applyingForSomeone
           ? `📲 I've DM'd @${applicantNum} the application form.\n\n`
           : `📲 I've DM'd you the application form.\n\n`) +
-        `✍️ Answer all questions and post them here with:\n` +
-        `\`${prefix}crew applied ${teamKey} <your answers>\`\n\n` +
         `_${pick(SLANG.greeting)}, good luck!_`;
 
-      // Send confirmation + action buttons
       await sock.sendMessage(extra.from, {
         text: confirmText,
         mentions: [applicantJid],
       }, { quoted: msg });
-      await sendButtons(sock, extra.from, {
-        text: `📝 *Quick actions:*`,
-        footer: `${teamKey} Application`,
-        buttons: [
-          { id: `run:${prefix}crew applied ${teamKey}`, text: '✍️ Submit Answers' },
-          { id: `run:${prefix}crew applicants ${teamKey}`, text: '📋 View Pending' },
-          { id: `run:${prefix}menu crew`, text: '🔰 Crew Menu' },
-        ],
-      });
 
     } catch (error) {
       console.error('Crew apply error:', error);
@@ -197,30 +185,34 @@ module.exports = {
   },
 };
 
-// ── Activity Button Handler ──────────────────────────────────
-// When applicant taps an activity level button in the DM, show the full form with that pre-selected
-onButton('crew:apply:activity', async (sock, msg, from, sender, btnId) => {
-  const level = btnId.replace('crew:apply:activity:', '');
-  const prefix = config.prefix || '.';
-  const activityMap = {
-    '1-2': '1-2 hours',
-    '3-4': '3-4 hours',
-    '5+':  '5+ hours',
-  };
-  const activity = activityMap[level] || level;
-  await sock.sendMessage(from, {
-    text:
-      `━━━━━━━━━━━━━━━━\n` +
-      `✅ *ACTIVITY SET: ${activity.toUpperCase()}*\n` +
-      `━━━━━━━━━━━━━━━━\n\n` +
-      `Now answer the remaining 5 questions and submit everything in ONE message:\n\n` +
-      `\`${prefix}crew applied <TEAM>\`\n` +
-      `\`1) ${activity}\`\n` +
-      `\`2) <your age>\`\n` +
-      `\`3) <experience>\`\n` +
-      `\`4) <loyalty>\`\n` +
-      `\`5) <communication>\`\n` +
-      `\`6) <scenario answer>\`\n\n` +
-      `_Go to any SS group and send the above._`,
-  });
+// ── Choice Button Handler ────────────────────────────────────
+// When applicant taps "Use Buttons" or "Type Answers" in the DM
+onButton('cwiz:choice:', async (sock, msg, from, sender, btnId) => {
+  const parts = btnId.replace('cwiz:choice:', '').split(':');
+  const choice = parts[0]; // 'btn' or 'txt'
+  const teamKey = parts[1];
+  const appUid = parts[2];
+
+  if (choice === 'btn') {
+    // Start the interactive wizard
+    await sock.sendMessage(from, {
+      text: `🔘 *BUTTON MODE*\n\nAnswer each question by tapping a button. Let's go!`,
+    });
+    await startWizard(sock, from, teamKey, appUid, from, false, from);
+  } else {
+    // Send the text form
+    const { buildFormMessage } = require('./crewForms');
+    const prefix = config.prefix || '.';
+    const formText = buildFormMessage(teamKey);
+    await sock.sendMessage(from, {
+      text:
+        `━━━━━━━━━━━━━━━━\n` +
+        `*TYPE MODE*\n` +
+        `━━━━━━━━━━━━━━━━\n\n` +
+        formText,
+    });
+    await sock.sendMessage(from, {
+      text: `✍️ *HOW TO SUBMIT:*\n\nGo to any SS group and send:\n\`${prefix}crew applied ${teamKey} <your answers>\`\n\nPut each answer on its own line.`,
+    });
+  }
 });

@@ -21,45 +21,6 @@ const categoryMeta = {
 
 const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'crew', 'owner'];
 
-// ── Quick commands — buttons that run commands directly ──────
-const quickCommands = {
-  admin: [
-    { id: 'run:.kick @user',    text: '🔨 Kick' },
-    { id: 'run:.demote @user',  text: '⬇️ Demote' },
-    { id: 'run:.warn @user',    text: '⚠️ Warn' },
-  ],
-  crew: [
-    { id: 'run:.crew apply',    text: '📝 Apply' },
-    { id: 'run:.crew applicants', text: '📋 Applicants' },
-    { id: 'run:.crew teams',    text: '👥 Teams' },
-  ],
-  general: [
-    { id: 'run:.ping',          text: '📡 Ping' },
-    { id: 'run:.menu',          text: '📖 Menu' },
-    { id: 'run:.sticker',       text: '🎨 Sticker' },
-  ],
-  media: [
-    { id: 'run:.tt',            text: '🎵 TikTok' },
-    { id: 'run:.ig',            text: '📸 Instagram' },
-    { id: 'run:.song',          text: '🎶 Song' },
-  ],
-  fun: [
-    { id: 'run:.meme',          text: '😂 Meme' },
-    { id: 'run:.joke',          text: '🤣 Joke' },
-    { id: 'run:.ship',          text: '💕 Ship' },
-  ],
-  games: [
-    { id: 'run:.ttt',           text: '❌ TicTacToe' },
-    { id: 'run:.8ball',         text: '🎱 8Ball' },
-    { id: 'run:.truth',         text: ' truths' },
-  ],
-  owner: [
-    { id: 'run:.selfmode on',   text: '🔒 Self Mode' },
-    { id: 'run:.approve',       text: '✅ Approve' },
-    { id: 'run:.broadcast',     text: '📢 Broadcast' },
-  ],
-};
-
 function buildCategoryText(cat) {
   const prefix = config.prefix || '.';
   const commands = loadCommands();
@@ -76,7 +37,7 @@ function buildCategoryText(cat) {
     text += `${prefix}${cmd.name}${cmd.description ? ` — \`${cmd.description}\`` : ''}\n`;
   }
   if (items.length === 0) text += `_No commands here yet, ${pick(SLANG.vibe)}_`;
-  text += `\n----------\n_Tap a button below or use ${prefix}help <cmd>_`;
+  text += `\n----------\n_Use ${prefix}help <cmd> for info_`;
   return text;
 }
 
@@ -145,32 +106,15 @@ module.exports = {
       // .menu <category> → show just that category
       const requested = (args[0] || '').toLowerCase();
       if (requested && requested !== 'all' && categoryMeta[requested]) {
-        // If button mode on, show category with action buttons
-        if (isButtonModeOn()) {
-          const catText = buildCategoryText(requested);
-          const catButtons = (quickCommands[requested] || []).slice(0, 3);
-          if (catButtons.length > 0) {
-            await sock.sendMessage(extra.from, { text: catText, ...newsletterCtx });
-            await sendButtons(sock, extra.from, {
-              text: `Tap to run a command:`,
-              footer: `${categoryMeta[requested]?.label || requested}`,
-              buttons: [
-                ...catButtons,
-                { id: 'menu:back', text: '⬅️ Back' },
-              ],
-            }, msg);
-            return;
-          }
-        }
         return extra.reply(buildCategoryText(requested));
       }
 
-      // Button mode ON → compact menu + category buttons
+      // Button mode ON → compact menu + category buttons (easier to use)
       if (isButtonModeOn() && requested !== 'all') {
         const summary = [
           `*KAMI BOT* ${pick(SLANG.greeting)}! 👋`,
           ``,
-          `🤖 Tap a button to browse commands 👇`,
+          `🤖 Tap a button to see that section's commands 👇`,
           ``,
           `📖 Full list: *${prefix}menu all*`,
         ].join('\n');
@@ -178,7 +122,7 @@ module.exports = {
         const buttons = [
           { id: 'menu:admin', text: '🛡️ Admin' },
           { id: 'menu:crew',  text: '🔰 Crew' },
-          { id: 'menu:more',  text: '📂 More' },
+          { id: 'menu:more',  text: '📂 More Categories' },
         ];
 
         const btnFooter = config.botName || 'KAMI Bot';
@@ -191,6 +135,7 @@ module.exports = {
             mentions: [extra.sender],
             ...newsletterCtx,
           }, { quoted: msg });
+          // Buttons can't attach to the image message, so send a follow-up interactive row
           await sendButtons(sock, extra.from, {
             text: `📖 Full list: *${prefix}menu all*`,
             footer: btnFooter,
@@ -233,135 +178,19 @@ module.exports = {
   }
 };
 
-// ── Button Handlers ──────────────────────────────────────────
-
-// Run a command directly from button tap
-onButton('run:', async (sock, msg, from, sender, btnId) => {
-  const prefix = config.prefix || '.';
-  const cmdText = btnId.replace('run:', '');
-  // Execute as if the user typed it
-  const fakeMsg = {
-    key: { remoteJid: from, participant: sender, id: 'btn_' + Date.now() },
-    message: { conversation: cmdText },
-    messageTimestamp: Math.floor(Date.now() / 1000),
-  };
-  const handler = require('../../handler');
-  await handler.handleMessage(sock, fakeMsg);
+// Register category button handlers (runs once at command load)
+onButton('menu:admin', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('admin') });
 });
-
-// Category navigation buttons
-onButton('menu:admin', async (sock, msg, from) => {
-  const prefix = config.prefix || '.';
-  const catText = buildCategoryText('admin');
-  const buttons = (quickCommands.admin || []).slice(0, 3);
-  await sock.sendMessage(from, { text: catText });
-  if (buttons.length > 0) {
-    await sendButtons(sock, from, {
-      text: `Tap to run:`,
-      footer: 'Admin',
-      buttons: [...buttons, { id: 'menu:back', text: '⬅️ Back' }],
-    });
-  }
+onButton('menu:crew', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('crew') });
 });
-
-onButton('menu:crew', async (sock, msg, from) => {
-  const catText = buildCategoryText('crew');
-  const buttons = (quickCommands.crew || []).slice(0, 3);
-  await sock.sendMessage(from, { text: catText });
-  if (buttons.length > 0) {
-    await sendButtons(sock, from, {
-      text: `Tap to run:`,
-      footer: 'Crew',
-      buttons: [...buttons, { id: 'menu:back', text: '⬅️ Back' }],
-    });
-  }
+onButton('menu:owner', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('owner') });
 });
-
-onButton('menu:owner', async (sock, msg, from) => {
-  const catText = buildCategoryText('owner');
-  const buttons = (quickCommands.owner || []).slice(0, 3);
-  await sock.sendMessage(from, { text: catText });
-  if (buttons.length > 0) {
-    await sendButtons(sock, from, {
-      text: `Tap to run:`,
-      footer: 'Owner',
-      buttons: [...buttons, { id: 'menu:back', text: '⬅️ Back' }],
-    });
-  }
-});
-
-onButton('menu:media', async (sock, msg, from) => {
-  const catText = buildCategoryText('media');
-  const buttons = (quickCommands.media || []).slice(0, 3);
-  await sock.sendMessage(from, { text: catText });
-  if (buttons.length > 0) {
-    await sendButtons(sock, from, {
-      text: `Tap to run:`,
-      footer: 'Media',
-      buttons: [...buttons, { id: 'menu:more-back', text: '⬅️ Back' }],
-    });
-  }
-});
-
-onButton('menu:fun', async (sock, msg, from) => {
-  const catText = buildCategoryText('fun');
-  const buttons = (quickCommands.fun || []).slice(0, 3);
-  await sock.sendMessage(from, { text: catText });
-  if (buttons.length > 0) {
-    await sendButtons(sock, from, {
-      text: `Tap to run:`,
-      footer: 'Fun',
-      buttons: [...buttons, { id: 'menu:more-back', text: '⬅️ Back' }],
-    });
-  }
-});
-
-onButton('menu:games', async (sock, msg, from) => {
-  const catText = buildCategoryText('games');
-  const buttons = (quickCommands.games || []).slice(0, 3);
-  await sock.sendMessage(from, { text: catText });
-  if (buttons.length > 0) {
-    await sendButtons(sock, from, {
-      text: `Tap to run:`,
-      footer: 'Games',
-      buttons: [...buttons, { id: 'menu:more-back', text: '⬅️ Back' }],
-    });
-  }
-});
-
-// Back button → return to main category menu
-onButton('menu:back', async (sock, msg, from) => {
-  const prefix = config.prefix || '.';
-  await sendButtons(sock, from, {
-    text: `*KAMI BOT*\n\n🤖 Pick a category:`,
-    footer: config.botName || 'KAMI Bot',
-    header: 'KAMI BOT',
-    buttons: [
-      { id: 'menu:admin', text: '🛡️ Admin' },
-      { id: 'menu:crew',  text: '🔰 Crew' },
-      { id: 'menu:more',  text: '📂 More' },
-    ],
-  });
-});
-
-// Back from More → return to More categories
-onButton('menu:more-back', async (sock, msg, from) => {
-  const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
-  await sendBtns(sock, from, {
-    text: `📂 *MORE CATEGORIES*\n\nTap to see commands:`,
-    footer: config.botName || 'KAMI Bot',
-    header: 'KAMI BOT',
-    buttons: [
-      { id: 'menu:media',   text: '🎬 Media' },
-      { id: 'menu:fun',     text: '🎉 Fun' },
-      { id: 'menu:games',   text: '🎮 Games' },
-    ],
-  });
-});
-
-// More categories page
 onButton('menu:more', async (sock, msg, from) => {
   const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
+  const prefix = config.prefix || '.';
   await sendBtns(sock, from, {
     text: `📂 *MORE CATEGORIES*\n\nTap to see commands:`,
     footer: config.botName || 'KAMI Bot',
@@ -372,4 +201,13 @@ onButton('menu:more', async (sock, msg, from) => {
       { id: 'menu:games',   text: '🎮 Games' },
     ],
   });
+});
+onButton('menu:media', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('media') });
+});
+onButton('menu:fun', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('fun') });
+});
+onButton('menu:games', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('games') });
 });

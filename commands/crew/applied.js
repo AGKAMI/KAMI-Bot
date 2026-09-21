@@ -248,34 +248,23 @@ const prefix = config.prefix || '.';
 onButton('crew:accept', async (sock, msg, from, sender, btnId) => {
   const uid = btnId.replace('crew:accept:', '');
   if (!uid) return;
-  // Execute accept directly
-  const fakeMsg = {
-    key: { remoteJid: from, participant: sender, id: 'btn_' + Date.now() },
-    message: { conversation: `${prefix}crew accept ${uid}` },
-    messageTimestamp: Math.floor(Date.now() / 1000),
-  };
-  const handler = require('../../handler');
-  await handler.handleMessage(sock, fakeMsg);
+  await sock.sendMessage(from, {
+    text: `✅ *ACCEPT APPLICATION*\n\nApp ID: *${uid}*\n\nType:\n\`${prefix}crew accept ${uid}\`\n\nOr add a role:\n\`${prefix}crew accept ${uid} member\``,
+  });
 });
 
 onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
   const uid = btnId.replace('crew:deny:', '');
   if (!uid) return;
-  // Ask for reason (need user input)
   await sock.sendMessage(from, {
-    text: `❌ *Deny Application*\n\nType a reason to deny *${uid}*:\n\`${prefix}crew deny ${uid} <reason>\``,
+    text: `❌ *DENY APPLICATION*\n\nApp ID: *${uid}*\n\nType:\n\`${prefix}crew deny ${uid} <reason>\`\n\nExample:\n\`${prefix}crew deny ${uid} Not active enough\``,
   });
 });
 
 onButton('crew:pending', async (sock, msg, from, sender, btnId) => {
   const team = btnId.replace('crew:pending:', '');
   if (!team) return;
-  // Execute applicants list directly
-  const fakeMsg = {
-    key: { remoteJid: from, participant: sender, id: 'btn_' + Date.now() },
-    message: { conversation: `${prefix}crew applicants ${team}` },
-    messageTimestamp: Math.floor(Date.now() / 1000),
-  };
-  const handler = require('../../handler');
-  await handler.handleMessage(sock, fakeMsg);
+  await sock.sendMessage(from, {
+    text: `📋 *PENDING APPLICATIONS*\n\nType:\n\`${prefix}crew applicants ${team}\``,
+  });
 });
