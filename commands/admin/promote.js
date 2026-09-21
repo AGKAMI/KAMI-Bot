@@ -65,7 +65,8 @@ module.exports = {
 
     } catch (error) {
       console.error('Promote error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't promote`);
+      const reason = error?.message || error?.output?.payload?.message || 'Unknown error';
+      await extra.reply(`❌ ERROR\n\nCouldn't promote — ${reason}`);
     }
   },
 };
