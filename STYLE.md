@@ -218,21 +218,71 @@ Use `\n\n` to separate logical sections. Use `\n` for lines within a section.
 
 Always italic. Always pick from the SLANG arrays in `utils/format.js`.
 
+### Core arrays
+
 | Context | SLANG Key | Example |
 |---------|-----------|---------|
 | Casual closer | `SLANG.vibe` | `_{sho}, done_` |
 | Success | `SLANG.good` | `✅ Done {lekke}` |
 | Error | `SLANG.error` | `❌ {moegoe} — couldn't do it` |
-| Addressing user | `SLANG.friend` | `Provide a team {chommie}` |
+| Addressing user | `SLANG.friend` | `Provide a team {laaitie}` |
 | Greeting | `SLANG.greeting` | `_{howzit}, good luck!_` |
 | Goodbye | `SLANG.bye` | `_{totsiens}!_` |
+| Yes/Agreement | `SLANG.yes` | `{yebo}, confirmed` |
+| No/Disagreement | `SLANG.no` | `{hayi}, not today` |
+| Thanks | `SLANG.thanks` | `_{enkosi} for that_` |
+| Intensity | `SLANG.intensifier` | `That's {lank} good` |
+
+### Energy arrays
+
+| Context | SLANG Key | Example |
+|---------|-----------|---------|
+| Roast (someone did something wild) | `SLANG.roast` | `yoh the audacity 💀` |
+| Dismiss (blocking/shutting down) | `SLANG.dismiss` | `nah not happening 💀` |
+| Protected (handled successfully) | `SLANG.protected` | `sorted lekke ✅` |
+| Warning (one more time and...) | `SLANG.warning` | `one more time and see what happens 💀` |
+| Celebration / hype | `SLANG.hype` | `ngeke ke! 🔥` |
+| Confusion / disbelief | `SLANG.confused` | `bathong what just happened 💀` |
+| Sadness / sympathy | `SLANG.sad` | `yoh that's heavy hey 😔` |
+
+### When to use each energy array
+
+| Situation | Array | Example |
+|-----------|-------|---------|
+| Someone tries to kick/demote protected member | `SLANG.roast` | `yoh the audacity 💀` |
+| Blocking a command (permission denied) | `SLANG.dismiss` | `nah not happening 💀` |
+| Protection event resolved | `SLANG.protected` | `sorted lekke ✅` |
+| Warning violator before escalation | `SLANG.warning` | `one more time and see what happens 💀` |
+| Successfully completed a task | `SLANG.hype` | `ngeke ke! 🔥` |
+| Something doesn't make sense | `SLANG.confused` | `bathong what just happened 💀` |
+| Bad news / denial | `SLANG.sad` | `yoh that's heavy hey 😔` |
+
+### Emoji guide (Gen Z South African)
+
+| Emoji | Meaning | Use when |
+|-------|---------|----------|
+| 💀 | "I'm dead" (laughing) | Someone did something wild, ironic humour |
+| 😭 | Emotional / crying laughing | Dramatic reactions, disbelief |
+| 💪 | Strong / sorted | Protection success, handled it |
+| 📸 | Caught in 4k | Someone caught doing something wrong |
+| 🔒 | Locked / protected | Security actions |
+| 🔥 | Hype / fire | Celebrations, success |
+| 🎉 | Celebration | Welcome, accept, good news |
+| 👑 | Owner / boss | KAMI references, authority |
 
 **Usage in code:**
 ```js
 const { pick, SLANG } = require('../../utils/format');
-// In message:
+// Casual closer:
 `_${pick(SLANG.vibe)}, done_`
+// Error:
 `❌ ${pick(SLANG.error)} — couldn't add member`
+// Roast someone:
+`🚫 ${pick(SLANG.roast)}`
+// Dismiss attempt:
+`_Try again ${pick(SLANG.dismiss)}_`
+// After handling protection:
+`_KAMI's people stay protected ${pick(SLANG.protected)}_`
 ```
 
 ---

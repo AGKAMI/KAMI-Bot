@@ -77,31 +77,45 @@ const status = {
 //             naai (too aggressive), gashu (confusing across regions)
 
 const SLANG = {
-  // Greetings
-  greeting: ['howzit', 'aweh', 'heita', 'heita mbokodo', 'yoh wena'],
+  // ── Greetings ────────────────────────────────────────────
+  greeting: [
+    'howzit', 'aweh', 'heita', 'heita mbokodo', 'yoh wena',
+    'sho mbokodo', 'heita gents', 'aweh sisi', 'heita baba',
+  ],
 
-  // Positive feedback
-  good: ['lekke', 'kiff', 'kwaai', 'scores', 'clocked it', 'sharp sharp'],
+  // ── Positive feedback ────────────────────────────────────
+  good: [
+    'lekke', 'kiff', 'kwaai', 'scores', 'clocked it', 'sharp sharp',
+    'ngeke', 'uyeze', 'phanda', 'lekker gents', 'oke shem',
+  ],
 
-  // Addressing users
-  friend: ['laaitie', 'my bru', 'wena', 'mbokodo', 'sisi', 'baba'],
+  // ── Addressing users ─────────────────────────────────────
+  friend: [
+    'laaitie', 'my bru', 'wena', 'mbokodo', 'sisi', 'baba',
+    'boet', 'gents', 'shem', 'ndoda', 'makhulu', 'gogo',
+  ],
 
-  // Errors / negative
-  error: ['moegoe', 'sleg', 'stukkend', 'yoh', 'haiibo', 'cima'],
+  // ── Errors / negative ────────────────────────────────────
+  error: [
+    'moegoe', 'sleg', 'stukkend', 'yoh', 'haiibo', 'cima',
+    'eish', 'hayibo', 'awu', 'shem', 'yoh shame',
+  ],
 
-  // Intensity
-  intensifier: ['lank', 'lekker', 'phanda', 'yoh'],
+  // ── Intensity ────────────────────────────────────────────
+  intensifier: [
+    'lank', 'lekker', 'phanda', 'yoh', 'honestly', 'ngeke ke',
+  ],
 
-  // General
-  yes: ['yebo', 'yebo shame', 'sho', 'aweh'],
-  no: ['awu', 'hayi', 'yoh nah', 'khona into e-off'],
-  thanks: ['enkosi', 'ke a leboha', 'thanks shame', 'sho lekke'],
-  bye: ['totsiens', 'later hey', 'shiya gentleman'],
+  // ── General ──────────────────────────────────────────────
+  yes: ['yebo', 'yebo shame', 'sho', 'aweh', 'ybo', 'ngo'],
+  no: ['awu', 'hayi', 'yoh nah', 'khona into e-off', 'haye', 'khona'],
+  thanks: ['enkosi', 'ke a leboha', 'thanks shame', 'sho lekke', 'ncawe'],
+  bye: ['totsiens', 'later hey', 'shiya gentleman', 'shiya', 'sala kahle'],
 
-  // Filler / vibe
-  vibe: ['sho', 'yazi', 'manje', 'nje', 'bathong', 'mos'],
+  // ── Filler / vibe ────────────────────────────────────────
+  vibe: ['sho', 'yazi', 'manje', 'nje', 'bathong', 'mos', 'yoh', 'shem'],
 
-  // Protection / roast energy
+  // ── Roast energy (someone did something wild) ────────────
   roast: [
     'yoh the audacity 💀',
     'not you trying that 💀',
@@ -110,9 +124,14 @@ const SLANG = {
     'bathong the boldness 😭',
     'agine the nerve 💀',
     'hao khonahale bru 💀',
+    'wena you really went there 💀',
+    'not this behaviour 😭',
+    'yoh the shameless energy 💀',
+    'and you thought we wouldn\'t notice 😭',
+    'caught in 4k my guy 💀',
   ],
 
-  // Dismissal energy
+  // ── Dismissal energy (blocking/shutting down) ────────────
   dismiss: [
     'nah not happening 💀',
     'try again boet 💀',
@@ -121,15 +140,58 @@ const SLANG = {
     'wena you really tried 😭',
     'sho... anyway 💀',
     'cima man, cima 😭',
+    'and then... nothing happened 💀',
+    'gone kanje, just like that 😭',
+    'not on KAMI\'s watch 💀',
+    'zero aura points for that attempt 😭',
   ],
 
-  // Protection success
+  // ── Protection success (handled the situation) ───────────
   protected: [
     'sorted lekke ✅',
     'handled, don\'t worry about it 💪',
     'KAMI\'s people stay protected 🔒',
     'caught in 4k, handled 📸',
     'yebo, that\'s how we do it 💪',
+    'clocked it and dealt with it ✅',
+    'sorted, nobody touches KAMI\'s people 🔒',
+    'handled with the quickness 💪',
+  ],
+
+  // ── Warning energy (one more time and...) ────────────────
+  warning: [
+    'one more time and see what happens 💀',
+    'push your luck why don\'t you 😭',
+    'yoh you\'re on thin ice laaitie 💀',
+    'test KAMI and find out 😭',
+    'keep that energy and see 💀',
+    'not twice hey, once was enough 😭',
+  ],
+
+  // ── Celebration / hype ───────────────────────────────────
+  hype: [
+    'ngeke ke! 🔥', 'lekker gents! 🎉', 'scores! 💪',
+    'yebo shame! 🥳', 'clocked it! ✅', 'phanda! 🔥',
+    'oke shem! 🎊', 'kwaai moves! 💯',
+  ],
+
+  // ── Confusion / disbelief ────────────────────────────────
+  confused: [
+    'bathong what just happened 💀',
+    'yoh I\'m confused 😭',
+    'wait... what? 💀',
+    'hao khonahale, seriously? 😭',
+    'eish, that doesn\'t add up 💀',
+    'mos... what\'s going on here 😭',
+  ],
+
+  // ── Sadness / sympathy ───────────────────────────────────
+  sad: [
+    'yoh that\'s heavy hey 😔',
+    'shame man, that hurts 💔',
+    'eish, sorry about that 😢',
+    'bathong, that\'s not nice 😔',
+    'yoh shame, take it easy 💪',
   ],
 };
 
