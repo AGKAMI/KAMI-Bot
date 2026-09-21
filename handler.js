@@ -518,6 +518,16 @@ const handleMessage = async (sock, msg) => {
           }
         }
 
+        // 📸 Set team image — owner replies to an image after !setteamimage
+        try {
+          const imageMsg = msg.message?.imageMessage || msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
+          if (imageMsg) {
+            const senderJid = msg.key.participant || msg.key.remoteJid;
+            const setTeamImg = require('./commands/admin/setteamimage');
+            if (await setTeamImg.handleImage(sock, msg, from, senderJid)) return;
+          }
+        } catch (e) {}
+
         // 🔒 DM BLOCKER (EARLY - fires on ANY message, command or not, before prefix gate)
         // When selfMode is ON, block DMs from anyone who isn't owner or approved.
         // Team admins: blocked if no pending applications for their teams.

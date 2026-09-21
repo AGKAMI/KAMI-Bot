@@ -14,6 +14,7 @@ const { resolveUser } = require('./crewHelpers');
 const { buildComparableIds } = require('../../utils/jidHelper');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { startWizard } = require('./applyInteractive');
+const { createApplication } = require('./applyHelper');
 
 module.exports = {
   subName: 'apply',
@@ -68,101 +69,20 @@ module.exports = {
 
       const teamGroupJid = config.crewTeams[teamKey].jid;
 
-      // --- Already in the crew DB for this team? ---
-      if (database.getCrewMember(teamGroupJid, applicantJid)) {
-        return extra.reply(
-          applyingForSomeone
-            ? `❌ ERROR\n\n${mention(applicantJid)} is already part of ${TEAMS[teamKey].label} ${pick(SLANG.vibe)}`
-            : `❌ ERROR\n\nYou're already part of ${TEAMS[teamKey].label} ${pick(SLANG.vibe)}`
-        );
-      }
-
-      // --- Already a participant in the team's WhatsApp group? ---
-      try {
-        const meta = await sock.groupMetadata(teamGroupJid).catch(() => null);
-        if (meta && meta.participants) {
-          const alreadyIn = meta.participants.some(p =>
-            p.id === applicantJid ||
-            p.id?.split('@')[0] === applicantJid.split('@')[0]
-          );
-          if (alreadyIn) {
-            return extra.reply(
-              applyingForSomeone
-                ? `❌ ERROR\n\n${mention(applicantJid)} is already in the ${teamKey} group 🤨\nWhy apply for a group they're already in?`
-                : `❌ ERROR\n\nYou're already in the ${teamKey} group 🤨\nWhy apply for a group you're already in?`
-            );
-          }
-        }
-      } catch (e) {}
-
-      // --- Duplicate pending application? ---
-      const existingApps = database.getApplicants(teamGroupJid);
-      const applicantVariants = buildComparableIds(applicantJid);
-      const dup = Object.values(existingApps).find(a =>
-        a.status === 'pending' && buildComparableIds(a.jid).some(v => applicantVariants.includes(v))
-      );
-      if (dup) {
-        // If the existing app has no answers (DM failure / never got the form),
-        // allow them to re-apply — remove the broken one first
-        if (!dup.answers) {
-          database.removeApplicant(teamGroupJid, dup.appUid);
-          console.log(`[CREW APPLY] Replacing broken pending app ${dup.appUid} for ${applicantNum}`);
-        } else {
-          return extra.reply(
-            applyingForSomeone
-              ? `❌ ERROR\n\n${mention(applicantJid)} already has a pending ${teamKey} application ${pick(SLANG.vibe)}\nApp ID: *${dup.appUid}*\n\nWait for review or hit an admin`
-              : `❌ ERROR\n\nYou already have a pending ${teamKey} application ${pick(SLANG.vibe)}\nApp ID: *${dup.appUid}*\n\nWait for review or hit an admin`
-          );
-        }
-      }
-
-      // Create the application (DB generates a short UID)
-      const app = database.addApplicant(teamGroupJid, applicantJid, {
-        team: teamKey,
-        answers: null,
+      // Use shared application logic
+      const result = await createApplication(sock, applicantJid, teamKey, {
+        replyFn: (text) => extra.reply(text),
+        from: extra.from,
+        applyingForSomeone,
       });
 
-      if (!app) {
-        return extra.reply(`❌ ERROR\n\nCouldn't create application ${pick(SLANG.error)}`);
-      }
-
-      // Make sure the bot isn't blocking the applicant, so the form DM lands
-      try {
-        await sock.updateBlockStatus(applicantJid, 'unblock');
-      } catch (e) {}
-
-      // DM the applicant: App ID + choice of Typing vs Buttons
-      try {
-        await sendButtons(sock, applicantJid, {
-          text:
-            `━━━━━━━━━━━━━━━━\n` +
-            `*${TEAMS[teamKey].label.toUpperCase()} APPLICATION*\n` +
-            `${TEAMS[teamKey].emoji} ${TEAMS[teamKey].role.toUpperCase()} ${TEAMS[teamKey].emoji}\n` +
-            `━━━━━━━━━━━━━━━━\n\n` +
-            `🆔 *YOUR APPLICATION ID:* ${app.appUid}\n\n` +
-            `How would you like to answer the questions?`,
-          footer: `${teamKey} Application`,
-          buttons: [
-            { id: `cwiz:choice:btn:${teamKey}:${app.appUid}`, text: '🔘 Use Buttons' },
-            { id: `cwiz:choice:txt:${teamKey}:${app.appUid}`, text: '✍️ Type Answers' },
-          ],
-        });
-      } catch (dmErr) {
-        console.error('[CREW APPLY] form DM failed:', dmErr.message);
-        // Remove the app so applicant isn't stuck in a dead state
-        database.removeApplicant(teamGroupJid, app.appUid);
-        return extra.reply(
-          applyingForSomeone
-            ? `❌ ERROR\n\nCouldn't DM ${mention(applicantJid)} the application form ${pick(SLANG.error)}\nCheck if they have DMs open from this bot\n\n_The application was not created — they need to open their DMs first._`
-            : `❌ ERROR\n\nCouldn't DM you the application form ${pick(SLANG.error)}\nCheck if you have DMs open from this bot\n\n_The application was not created — open your DMs and try again._`
-        );
-      }
+      if (!result.ok) return;
 
       // Confirm where they applied from
       const confirmText =
         `✅ *APPLICATION STARTED*\n\n` +
         `🏢 Team: *${teamKey}* — ${TEAMS[teamKey].label}\n` +
-        `🆔 *App ID:* ${app.appUid}\n\n` +
+        `🆔 *App ID:* ${result.app.appUid}\n\n` +
         (applyingForSomeone
           ? `📲 I've DM'd ${mention(applicantJid)} the application form.\n\n`
           : `📲 I've DM'd you the application form.\n\n`) +
