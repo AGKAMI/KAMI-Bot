@@ -112,10 +112,36 @@ welcome: false,
     // Security team groups (JID + invite link). Used for .crew apply routing,
     // admin notification, auto-add on accept, and hired DM invite link.
     crewTeams: {
-      'SSRS': { name: 'Royal Security', jid: '120363402129417473@g.us', invite: 'DIOeUd6Fz1vIN5CNKf8tRB' },
-      'KSSPS': { name: 'Private Security', jid: '120363421626159074@g.us', invite: 'D6LGiNbZaSEAm4KS2kErwx' },
-      'KSSMP': { name: 'Metro Police', jid: '120363409819775730@g.us', invite: 'Ls0VolQePSk1kSlV5scXpD' },
-      'KSSMS': { name: 'Maganyeni Security', jid: '120363423238834158@g.us', invite: 'J5SDntb5MBt8xOC5FbUujv' }
+      'SSRS': {
+        name: 'Royal Security',
+        jid: '120363402129417473@g.us',
+        invite: 'DIOeUd6Fz1vIN5CNKf8tRB',
+        ranks: ['security officer', 'armed response', 'shift supervisor', 'security supervisor', 'area manager', 'operations manager', 'general manager'],
+      },
+      'KSSPS': {
+        name: 'Private Security',
+        jid: '120363421626159074@g.us',
+        invite: 'D6LGiNbZaSEAm4KS2kErwx',
+        ranks: ['grade e', 'grade d', 'grade c', 'grade b', 'grade a'],
+      },
+      'KSSMP': {
+        name: 'Metro Police',
+        jid: '120363409819775730@g.us',
+        invite: 'Ls0VolQePSk1kSlV5scXpD',
+        ranks: ['constable', 'senior constable', 'sergeant', 'inspector', 'chief inspector', 'superintendent', 'brigadier', 'colonel'],
+      },
+      'KSSMS': {
+        name: 'Maganyeni Security',
+        jid: '120363423238834158@g.us',
+        invite: 'J5SDntb5MBt8xOC5FbUujv',
+        ranks: ['grade e', 'grade d', 'grade c', 'grade b', 'grade a'],
+      },
+      'SSGENERAL': {
+        name: 'Slammed Society General',
+        jid: '120363417242897528@g.us',
+        invite: '',
+        ranks: ['member', 'senior member', 'moderator', 'admin', 'co-leader', 'leader'],
+      },
     },
     
     // Limits

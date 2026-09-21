@@ -720,12 +720,22 @@ const pruneTeamAdmins = (currentAdminsByGroup) => {
 
 // Get custom roles for a group (ordered by hierarchy)
 const getCustomRoles = (groupJid) => {
-  const team = getTeam(groupJid);
-  if (!team.roles || team.roles.length === 0) {
-    // Default roles if none configured
-    return ['member', 'officer', 'co-leader', 'leader'];
+  // 1. Check config.crewTeams for team-specific ranks (keyed by teamKey)
+  const configTeams = require('../config').crewTeams || {};
+  for (const [key, info] of Object.entries(configTeams)) {
+    if (info.jid === groupJid && info.ranks && info.ranks.length > 0) {
+      return info.ranks;
+    }
   }
-  return team.roles;
+
+  // 2. Fall back to teamMap roles
+  const team = getTeam(groupJid);
+  if (team.roles && team.roles.length > 0) {
+    return team.roles;
+  }
+
+  // 3. Default fallback
+  return ['member', 'officer', 'co-leader', 'leader'];
 };
 
 // Set custom roles for a group

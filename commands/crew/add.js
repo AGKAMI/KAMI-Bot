@@ -8,11 +8,12 @@ const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
-const ROLE_EMOJIS = {
-  'leader': '👑',
-  'co-leader': '⭐',
-  'officer': '🎖️',
-  'member': '👤',
+const getRoleEmoji = (role, roles) => {
+  const idx = roles.indexOf(role);
+  if (idx === roles.length - 1) return '👑';
+  if (idx === roles.length - 2) return '⭐';
+  if (idx === 0) return '👤';
+  return '🎖️';
 };
 
 function phoneToJid(phone) {
@@ -86,17 +87,16 @@ module.exports = {
 
       const targetNum = target.split('@')[0];
 
+      const validRoles = database.getCustomRoles(extra.from);
+
       // Check if already in crew DB
       const existing = database.getCrewMember(extra.from, target);
       if (existing) {
         return extra.reply(
           `❌ ERROR\n\n@${targetNum} is already in the crew\n` +
-          `Role: ${ROLE_EMOJIS[existing.role] || '👤'} ${existing.role}`
+          `Role: ${getRoleEmoji(existing.role, validRoles)} ${existing.role}`
         );
       }
-
-      // Get custom roles for this group
-      const validRoles = database.getCustomRoles(extra.from);
 
       // Parse role — find a valid role word from remaining args
       let role = validRoles[0]; // default to first (lowest) role
@@ -129,7 +129,7 @@ module.exports = {
         database.addOwnerAddedMember(extra.from, target, extra.sender);
       }
 
-      const roleEmoji = ROLE_EMOJIS[role] || '👤';
+      const roleEmoji = getRoleEmoji(role, validRoles);
       const ownerVIP = extra.isOwnerMentioned;
 
       await sock.sendMessage(extra.from, {

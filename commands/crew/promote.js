@@ -8,11 +8,12 @@ const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
-const ROLE_EMOJIS = {
-  'leader': '👑',
-  'co-leader': '⭐',
-  'officer': '🎖️',
-  'member': '👤',
+const getRoleEmoji = (role, roles) => {
+  const idx = roles.indexOf(role);
+  if (idx === roles.length - 1) return '👑';
+  if (idx === roles.length - 2) return '⭐';
+  if (idx === 0) return '👤';
+  return '🎖️';
 };
 
 module.exports = {
@@ -77,7 +78,7 @@ module.exports = {
             ? `👑 THE BOSS HAS SPOKEN 👑\n\n`
             : `⬆️ PROMOTED\n\n`) +
           `@${targetNum}\n\n` +
-          `${ROLE_EMOJIS[oldRole] || '👤'} ${oldRole} → ${ROLE_EMOJIS[newRole] || '👤'} ${bold(newRole)}` +
+          `${getRoleEmoji(oldRole, validRoles)} ${oldRole} → ${getRoleEmoji(newRole, validRoles)} ${bold(newRole)}` +
           (ownerVIP ? `\n\n_The owner himself has promoted this member._ 👑` : ''),
         mentions: [target],
       }, { quoted: msg });

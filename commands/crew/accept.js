@@ -11,11 +11,13 @@ const axios = require('axios');
 const { bold, pick, SLANG } = require('../../utils/format');
 const { TEAMS, buildHiredMessage } = require('./crewForms');
 
-const ROLE_EMOJIS = {
-  'leader': '👑',
-  'co-leader': '⭐',
-  'officer': '🎖️',
-  'member': '👤',
+// Dynamic emoji mapping — first role gets 👤, last gets 👑
+const getRoleEmoji = (role, roles) => {
+  const idx = roles.indexOf(role);
+  if (idx === roles.length - 1) return '👑';
+  if (idx === roles.length - 2) return '⭐';
+  if (idx === 0) return '👤';
+  return '🎖️';
 };
 
 module.exports = {
@@ -176,7 +178,7 @@ module.exports = {
         console.error('[CREW ACCEPT] hired DM failed:', dmErr.message);
       }
 
-      const roleEmoji = ROLE_EMOJIS[role] || '👤';
+      const roleEmoji = getRoleEmoji(role, validRoles);
       const ownerVIP = extra.isOwnerMentioned;
 
       await sock.sendMessage(extra.from, {

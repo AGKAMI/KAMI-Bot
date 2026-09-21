@@ -58,17 +58,21 @@ module.exports = {
     const mentions = [];
     let currentRole = null;
 
+    const getRoleEmoji = (role) => {
+      const idx = roles.indexOf(role);
+      if (idx === roles.length - 1) return '👑';
+      if (idx === roles.length - 2) return '⭐';
+      if (idx === 0) return '👤';
+      return '🎖️';
+    };
+
     for (const [jid, data] of memberList) {
       const num = jid.split(':')[0].split('@')[0].replace(/\D/g, '');
 
       // Role header
       if (data.role !== currentRole) {
         currentRole = data.role;
-        const roleEmoji = data.role === 'leader' ? '👑'
-          : data.role === 'co-leader' ? '⭐'
-          : data.role === 'officer' ? '🎖️'
-          : '👤';
-        text += `\n${roleEmoji} *${data.role.toUpperCase()}*\n`;
+        text += `\n${getRoleEmoji(data.role)} *${data.role.toUpperCase()}*\n`;
       }
 
       // Status indicator

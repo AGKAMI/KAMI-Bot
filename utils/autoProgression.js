@@ -1,27 +1,39 @@
 /**
  * Auto Progression Engine
- * Automatically promotes crew members based on activity thresholds.
- * Runs on a timer — no human intervention needed.
+ * Promotes crew members based on activity — uses per-team ranks from config.
  *
- * Thresholds:
- *   - member → officer: 100 messages + 14 days active
- *   - officer → co-leader: 300 messages + 30 days active
- *   - co-leader → leader: 500 messages + 60 days active
+ * Each team's rank hierarchy is defined in config.crewTeams[teamKey].ranks.
+ * Progression thresholds scale with position in the hierarchy:
+ *   lower ranks = easier thresholds
+ *   higher ranks = harder thresholds
  *
- * Configurable via PROGRESSION_RULES below.
+ * WhatsApp admin promotion:
+ *   SS General: moderator and above
+ *   Security teams: grade b / shift supervisor and above
  */
 
 const database = require('../database');
 const config = require('../config');
 
-// ── Progression Rules ─────────────────────────────────────
-// Each rule: { from, to, minMessages, minDaysActive }
-// Checked in order — first matching rule wins
-const PROGRESSION_RULES = [
-  { from: 'member',    to: 'officer',    minMessages: 100, minDaysActive: 14 },
-  { from: 'officer',   to: 'co-leader',  minMessages: 300, minDaysActive: 30 },
-  { from: 'co-leader', to: 'leader',     minMessages: 500, minDaysActive: 60 },
-];
+// ── Progression Thresholds ────────────────────────────────
+// Scales with index in the team's rank array
+const getThresholds = (index, total) => {
+  // Earlier promotions = easier, later = harder
+  const msgMultiplier = index + 1;
+  const dayMultiplier = index + 1;
+
+  const minMessages = Math.floor(40 * Math.pow(msgMultiplier, 1.5));
+  const minDaysActive = Math.floor(5 * Math.pow(dayMultiplier, 1.2));
+
+  return { minMessages, minDaysActive };
+};
+
+// WhatsApp admin threshold — rank index must be >= this
+const getAdminThresholdIndex = (teamKey) => {
+  if (teamKey === 'SSGENERAL') return 3; // moderator+ gets admin
+  if (teamKey === 'KSSMP') return 3; // inspector+ (metro police)
+  return 3; // grade b / shift supervisor+ for security teams
+};
 
 // How often to run (in ms) — default every hour
 const CHECK_INTERVAL = 60 * 60 * 1000;
@@ -33,6 +45,16 @@ const MEMBER_COOLDOWN = 24 * 60 * 60 * 1000; // 24 hours
 const lastCheck = new Map();
 
 /**
+ * Get rank hierarchy for a team from config
+ */
+const getTeamRanks = (teamKey) => {
+  const configRanks = config.crewTeams?.[teamKey]?.ranks;
+  if (configRanks && configRanks.length > 0) return configRanks;
+  // Fallback — shouldn't happen if config is correct
+  return ['member', 'senior member', 'moderator', 'admin', 'co-leader', 'leader'];
+};
+
+/**
  * Check one group for eligible promotions
  * Returns array of { memberJid, from, to, activity } for each auto-promotion
  */
@@ -40,6 +62,8 @@ const checkGroup = async (sock, groupJid, teamKey) => {
   const promotions = [];
   const allActivity = database.getGroupMemberActivity(groupJid);
   const roles = database.getCustomRoles(groupJid);
+  const ranks = getTeamRanks(teamKey);
+  const adminThreshold = getAdminThresholdIndex(teamKey);
 
   for (const [memberJid, data] of Object.entries(allActivity)) {
     // Skip if cooldown active
@@ -47,32 +71,31 @@ const checkGroup = async (sock, groupJid, teamKey) => {
     const lastCheckTime = lastCheck.get(cooldownKey) || 0;
     if (Date.now() - lastCheckTime < MEMBER_COOLDOWN) continue;
 
-    // Find applicable rule
-    const currentRoleIndex = roles.indexOf(data.role);
-    const rule = PROGRESSION_RULES.find(r => r.from === data.role);
+    // Find current rank in hierarchy
+    const currentRankIndex = ranks.indexOf(data.role);
+    if (currentRankIndex === -1) continue; // Role not in hierarchy
+    if (currentRankIndex >= ranks.length - 1) continue; // Already at top rank
 
-    if (!rule) continue; // No rule for this role (e.g., already leader)
-    if (data.role !== rule.from) continue;
+    // Next rank
+    const nextRank = ranks[currentRankIndex + 1];
+    const { minMessages, minDaysActive } = getThresholds(currentRankIndex, ranks.length);
 
     // Check thresholds
-    if (data.totalMessages >= rule.minMessages && data.daysActive >= rule.minDaysActive) {
-      // Verify role exists in hierarchy
-      const newRoleIndex = roles.indexOf(rule.to);
-      if (newRoleIndex === -1) continue;
-
+    if (data.totalMessages >= minMessages && data.daysActive >= minDaysActive) {
       // Auto-promote
       try {
         const member = database.getCrewMember(groupJid, memberJid);
         if (!member) continue;
 
-        database.addCrewMember(groupJid, memberJid, { ...member, role: rule.to });
+        database.addCrewMember(groupJid, memberJid, { ...member, role: nextRank });
 
-        // Also promote in WhatsApp if officer or above
-        if (rule.to === 'officer' || rule.to === 'co-leader' || rule.to === 'leader') {
+        // Promote to WhatsApp admin if reaching threshold
+        const nextRankIndex = currentRankIndex + 1;
+        if (nextRankIndex >= adminThreshold) {
           try {
             await sock.groupParticipantsUpdate(groupJid, [memberJid], 'promote');
           } catch (e) {
-            // WhatsApp promote might fail if not admin — that's ok, role is still updated in DB
+            // WhatsApp promote might fail — role is still updated in DB
           }
         }
 
@@ -82,9 +105,9 @@ const checkGroup = async (sock, groupJid, teamKey) => {
         await sock.sendMessage(groupJid, {
           text:
             `⬆️ *AUTO-PROGRESSION*\n\n` +
-            `@${memberNum} has been promoted to *${rule.to}*\n\n` +
-            `📊 Activity: ${data.totalMessages} messages, ${data.daysActive} days active\n` +
-            `📈 Met the threshold for ${rule.to}\n\n` +
+            `@${memberNum} promoted to *${nextRank}*\n\n` +
+            `📊 Activity: ${data.totalMessages} msgs, ${data.daysActive} days\n` +
+            `📈 Met threshold for ${nextRank}\n\n` +
             `_Consistency pays off ${pick(SLANG.vibe)}_ 👑`,
           mentions: [memberJid],
         });
@@ -94,8 +117,8 @@ const checkGroup = async (sock, groupJid, teamKey) => {
           await sock.sendMessage(memberJid, {
             text:
               `⬆️ *YOU GOT PROMOTED* 🎉\n\n` +
-              `You're now a *${rule.to}* in ${teamKey}\n\n` +
-              `📊 Your activity: ${data.totalMessages} messages, ${data.daysActive} days\n` +
+              `You're now *${nextRank}* in ${teamKey}\n\n` +
+              `📊 Your activity: ${data.totalMessages} msgs, ${data.daysActive} days\n` +
               `📈 You met the threshold — keep it up!\n\n` +
               `_KAMI sees the effort ${pick(SLANG.good)}_ 👑`,
           });
@@ -103,12 +126,12 @@ const checkGroup = async (sock, groupJid, teamKey) => {
 
         promotions.push({
           memberJid,
-          from: rule.from,
-          to: rule.to,
+          from: data.role,
+          to: nextRank,
           activity: { messages: data.totalMessages, days: data.daysActive },
         });
 
-        console.log(`[AUTO-PROGRESSION] ${memberNum} → ${rule.to} in ${teamKey} (${data.totalMessages} msgs, ${data.daysActive} days)`);
+        console.log(`[AUTO-PROGRESSION] ${memberNum} → ${nextRank} in ${teamKey} (${data.totalMessages} msgs, ${data.daysActive} days)`);
       } catch (e) {
         console.error(`[AUTO-PROGRESSION] Failed to promote ${memberJid}:`, e.message);
       }
@@ -228,7 +251,6 @@ const runInactiveCheck = async (sock) => {
   }
 };
 
-// Need to import pick and SLANG here
 const { pick, SLANG } = require('../utils/format');
 
 module.exports = {
@@ -236,5 +258,5 @@ module.exports = {
   runProgressionCheck,
   runInactiveCheck,
   startProgressionEngine,
-  PROGRESSION_RULES,
+  getTeamRanks,
 };

@@ -64,9 +64,11 @@ module.exports = {
     const roleIndex = roles.indexOf(member.role);
     const nextRole = roleIndex < roles.length - 1 ? roles[roleIndex + 1] : null;
 
-    // Progress to next role
-    const MSGS_FOR_PROMOTE = 100;
-    const DAYS_FOR_PROMOTE = 14;
+    // Progress to next role — scale with position in hierarchy
+    const msgMultiplier = roleIndex + 1;
+    const dayMultiplier = roleIndex + 1;
+    const MSGS_FOR_PROMOTE = Math.floor(40 * Math.pow(msgMultiplier, 1.5));
+    const DAYS_FOR_PROMOTE = Math.floor(5 * Math.pow(dayMultiplier, 1.2));
     const progress = Math.min(100, Math.round((activity.totalMessages / MSGS_FOR_PROMOTE) * 100));
     const daysProgress = Math.min(100, Math.round((activity.daysActive / DAYS_FOR_PROMOTE) * 100));
 
