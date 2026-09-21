@@ -264,6 +264,7 @@ onButton('crew:accept', async (sock, msg, from, sender, btnId) => {
 onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
   const uid = btnId.replace('crew:deny:', '');
   if (!uid) return;
+  const p = require('../../config').prefix || '.';
   const { getApplicantByUid, getProcessedApp } = require('../../database');
   const app = getApplicantByUid(uid);
   const processed = getProcessedApp(uid);
@@ -275,7 +276,7 @@ onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
     return;
   }
   await sock.sendMessage(from, {
-    text: `❌ *Deny Application*\n\nType a reason to deny *${uid}*:\n\`${prefix}crew deny ${uid} <reason>\``,
+    text: `❌ *Deny Application*\n\nType a reason to deny *${uid}*:\n\`${p}crew deny ${uid} <reason>\``,
   });
 });
 
