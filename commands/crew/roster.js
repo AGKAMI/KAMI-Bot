@@ -22,12 +22,21 @@ module.exports = {
       return extra.reply(`❌ ERROR\n\nThis command works in groups only`);
     }
 
-    const teamData = database.getCrew();
-    const teamKey = Object.keys(teamData.teams || {}).find(
-      k => teamData.teams[k]?.jid === from
+    // Check config.crewTeams for team JIDs
+    const crewConfig = config.crewTeams || {};
+    const teamKey = Object.keys(crewConfig).find(
+      k => crewConfig[k]?.jid === from
     );
 
+    // Fallback: check database teamMap
     if (!teamKey) {
+      const teamData = database.getCrew();
+      const dbKey = Object.keys(teamData.teamMap || {}).find(
+        k => teamData.teamMap[k] === from
+      );
+      if (dbKey) {
+        return extra.reply(`📋 ROSTER\n\nTeam: ${dbKey}\n\n_No members yet_`);
+      }
       return extra.reply(`❌ ERROR\n\nThis group isn't a crew team`);
     }
 

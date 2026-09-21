@@ -11,7 +11,7 @@ module.exports = {
   execute: async (sock, msg, args, extra) => {
     const { from, sender, isOwner, isGroup } = extra;
     const prefix = config.prefix;
-    const teamData = database.getCrew();
+    const crewConfig = config.crewTeams || {};
 
     // Only owner can view activity
     if (!isOwner) {
@@ -21,7 +21,7 @@ module.exports = {
       );
     }
 
-    const teamGroups = Object.keys(teamData.teams || {});
+    const teamGroups = Object.keys(crewConfig);
 
     // Parse args: check for @mention (specific admin) or days number
     let targetAdmin = null;

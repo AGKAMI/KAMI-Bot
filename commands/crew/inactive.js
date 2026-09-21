@@ -22,9 +22,10 @@ module.exports = {
       return extra.reply(`❌ ERROR\n\nThis command works in groups only`);
     }
 
-    const teamData = database.getCrew();
-    const teamKey = Object.keys(teamData.teams || {}).find(
-      k => teamData.teams[k]?.jid === from
+    // Check config.crewTeams for team JIDs
+    const crewConfig = config.crewTeams || {};
+    const teamKey = Object.keys(crewConfig).find(
+      k => crewConfig[k]?.jid === from
     );
 
     if (!teamKey) {
