@@ -98,6 +98,15 @@ module.exports = {
         if (isDM) {
           // DM context — enforce team-admin access rules
           const isApproved = database.isApprovedNumber(extra.sender);
+
+          // Owner-only commands: block everyone except owner
+          const handler = subHandlers[actualSub] || subHandlers[aliasMap[actualSub]];
+          if (handler && handler.ownerOnly && !isOwner) {
+            return extra.reply(
+              `❌ ERROR\n\nThis command is owner-only`
+            );
+          }
+
           if (sub === 'accept' || sub === 'deny') {
             // accept/deny from DM: owner, approved, or team admin only
             if (!isOwner && !isApproved && !isTeamAdmin) {
