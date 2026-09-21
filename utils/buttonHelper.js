@@ -183,7 +183,17 @@ function handleButtonResponse(sock, msg) {
 
     if (!btnId) return false;
 
-    const handler = buttonHandlers.get(btnId);
+    // Exact match first
+    let handler = buttonHandlers.get(btnId);
+    if (!handler) {
+      // Prefix match — check if any registered ID is a prefix of btnId
+      for (const [key, hnd] of buttonHandlers) {
+        if (btnId.startsWith(key + ':') || btnId.startsWith(key)) {
+          handler = hnd;
+          break;
+        }
+      }
+    }
     if (handler) {
       handler(sock, msg, from, sender, btnId);
       return true;

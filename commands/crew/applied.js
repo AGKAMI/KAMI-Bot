@@ -243,28 +243,45 @@ module.exports = {
 // Registered when this module loads. Handles taps on accept/deny/pending buttons
 // sent in the admin application notice.
 const { onButton } = require('../../utils/buttonHelper');
+const handler = require('../../handler');
 const prefix = config.prefix || '.';
 
 onButton('crew:accept', async (sock, msg, from, sender, btnId) => {
   const uid = btnId.replace('crew:accept:', '');
   if (!uid) return;
-  await sock.sendMessage(from, {
-    text: `✅ *ACCEPT APPLICATION*\n\nApp ID: *${uid}*\n\nType:\n\`${prefix}crew accept ${uid}\`\n\nOr add a role:\n\`${prefix}crew accept ${uid} member\``,
-  });
+  const fakeMsg = {
+    key: { remoteJid: from, participant: sender, id: 'btn_' + Date.now() },
+    message: { conversation: `${prefix}crew accept ${uid}` },
+    messageTimestamp: Math.floor(Date.now() / 1000),
+  };
+  await handler.handleMessage(sock, fakeMsg);
 });
 
 onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
   const uid = btnId.replace('crew:deny:', '');
   if (!uid) return;
+  const { getApplicantByUid, getProcessedApp } = require('../../database');
+  const app = getApplicantByUid(uid);
+  const processed = getProcessedApp(uid);
+  if (!app && processed) {
+    const action = processed.action === 'accepted' ? '✅ accepted' : '❌ denied';
+    await sock.sendMessage(from, {
+      text: `⚠️ Application *${uid}* was already ${action} by an admin.\n\nNothing to do.`,
+    });
+    return;
+  }
   await sock.sendMessage(from, {
-    text: `❌ *DENY APPLICATION*\n\nApp ID: *${uid}*\n\nType:\n\`${prefix}crew deny ${uid} <reason>\`\n\nExample:\n\`${prefix}crew deny ${uid} Not active enough\``,
+    text: `❌ *Deny Application*\n\nType a reason to deny *${uid}*:\n\`${prefix}crew deny ${uid} <reason>\``,
   });
 });
 
 onButton('crew:pending', async (sock, msg, from, sender, btnId) => {
   const team = btnId.replace('crew:pending:', '');
   if (!team) return;
-  await sock.sendMessage(from, {
-    text: `📋 *PENDING APPLICATIONS*\n\nType:\n\`${prefix}crew applicants ${team}\``,
-  });
+  const fakeMsg = {
+    key: { remoteJid: from, participant: sender, id: 'btn_' + Date.now() },
+    message: { conversation: `${prefix}crew applicants ${team}` },
+    messageTimestamp: Math.floor(Date.now() / 1000),
+  };
+  await handler.handleMessage(sock, fakeMsg);
 });

@@ -66,10 +66,10 @@ function getQuestions(teamKey) {
       label: 'AGE',
       text: 'How old are you?',
       options: [
-        { id: '12-14',  label: '12-14' },
-        { id: '15-17',  label: '15-17' },
-        { id: '18-21',  label: '18-21' },
-        { id: '22+',    label: '22+' },
+        { id: '7-11 (Minor)',    label: '7-11 (Minor)' },
+        { id: '12-14',           label: '12-14' },
+        { id: '15-17',           label: '15-17' },
+        { id: '18+',             label: '18+' },
       ],
     },
     {
