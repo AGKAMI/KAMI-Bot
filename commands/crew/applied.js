@@ -243,18 +243,19 @@ module.exports = {
 // Registered when this module loads. Handles taps on accept/deny/pending buttons
 // sent in the admin application notice.
 const { onButton } = require('../../utils/buttonHelper');
-const handler = require('../../handler');
 const prefix = config.prefix || '.';
 
 onButton('crew:accept', async (sock, msg, from, sender, btnId) => {
   const uid = btnId.replace('crew:accept:', '');
   if (!uid) return;
-  const fakeMsg = {
-    key: { remoteJid: from, participant: sender, id: 'btn_' + Date.now() },
-    message: { conversation: `${prefix}crew accept ${uid}` },
-    messageTimestamp: Math.floor(Date.now() / 1000),
-  };
-  await handler.handleMessage(sock, fakeMsg);
+  // Load lazily to avoid circular dependency (applied.js ↔ handler.js)
+  const acceptCmd = require('./accept');
+  await acceptCmd.execute(sock, msg, [uid], {
+    from, sender,
+    isGroup: false,
+    isOwner: false,
+    reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+  });
 });
 
 onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
@@ -278,10 +279,11 @@ onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
 onButton('crew:pending', async (sock, msg, from, sender, btnId) => {
   const team = btnId.replace('crew:pending:', '');
   if (!team) return;
-  const fakeMsg = {
-    key: { remoteJid: from, participant: sender, id: 'btn_' + Date.now() },
-    message: { conversation: `${prefix}crew applicants ${team}` },
-    messageTimestamp: Math.floor(Date.now() / 1000),
-  };
-  await handler.handleMessage(sock, fakeMsg);
+  const applicantsCmd = require('./applicants');
+  await applicantsCmd.execute(sock, msg, [team], {
+    from, sender,
+    isGroup: from.endsWith('@g.us'),
+    isOwner: false,
+    reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+  });
 });
