@@ -101,6 +101,7 @@ onButton('admin:unban', async (sock, msg, from, sender, btnId) => {
       mentions: [target],
     });
   } catch (e) {
-    await sock.sendMessage(from, { text: `❌ *UNBAN FAILED*\n\n_Couldn't unblock the user_` });
+    console.error('[UNBAN BTN] Error:', e.message);
+    await sock.sendMessage(from, { text: `❌ *UNBAN FAILED*\n\n${e.message || "Couldn't unblock user"}` });
   }
 });

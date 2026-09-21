@@ -81,6 +81,7 @@ onButton('admin:demote', async (sock, msg, from, sender, btnId) => {
       mentions: [target],
     });
   } catch (e) {
-    await sock.sendMessage(from, { text: `❌ *DEMOTE FAILED*\n\n_Couldn't demote — check if I'm admin_` });
+    console.error('[DEMOTE BTN] Error:', e.message);
+    await sock.sendMessage(from, { text: `❌ *DEMOTE FAILED*\n\n${e.message || "Couldn't demote user"}` });
   }
 });

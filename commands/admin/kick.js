@@ -4,10 +4,14 @@
  */
 
 const database = require('../../database');
-const handler = require('../../handler');
 const config = require('../../config');
 const { pick, SLANG, mention } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
+
+// Lazy require to avoid circular dependency (kick.js ↔ handler.js via commandLoader)
+function getHandler() {
+  return require('../../handler');
+}
 
 function getOwnerJid(sock) {
   const botId = sock.user?.id || '';
@@ -162,6 +166,7 @@ module.exports = {
 
       // ── Safe to kick ─────────────────────────────────────
       // Mark targets so handler protection doesn't re-add them
+      const handler = getHandler();
       for (const t of usersToKick) handler._botKicked.add(t);
       setTimeout(() => {
         for (const t of usersToKick) handler._botKicked.delete(t);
@@ -205,6 +210,7 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
       mentions: [target],
     });
   } catch (e) {
-    await sock.sendMessage(from, { text: `❌ *RE-ADD FAILED*\n\n_Couldn't add the user back_` });
+    console.error('[READD BTN] Error:', e.message);
+    await sock.sendMessage(from, { text: `❌ *RE-ADD FAILED*\n\n${e.message || "Couldn't add user back"}` });
   }
 });

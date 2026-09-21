@@ -96,12 +96,17 @@ onButton('admin:undowarn', async (sock, msg, from, sender, btnId) => {
   const num = btnId.replace('admin:undowarn:', '');
   if (!num) return;
   const target = `${num}@s.whatsapp.net`;
-  const database = require('../../database');
-  database.removeWarning(from, target);
-  await sock.sendMessage(from, {
-    text: `✅ *WARNING REMOVED*\n\n${mention(target)} _has been cleared of their last warning_`,
-    mentions: [target],
-  });
+  try {
+    const database = require('../../database');
+    database.removeWarning(from, target);
+    await sock.sendMessage(from, {
+      text: `✅ *WARNING REMOVED*\n\n${mention(target)} _has been cleared of their last warning_`,
+      mentions: [target],
+    });
+  } catch (e) {
+    console.error('[UNDOWARN] Error:', e.message);
+    await sock.sendMessage(from, { text: `❌ *UNDO FAILED*\n\n${e.message || "Couldn't remove warning"}` });
+  }
 });
 
 onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
@@ -117,6 +122,7 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
     const database = require('../../database');
     database.clearWarnings(from, target);
   } catch (e) {
-    await sock.sendMessage(from, { text: `*❌ KICK FAILED*\n\n_Couldn't remove the user — check if I'm admin_` });
+    console.error('[KICK BTN] Error:', e.message);
+    await sock.sendMessage(from, { text: `❌ *KICK FAILED*\n\n${e.message || "Couldn't kick user"}` });
   }
 });

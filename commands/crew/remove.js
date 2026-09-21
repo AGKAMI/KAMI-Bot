@@ -5,10 +5,14 @@
  */
 
 const database = require('../../database');
-const handler = require('../../handler');
 const config = require('../../config');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
+
+// Lazy require to avoid circular dependency
+function getHandler() {
+  return require('../../handler');
+}
 
 module.exports = {
   subName: 'remove',
@@ -55,6 +59,7 @@ module.exports = {
       let kickedFromGroup = false;
       try {
         // Mark as bot-initiated so handler.js skips member protection
+        const handler = getHandler();
         handler._botKicked.add(target);
         setTimeout(() => handler._botKicked.delete(target), 5000);
 

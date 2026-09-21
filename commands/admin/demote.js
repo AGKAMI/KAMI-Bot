@@ -286,6 +286,7 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
       mentions: [target],
     });
   } catch (e) {
-    await sock.sendMessage(from, { text: `❌ *PROMOTE FAILED*\n\n_Couldn't promote — check if I'm admin_` });
+    console.error('[PROMOTE BTN] Error:', e.message);
+    await sock.sendMessage(from, { text: `❌ *PROMOTE FAILED*\n\n${e.message || "Couldn't promote user"}` });
   }
 });

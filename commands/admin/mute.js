@@ -40,6 +40,7 @@ onButton('admin:unmute', async (sock, msg, from, sender, btnId) => {
       text: `🔓 UNMUTED\n\nGroup opened — everyone can talk now`,
     });
   } catch (e) {
-    await sock.sendMessage(from, { text: `❌ *UNMUTE FAILED*\n\n_Couldn't open the group_` });
+    console.error('[UNMUTE BTN] Error:', e.message);
+    await sock.sendMessage(from, { text: `❌ *UNMUTE FAILED*\n\n${e.message || "Couldn't open the group"}` });
   }
 });

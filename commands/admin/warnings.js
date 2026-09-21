@@ -126,6 +126,7 @@ onButton('admin:clearwarnings', async (sock, msg, from, sender, btnId) => {
       mentions: [target],
     });
   } catch (e) {
-    await sock.sendMessage(from, { text: `❌ *CLEAR FAILED*\n\n_Couldn't clear warnings_` });
+    console.error('[CLEAR WARNINGS BTN] Error:', e.message);
+    await sock.sendMessage(from, { text: `❌ *CLEAR FAILED*\n\n${e.message || "Couldn't clear warnings"}` });
   }
 });

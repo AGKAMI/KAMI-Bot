@@ -40,6 +40,7 @@ onButton('admin:mute', async (sock, msg, from, sender, btnId) => {
       text: `🔒 MUTED\n\nGroup closed — only admins can talk now`,
     });
   } catch (e) {
-    await sock.sendMessage(from, { text: `❌ *MUTE FAILED*\n\n_Couldn't close the group_` });
+    console.error('[MUTE BTN] Error:', e.message);
+    await sock.sendMessage(from, { text: `❌ *MUTE FAILED*\n\n${e.message || "Couldn't close the group"}` });
   }
 });
