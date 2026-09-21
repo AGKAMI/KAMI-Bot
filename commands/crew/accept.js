@@ -126,20 +126,6 @@ module.exports = {
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
 
-      // Clean up auto-unblock tracking (team admins are already exempt from
-      // the DM blocker, so we don't actually re-block them — just clear the tracking)
-      try {
-        const autoUnblocked = database.getAutoUnblockedTeamAdmins();
-        for (const adminNum of autoUnblocked) {
-          const adminJid = adminNum + '@s.whatsapp.net';
-          if (!database.hasPendingApplicationsForAnyTeam(adminJid)) {
-            database.removeAutoUnblockedTeamAdmin(adminJid);
-          }
-        }
-      } catch (e) {
-        console.error('[CREW ACCEPT] Auto-unblock cleanup error:', e.message);
-      }
-
       // Add the applicant to the team's WhatsApp group
       let addedToGroup = false;
       if (teamGroupJid) {

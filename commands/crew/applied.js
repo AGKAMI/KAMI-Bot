@@ -164,43 +164,8 @@ module.exports = {
         );
       }
 
-      // Unblock team admins for this team so they can receive the application notice
-      let unblockedAdmins = [];
-      if (teamGroupJid) {
-        try {
-          const meta = await sock.groupMetadata(teamGroupJid).catch(() => null);
-          if (meta && meta.participants) {
-            const groupAdmins = meta.participants.filter(p =>
-              p.admin === 'admin' || p.admin === 'superadmin'
-            );
-            
-            for (const admin of groupAdmins) {
-              const adminJid = admin.id;
-              if (!adminJid) continue;
-              const adminNum = adminJid.replace(/@.*$/, '');
-              
-              // Skip if already auto-unblocked
-              if (database.isAutoUnblockedTeamAdmin(adminJid)) continue;
-              // Skip owner
-              if (database.getGlobalSettings().approvedNumbers?.includes(adminNum)) continue;
-              
-              // Unblock them
-              try {
-                await sock.updateBlockStatus(adminJid, 'unblock');
-                database.addAutoUnblockedTeamAdmin(adminJid);
-                unblockedAdmins.push(adminJid);
-                console.log(`[CREW APPLIED] Unblocked team admin ${adminNum} for ${teamKey} application`);
-              } catch (e) {
-                console.error(`[CREW APPLIED] Failed to unblock admin ${adminNum}:`, e.message);
-              }
-            }
-          }
-        } catch (e) {
-          console.error('[CREW APPLIED] Admin unblock error:', e.message);
-        }
-      }
-
       // DM the application to ALL group admins of the team
+      // Note: team admins are already exempt from DM blocker — no unblocking needed
       let adminMsg = null;
       if (teamGroupJid) {
         try {

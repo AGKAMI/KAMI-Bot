@@ -143,10 +143,12 @@ module.exports = {
         });
       } catch (dmErr) {
         console.error('[CREW APPLY] form DM failed:', dmErr.message);
+        // Remove the app so applicant isn't stuck in a dead state
+        database.removeApplicant(teamGroupJid, app.appUid);
         return extra.reply(
           applyingForSomeone
-            ? `❌ ERROR\n\nCouldn't DM @${applicantNum} the application form ${pick(SLANG.error)}\nCheck if they have DMs open from this bot`
-            : `❌ ERROR\n\nCouldn't DM you the application form ${pick(SLANG.error)}\nCheck if you have DMs open from this bot`
+            ? `❌ ERROR\n\nCouldn't DM @${applicantNum} the application form ${pick(SLANG.error)}\nCheck if they have DMs open from this bot\n\n_The application was not created — they need to open their DMs first._`
+            : `❌ ERROR\n\nCouldn't DM you the application form ${pick(SLANG.error)}\nCheck if you have DMs open from this bot\n\n_The application was not created — open your DMs and try again._`
         );
       }
 
