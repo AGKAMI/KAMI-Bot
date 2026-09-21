@@ -3,6 +3,7 @@
  */
 
 const axios = require('axios');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -13,6 +14,7 @@ module.exports = {
   usage: '.translate <text> <lang> or .translate <lang> (reply to message)',
   
   async execute(sock, msg, args) {
+    const prefix = config.prefix || '.';
     try {
       const chatId = msg.key.remoteJid;
       
@@ -41,10 +43,10 @@ module.exports = {
           return await sock.sendMessage(chatId, {
             text: `*TRANSLATOR*\n\n` +
             `Usage:\n` +
-            `1. Reply to a message with: .translate <lang> or .trt <lang>\n` +
-            `2. Or type: .translate <text> <lang> or .trt <text> <lang>\n\n` +
+            `1. Reply to a message with: ${prefix}translate <lang> or .trt <lang>\n` +
+            `2. Or type: ${prefix}translate <text> <lang> or .trt <text> <lang>\n\n` +
             `Example:\n` +
-            `.translate hello fr\n` +
+            `${prefix}translate hello fr\n` +
             `.trt hello fr\n\n` +
             `Language codes:\n` +
             `fr - French, es - Spanish, de - German, it - Italian\n` +
@@ -65,7 +67,7 @@ module.exports = {
       
       if (!lang) {
         return await sock.sendMessage(chatId, { 
-          text: `❌ _${pick(SLANG.error)}, specify a language code_\n\n_Example:_ .translate hello fr`
+          text: `❌ _${pick(SLANG.error)}, specify a language code_\n\n_Example:_ ${prefix}translate hello fr`
         }, { quoted: msg });
       }
       

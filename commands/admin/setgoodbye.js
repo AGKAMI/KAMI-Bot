@@ -3,6 +3,7 @@
  */
 
 const db = require('../../database');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -15,13 +16,15 @@ module.exports = {
   ownerOnly: true, adminOnly: false,
   botAdminNeeded: true,
   execute: async (sock, msg, args) => {
+
+  const prefix = config.prefix || '.';
     try {
       const groupId = msg.key.remoteJid;
       
       if (!args.length) {
         const groupSettings = db.getGroupSettings(groupId);
         return await sock.sendMessage(groupId, {
-          text: `📝 *CURRENT GOODBYE MESSAGE*\n\n${groupSettings.goodbyeMessage}\n\n*Usage:* .setgoodbye <message>\n\n*Tip:* Use @user to mention the member who left`
+          text: `📝 *CURRENT GOODBYE MESSAGE*\n\n${groupSettings.goodbyeMessage}\n\n*Usage:* ${prefix}setgoodbye <message>\n\n*Tip:* Use @user to mention the member who left`
         }, { quoted: msg });
       }
       

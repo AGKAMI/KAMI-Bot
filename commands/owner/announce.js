@@ -83,6 +83,8 @@ module.exports = {
   ownerOnly: false,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       // ── Permission: owner or team admin ────────────────────
       if (!extra.isOwner && !database.isTeamAdmin(extra.sender)) {
@@ -98,9 +100,9 @@ module.exports = {
         return extra.reply(
           `❌ ERROR\n\nReply to a message to announce it\n\n` +
           `Usage:\n` +
-          `• \`.announce\` — community + SS crew group + newsletter\n` +
-          `• \`.announce ss\` — community + all SS crew + newsletter\n` +
-          `• \`.announce all\` — all CPM groups + community + newsletter`
+          `• \`${prefix}announce\` — community + SS crew group + newsletter\n` +
+          `• \`${prefix}announce ss\` — community + all SS crew + newsletter\n` +
+          `• \`${prefix}announce all\` — all CPM groups + community + newsletter`
         );
       }
 
@@ -109,7 +111,7 @@ module.exports = {
       if (mode && !['all', 'ss'].includes(mode)) {
         return extra.reply(
           `❌ ERROR\n\nUnknown mode: ${mode}\n\n` +
-          `Use: \`.announce\`, \`.announce ss\`, or \`.announce all\``
+          `Use: \`${prefix}announce\`, \`${prefix}announce ss\`, or \`${prefix}announce all\``
         );
       }
 

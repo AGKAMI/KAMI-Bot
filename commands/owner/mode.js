@@ -17,6 +17,8 @@ module.exports = {
   ownerOnly: true,
   
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       if (!args[0]) {
         const currentMode = config.selfMode ? 'private' : 'public';
@@ -29,8 +31,8 @@ module.exports = {
           `📋 *Current Mode:* *${currentMode.toUpperCase()}*\n` +
           `📝 *Status:* ${description}\n\n` +
           `*Usage:*\n` +
-          `  .mode private — Only owner can use\n` +
-          `  .mode public — Everyone can use`
+          `  ${prefix}mode private — Only owner can use\n` +
+          `  ${prefix}mode public — Everyone can use`
         );
       }
       
@@ -56,7 +58,7 @@ module.exports = {
         return extra.reply(`*🌐 PUBLIC MODE*\n\n✅ ${pick(SLANG.good)}, bot is now public — everyone can use commands`);
       }
       
-      return extra.reply(`*❌ ERROR* — invalid mode\n💡 Usage: .mode <private/public>`);
+      return extra.reply(`*❌ ERROR* — invalid mode\n💡 Usage: ${prefix}mode <private/public>`);
       
     } catch (error) {
       console.error('Mode command error:', error);

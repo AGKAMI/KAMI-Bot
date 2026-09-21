@@ -2,6 +2,7 @@
  * Newsletter Command - Get newsletter information from WhatsApp channel link
  */
 
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 /**
@@ -64,6 +65,8 @@ module.exports = {
   usage: '.newsletter <channel link>',
   ownerOnly: true,
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const chatId = extra.from;
       
@@ -86,7 +89,7 @@ module.exports = {
       const inviteCode = getChannelInviteCode(link);
       
       if (!inviteCode) {
-        return extra.reply(`*❌ ERROR* — couldn't extract the invite code\n\n💡 Please provide a valid WhatsApp channel link:\n   https://whatsapp.com/channel/0029VaAbCdEfGhIJkL\n\nOr just the invite code: .newsletter 0029VaAbCdEfGhIJkL`);
+        return extra.reply(`*❌ ERROR* — couldn't extract the invite code\n\n💡 Please provide a valid WhatsApp channel link:\n   https://whatsapp.com/channel/0029VaAbCdEfGhIJkL\n\nOr just the invite code: ${prefix}newsletter 0029VaAbCdEfGhIJkL`);
       }
       
       // Use the extracted invite code directly

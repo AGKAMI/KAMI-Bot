@@ -5,6 +5,7 @@
 const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
 
+const config = require('../../config');
 module.exports = {
   name: 'setname',
   aliases: ['rename', 'groupname'],
@@ -16,6 +17,8 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const { from } = extra;
       const newName = args.join(' ').trim();
@@ -23,13 +26,13 @@ module.exports = {
       if (!newName) {
         return extra.reply(
           `❌ *ERROR*\n\n` +
-          `💡 *Usage:* .setname <new group name>\n\n` +
+          `💡 *Usage:* ${prefix}setname <new group name>\n\n` +
           `🔧 *Template variables:*\n` +
           `• _{user}_ — who ran the command\n` +
           `• _{group}_ — current group name\n` +
           `• _{count}_ — member count\n` +
           `• _{time}_ — current time\n\n` +
-          `_Example: .setname {group} VIP_`
+          `_Example: ${prefix}setname {group} VIP_`
         );
       }
 

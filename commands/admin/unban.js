@@ -3,6 +3,7 @@
  * WhatsApp-unblocks them
  */
 
+const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 
 const parseNumber = (input) => {
@@ -22,6 +23,7 @@ module.exports = {
   adminOnly: true,
 
   async execute(sock, msg, args, extra) {
+    const prefix = config.prefix || '.';
     try {
       const { from, sender } = extra;
       let target;
@@ -41,7 +43,7 @@ module.exports = {
           } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
             target = ctx.participant;
           } else {
-            return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Examples:_\n.unban 27833882383\n.unban me`);
+            return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Examples:_\n${prefix}unban 27833882383\n${prefix}unban me`);
           }
         }
       }

@@ -5,6 +5,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 function phoneToJid(phone) {
@@ -27,6 +28,8 @@ module.exports = {
   ownerOnly: true,
 
   async execute(sock, msg, args) {
+
+  const prefix = config.prefix || '.';
     try {
       const sub = (args[0] || '').toLowerCase();
 
@@ -34,7 +37,7 @@ module.exports = {
         const admins = database.getTeamAdmins();
         const list = admins.length ? admins.map(n => `  • ${n}`).join('\n') : '  _None_';
         return sock.sendMessage(msg.key.remoteJid, {
-          text: `👥 *TEAM ADMINS*\n\n_These can accept/deny applications from DMs:_\n${list}\n\n*Usage:*\n  .teamadmin approve <number>\n  .teamadmin remove <number>\n  .teamadmin list`
+          text: `👥 *TEAM ADMINS*\n\n_These can accept/deny applications from DMs:_\n${list}\n\n*Usage:*\n  ${prefix}teamadmin approve <number>\n  ${prefix}teamadmin remove <number>\n  ${prefix}teamadmin list`
         }, { quoted: msg });
       }
 
@@ -51,7 +54,7 @@ module.exports = {
 
         if (!target) {
           return sock.sendMessage(msg.key.remoteJid, {
-            text: `❌ ERROR\n\n_Usage: .teamadmin ${sub} <number|@mention>_`
+            text: `❌ ERROR\n\n_Usage: ${prefix}teamadmin ${sub} <number|@mention>_`
           }, { quoted: msg });
         }
 
@@ -76,7 +79,7 @@ module.exports = {
       }
 
       return sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ *ERROR*\n\n_Invalid option_\n\n*Usage:*\n  .teamadmin approve <number>\n  .teamadmin remove <number>\n  .teamadmin list`
+        text: `❌ *ERROR*\n\n_Invalid option_\n\n*Usage:*\n  ${prefix}teamadmin approve <number>\n  ${prefix}teamadmin remove <number>\n  ${prefix}teamadmin list`
       }, { quoted: msg });
 
     } catch (error) {

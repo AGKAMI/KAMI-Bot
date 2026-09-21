@@ -5,6 +5,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -18,6 +19,7 @@ module.exports = {
   botAdminNeeded: false,
 
   async execute(sock, msg, args, extra) {
+    const prefix = config.prefix || '.';
     try {
       const sub = (args[0] || '').toLowerCase();
 
@@ -50,7 +52,7 @@ module.exports = {
         `📜 *GROUP RULES*\n\n` +
         `_No rules set yet ${pick(SLANG.vibe)}_\n\n` +
         `*How to set rules:*\n` +
-        `Admins use: .setrules No spam; Be respectful; Have fun\n` +
+        `Admins use: ${prefix}setrules No spam; Be respectful; Have fun\n` +
         `_Use semicolons or new lines to separate rules_`
       );
     }
@@ -106,7 +108,7 @@ module.exports = {
         `❌ *ERROR*\n\n` +
         `_Provide the rules text ${pick(SLANG.vibe)}_\n\n` +
         `*Example:*\n` +
-        `.setrules No spam; Be respectful; Have fun\n\n` +
+        `${prefix}setrules No spam; Be respectful; Have fun\n\n` +
         `_Use ; or new lines to separate rules_`
       );
     }

@@ -13,18 +13,21 @@ module.exports = {
   usage: '.tts <text>',
   
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const chatId = extra.from;
       const text = args.join(' ');
 
       if (!text) {
-        return extra.reply(`⚠️ *WARNING*\n💡 Give me text to convert to speech\n📝 *Example:* *.tts hi how are you*`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Give me text to convert to speech\n📝 *Example:* *${prefix}tts hi how are you*`);
       }
 
       const audioUrl = await APIs.textToSpeech(text);
 
       // Download audio as buffer
       const axios = require('axios');
+const config = require('../../config');
       const audioResponse = await axios.get(audioUrl, {
         responseType: 'arraybuffer',
         timeout: 30000

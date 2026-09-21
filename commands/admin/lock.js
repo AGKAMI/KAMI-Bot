@@ -5,6 +5,7 @@
 const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
 
+const config = require('../../config');
 module.exports = {
   name: 'lock',
   aliases: ['unlock', 'lockstatus'],
@@ -16,6 +17,8 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const { from } = extra;
       const sub = (args[0] || '').toLowerCase();
@@ -23,7 +26,7 @@ module.exports = {
       const settings = database.getGroupSettings(from);
 
       if (sub === 'status' || sub === '') {
-        return extra.reply(buildStatus(settings));
+        return extra.reply(buildStatus(settings, prefix));
       }
 
       if (sub === 'on' || sub === 'lock') {
@@ -101,11 +104,11 @@ module.exports = {
         `💡 *Usage:*\n` +
         `• _.lock_ — lock all settings\n` +
         `• _.unlock_ — unlock all\n` +
-        `• _.lock status_ — check status\n` +
-        `• _.lock name_ — lock name only\n` +
-        `• _.lock desc_ — lock desc only\n` +
-        `• _.lock pp_ — lock profile pic only\n` +
-        `• _.lock name off_ — unlock name`
+        `• _${prefix}lock status_ — check status\n` +
+        `• _${prefix}lock name_ — lock name only\n` +
+        `• _${prefix}lock desc_ — lock desc only\n` +
+        `• _${prefix}lock pp_ — lock profile pic only\n` +
+        `• _${prefix}lock name off_ — unlock name`
       );
 
     } catch (error) {
@@ -115,7 +118,7 @@ module.exports = {
   }
 };
 
-function buildStatus(settings) {
+function buildStatus(settings, prefix) {
   const lockName = settings.lockName || false;
   const lockDesc = settings.lockDesc || false;
   const lockPp = settings.lockPp || false;
@@ -126,9 +129,9 @@ function buildStatus(settings) {
     `${lockDesc ? '🔒' : '🔓'} *Description:* ${lockDesc ? 'Locked' : 'Unlocked'}\n` +
     `${lockPp ? '🔒' : '🔓'} *Profile pic:* ${lockPp ? 'Locked' : 'Unlocked'}\n\n` +
     `📱 *Commands:*\n` +
-    `• _.lock_ — lock all\n` +
-    `• _.unlock_ — unlock all\n` +
-    `• _.lock name / desc / pp_ — lock individual\n` +
-    `• _.lock name off / desc off / pp off_ — unlock individual`
+    `• _${prefix}lock_ — lock all\n` +
+    `• _${prefix}unlock_ — unlock all\n` +
+    `• _${prefix}lock name / desc / pp_ — lock individual\n` +
+    `• _${prefix}lock name off / desc off / pp off_ — unlock individual`
   );
 }

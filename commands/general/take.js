@@ -17,6 +17,7 @@ module.exports = {
   category: 'general',
   
   async execute(sock, msg, args, extra) {
+    const prefix = config.prefix || '.';
     let targetMessage = msg;
     const ctxInfo = msg.message?.extendedTextMessage?.contextInfo;
     
@@ -34,7 +35,7 @@ module.exports = {
     const stickerMsg = targetMessage.message?.stickerMessage;
     
     if (!stickerMsg) {
-      return extra.reply(`⚠️ *WARNING*\n💡 Reply to a sticker with .take to steal it`);
+      return extra.reply(`⚠️ *WARNING*\n💡 Reply to a sticker with ${prefix}take to steal it`);
     }
     
     try {

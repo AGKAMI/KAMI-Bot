@@ -53,7 +53,7 @@ module.exports = {
         `📝 *Description:* ${cmd.description || 'No description'}`,
         `📂 *Category:* ${categoryMeta[cmd.category] || cmd.category}`,
         `🔗 *Aliases:* ${aliases}`,
-        `📖 *Usage:* ${cmd.usage || `${prefix}${cmd.name}`}`,
+        `📖 *Usage:* ${(cmd.usage || `${prefix}${cmd.name}`).replace(/^\./, prefix)}`,
         ``,
         `💡 _Tip: Use ${prefix}menu to browse all commands._`
       ].join('\n');

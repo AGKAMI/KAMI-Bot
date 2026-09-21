@@ -1,6 +1,7 @@
 const yts = require('yt-search');
 const axios = require('axios');
 const APIs = require('../../utils/api');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 const processedMessages = new Set();
@@ -27,6 +28,8 @@ module.exports = {
   usage: '.video <YouTube URL or search>',
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     if (processedMessages.has(msg.key.id)) return;
     processedMessages.add(msg.key.id);
     setTimeout(() => processedMessages.delete(msg.key.id), 5 * 60 * 1000);
@@ -59,7 +62,7 @@ module.exports = {
           /https?:\/\/(?:www\.)?youtube\.com\/shorts\//,
         ];
         if (!patterns.some(p => p.test(videoUrl))) {
-          return extra.reply(`❌ _${pick(SLANG.error)}, invalid YouTube link_\n_Use:_ .video <url or search>`);
+          return extra.reply(`❌ _${pick(SLANG.error)}, invalid YouTube link_\n_Use:_ ${prefix}video <url or search>`);
         }
 
         await extra.react('🔄');

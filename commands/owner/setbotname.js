@@ -16,6 +16,8 @@ module.exports = {
   ownerOnly: true,
   
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       let newBotName = '';
       
@@ -40,8 +42,8 @@ module.exports = {
           `*📝 SET BOT NAME*\n\n` +
           `📋 *Current name:* *${config.botName}*\n\n` +
           `*Usage:*\n` +
-          `  .setbotname <new name>\n` +
-          `  Or reply to a message with .setbotname`
+          `  ${prefix}setbotname <new name>\n` +
+          `  Or reply to a message with ${prefix}setbotname`
         );
       }
       

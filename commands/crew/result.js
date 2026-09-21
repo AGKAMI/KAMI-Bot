@@ -1,6 +1,7 @@
 const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
 
+const config = require('../../config');
 module.exports = {
   subName: 'result',
   name: null,
@@ -10,12 +11,14 @@ module.exports = {
   groupOnly: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     const jid = extra.from;
     const sender = msg.key.participant || msg.key.remoteJid;
 
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nUsage: \`.crew result <event-id> <winner>\`\nExample: \`.crew result evt_1234567890 Mfowethu\`\n\nLog the results of the event.`
+        text: `❌ *ERROR*\n\nUsage: \`${prefix}crew result <event-id> <winner>\`\nExample: \`${prefix}crew result evt_1234567890 Mfowethu\`\n\nLog the results of the event.`
       });
     }
 
@@ -25,7 +28,7 @@ module.exports = {
     const team = database.getTeam(jid);
     if (!team || !team.events || !team.events[eventId]) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nThat event: *${eventId}* doesn't exist.\nSee all events with: \`.crew events\``
+        text: `❌ *ERROR*\n\nThat event: *${eventId}* doesn't exist.\nSee all events with: \`${prefix}crew events\``
       });
     }
 

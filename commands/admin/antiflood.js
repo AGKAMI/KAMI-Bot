@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -16,12 +17,14 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const sub = (args[0] || '').toLowerCase();
       const settings = database.getGroupSettings(extra.from);
 
       if (!sub || sub === 'status') {
-        return extra.reply(buildStatus(settings));
+        return extra.reply(buildStatus(settings, prefix));
       }
 
       if (sub === 'on') {
@@ -50,12 +53,12 @@ module.exports = {
         if (args.length < 4) {
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Usage: .antiflood set <limit> <window>s <action>_\n\n` +
+            `_Usage: ${prefix}antiflood set <limit> <window>s <action>_\n\n` +
             `_${pick(SLANG.vibe)}:_\n` +
             `• _Limit = max messages in window_\n` +
             `• _Window = time in seconds_\n` +
             `• _Action = warn / delete / kick_\n\n` +
-            `_Example: .antiflood set 5 10s warn_`
+            `_Example: ${prefix}antiflood set 5 10s warn_`
           );
         }
 
@@ -107,7 +110,7 @@ module.exports = {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to exempt, ${pick(SLANG.vibe)}_\n\n` +
-            `_Example: .antiflood exempt @user_`
+            `_Example: ${prefix}antiflood exempt @user_`
           );
         }
 
@@ -137,7 +140,7 @@ module.exports = {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to unexempt, ${pick(SLANG.vibe)}_\n\n` +
-            `_Example: .antiflood unexempt @user_`
+            `_Example: ${prefix}antiflood unexempt @user_`
           );
         }
 
@@ -180,7 +183,7 @@ module.exports = {
 
       return extra.reply(
         `❌ *ERROR*\n\n` +
-        `_Use .antiflood for usage, ${pick(SLANG.vibe)}_`
+        `_Use ${prefix}antiflood for usage, ${pick(SLANG.vibe)}_`
       );
 
     } catch (error) {
@@ -189,7 +192,7 @@ module.exports = {
   }
 };
 
-function buildStatus(settings) {
+function buildStatus(settings, prefix) {
   const status = settings.antiflood ? 'ON' : 'OFF';
   const limit = settings.antifloodLimit || 5;
   const windowSec = settings.antifloodWindow || 10;
@@ -204,12 +207,12 @@ function buildStatus(settings) {
     `🔨 *Action:* ${action}\n` +
     `👥 *Exempt:* ${exempt.length} users\n\n` +
     `📱 *Commands:*\n` +
-    `• _.antiflood on_\n` +
-    `• _.antiflood off_\n` +
-    `• _.antiflood set <limit> <window>s <action>_\n` +
-    `• _.antiflood exempt @user_\n` +
-    `• _.antiflood unexempt @user_\n` +
-    `• _.antiflood exemptlist_\n\n` +
+    `• _${prefix}antiflood on_\n` +
+    `• _${prefix}antiflood off_\n` +
+    `• _${prefix}antiflood set <limit> <window>s <action>_\n` +
+    `• _${prefix}antiflood exempt @user_\n` +
+    `• _${prefix}antiflood unexempt @user_\n` +
+    `• _${prefix}antiflood exemptlist_\n\n` +
     `_Actions: warn, delete, kick_`
   );
 }

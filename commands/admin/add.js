@@ -3,6 +3,7 @@
  * Usage: .add <number>
  */
 
+const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 
 function phoneToJid(phone) {
@@ -26,14 +27,16 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       if (!args || args.length === 0) {
         return extra.reply(
-          `❌ ERROR\n\nProvide a number\n\nUsage: .add <number>\n\n` +
+          `❌ ERROR\n\nProvide a number\n\nUsage: ${prefix}add <number>\n\n` +
           `Examples:\n` +
-          `• .add 0833882383\n` +
-          `• .add +27 83 388 2383\n` +
-          `• .add 27833882383`
+          `• ${prefix}add 0833882383\n` +
+          `• ${prefix}add +27 83 388 2383\n` +
+          `• ${prefix}add 27833882383`
         );
       }
 

@@ -6,6 +6,7 @@ const {
 } = require('@whiskeysockets/baileys');
 const { PassThrough } = require('stream');
 const ffmpeg = require('fluent-ffmpeg');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 // Single default color for text statuses (purple)
@@ -22,6 +23,7 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+    const prefix = config.prefix || '.';
     try {
       const from = extra.from;
 
@@ -41,9 +43,9 @@ module.exports = {
           return extra.reply(
             `📱 GROUP STATUS USAGE\n\n` +
             `• Reply to image/video/audio with:\n` +
-            `  \`.groupstatus [optional caption]\`\n` +
+            `  \`${prefix}groupstatus [optional caption]\`\n` +
             `• Or send text status only:\n` +
-            `  \`.groupstatus Your text here\`\n\n` +
+            `  \`${prefix}groupstatus Your text here\`\n\n` +
             `💡 Text statuses use a purple background by default`
           );
         }

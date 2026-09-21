@@ -4,6 +4,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -16,6 +17,8 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
@@ -36,8 +39,8 @@ module.exports = {
         return extra.reply(
           `❌ ERROR\n\nTag or reply to someone\n\n` +
           `Usage:\n` +
-          `• .promote @user\n` +
-          `• Reply with .promote`
+          `• ${prefix}promote @user\n` +
+          `• Reply with ${prefix}promote`
         );
       }
 

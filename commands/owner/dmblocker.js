@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -14,6 +15,8 @@ module.exports = {
   ownerOnly: true,
 
   async execute(sock, msg, args) {
+
+  const prefix = config.prefix || '.';
     try {
       const action = args[0]?.toLowerCase();
       const chatId = msg.key.remoteJid;
@@ -28,10 +31,10 @@ module.exports = {
                `*Status:* *${currentStatus}*\n\n` +
                `*Approved numbers:*\n${list}\n\n` +
                `*Usage:*\n` +
-               `  .dmblocker on/off\n` +
-               `  .dmblocker approve <number>\n` +
-               `  .dmblocker disapprove <number>\n` +
-               `  .dmblocker list`
+               `  ${prefix}dmblocker on/off\n` +
+               `  ${prefix}dmblocker approve <number>\n` +
+               `  ${prefix}dmblocker disapprove <number>\n` +
+               `  ${prefix}dmblocker list`
         }, { quoted: msg });
       }
 
@@ -46,7 +49,7 @@ module.exports = {
           text: `*✅ DM BLOCKER ON*\n\n` +
                `_${pick(SLANG.good)}, dm blocker is now on_\n\n` +
                `Only approved numbers can use this bot.\n` +
-               `Use .dmblocker approve <number> to add someone.`
+               `Use ${prefix}dmblocker approve <number> to add someone.`
         }, { quoted: msg });
       }
 
@@ -68,7 +71,7 @@ module.exports = {
         const number = args[1];
         if (!number) {
           return await sock.sendMessage(chatId, {
-            text: `*Usage:* .dmblocker approve <number>\n\n_Example: .dmblocker approve 27831234567_`
+            text: `*Usage:* ${prefix}dmblocker approve <number>\n\n_Example: ${prefix}dmblocker approve 27831234567_`
           }, { quoted: msg });
         }
 
@@ -102,8 +105,8 @@ module.exports = {
             text: `🎉 *WELCOME TO KAMI BOT* 🤖\n\n` +
                   `✅ You have been *approved* by KAMI\n` +
                   `🔓 You can now message this bot directly\n\n` +
-                  `Send *.menu* to see all available commands\n` +
-                  `Type *.help* if you need assistance\n\n` +
+                  `Send *${prefix}menu* to see all available commands\n` +
+                  `Type *${prefix}help* if you need assistance\n\n` +
                   `_Lekke, enjoy the bot!_ 💀`
           });
         } catch (e) {}
@@ -127,7 +130,7 @@ module.exports = {
         const number = args[1];
         if (!number) {
           return await sock.sendMessage(chatId, {
-            text: `*Usage:* .dmblocker disapprove <number>`
+            text: `*Usage:* ${prefix}dmblocker disapprove <number>`
           }, { quoted: msg });
         }
         const removed = database.removeApprovedNumber(number);
@@ -151,10 +154,10 @@ module.exports = {
       return await sock.sendMessage(chatId, {
         text: `❌ ERROR\n\n_Invalid option_\n\n` +
              `*Usage:*\n` +
-             `  .dmblocker on/off/status\n` +
-             `  .dmblocker approve <number>\n` +
-             `  .dmblocker disapprove <number>\n` +
-             `  .dmblocker list`
+             `  ${prefix}dmblocker on/off/status\n` +
+             `  ${prefix}dmblocker approve <number>\n` +
+             `  ${prefix}dmblocker disapprove <number>\n` +
+             `  ${prefix}dmblocker list`
       }, { quoted: msg });
 
     } catch (error) {

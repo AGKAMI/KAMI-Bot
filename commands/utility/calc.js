@@ -2,6 +2,7 @@
  * Calculator Command - Perform math calculations
  */
 
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -12,9 +13,10 @@ module.exports = {
     usage: '.calc <expression>',
     
     async execute(sock, msg, args, extra) {
+      const prefix = config.prefix || '.';
       try {
         if (args.length === 0) {
-          return extra.reply(`📝 _${pick(SLANG.vibe)}, give me something to calculate_\n\n_Example:_ .calc 5 + 3 * 2`);
+          return extra.reply(`📝 _${pick(SLANG.vibe)}, give me something to calculate_\n\n_Example:_ ${prefix}calc 5 + 3 * 2`);
         }
         
         const expression = args.join(' ');

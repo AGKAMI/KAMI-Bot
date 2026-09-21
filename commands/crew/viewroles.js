@@ -4,6 +4,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -15,6 +16,8 @@ module.exports = {
   groupOnly: false,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const roles = database.getCustomRoles(extra.from);
 
@@ -30,7 +33,7 @@ module.exports = {
           roleList + `\n` +
           `----------\n\n` +
           `_Lowest → Highest (bottom = highest)_\n` +
-          `_Use .crew setroles to change_`,
+          `_Use ${prefix}crew setroles to change_`,
       }, { quoted: msg });
 
     } catch (error) {

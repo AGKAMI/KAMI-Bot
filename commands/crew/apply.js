@@ -24,14 +24,16 @@ module.exports = {
   ownerOnly: false,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       if (!args || args.length === 0) {
         return extra.reply(
           `❌ ERROR\n\nProvide a team\n\n` +
           `Usage:\n` +
-          `• \`.crew apply <team>\` — apply for yourself\n` +
-          `• \`.crew apply <team> @user\` — apply for someone\n` +
-          `• \`.crew apply <team> 0833882383\` — apply for someone by number\n\n` +
+          `• \`${prefix}crew apply <team>\` — apply for yourself\n` +
+          `• \`${prefix}crew apply <team> @user\` — apply for someone\n` +
+          `• \`${prefix}crew apply <team> 0833882383\` — apply for someone by number\n\n` +
           `Teams: ${Object.keys(TEAMS).join(', ')}`
         );
       }
@@ -150,7 +152,7 @@ module.exports = {
           ? `📲 I've DM'd @${applicantNum} the application form.\n\n`
           : `📲 I've DM'd you the application form.\n\n`) +
         `✍️ Answer all questions and post them here with:\n` +
-        `\`.crew applied ${teamKey} <your answers>\`\n\n` +
+        `\`${prefix}crew applied ${teamKey} <your answers>\`\n\n` +
         `_${pick(SLANG.greeting)}, good luck!_`;
 
       await sock.sendMessage(extra.from, {

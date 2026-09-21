@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const config = require('../../config');
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
@@ -16,11 +17,13 @@ module.exports = {
   ownerOnly: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       // Check if message is a reply
       const quotedMessage = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
       if (!quotedMessage) {
-        return extra.reply(`*📷 SET BOT PP*\n\n💡 Reply to an image or sticker with .setbotpp`);
+        return extra.reply(`*📷 SET BOT PP*\n\n💡 Reply to an image or sticker with ${prefix}setbotpp`);
       }
 
       const imageMessage = quotedMessage.imageMessage;

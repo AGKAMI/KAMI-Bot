@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const APIs = require('../../utils/api');
+const config = require('../../config');
 const { toAudio } = require('../../utils/converter');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
@@ -28,6 +29,7 @@ module.exports = {
   usage: '.song <song name or YouTube link>',
   
   async execute(sock, msg, args) {
+    const prefix = config.prefix || '.';
     if (activeAudioDownloads >= 2) {
       return await sock.sendMessage(msg.key.remoteJid, {
         text: `❌ _too many downloads — try again in a few seconds_`
@@ -40,7 +42,7 @@ module.exports = {
       
       if (!text) {
         return await sock.sendMessage(chatId, { 
-          text: `📝 _${pick(SLANG.vibe)}, give me a song name or YouTube link_\n\n_Example:_ .song Shape of You` 
+          text: `📝 _${pick(SLANG.vibe)}, give me a song name or YouTube link_\n\n_Example:_ ${prefix}song Shape of You` 
         }, { quoted: msg });
       }
       

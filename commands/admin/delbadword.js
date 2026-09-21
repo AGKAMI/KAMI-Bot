@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -16,6 +17,8 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const raw = args.join(' ').trim();
 
@@ -23,7 +26,7 @@ module.exports = {
         return extra.reply(
           `❌ *ERROR*\n\n` +
           `_Provide the pattern to remove, ${pick(SLANG.vibe)}_\n\n` +
-          `_Example: .delbadword bad*_`
+          `_Example: ${prefix}delbadword bad*_`
         );
       }
 
@@ -35,7 +38,7 @@ module.exports = {
         return extra.reply(
           `❌ *NOT FOUND*\n\n` +
           `_${normalized} isn't in the blacklist, ${pick(SLANG.vibe)}_\n\n` +
-          `_Use .antibadword status to see all patterns_`
+          `_Use ${prefix}antibadword status to see all patterns_`
         );
       }
 

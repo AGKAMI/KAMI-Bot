@@ -4,6 +4,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
@@ -37,6 +38,8 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
@@ -76,8 +79,8 @@ module.exports = {
         return extra.reply(
           `❌ ERROR\n\nTag or add a number\n\n` +
           `Usage:\n` +
-          `• .crew add @user <role>\n` +
-          `• .crew add 0833882383 <role>`
+          `• ${prefix}crew add @user <role>\n` +
+          `• ${prefix}crew add 0833882383 <role>`
         );
       }
 

@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -16,6 +17,8 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       let target;
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
@@ -26,7 +29,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply(`*✅ RESET WARN*\n\n_Tag or reply to the person you wanna reset_\n\n_Example: .resetwarn @user_`);
+        return extra.reply(`*✅ RESET WARN*\n\n_Tag or reply to the person you wanna reset_\n\n_Example: ${prefix}resetwarn @user_`);
       }
 
       const currentWarnings = database.getWarnings(extra.from, target);

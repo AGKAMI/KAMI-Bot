@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 const ffmpegPath = require('ffmpeg-static');
+const config = require('../../config');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
@@ -19,12 +20,13 @@ module.exports = {
   description: 'Search and get memes',
   usage: 'memesearch <query>',
   execute: async (sock, msg, args, extra) => {
+    const prefix = config.prefix || '.';
     try {
       const query = args.join(' ').trim();
       
       if (!query) {
         return await extra.reply(
-          `❌ _${pick(SLANG.error)} — usage: .memesearch <query>_\n\n_Example: .memesearch hello_`
+          `❌ _${pick(SLANG.error)} — usage: ${prefix}memesearch <query>_\n\n_Example: ${prefix}memesearch hello_`
         );
       }
       

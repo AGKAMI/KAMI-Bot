@@ -20,11 +20,13 @@ module.exports = {
   ownerOnly: false,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       if (!args || args.length < 2) {
         return extra.reply(
           `❌ ERROR\n\n` +
-          `Usage: .crew applied <team> <your answers>\n\n` +
+          `Usage: ${prefix}crew applied <team> <your answers>\n\n` +
           `Teams: ${Object.keys(TEAMS).join(', ')}\n\n` +
           `You can put each answer on its own line — just keep it in ONE message`
         );

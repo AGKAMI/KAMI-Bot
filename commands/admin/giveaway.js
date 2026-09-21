@@ -10,6 +10,7 @@
  * Attach media: reply to an image/video with .giveaway <prize>
  */
 
+const config = require('../../config');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { pick, SLANG } = require('../../utils/format');
 
@@ -62,6 +63,8 @@ module.exports = {
   adminOnly: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const from = extra.from;
       const fullArgs = args.join(' ');
@@ -126,16 +129,16 @@ module.exports = {
         return extra.reply(
           `❌ *ERROR*\n\n` +
           `💡 *Usage:*\n` +
-          `• \`.giveaway <prize> <time> winners <n>\`\n` +
-          `• Reply to an image/video + \`.giveaway <prize>\`\n\n` +
+          `• \`${prefix}giveaway <prize> <time> winners <n>\`\n` +
+          `• Reply to an image/video + \`${prefix}giveaway <prize>\`\n\n` +
           `⏱️ *Time:* 30s, 5m, 1h, 1h30m\n` +
           `🎯 *Winners:* winners 3 (default: 1)\n` +
           `📋 *Min entries:* min 5\n\n` +
           `*Examples:*\n` +
-          `• \`.giveaway ADT Jeep SRT 1h winners 1\`\n` +
-          `• \`.giveaway Airtime R50 30m winners 2\`\n` +
-          `• \`.giveaway Voucher 45m winners 1 min 10\`\n` +
-          `• Reply to photo + \`.giveaway iPhone 1h winners 3\``
+          `• \`${prefix}giveaway ADT Jeep SRT 1h winners 1\`\n` +
+          `• \`${prefix}giveaway Airtime R50 30m winners 2\`\n` +
+          `• \`${prefix}giveaway Voucher 45m winners 1 min 10\`\n` +
+          `• Reply to photo + \`${prefix}giveaway iPhone 1h winners 3\``
         );
       }
 

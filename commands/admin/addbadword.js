@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -16,6 +17,8 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const raw = args.join(' ').trim();
 
@@ -27,7 +30,7 @@ module.exports = {
           `• _.addbadword bad* _ — wildcard (matches "badass", "badword")\n` +
           `• _.addbadword "bad word"_ — phrase (exact phrase match)\n` +
           `• _.addbadword stupid_ — simple (exact word match)\n\n` +
-          `_Example: .addbadword "bad word"_`
+          `_Example: ${prefix}addbadword "bad word"_`
         );
       }
 

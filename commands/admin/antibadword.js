@@ -16,12 +16,14 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const sub = (args[0] || '').toLowerCase();
 
       if (!sub || sub === 'status') {
         const settings = database.getGroupSettings(extra.from);
-        return extra.reply(buildStatus(settings));
+        return extra.reply(buildStatus(settings, prefix));
       }
 
       if (sub === 'on') {
@@ -59,7 +61,7 @@ module.exports = {
         if (!['warn', 'delete', 'kick'].includes(action)) {
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `${bold('Usage:')} .antibadword set <warn|delete|kick>${pick(SLANG.vibe)}\n\n` +
+            `${bold('Usage:')} ${prefix}antibadword set <warn|delete|kick>${pick(SLANG.vibe)}\n\n` +
             `• _warn_ — warn the user but don't delete\n` +
             `• _delete_ — delete the bad message\n` +
             `• _kick_ — delete + kick the user`
@@ -79,7 +81,7 @@ module.exports = {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to exempt, ${pick(SLANG.vibe)}_\n\n` +
-            `_Example: .antibadword exempt @user_`
+            `_Example: ${prefix}antibadword exempt @user_`
           );
         }
 
@@ -126,7 +128,7 @@ module.exports = {
 
       return extra.reply(
         `❌ *ERROR*\n\n` +
-        `_Use .antibadword for usage, ${pick(SLANG.vibe)}_`
+        `_Use ${prefix}antibadword for usage, ${pick(SLANG.vibe)}_`
       );
 
     } catch (error) {
@@ -135,7 +137,7 @@ module.exports = {
   }
 };
 
-function buildStatus(settings) {
+function buildStatus(settings, prefix) {
   const status = settings.antibadword ? 'ON' : 'OFF';
   const words = settings.badwords || [];
   const wildcards = words.filter(w => w.includes('*')).length;
@@ -152,13 +154,13 @@ function buildStatus(settings) {
     `📊 *Total:* ${words.length} patterns\n` +
     `👥 *Exempt:* ${exempt.length} users + admins\n\n` +
     `📱 *Commands:*\n` +
-    `• _.antibadword on_ — enable (auto-seeds SA slurs)\n` +
-    `• _.antibadword off_\n` +
-    `• _.antibadword set <warn|delete|kick>_\n` +
-    `• _.addbadword <pattern>_\n` +
-    `• _.delbadword <pattern>_\n` +
-    `• _.antibadword exempt @user_\n` +
-    `• _.antibadword exceptions_\n\n` +
+    `• _${prefix}antibadword on_ — enable (auto-seeds SA slurs)\n` +
+    `• _${prefix}antibadword off_\n` +
+    `• _${prefix}antibadword set <warn|delete|kick>_\n` +
+    `• _${prefix}addbadword <pattern>_\n` +
+    `• _${prefix}delbadword <pattern>_\n` +
+    `• _${prefix}antibadword exempt @user_\n` +
+    `• _${prefix}antibadword exceptions_\n\n` +
     `💡 _Patterns: *bad* = wildcard, "bad word" = phrase, bad = simple. Matching is case-insensitive._`
   );
 }

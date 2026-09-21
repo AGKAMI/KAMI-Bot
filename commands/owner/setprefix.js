@@ -16,9 +16,11 @@ module.exports = {
   ownerOnly: true,
   
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       if (args.length === 0) {
-        return extra.reply(`*📌 CURRENT PREFIX*\n\n📋 *Prefix:* *${config.prefix}*\n\n💡 Usage: .setprefix <new prefix>`);
+        return extra.reply(`*📌 CURRENT PREFIX*\n\n📋 *Prefix:* *${config.prefix}*\n\n💡 Usage: ${prefix}setprefix <new prefix>`);
       }
       
       const newPrefix = args[0];

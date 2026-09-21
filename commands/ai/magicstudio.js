@@ -4,6 +4,7 @@
  */
 
 const axios = require('axios');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 const BASE = 'https://api.siputzx.my.id/api/ai/magicstudio';
@@ -15,12 +16,13 @@ module.exports = {
   description: 'Generate AI art from text prompt',
   usage: 'magicstudio <prompt>',
   execute: async (sock, msg, args, extra) => {
+    const prefix = config.prefix || '.';
     try {
       const prompt = args.join(' ').trim();
       
       if (!prompt) {
         return await extra.reply(
-          `❌ _${pick(SLANG.error)} — usage: .magicstudio <prompt>_\n\n_Example: .magicstudio a cyberpunk city_`
+          `❌ _${pick(SLANG.error)} — usage: ${prefix}magicstudio <prompt>_\n\n_Example: ${prefix}magicstudio a cyberpunk city_`
         );
       }
       

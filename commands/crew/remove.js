@@ -6,6 +6,7 @@
 
 const database = require('../../database');
 const handler = require('../../handler');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
@@ -20,6 +21,8 @@ module.exports = {
   ownerOnly: false,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
@@ -30,8 +33,8 @@ module.exports = {
           `❌ ERROR\n\n` +
           `Tag or add a number\n\n` +
           `Usage:\n` +
-          `• .crew remove @user\n` +
-          `• .crew remove 0833882383`
+          `• ${prefix}crew remove @user\n` +
+          `• ${prefix}crew remove 0833882383`
         );
       }
 

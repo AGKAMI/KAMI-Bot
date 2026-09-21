@@ -23,6 +23,8 @@ module.exports = {
   adminOnly: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const { from, sender } = extra;
       let target;
@@ -39,7 +41,7 @@ module.exports = {
         } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
           target = ctx.participant;
         } else {
-          return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Example: .ban 27833882383_`);
+          return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Example: ${prefix}ban 27833882383_`);
         }
       }
 

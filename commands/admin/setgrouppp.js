@@ -6,6 +6,7 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
 
+const config = require('../../config');
 module.exports = {
   name: 'setgrouppp',
   aliases: ['setgrouppic', 'grouppp', 'setpp'],
@@ -17,6 +18,8 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const { from } = extra;
 
@@ -25,7 +28,7 @@ module.exports = {
         const text = [
           `❌ *ERROR*`,
           '',
-          `💡 Reply to an image with .setgrouppp`,
+          `💡 Reply to an image with ${prefix}setgrouppp`,
           `_Make sure the replied message is a photo, ${pick(SLANG.vibe)}_`
         ].join('\n');
         return await extra.reply(text);

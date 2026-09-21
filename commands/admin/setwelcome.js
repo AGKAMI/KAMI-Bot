@@ -3,6 +3,7 @@
  */
 
 const db = require('../../database');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -15,13 +16,15 @@ module.exports = {
   ownerOnly: true, adminOnly: false,
   botAdminNeeded: true,
   execute: async (sock, msg, args) => {
+
+  const prefix = config.prefix || '.';
     try {
       const groupId = msg.key.remoteJid;
       
       if (!args.length) {
         const groupSettings = db.getGroupSettings(groupId);
         return await sock.sendMessage(groupId, {
-          text: `📝 *CURRENT WELCOME MESSAGE*\n\n${groupSettings.welcomeMessage}\n\n*Usage:* .setwelcome <message>\n\n*Tip:* Use @user to mention the new member`
+          text: `📝 *CURRENT WELCOME MESSAGE*\n\n${groupSettings.welcomeMessage}\n\n*Usage:* ${prefix}setwelcome <message>\n\n*Tip:* Use @user to mention the new member`
         }, { quoted: msg });
       }
       

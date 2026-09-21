@@ -25,6 +25,7 @@ module.exports = {
   category: 'general',
   
   async execute(sock, msg, args, extra) {
+    const prefix = config.prefix || '.';
     const chatId = extra.from;
     const messageToQuote = msg;
     let targetMessage = msg;
@@ -47,7 +48,7 @@ module.exports = {
       targetMessage.message?.documentMessage;
     
     if (!mediaMessage) {
-      return extra.reply(`⚠️ *WARNING*\n💡 Reply to an image or video with .sticker, or send media with .sticker as caption`);
+      return extra.reply(`⚠️ *WARNING*\n💡 Reply to an image or video with ${prefix}sticker, or send media with ${prefix}sticker as caption`);
     }
     
     const tempDir = getTempDir();

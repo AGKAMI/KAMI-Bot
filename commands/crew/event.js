@@ -1,6 +1,7 @@
 const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
 
+const config = require('../../config');
 module.exports = {
   subName: 'event',
   name: null,
@@ -10,12 +11,14 @@ module.exports = {
   groupOnly: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     const jid = extra.from;
     const sender = msg.key.participant || msg.key.remoteJid;
 
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nUsage: \`.crew event <name> <time>\`\nExample: \`.crew event Friday Drift 20:30\`\n\nGive us the event name and the time.`
+        text: `❌ *ERROR*\n\nUsage: \`${prefix}crew event <name> <time>\`\nExample: \`${prefix}crew event Friday Drift 20:30\`\n\nGive us the event name and the time.`
       });
     }
 
@@ -48,8 +51,8 @@ module.exports = {
         `⏰ *Time:* ${time}\n` +
         `👤 *Created by:* ${creatorName}\n` +
         `🆔 *Event ID:* ${eventId}\n\n` +
-        `See all events with: \`.crew events\`\n` +
-        `Members can RSVP with: \`.crew attend ${eventId}\``
+        `See all events with: \`${prefix}crew events\`\n` +
+        `Members can RSVP with: \`${prefix}crew attend ${eventId}\``
     });
   }
 };

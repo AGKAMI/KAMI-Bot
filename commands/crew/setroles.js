@@ -5,6 +5,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -17,11 +18,13 @@ module.exports = {
   ownerOnly: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       if (args.length < 2) {
         return extra.reply(
           `❌ ERROR\n\nProvide at least 2 roles\n\n` +
-          `Usage: .crew setroles soldier officer general\n\n` +
+          `Usage: ${prefix}crew setroles soldier officer general\n\n` +
           `_Last role = highest rank (for promote/demote)_`
         );
       }
@@ -46,7 +49,7 @@ module.exports = {
           `🏷️ CUSTOM ROLES SET\n\n` +
           `Hierarchy (lowest → highest):\n` +
           roleList + `\n\n` +
-          `_Use .crew add @user <role> to assign_`,
+          `_Use ${prefix}crew add @user <role> to assign_`,
       }, { quoted: msg });
 
     } catch (error) {

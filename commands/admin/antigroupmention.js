@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -16,6 +17,7 @@ module.exports = {
   botAdminNeeded: true,
   
   async execute(sock, msg, args, extra) {
+    const prefix = config.prefix || '.';
     try {
       if (!args[0]) {
         const settings = database.getGroupSettings(extra.from);
@@ -26,10 +28,10 @@ module.exports = {
           `*Status*: ${status}\n` +
           `*Action*: ${action}\n\n` +
           `📱 *Usage*:\n` +
-          `• .antigroupmention on\n` +
-          `• .antigroupmention off\n` +
-          `• .antigroupmention set delete | kick | warn\n` +
-          `• .antigroupmention get\n\n` +
+          `• ${prefix}antigroupmention on\n` +
+          `• ${prefix}antigroupmention off\n` +
+          `• ${prefix}antigroupmention set delete | kick | warn\n` +
+          `• ${prefix}antigroupmention get\n\n` +
           `💡 Warn = warn 3 times then auto-kick ${pick(SLANG.vibe)}`
         );
       }
@@ -51,7 +53,7 @@ module.exports = {
       
       if (opt === 'set') {
         if (args.length < 2) {
-          return extra.reply(`❌ ERROR\n\nSpecify an action: .antigroupmention set delete | kick | warn`);
+          return extra.reply(`❌ ERROR\n\nSpecify an action: ${prefix}antigroupmention set delete | kick | warn`);
         }
         
         const setAction = args[1].toLowerCase();
@@ -73,7 +75,7 @@ module.exports = {
         return extra.reply(`🛡️ ANTIGROUPMENTION CONFIG\n\n*Status*: ${status}\n*Action*: ${action}`);
       }
       
-      return extra.reply(`❌ ERROR\n\nUse .antigroupmention for usage`);
+      return extra.reply(`❌ ERROR\n\nUse ${prefix}antigroupmention for usage`);
       
     } catch (error) {
       await extra.reply(`❌ ERROR\n\n${error.message}`);

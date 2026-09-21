@@ -18,6 +18,8 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       let target;
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
@@ -31,7 +33,7 @@ module.exports = {
         return extra.reply(
           `⚠️ *WARNINGS*\n\n` +
           `_Tag or reply to the person you wanna check ${pick(SLANG.vibe)}_\n\n` +
-          `_Example: .warnings @user_`
+          `_Example: ${prefix}warnings @user_`
         );
       }
 

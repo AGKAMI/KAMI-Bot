@@ -3,6 +3,7 @@
  */
 
 const axios = require('axios');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -13,10 +14,11 @@ module.exports = {
   usage: '.weather <city>',
   
   async execute(sock, msg, args) {
+    const prefix = config.prefix || '.';
     try {
       if (args.length === 0) {
         return await sock.sendMessage(msg.key.remoteJid, { 
-          text: `📝 _${pick(SLANG.vibe)}, give me a city name_\n\n_Example:_ .weather london`
+          text: `📝 _${pick(SLANG.vibe)}, give me a city name_\n\n_Example:_ ${prefix}weather london`
         }, { quoted: msg });
       }
       

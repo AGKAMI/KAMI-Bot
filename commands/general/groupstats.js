@@ -1,5 +1,6 @@
 // commands/admin/groupstats.js
 
+const config = require('../../config');
 const { getStats } = require('../../utils/groupstats');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
@@ -12,6 +13,7 @@ module.exports = {
     groupOnly: true,
 
     async execute(sock, msg, args, extra) {
+      const prefix = config.prefix || '.';
         try {
             const from = extra.from;
             const stats = getStats(from);
@@ -38,7 +40,7 @@ module.exports = {
 👥 *Top Active Members:*
 ${topText}
 
-💡 _Type .myactivity to see your stats._
+💡 _Type ${prefix}myactivity to see your stats._
 `.trim();
 
             await sock.sendMessage(from, {

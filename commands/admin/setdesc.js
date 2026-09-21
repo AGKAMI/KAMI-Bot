@@ -5,6 +5,7 @@
 const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
 
+const config = require('../../config');
 module.exports = {
   name: 'setdesc',
   aliases: ['desc', 'groupdesc'],
@@ -16,6 +17,8 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const { from } = extra;
       const newDesc = args.join(' ').trim();
@@ -23,13 +26,13 @@ module.exports = {
       if (!newDesc) {
         return extra.reply(
           `❌ *ERROR*\n\n` +
-          `💡 *Usage:* .setdesc <new description>\n\n` +
+          `💡 *Usage:* ${prefix}setdesc <new description>\n\n` +
           `🔧 *Template variables:*\n` +
           `• _{user}_ — who ran the command\n` +
           `• _{group}_ — current group name\n` +
           `• _{count}_ — member count\n` +
           `• _{time}_ — current time\n\n` +
-          `_Example: .setdesc Welcome to {group}! Members: {count}_`
+          `_Example: ${prefix}setdesc Welcome to {group}! Members: {count}_`
         );
       }
 

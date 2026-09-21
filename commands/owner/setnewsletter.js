@@ -20,6 +20,8 @@ module.exports = {
   botAdminOnly: false,
   
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const chatId = extra.from;
       let newsletterJid = '';
@@ -67,9 +69,9 @@ module.exports = {
           `📋 *Current JID:* \`${currentJid}\`\n` +
           `📝 *Name:* ${config.botName}\n\n` +
           `*Usage:*\n` +
-          `  .setnewsletter <newsletter JID>\n` +
-          `  Or reply to a newsletter message with .setnewsletter\n\n` +
-          `💡 Example: .setnewsletter 120363161513685998@newsletter`
+          `  ${prefix}setnewsletter <newsletter JID>\n` +
+          `  Or reply to a newsletter message with ${prefix}setnewsletter\n\n` +
+          `💡 Example: ${prefix}setnewsletter 120363161513685998@newsletter`
         );
       }
       

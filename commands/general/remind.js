@@ -2,6 +2,7 @@
  * Remind Command - Set reminders for the group with list and cancel support
  */
 
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 const activeReminders = new Map();
@@ -16,6 +17,8 @@ module.exports = {
     groupOnly: true,
 
     async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
         try {
             const from = extra.from;
             const sender = extra.sender;
@@ -49,7 +52,7 @@ module.exports = {
                     lines.push(`⏰ Fires in ${r.timeLabel}`);
                 }
 
-                lines.push(``, `_To cancel: .remind cancel <number>_`);
+                lines.push(``, `_To cancel: ${prefix}remind cancel <number>_`);
 
                 const mentions = groupReminders.map(r => r.sender);
 
@@ -64,7 +67,7 @@ module.exports = {
                 if (isNaN(index) || index < 0 || index >= groupReminders.length) {
                     return extra.reply(
                         `❌ *ERROR*\n\n` +
-                        `💡 Invalid reminder number. Use *.remind list* to see active reminders, ${pick(SLANG.vibe)}`
+                        `💡 Invalid reminder number. Use *${prefix}remind list* to see active reminders, ${pick(SLANG.vibe)}`
                     );
                 }
 
@@ -84,11 +87,11 @@ module.exports = {
                 return extra.reply(
                     `❌ *ERROR*\n\n` +
                     `💡 *Usage:*\n` +
-                    `• .remind 10m Check the rules\n` +
-                    `• .remind 1h Meeting time\n` +
-                    `• .remind 30s Ping me\n` +
-                    `• .remind list\n` +
-                    `• .remind cancel <number>\n\n` +
+                    `• ${prefix}remind 10m Check the rules\n` +
+                    `• ${prefix}remind 1h Meeting time\n` +
+                    `• ${prefix}remind 30s Ping me\n` +
+                    `• ${prefix}remind list\n` +
+                    `• ${prefix}remind cancel <number>\n\n` +
                     `⏳ *Units:* s (seconds), m (minutes), h (hours), d (days)\n` +
                     `📋 *Max active reminders:* ${MAX_REMINDERS}`
                 );
@@ -98,7 +101,7 @@ module.exports = {
                 return extra.reply(
                     `❌ *ERROR*\n\n` +
                     `📋 Max ${MAX_REMINDERS} active reminders per group.\n` +
-                    `Use *.remind list* or *.remind cancel <number>*, ${pick(SLANG.vibe)}`
+                    `Use *${prefix}remind list* or *${prefix}remind cancel <number>*, ${pick(SLANG.vibe)}`
                 );
             }
 

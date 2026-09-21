@@ -13,6 +13,7 @@ const { bold, pick, SLANG } = require('../../utils/format');
 const fs = require('fs');
 const path = require('path');
 
+const config = require('../../config');
 // Load all crew sub-handlers
 const subHandlers = {};
 const handlersPath = path.join(__dirname);
@@ -38,6 +39,8 @@ module.exports = {
   groupOnly: false,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const sub = (args[0] || '').toLowerCase();
       const subArgs = args.slice(1);
@@ -82,8 +85,8 @@ module.exports = {
         } else {
           return extra.reply(
             `❌ ERROR\n\nUnknown team or command: ${sub}\n\n` +
-            `Use .crew teams to see available abbreviations\n` +
-            `Use .crew help for commands`
+            `Use ${prefix}crew teams to see available abbreviations\n` +
+            `Use ${prefix}crew help for commands`
           );
         }
       } else {
@@ -112,9 +115,9 @@ module.exports = {
               }
               return extra.reply(
                 `❌ ERROR\n\nFrom DMs, you must specify a team\n\n` +
-                `Usage: .crew <team> ${sub} [args]\n` +
-                `Example: .crew ssrs ${sub}\n\n` +
-                `Use .crew teams to see abbreviations`
+                `Usage: ${prefix}crew <team> ${sub} [args]\n` +
+                `Example: ${prefix}crew ssrs ${sub}\n\n` +
+                `Use ${prefix}crew teams to see abbreviations`
               );
             }
             // owner in DM can run anything — continue
@@ -136,7 +139,7 @@ module.exports = {
       if (!actualSub) {
         return extra.reply(
           `❌ ERROR\n\nSpecify a command after the team abbreviation\n\n` +
-          `Example: .crew ${sub} roster`
+          `Example: ${prefix}crew ${sub} roster`
         );
       }
 
@@ -168,7 +171,7 @@ module.exports = {
 
       return extra.reply(
         `❌ ERROR\n\nUnknown command: ${actualSub}\n\n` +
-        `Use .crew help for available commands`
+        `Use ${prefix}crew help for available commands`
       );
 
     } catch (error) {
@@ -184,8 +187,8 @@ async function setTeam(sock, msg, args, extra) {
 
   if (!abbrev) {
     return extra.reply(
-      `❌ ERROR\n\nUsage: .crew setteam <abbrev> [team name]\n\n` +
-      `Example: .crew setteam SSRS Royal Security\n\n` +
+      `❌ ERROR\n\nUsage: ${prefix}crew setteam <abbrev> [team name]\n\n` +
+      `Example: ${prefix}crew setteam SSRS Royal Security\n\n` +
       `Run this IN the group you want to map.`
     );
   }
@@ -197,7 +200,7 @@ async function setTeam(sock, msg, args, extra) {
           `Abbreviation: ${bold(abbrev)}\n` +
           `Team: ${bold(teamName)}\n` +
           `Group: ${extra.from.split('@')[0]}\n\n` +
-          `Now you can use: .crew ${abbrev.toLowerCase()} <command>`
+          `Now you can use: ${prefix}crew ${abbrev.toLowerCase()} <command>`
   }, { quoted: msg });
 }
 
@@ -210,14 +213,14 @@ async function showTeams(sock, msg, extra) {
 
   if (teams.length === 0) {
     text += `\n_No teams configured yet_\n`;
-    text += `\nRun .crew setteam <abbrev> in each group to map them`;
+    text += `\nRun ${prefix}crew setteam <abbrev> in each group to map them`;
   } else {
     for (const [abbrev, data] of teams) {
       text += `\n• ${bold(abbrev)} — ${data.name}`;
       text += `\n  📍 ${data.jid.split('@')[0]}`;
     }
     text += `\n----------\n`;
-    text += `\nUsage: .crew <abbrev> <command>`;
+    text += `\nUsage: ${prefix}crew <abbrev> <command>`;
   }
 
   await sock.sendMessage(extra.from, { text }, { quoted: msg });
@@ -228,31 +231,31 @@ async function showHelp(sock, msg, extra) {
     `🔰 *SLAMMED SOCIETY CREW*`,
     ``,
     `📋 *ROSTER*`,
-    `• .crew add @user [role]`,
-    `• .crew remove @user`,
-    `• .crew promote @user <role>`,
-    `• .crew demote @user`,
-    `• .crew role @user <role>`,
+    `• ${prefix}crew add @user [role]`,
+    `• ${prefix}crew remove @user`,
+    `• ${prefix}crew promote @user <role>`,
+    `• ${prefix}crew demote @user`,
+    `• ${prefix}crew role @user <role>`,
     ``,
     `📅 *EVENTS*`,
-    `• .crew event <name> <time>`,
-    `• .crew events`,
-    `• .crew attend [event-id]`,
-    `• .crew result <event-id> <winner>`,
+    `• ${prefix}crew event <name> <time>`,
+    `• ${prefix}crew events`,
+    `• ${prefix}crew attend [event-id]`,
+    `• ${prefix}crew result <event-id> <winner>`,
     ``,
     `📋 *RECRUITMENT*`,
-    `• .crew apply <team> — get the application form in DMs`,
-    `• .crew applied <team> <answers> — submit your application`,
-    `• .crew applicants — view pending apps (with IDs)`,
-    `• .crew accept <appUid> — accept an applicant`,
-    `• .crew deny <appUid> <reason> — reject an applicant`,
+    `• ${prefix}crew apply <team> — get the application form in DMs`,
+    `• ${prefix}crew applied <team> <answers> — submit your application`,
+    `• ${prefix}crew applicants — view pending apps (with IDs)`,
+    `• ${prefix}crew accept <appUid> — accept an applicant`,
+    `• ${prefix}crew deny <appUid> <reason> — reject an applicant`,
     ``,
     `🏷️ *TEAMS*`,
-    `• .crew teams — list all abbreviations`,
-    `• .crew setteam <abbrev> — map group to abbreviation`,
-    `• .crew <abbrev> <command> — run command on specific team`,
+    `• ${prefix}crew teams — list all abbreviations`,
+    `• ${prefix}crew setteam <abbrev> — map group to abbreviation`,
+    `• ${prefix}crew <abbrev> <command> — run command on specific team`,
     ``,
-    `💡 _Example: .crew ssrs add @user_`,
+    `💡 _Example: ${prefix}crew ssrs add @user_`,
     ``,
     `_${pick(SLANG.vibe)} — Slammed Society CPM_`
   ].join('\n');

@@ -8,6 +8,7 @@ const { bold, pick, SLANG } = require('../../utils/format');
 const fs = require('fs');
 const path = require('path');
 
+const config = require('../../config');
 const DB_PATH = path.join(__dirname, '..', '..', 'database');
 
 const TABLES = {
@@ -28,6 +29,8 @@ module.exports = {
   ownerOnly: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const sub = (args[0] || '').toLowerCase();
       const subArgs = args.slice(1);
@@ -72,7 +75,7 @@ module.exports = {
       }
 
       return extra.reply(
-        `❌ ERROR\n\nUnknown command: ${sub}\n\nUse .db help for available commands`
+        `❌ ERROR\n\nUnknown command: ${sub}\n\nUse ${prefix}db help for available commands`
       );
 
     } catch (error) {
@@ -87,19 +90,19 @@ async function showHelp(sock, msg, extra) {
     `🗄️ *DATABASE MANAGER*`,
     ``,
     `📊 *INFO*`,
-    `• .db stats — overview of all tables`,
-    `• .db view <table> — view table contents`,
+    `• ${prefix}db stats — overview of all tables`,
+    `• ${prefix}db view <table> — view table contents`,
     ``,
     `🔍 *SEARCH*`,
-    `• .db search <table> <query> — search table`,
+    `• ${prefix}db search <table> <query> — search table`,
     ``,
     `✏️ *EDIT*`,
-    `• .db edit <table> <key> <field> <value>`,
-    `• .db delete <table> <key> — delete entry`,
+    `• ${prefix}db edit <table> <key> <field> <value>`,
+    `• ${prefix}db delete <table> <key> — delete entry`,
     ``,
     `⚠️ *DANGER*`,
-    `• .db reset <table> — clear entire table`,
-    `• .db backup — backup database`,
+    `• ${prefix}db reset <table> — clear entire table`,
+    `• ${prefix}db backup — backup database`,
     ``,
     `📋 *Tables:* ${Object.keys(TABLES).join(', ')}`,
     ``,
@@ -262,7 +265,7 @@ async function resetTable(sock, msg, args, extra) {
   if (args[1] !== 'confirm') {
     return extra.reply(
       `⚠️ WARNING\n\nThis will CLEAR all data in "${tableName}"\n\n` +
-      `Type .db reset ${tableName} confirm to proceed\n\n` +
+      `Type ${prefix}db reset ${tableName} confirm to proceed\n\n` +
       `_This cannot be undone, ${pick(SLANG.vibe)}_`
     );
   }
@@ -293,7 +296,7 @@ async function searchDb(sock, msg, args, extra) {
   }
 
   if (!query) {
-    return extra.reply(`❌ ERROR\n\nUsage: .db search <table> <query>`);
+    return extra.reply(`❌ ERROR\n\nUsage: ${prefix}db search <table> <query>`);
   }
 
   const filePath = path.join(DB_PATH, TABLES[tableName].file);
@@ -334,8 +337,8 @@ async function editEntry(sock, msg, args, extra) {
 
   if (!tableName || !key || !field || !value) {
     return extra.reply(
-      `❌ ERROR\n\nUsage: .db edit <table> <key> <field> <value>\n\n` +
-      `Example: .db edit crew 27833882383@s.whatsapp.net role leader`
+      `❌ ERROR\n\nUsage: ${prefix}db edit <table> <key> <field> <value>\n\n` +
+      `Example: ${prefix}db edit crew 27833882383@s.whatsapp.net role leader`
     );
   }
 
@@ -375,7 +378,7 @@ async function deleteEntry(sock, msg, args, extra) {
 
   if (!tableName || !key) {
     return extra.reply(
-      `❌ ERROR\n\nUsage: .db delete <table> <key>`
+      `❌ ERROR\n\nUsage: ${prefix}db delete <table> <key>`
     );
   }
 

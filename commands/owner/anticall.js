@@ -12,14 +12,16 @@ module.exports = {
   usage: '.anticall on/off',
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     if (!args[0]) {
-      return extra.reply(`*📞 ANTICALL*\n\n💡 Usage: .anticall on/off`);
+      return extra.reply(`*📞 ANTICALL*\n\n💡 Usage: ${prefix}anticall on/off`);
     }
 
     const option = args[0].toLowerCase();
 
     if (!['on', 'off'].includes(option)) {
-      return extra.reply(`*❌ ERROR* — invalid option\n💡 Usage: .anticall on/off`);
+      return extra.reply(`*❌ ERROR* — invalid option\n💡 Usage: ${prefix}anticall on/off`);
     }
 
     const enabled = option === 'on';
@@ -27,6 +29,7 @@ module.exports = {
     // Update the default setting in config
     const fs = require('fs');
     const path = require('path');
+const config = require('../../config');
     const configPath = path.join(__dirname, '../../config.js');
     
     try {

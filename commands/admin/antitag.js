@@ -4,6 +4,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -17,6 +18,7 @@ module.exports = {
   botAdminNeeded: true,
   
   async execute(sock, msg, args, extra) {
+    const prefix = config.prefix || '.';
     try {
       if (!args[0]) {
         const settings = database.getGroupSettings(extra.from);
@@ -27,10 +29,10 @@ module.exports = {
           `*Status*: ${status}\n` +
           `*Action*: ${action}\n\n` +
           `📱 *Usage*:\n` +
-          `• .antitag on\n` +
-          `• .antitag off\n` +
-          `• .antitag set delete | kick\n` +
-          `• .antitag get`
+          `• ${prefix}antitag on\n` +
+          `• ${prefix}antitag off\n` +
+          `• ${prefix}antitag set delete | kick\n` +
+          `• ${prefix}antitag get`
         );
       }
       
@@ -51,7 +53,7 @@ module.exports = {
       
       if (opt === 'set') {
         if (args.length < 2) {
-          return extra.reply(`❌ ERROR\n\nSpecify an action: .antitag set delete | kick`);
+          return extra.reply(`❌ ERROR\n\nSpecify an action: ${prefix}antitag set delete | kick`);
         }
         
         const setAction = args[1].toLowerCase();
@@ -73,7 +75,7 @@ module.exports = {
         return extra.reply(`📛 ANTITAG CONFIG\n\n*Status*: ${status}\n*Action*: ${action}`);
       }
       
-      return extra.reply(`❌ ERROR\n\nUse .antitag for usage`);
+      return extra.reply(`❌ ERROR\n\nUse ${prefix}antitag for usage`);
       
     } catch (error) {
       await extra.reply(`❌ ERROR\n\n${error.message}`);

@@ -2,6 +2,7 @@
  * AFK Command - Set AFK status with list, history, and DM auto-reply
  */
 
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 const afkUsers = new Map();
@@ -44,6 +45,8 @@ module.exports = {
     afkUsers,
 
     async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
         try {
             const sender = extra.sender;
             const from = extra.from;
@@ -84,7 +87,7 @@ module.exports = {
                     );
                 }
 
-                lines.push(``, `_Use .afk to toggle your status_`);
+                lines.push(``, `_Use ${prefix}afk to toggle your status_`);
 
                 return sock.sendMessage(from, {
                     text: lines.join('\n'),

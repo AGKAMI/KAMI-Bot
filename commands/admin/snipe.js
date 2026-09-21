@@ -4,6 +4,7 @@
  */
 
 const snipeStore = require('../../utils/snipeStore');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 const SnipeStoreClass = snipeStore.constructor;
 const typeEmoji = SnipeStoreClass.typeEmoji;
@@ -19,6 +20,8 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const sub = (args[0] || '').toLowerCase();
 
@@ -80,7 +83,7 @@ module.exports = {
     });
 
     text += `----------\n`;
-    text += `_Use .snipe <number> for details ${pick(SLANG.vibe)}_`;
+    text += `_Use ${prefix}snipe <number> for details ${pick(SLANG.vibe)}_`;
 
     const mentions = entries.map(e => e.sender);
 

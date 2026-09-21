@@ -1,4 +1,5 @@
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
@@ -20,6 +21,8 @@ module.exports = {
   adminOnly: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
@@ -27,7 +30,7 @@ module.exports = {
 
       if (!resolved.jid) {
         return extra.reply(
-          '❌ ERROR\n\nTag or add a number\n\nUsage: .crew demote @user|number'
+          '❌ ERROR\n\nTag or add a number\n\nUsage: ${prefix}crew demote @user|number'
         );
       }
 

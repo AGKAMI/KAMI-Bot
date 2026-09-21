@@ -44,6 +44,7 @@ module.exports = {
   category: 'general',
   
   async execute(sock, msg, args, extra) {
+    const prefix = config.prefix || '.';
     // Declare temp files outside try block so they're available in finally
     const tmpDir = getTempDir();
     const tempInput = path.join(tmpDir, `temp_${Date.now()}`);
@@ -80,7 +81,7 @@ module.exports = {
       const mediaMessage = media;
 
       if (!mediaMessage) {
-        return extra.reply(`⚠️ *WARNING*\n💡 Reply to an image/video/sticker with .crop, or send media with .crop as caption`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Reply to an image/video/sticker with ${prefix}crop, or send media with ${prefix}crop as caption`);
       }
 
       // Download media

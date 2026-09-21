@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 const parseNumber = (input) => {
@@ -22,9 +23,11 @@ module.exports = {
   ownerOnly: true,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     const number = args.join(' ');
     if (!number || !/\d/.test(number)) {
-      return extra.reply(`*Usage:* .approve <number>\n\n_Example: .approve 27833882383_`);
+      return extra.reply(`*Usage:* ${prefix}approve <number>\n\n_Example: ${prefix}approve 27833882383_`);
     }
 
     const digits = parseNumber(number);
@@ -55,8 +58,8 @@ module.exports = {
         text: `🎉 *WELCOME TO KAMI BOT* 🤖\n\n` +
               `✅ You have been *approved* by KAMI\n` +
               `🔓 You can now message this bot directly\n\n` +
-              `Send *.menu* to see all available commands\n` +
-              `Type *.help* if you need assistance\n\n` +
+              `Send *${prefix}menu* to see all available commands\n` +
+              `Type *${prefix}help* if you need assistance\n\n` +
               `_Lekke, enjoy the bot!_ 💀`
       });
     } catch (e) {}

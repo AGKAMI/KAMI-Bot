@@ -2,6 +2,7 @@
  * Broadcast Command - Send message to all chats
  */
 
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -13,9 +14,11 @@ module.exports = {
     ownerOnly: true,
     
     async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
       try {
         if (args.length === 0) {
-          return extra.reply(`*📢 BROADCAST*\n\n💡 Usage: .broadcast <message>\n📝 Example: .broadcast Hello everyone!`);
+          return extra.reply(`*📢 BROADCAST*\n\n💡 Usage: ${prefix}broadcast <message>\n📝 Example: ${prefix}broadcast Hello everyone!`);
         }
         
         const message = args.join(' ');

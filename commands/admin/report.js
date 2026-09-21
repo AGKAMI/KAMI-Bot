@@ -16,6 +16,8 @@ module.exports = {
     groupOnly: true,
 
     async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
         try {
             const from = extra.from;
             const sender = extra.sender;
@@ -57,7 +59,7 @@ module.exports = {
                     lines.push(`----------`);
                 }
 
-                lines.push(`_Use .report dismiss <number> to acknowledge_`);
+                lines.push(`_Use ${prefix}report dismiss <number> to acknowledge_`);
 
                 const mentions = pending.map(r => r.reportedBy);
 
@@ -82,7 +84,7 @@ module.exports = {
 
                 if (!report) {
                     return extra.reply(
-                        `❌ ERROR\n\nReport #${number} not found\nUse .report queue to see pending reports`
+                        `❌ ERROR\n\nReport #${number} not found\nUse ${prefix}report queue to see pending reports`
                     );
                 }
 
@@ -104,10 +106,10 @@ module.exports = {
                 return extra.reply(
                     `❌ ERROR\n\nReply to a message to report it\n\n` +
                     `📝 Usage:\n` +
-                    `• Reply → .report <reason>\n` +
-                    `• Reply → .report anon <reason>\n` +
-                    `• .report queue\n` +
-                    `• .report dismiss <number>`
+                    `• Reply → ${prefix}report <reason>\n` +
+                    `• Reply → ${prefix}report anon <reason>\n` +
+                    `• ${prefix}report queue\n` +
+                    `• ${prefix}report dismiss <number>`
                 );
             }
 
@@ -214,7 +216,7 @@ module.exports = {
                 `${reportedText.substring(0, 500)}${reportedText.length > 500 ? '...' : ''}`,
                 `----------`,
                 ``,
-                `_Use .report dismiss ${reportNum} in the group to acknowledge_`
+                `_Use ${prefix}report dismiss ${reportNum} in the group to acknowledge_`
             ].join('\n');
 
             // DM each admin

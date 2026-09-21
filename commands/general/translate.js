@@ -3,6 +3,7 @@
  */
 
 const APIs = require('../../utils/api');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -13,9 +14,11 @@ module.exports = {
   usage: '.translate <lang code> <text>',
   
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       if (args.length < 2) {
-        return extra.reply(`❌ *ERROR*\n💡 Usage: .translate <lang> <text>\n\n📝 *Example:* .translate es Hello world`);
+        return extra.reply(`❌ *ERROR*\n💡 Usage: ${prefix}translate <lang> <text>\n\n📝 *Example:* ${prefix}translate es Hello world`);
       }
       
       const targetLang = args[0];

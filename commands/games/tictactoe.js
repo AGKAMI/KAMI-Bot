@@ -6,7 +6,9 @@ module.exports = {
   category: 'games',
   groupOnly: true,
   execute: async (sock, msg, args, ctx) => {
+    const prefix = config.prefix || '.';
     const games = require('./grouphangman.js');
+const config = require('../../config');
     const from = ctx.from;
     const sub = (args[0] || '').toLowerCase();
     const boardKey = 'ttt_' + from;
@@ -20,7 +22,7 @@ module.exports = {
         turn: 'X',
         players: { X: null, O: null },
       });
-      return ctx.reply(`❌ ${pick(SLANG.error)} — tic tac toe!\nFirst person to play is X.\nUse .ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`);
+      return ctx.reply(`❌ ${pick(SLANG.error)} — tic tac toe!\nFirst person to play is X.\nUse ${prefix}ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`);
     }
 
     if (['stop', 'end'].includes(sub)) {
@@ -29,11 +31,11 @@ module.exports = {
     }
 
     if (!/^\d$/.test(sub)) {
-      return ctx.reply(`❌ _${pick(SLANG.error)} — use: .ttt start | .ttt <1-9> | .ttt stop_`);
+      return ctx.reply(`❌ _${pick(SLANG.error)} — use: ${prefix}ttt start | ${prefix}ttt <1-9> | ${prefix}ttt stop_`);
     }
 
     const g = games.ttt.get(boardKey);
-    if (!g) return ctx.reply(`❌ _no active game — use .ttt start_`);
+    if (!g) return ctx.reply(`❌ _no active game — use ${prefix}ttt start_`);
 
     const pos = parseInt(sub) - 1;
     if (pos < 0 || pos > 8) return ctx.reply(`❌ _${pick(SLANG.error)} — use a number from 1-9_`);

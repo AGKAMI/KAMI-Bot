@@ -16,6 +16,8 @@ module.exports = {
   adminOnly: true,
   botAdminNeeded: true,
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       let target;
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
@@ -26,7 +28,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply(`*⚠️ WARN*\n\n_Tag, reply, or add a number_\n\n_Example: .warn @user breaking rules_`);
+        return extra.reply(`*⚠️ WARN*\n\n_Tag, reply, or add a number_\n\n_Example: ${prefix}warn @user breaking rules_`);
       }
 
       const reason = args.slice(mentioned.length > 0 ? 1 : 0).join(' ') || 'No reason specified';

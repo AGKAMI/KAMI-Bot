@@ -14,13 +14,14 @@ module.exports = {
   usage: '.matrix <text>',
   
   async execute(sock, msg, args) {
+    const prefix = config.prefix || '.';
     try {
       const text = args.join(' ');
       const chatId = msg.key.remoteJid;
       
       if (!text) {
         return await sock.sendMessage(chatId, { 
-          text: `_${pick(SLANG.vibe)}, give me text to generate_\n\n_Example:_ .matrix Nick` 
+          text: `_${pick(SLANG.vibe)}, give me text to generate_\n\n_Example:_ ${prefix}matrix Nick` 
         }, { quoted: msg });
       }
       

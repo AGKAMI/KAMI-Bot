@@ -3,6 +3,7 @@
  */
 
 const db = require('../../database');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -15,6 +16,8 @@ module.exports = {
   ownerOnly: true, adminOnly: false,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const groupId = msg.key.remoteJid;
       const groupSettings = db.getGroupSettings(groupId);
@@ -41,12 +44,12 @@ module.exports = {
           `• Font size: ${current.fontSize}\n` +
           `• Sub font size: ${current.subFontSize}\n\n` +
           `*Options:*\n` +
-          `• .setgoodbyestyle position <top/center/bottom>\n` +
-          `• .setgoodbyestyle textcolor <hex>\n` +
-          `• .setgoodbyestyle bgcolor <rgba/hex>\n` +
-          `• .setgoodbyestyle fontsize <number>\n` +
-          `• .setgoodbyestyle subfontsize <number>\n` +
-          `• .setgoodbyestyle reset`
+          `• ${prefix}setgoodbyestyle position <top/center/bottom>\n` +
+          `• ${prefix}setgoodbyestyle textcolor <hex>\n` +
+          `• ${prefix}setgoodbyestyle bgcolor <rgba/hex>\n` +
+          `• ${prefix}setgoodbyestyle fontsize <number>\n` +
+          `• ${prefix}setgoodbyestyle subfontsize <number>\n` +
+          `• ${prefix}setgoodbyestyle reset`
         );
       }
 

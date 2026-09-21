@@ -5,6 +5,7 @@
 const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
 
+const config = require('../../config');
 const lastMessageTime = new Map();
 
 module.exports = {
@@ -20,13 +21,15 @@ module.exports = {
   lastMessageTime,
 
   async execute(sock, msg, args, extra) {
+
+  const prefix = config.prefix || '.';
     try {
       const { from, sender } = extra;
       const sub = (args[0] || '').toLowerCase();
       const settings = database.getGroupSettings(from);
 
       if (sub === 'status' || sub === '') {
-        return extra.reply(buildStatus(settings, extra));
+        return extra.reply(buildStatus(settings, extra, prefix));
       }
 
       if (sub === 'on') {
@@ -34,7 +37,7 @@ module.exports = {
         if (current === 0) {
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Set a time first, e.g. .slowmode 10s_`
+            `_Set a time first, e.g. ${prefix}slowmode 10s_`
           );
         }
         return extra.reply(
@@ -62,7 +65,7 @@ module.exports = {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to bypass, ${pick(SLANG.vibe)}_\n\n` +
-            `_Example: .slowmode bypass @user_`
+            `_Example: ${prefix}slowmode bypass @user_`
           );
         }
 
@@ -92,7 +95,7 @@ module.exports = {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to remove bypass, ${pick(SLANG.vibe)}_\n\n` +
-            `_Example: .slowmode unbypass @user_`
+            `_Example: ${prefix}slowmode unbypass @user_`
           );
         }
 
@@ -175,7 +178,7 @@ module.exports = {
   }
 };
 
-function buildStatus(settings, extra) {
+function buildStatus(settings, extra, prefix) {
   const seconds = settings.slowmode || 0;
   const status = seconds === 0 ? '❌ Off' : `✅ ${seconds}s`;
   let cooldownLabel = 'None';
@@ -200,9 +203,9 @@ function buildStatus(settings, extra) {
     `👑 *Admins:* Always bypass\n` +
     `👥 *Bypass list:* ${bypass.length} users\n\n` +
     `📱 *Commands:*\n` +
-    `• _.slowmode 10s / 5m / 1h_\n` +
-    `• _.slowmode off_\n` +
-    `• _.slowmode bypass @user_\n` +
-    `• _.slowmode unbypass @user_`
+    `• _${prefix}slowmode 10s / 5m / 1h_\n` +
+    `• _${prefix}slowmode off_\n` +
+    `• _${prefix}slowmode bypass @user_\n` +
+    `• _${prefix}slowmode unbypass @user_`
   );
 }

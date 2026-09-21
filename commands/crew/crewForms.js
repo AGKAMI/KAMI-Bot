@@ -55,14 +55,17 @@ const buildFormMessage = (teamKey) => {
     `_${teamKey} APPLICATION_\n` +
     `${team.emoji} ${team.role.toUpperCase()} ${team.emoji}\n\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
+    `📋 *BEFORE YOU APPLY — MINIMUM REQUIREMENTS:*\n` +
+    REQUIREMENTS.map(r => `• ${r}`).join('\n') + '\n\n' +
+    `━━━━━━━━━━━━━━━━\n\n` +
     `*Send all answers in ONE message. Do not send each answer separately.*\n\n` +
     `${questions}\n\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `✍️ *HOW TO SUBMIT:*\n` +
     `Go to any Slammed Society group and reply:\n` +
-    `\`.crew applied ${teamKey} <your answer here>\`\n\n` +
+    `\`${prefix}crew applied ${teamKey} <your answer here>\`\n\n` +
     `Example:\n` +
-    `\`.crew applied ${teamKey} 1) 3 hours 2) 18 3) yes did vip before 4) yes 5) active 6) i move the vip to safe zone\`\n\n` +
+    `\`${prefix}crew applied ${teamKey} 1) 3 hours 2) 18 3) yes did vip before 4) yes 5) active 6) i move the vip to safe zone\`\n\n` +
     (crewTeam ? `You'll get an application ID to track it. ` : ``) +
     `_${pickGood()}, good luck with the tryout!_`;
 };
@@ -101,20 +104,48 @@ const buildDeniedMessage = (teamKey, reason) => {
     `_Don't take it personal, yazi. Keep grinding._ 💪`;
 };
 
+// Minimum requirements — shown to admins so they know what to look for
+const REQUIREMENTS = [
+  '⏱️ *Minimum 2 hours/day* play time (max 10)',
+  '🎂 *Minimum age 12*',
+  '🎯 *Experience:* not required — just means they need training',
+  '🔰 *Loyalty:* must be committed to SS — non-negotiable',
+  '📲 *WhatsApp:* must be active daily for comms — non-negotiable',
+  '🚨 *Scenario:* judge if their answer shows common sense under pressure',
+];
+
 // Build the pending-application notice sent to the team's group admins
 const buildAdminNotice = (app) => {
   const team = TEAMS[app.team];
   const num = app.jid ? app.jid.split('@')[0] : 'unknown';
+  const teamQuestions = getQuestionsForAdmin(app.team);
   return `━━━━━━━━━━━━━━━━\n` +
     `*NEW ${app.team} APPLICATION* ${team ? team.emoji : ''}\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `🆔 *App ID:* ${app.appUid}\n` +
     `👤 *Applicant:* ${num}\n\n` +
-    `📝 *ANSWERS:*\n${app.answers || '(not provided)'}\n\n` +
+    `📝 *QUESTIONS + ANSWERS:*\n${teamQuestions}\n\n` +
+    `💬 *APPLICANT'S ANSWERS:*\n${app.answers || '(not provided)'}\n\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
-    `✅ Accept: \`.crew accept ${app.appUid}\`\n` +
-    `❌ Deny: \`.crew deny ${app.appUid} <reason>\`\n\n` +
+    `📋 *MINIMUM REQUIREMENTS:*\n` +
+    REQUIREMENTS.map(r => `• ${r}`).join('\n') + '\n\n' +
+    `━━━━━━━━━━━━━━━━\n\n` +
+    `✅ Accept: \`${prefix}crew accept ${app.appUid}\`\n` +
+    `❌ Deny: \`${prefix}crew deny ${app.appUid} <reason>\`\n\n` +
     `_Reply from any Slammed Society group or directly from DM._`;
+};
+
+// Format questions with numbered list for admin review
+const getQuestionsForAdmin = (teamKey) => {
+  const q = [
+    ['1️⃣', '⏱️', 'ACTIVITY', 'How many hours per day do you play CPM?'],
+    ['2️⃣', '🎂', 'AGE', 'How old are you?'],
+    ['3️⃣', '🎯', 'EXPERIENCE', 'Relevant experience in CPM?'],
+    ['4️⃣', '🔰', 'LOYALTY', 'Will they follow orders and prioritize SS?'],
+    ['5️⃣', '📲', 'COMMUNICATION', 'Are they active on WhatsApp daily?'],
+    ['6️⃣', '🚨', 'SCENARIO', 'Do they show common sense under pressure?'],
+  ];
+  return q.map(([n, em, name, hint]) => `${n} ${em} *${name}* — ${hint}`).join('\n');
 };
 
 const pickGood = () => {

@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -16,6 +17,7 @@ module.exports = {
   botAdminNeeded: false,
   
   async execute(sock, msg, args, extra) {
+    const prefix = config.prefix || '.';
     try {
       if (!args[0]) {
         const settings = database.getGroupSettings(extra.from);
@@ -25,8 +27,8 @@ module.exports = {
           `*Status*: ${status}\n\n` +
           `When enabled, all images and videos go straight to sticker ${pick(SLANG.vibe)}\n\n` +
           `📱 *Usage*:\n` +
-          `• .autosticker on\n` +
-          `• .autosticker off`
+          `• ${prefix}autosticker on\n` +
+          `• ${prefix}autosticker off`
         );
       }
       
@@ -48,7 +50,7 @@ module.exports = {
         return extra.reply(`✅ SUCCESS\n\nAutosticker turned OFF`);
       }
       
-      return extra.reply(`❌ ERROR\n\nInvalid option\nUsage: .autosticker <on/off>`);
+      return extra.reply(`❌ ERROR\n\nInvalid option\nUsage: ${prefix}autosticker <on/off>`);
     } catch (error) {
       console.error('[AutoSticker Command Error]:', error);
       return extra.reply(`❌ ERROR\n\nCouldn't update autosticker setting`);
