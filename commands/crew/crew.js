@@ -125,7 +125,7 @@ module.exports = {
         } else {
           // Group context
           if (sub !== 'apply' && sub !== 'applied') {
-            if (!inCrewGroup) {
+            if (!inCrewGroup && !isOwner) {
               return extra.reply(
                 `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
                 `Your group: ${extra.from.split('@')[0]}`

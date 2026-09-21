@@ -79,6 +79,7 @@ module.exports = {
         grouped[teamKey].push({ uid, app });
       }
 
+      const isOwner = extra.isOwner;
       const lines = [];
       const mentions = [];
 
@@ -90,7 +91,20 @@ module.exports = {
           const num = app.jid ? app.jid.split('@')[0] : 'unknown';
           const hasAnswers = app.answers ? '✅' : '⏳';
           const date = new Date(app.appliedAt).toLocaleDateString('en-ZA');
-          lines.push(`  🆔 *${uid}* — @${num} — ${hasAnswers} — ${date}`);
+          const daysAgo = Math.floor((Date.now() - app.appliedAt) / (1000 * 60 * 60 * 24));
+
+          let line = `  🆔 *${uid}* — @${num} — ${hasAnswers} — ${date}`;
+          if (daysAgo > 0) line += ` — _${daysAgo}d ago_`;
+
+          // Owner gets answers preview
+          if (isOwner && app.answers) {
+            const preview = app.answers.substring(0, 80).replace(/\n/g, ' ');
+            line += `\n     💬 _${preview}${app.answers.length > 80 ? '...' : ''}_`;
+          } else if (isOwner && !app.answers) {
+            line += `\n     ⚠️ _No answers submitted yet_`;
+          }
+
+          lines.push(line);
           if (app.jid) mentions.push(app.jid);
         }
         lines.push('');
@@ -104,7 +118,12 @@ module.exports = {
           lines.join('\n') +
           `----------\n\n` +
           `✅ Accept: \`${prefix}crew accept <UID>\`\n` +
-          `❌ Deny: \`${prefix}crew deny <UID> <reason>\``,
+          `❌ Deny: \`${prefix}crew deny <UID> <reason>\`\n` +
+          (isOwner
+            ? `🚫 Cancel: \`${prefix}crew cancel <UID>\`\n` +
+              `🔄 Reroll: \`${prefix}crew reroll <UID>\`\n` +
+              `📋 History: \`${prefix}crew history\``
+            : ''),
         mentions,
       }, { quoted: msg });
 
