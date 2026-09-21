@@ -7,6 +7,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
+const { buildComparableIds } = require('../../utils/jidHelper');
 
 module.exports = {
   subName: 'withdraw',
@@ -49,8 +50,8 @@ module.exports = {
       // Only the applicant themselves can withdraw (or the owner)
       const sender = msg.key.participant || msg.key.remoteJid;
       const applicantJid = sender.includes('@g.us') ? (msg.key.participant || extra.sender) : sender;
-      const isSamePerson = database.buildComparableIds(applicantJid)
-        .some(v => database.buildComparableIds(app.jid).includes(v));
+      const isSamePerson = buildComparableIds(applicantJid)
+        .some(v => buildComparableIds(app.jid).includes(v));
 
       if (!extra.isOwner && !isSamePerson) {
         return extra.reply(

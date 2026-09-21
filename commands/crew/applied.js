@@ -90,10 +90,68 @@ module.exports = {
         database.updateTeam(storeGroupJid, team);
         app = team.applicants[existing.appUid];
       } else {
-        // No prior .crew apply — tell them to start one first
+        // No pending app for this team — figure out exactly why
+
+        // 1. Check if they have a processed app (accepted/denied/expired/cancelled)
+        const allTeams = config.crewTeams || {};
+        for (const [tk, ti] of Object.entries(allTeams)) {
+          const crewData = database.getTeam(ti.jid);
+          if (crewData.processedApps) {
+            for (const [uid, proc] of Object.entries(crewData.processedApps)) {
+              const procVariants = buildComparableIds(proc.applicantJid);
+              if (procVariants.some(v => applicantVariants.includes(v)) && proc.team === teamKey) {
+                if (proc.action === 'accepted') {
+                  return extra.reply(
+                    `❌ ERROR\n\nYou were already *accepted* into *${teamKey}* ${pick(SLANG.vibe)}\n` +
+                    `You're part of the crew now.`
+                  );
+                } else if (proc.action === 'denied') {
+                  return extra.reply(
+                    `❌ ERROR\n\nYour *${teamKey}* application was *denied* ${pick(SLANG.vibe)}\n\n` +
+                    `🔄 You can reapply: \`${prefix}crew apply ${teamKey}\``
+                  );
+                } else if (proc.action === 'expired') {
+                  return extra.reply(
+                    `❌ ERROR\n\nYour *${teamKey}* application *expired* (no review within 7 days)\n\n` +
+                    `🔄 You can reapply: \`${prefix}crew apply ${teamKey}\``
+                  );
+                } else if (proc.action === 'cancelled') {
+                  return extra.reply(
+                    `❌ ERROR\n\nYour *${teamKey}* application was *cancelled* by an admin\n\n` +
+                    `🔄 You can reapply: \`${prefix}crew apply ${teamKey}\``
+                  );
+                } else if (proc.action === 'withdrawn') {
+                  return extra.reply(
+                    `❌ ERROR\n\nYou *withdrew* your *${teamKey}* application\n\n` +
+                    `🔄 You can reapply: \`${prefix}crew apply ${teamKey}\``
+                  );
+                }
+              }
+            }
+          }
+        }
+
+        // 2. Check if they have a pending app for a DIFFERENT team
+        for (const [tk, ti] of Object.entries(allTeams)) {
+          if (tk === teamKey) continue;
+          const apps = database.getApplicants(ti.jid);
+          for (const [, a] of Object.entries(apps)) {
+            if (a.status === 'pending') {
+              const appVariants = buildComparableIds(a.jid);
+              if (appVariants.some(v => applicantVariants.includes(v))) {
+                return extra.reply(
+                  `❌ ERROR\n\nYou don't have a pending *${teamKey}* application, but you DO have one for *${tk}* ${pick(SLANG.vibe)}\n\n` +
+                  `Submit answers for ${tk}: \`${prefix}crew applied ${tk} <answers>\`\n` +
+                  `Or apply for ${teamKey}: \`${prefix}crew apply ${teamKey}\``
+                );
+              }
+            }
+          }
+        }
+
+        // 3. No app found anywhere — tell them to start one
         return extra.reply(
-          `❌ ERROR\n\n` +
-          `You don't have a pending *${teamKey}* application ${pick(SLANG.vibe)}\n\n` +
+          `❌ ERROR\n\nYou don't have a pending *${teamKey}* application ${pick(SLANG.vibe)}\n\n` +
           `Start one with: \`${prefix}crew apply ${teamKey}\`\n` +
           `You'll get the application form + your App ID`
         );
