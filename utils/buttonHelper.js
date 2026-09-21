@@ -1,12 +1,11 @@
 /**
- * Button Helper — interactive quick-reply buttons via Baileys nativeFlowMessage.
- * Uses the full gifted-btns-compatible structure (header + messageVersion +
- * messageParamsJson + externalAdReply) so buttons render on supported clients.
- * When button mode is OFF (or no buttons passed) it falls back to plain text.
+ * Button Helper — interactive buttons via Baileys nativeFlowMessage.
+ * Supports quick_reply (tappable) and cta_url (opens link) buttons.
+ * Falls back to plain text when button mode is OFF or on error.
  *
- * Button presses arrive as buttonsResponseMessage / interactiveResponseMessage
- * with an id. Register handlers with onButton(id, fn) and route them in
- * handler.handleMessage via handleButtonResponse().
+ * Button presses arrive as templateButtonReplyMessage.selectedId
+ * (Baileys v7), or buttonsResponseMessage / nativeFlowResponseMessage
+ * on older versions.
  */
 
 const config = require('../config');
@@ -15,12 +14,10 @@ const path = require('path');
 
 const buttonHandlers = new Map();
 
-// Button mode toggle — read from config.buttonMode
 function isButtonModeOn() {
   return config.buttonMode === true || config.buttonMode === 'on';
 }
 
-// Load a thumbnail buffer for the externalAdReply card (helps buttons render)
 function loadThumbnail() {
   try {
     const candidates = [
@@ -38,35 +35,78 @@ function loadThumbnail() {
 }
 
 /**
- * Send a message with interactive quick-reply buttons.
- * @param {object} sock - Baileys socket
- * @param {string} jid - chat JID
- * @param {object} opts - { text, footer, buttons: [{ id, text }] }
+ * Normalize a button to nativeFlowMessage format.
+ * - { id, text }           → quick_reply (tappable, sends id back)
+ * - { text, url }          → cta_url (opens URL in browser)
+ * - { text, phone }        → cta_call (initiates call)
+ * - { text, displayText }  → cta_copy (copies text to clipboard)
+ */
+function normalizeButton(b) {
+  // URL button
+  if (b.url) {
+    return {
+      name: 'cta_url',
+      buttonParamsJson: JSON.stringify({
+        display_text: String(b.text || 'Open'),
+        url: b.url,
+        merchant_url: b.url,
+      }),
+    };
+  }
+
+  // Phone call button
+  if (b.phone) {
+    return {
+      name: 'cta_call',
+      buttonParamsJson: JSON.stringify({
+        display_text: String(b.text || 'Call'),
+        phone_number: b.phone,
+      }),
+    };
+  }
+
+  // Copy-to-clipboard button
+  if (b.displayText && !b.id) {
+    return {
+      name: 'cta_copy',
+      buttonParamsJson: JSON.stringify({
+        display_text: String(b.text || 'Copy'),
+        copy_text: b.displayText,
+      }),
+    };
+  }
+
+  // Quick-reply button (default) — sends the id back as a message
+  return {
+    name: 'quick_reply',
+    buttonParamsJson: JSON.stringify({
+      display_text: String(b.text || b.label || b.id),
+      id: b.id,
+    }),
+  };
+}
+
+/**
+ * Send a message with interactive buttons.
+ * @param {object} sock
+ * @param {string} jid
+ * @param {object} opts - { text, footer, header, buttons, thumbnail }
  * @param {object} quoted - message to quote (optional)
  */
 async function sendButtons(sock, jid, opts, quoted) {
   const { text, footer = '', buttons = [], header = '' } = opts;
 
-  // Fallback: button mode off, or no buttons → plain text
   if (!isButtonModeOn() || buttons.length === 0) {
     return quoted
       ? sock.sendMessage(jid, { text }, { quoted })
       : sock.sendMessage(jid, { text });
   }
 
-  // Inject a thumbnail so the interactive card renders on more clients
   if (!opts.thumbnail) {
     opts.thumbnail = loadThumbnail();
   }
 
-  // Baileys caps quick-reply buttons at 3 per message
-  const rows = buttons.slice(0, 3).map(b => ({
-    name: 'quick_reply',
-    buttonParamsJson: JSON.stringify({
-      display_text: String(b.text || b.label || b.id),
-      id: b.id,
-    }),
-  }));
+  const rows = buttons.slice(0, 3).map(normalizeButton);
 
   const content = {
     interactiveMessage: {
@@ -96,7 +136,6 @@ async function sendButtons(sock, jid, opts, quoted) {
     },
   };
 
-  // Try interactive; if the client can't build it, fall back to plain text
   try {
     return quoted
       ? await sock.sendMessage(jid, content, { quoted })
@@ -105,36 +144,41 @@ async function sendButtons(sock, jid, opts, quoted) {
     console.error('[BUTTON] send failed, falling back to text:', err.message);
     return quoted
       ? sock.sendMessage(jid, { text }, { quoted })
-      : sock.sendMessage(jid, { text });
+      : sock.sendMessage(jid, text);
   }
 }
 
-// Register a handler for a button id
 function onButton(id, handler) {
   buttonHandlers.set(id, handler);
 }
 
 /**
- * Handle an incoming button press. Call this early in handleMessage.
+ * Handle incoming button press. Call this in the message handler.
+ * Checks all known Baileys response formats.
  * @returns {boolean} true if a registered button was handled
  */
 function handleButtonResponse(sock, msg) {
   try {
-    const br =
-      msg.message?.buttonsResponseMessage ||
-      msg.message?.interactiveResponseMessage ||
-      null;
-    if (!br) return false;
+    const m = msg.message;
+    if (!m) return false;
 
     const from = msg.key.remoteJid;
     const sender = msg.key.participant || from;
 
-    let btnId = br.selectedButtonId || null;
+    let btnId = null;
 
-    // nativeFlowResponseMessage.paramsJson is a JSON string: {"id":"..."}
-    if (!btnId && br.nativeFlowResponseMessage?.paramsJson) {
+    // Baileys v7: button taps arrive here
+    if (m.templateButtonReplyMessage?.selectedId) {
+      btnId = m.templateButtonReplyMessage.selectedId;
+    }
+    // Older Baileys / some clients
+    else if (m.buttonsResponseMessage?.selectedButtonId) {
+      btnId = m.buttonsResponseMessage.selectedButtonId;
+    }
+    // nativeFlowResponseMessage fallback
+    else if (m.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson) {
       try {
-        btnId = JSON.parse(br.nativeFlowResponseMessage.paramsJson).id;
+        btnId = JSON.parse(m.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson).id;
       } catch (e) {}
     }
 
@@ -142,7 +186,7 @@ function handleButtonResponse(sock, msg) {
 
     const handler = buttonHandlers.get(btnId);
     if (handler) {
-      handler(sock, msg, from, sender, br);
+      handler(sock, msg, from, sender, btnId);
       return true;
     }
     return false;
