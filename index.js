@@ -289,7 +289,7 @@ async function startBot() {
       console.log('⚠️ No activity detected. Forcing reconnect...');
       await sock.end(undefined, undefined, { reason: 'inactive' });
       clearInterval(watchdogInterval);
-      setTimeout(() => startBot(), 5000); // Slightly longer delay
+      setTimeout(() => startBot().catch(e => console.error('[WATCHDOG] reconnect failed:', e.message)), 5000);
     }
   }, 5 * 60 * 1000); // Every 5 min check
 
@@ -320,7 +320,7 @@ async function startBot() {
       if (statusCode === 401 || statusCode === 440 || errorMessage.includes('conflict')) {
         console.log('⚠️ Session conflict — another WhatsApp session is active on this number.');
         console.log('   Log out of WhatsApp Web / close other sessions, then the bot will reconnect in 30s.');
-        setTimeout(() => startBot(), 30000);
+        setTimeout(() => startBot().catch(e => console.error('[CONFLICT] reconnect failed:', e.message)), 30000);
         return;
       }
 
@@ -335,12 +335,13 @@ async function startBot() {
       }
 
       if (shouldReconnect) {
-        setTimeout(() => startBot(), 3000);
+        setTimeout(() => startBot().catch(e => console.error('[RECONNECT] reconnect failed:', e.message)), 3000);
       } else {
         console.log('\n⚠️ Session expired. QR code will appear on next restart.');
         console.log('   Restart the bot from the panel to re-pair.\n');
       }
     } else if (connection === 'open') {
+      try {
       console.log('\n');
       console.log('╔════════════════════════════════════╗');
       console.log('║      💀 KAMI BOT CONNECTED 💀      ║');
@@ -503,6 +504,9 @@ async function startBot() {
         }
       }
       console.log(`🧹 Store cleaned. Active chats: ${store.messages.size}`);
+      } catch (openErr) {
+        console.error('[CONNECTION] Error in connection open handler:', openErr.message);
+      }
     }
   });
 
@@ -684,6 +688,10 @@ console.log(`👑 Owner: ${ownerNames}\n`);
 
 // Proactively delete Puppeteer cache so it doesn't fill disk on panels
 cleanupPuppeteerCache();
+
+// Keepalive — prevents the event loop from draining between reconnects
+// Without this, the process exits during the setTimeout gap before startBot() runs again
+setInterval(() => {}, 300000); // 5-min no-op keeps Node alive
 
 startBot().catch(err => {
   console.error('Error starting bot:', err);
