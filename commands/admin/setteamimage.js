@@ -73,9 +73,14 @@ module.exports = {
         fs.mkdirSync(TEAM_IMAGES_DIR, { recursive: true });
       }
 
-      // Download the image
+      // Get the actual image message — handle both direct image and reply-to-image
       const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-      const buffer = await downloadMediaMessage(msg, 'buffer', {});
+      let imgMsg = msg;
+      if (!msg.message?.imageMessage && msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage) {
+        imgMsg = msg.message.extendedTextMessage.contextInfo.quotedMessage;
+      }
+
+      const buffer = await downloadMediaMessage(imgMsg, 'buffer', {});
 
       if (!buffer || buffer.length === 0) {
         await sock.sendMessage(from, { text: `❌ Failed to download image` });

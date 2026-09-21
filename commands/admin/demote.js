@@ -7,10 +7,14 @@
  */
 
 const database = require('../../database');
-const handler = require('../../handler');
 const config = require('../../config');
 const { pick, SLANG, mention } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
+
+// Lazy require to avoid circular dependency (demote.js ↔ handler.js)
+function getHandler() {
+  return require('../../handler');
+}
 
 function getOwnerJid(sock) {
   const botId = sock.user?.id || '';
@@ -243,6 +247,7 @@ module.exports = {
       }
 
       // ── Normal Demote ──────────────────────────────────────
+      const handler = getHandler();
       handler._botDemoted.add(target);
       await sock.groupParticipantsUpdate(extra.from, [target], 'demote');
       setTimeout(() => handler._botDemoted.delete(target), 5000);
