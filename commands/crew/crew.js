@@ -97,9 +97,10 @@ module.exports = {
 
         if (isDM) {
           // DM context — enforce team-admin access rules
+          const isApproved = database.isApprovedNumber(extra.sender);
           if (sub === 'accept' || sub === 'deny') {
-            // accept/deny from DM: owner or team admin only
-            if (!isOwner && !isTeamAdmin) {
+            // accept/deny from DM: owner, approved, or team admin only
+            if (!isOwner && !isApproved && !isTeamAdmin) {
               return extra.reply(
                 `❌ ERROR\n\nOnly SS team admins or the owner can accept/deny applications from DMs`
               );
@@ -107,7 +108,7 @@ module.exports = {
             // allowed — route to handler below
           } else if (sub !== 'apply' && sub !== 'applied' && sub !== 'applicants' && sub !== 'pending') {
             // Any other crew command in DM
-            if (!isOwner) {
+            if (!isOwner && !isApproved) {
               if (isTeamAdmin) {
                 return extra.reply(
                   `❌ ERROR\n\nAs a team admin you're only allowed to accept or deny pending applications from DMs`
@@ -120,7 +121,7 @@ module.exports = {
                 `Use ${prefix}crew teams to see abbreviations`
               );
             }
-            // owner in DM can run anything — continue
+            // owner/approved in DM can run anything — continue
           }
         } else {
           // Group context
