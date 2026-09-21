@@ -90,11 +90,13 @@ module.exports = {
         database.updateTeam(storeGroupJid, team);
         app = team.applicants[existing.appUid];
       } else {
-        // No prior .crew apply — create the app now with answers
-        app = database.addApplicant(storeGroupJid, applicantJid, {
-          team: teamKey,
-          answers,
-        });
+        // No prior .crew apply — tell them to start one first
+        return extra.reply(
+          `❌ ERROR\n\n` +
+          `You don't have a pending *${teamKey}* application ${pick(SLANG.vibe)}\n\n` +
+          `Start one with: \`${prefix}crew apply ${teamKey}\`\n` +
+          `You'll get the application form + your App ID`
+        );
       }
 
       if (!app) {

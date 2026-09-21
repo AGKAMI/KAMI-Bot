@@ -90,9 +90,14 @@ module.exports = {
       // Role (default: lowest custom role)
       const validRoles = teamGroupJid ? database.getCustomRoles(teamGroupJid) : ['member'];
       let role = validRoles[0];
+      let roleWarn = '';
       for (const arg of args.slice(1)) {
         const lower = arg.toLowerCase();
-        if (validRoles.includes(lower)) { role = lower; break; }
+        if (validRoles.includes(lower)) {
+          role = lower;
+        } else if (arg.toLowerCase() !== role) {
+          roleWarn = `\n⚠️ _"${arg}" isn't a valid role. Available roles: ${validRoles.join(', ')}. Using *${role}* instead._`;
+        }
       }
 
       // Add to crew
@@ -121,23 +126,18 @@ module.exports = {
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
 
-      // Re-block auto-unblocked team admins if no pending apps remain for their teams
+      // Clean up auto-unblock tracking (team admins are already exempt from
+      // the DM blocker, so we don't actually re-block them — just clear the tracking)
       try {
         const autoUnblocked = database.getAutoUnblockedTeamAdmins();
         for (const adminNum of autoUnblocked) {
           const adminJid = adminNum + '@s.whatsapp.net';
           if (!database.hasPendingApplicationsForAnyTeam(adminJid)) {
-            try {
-              await sock.updateBlockStatus(adminJid, 'block');
-              database.removeAutoUnblockedTeamAdmin(adminJid);
-              console.log(`[CREW ACCEPT] Re-blocked admin ${adminNum} — no pending applications remaining`);
-            } catch (e) {
-              console.error(`[CREW ACCEPT] Failed to re-block admin ${adminNum}:`, e.message);
-            }
+            database.removeAutoUnblockedTeamAdmin(adminJid);
           }
         }
       } catch (e) {
-        console.error('[CREW ACCEPT] Admin re-block error:', e.message);
+        console.error('[CREW ACCEPT] Auto-unblock cleanup error:', e.message);
       }
 
       // Add the applicant to the team's WhatsApp group
@@ -195,6 +195,7 @@ module.exports = {
           (addedToGroup
             ? '✅ Added to the ' + teamKey + ' group\n'
             : '⚠️ Couldn\'t auto-add them to the group — send the invite manually\n') +
+          roleWarn + '\n' +
           (ownerVIP
             ? '_The owner himself has accepted this member. Welcome to the squad._ 👑'
             : '_Hired message + group pic + invite sent to them_' + pick(SLANG.vibe)),

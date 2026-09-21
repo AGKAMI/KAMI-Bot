@@ -1159,19 +1159,24 @@ const handleMessage = async (sock, msg) => {
       }
     }
     
-    // Applicant DM restriction — can ONLY use .crew apply for other teams while pending.
+    // Applicant DM restriction — can ONLY use crew application commands while pending.
     // Owner keeps universal access. Team admins handled above.
     if (!isGroup && !database.isTeamAdmin(sender) && !isOwner(sender) && database.hasPendingApplication(sender)) {
       const lowerBody = (body || '').trim().toLowerCase();
       const prefixEscaped = config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const isApplyCmd = new RegExp('^' + prefixEscaped + 'crew\\s+apply(?=\\s|$)').test(lowerBody);
-      if (!isApplyCmd) {
+      const isAllowedCmd = new RegExp('^' + prefixEscaped +
+        'crew\\s+(apply|applied|withdraw|applicants|pending)(?=\\s|$)').test(lowerBody);
+      if (!isAllowedCmd) {
         return sock.sendMessage(from, {
           text: `⏳ APPLICATION PENDING\n\n` +
                 `You have a pending application being reviewed by an admin.\n` +
                 `Wait for an admin to accept or deny your application.\n\n` +
                 `❌ You cannot use other commands while your application is being reviewed.\n\n` +
-                `💡 You can apply to other teams with: \`.crew apply <team>\``
+                `💡 *Crew commands you can use:*\n` +
+                `\`${prefix}crew apply <team>\` — apply to another team\n` +
+                `\`${prefix}crew applied <team> <answers>\` — submit your answers\n` +
+                `\`${prefix}crew withdraw <UID>\` — withdraw your application\n` +
+                `\`${prefix}crew applicants <team>\` — check your app status`
         }, { quoted: msg });
       }
     }

@@ -101,11 +101,18 @@ module.exports = {
         a.status === 'pending' && buildComparableIds(a.jid).some(v => applicantVariants.includes(v))
       );
       if (dup) {
-        return extra.reply(
-          applyingForSomeone
-            ? `❌ ERROR\n\n@${applicantNum} already has a pending ${teamKey} application ${pick(SLANG.vibe)}\nApp ID: ${dup.appUid}\n\nWait for review or hit an admin`
-            : `❌ ERROR\n\nYou already have a pending ${teamKey} application ${pick(SLANG.vibe)}\nApp ID: ${dup.appUid}\n\nWait for review or hit an admin`
-        );
+        // If the existing app has no answers (DM failure / never got the form),
+        // allow them to re-apply — remove the broken one first
+        if (!dup.answers) {
+          database.removeApplicant(teamGroupJid, dup.appUid);
+          console.log(`[CREW APPLY] Replacing broken pending app ${dup.appUid} for ${applicantNum}`);
+        } else {
+          return extra.reply(
+            applyingForSomeone
+              ? `❌ ERROR\n\n@${applicantNum} already has a pending ${teamKey} application ${pick(SLANG.vibe)}\nApp ID: *${dup.appUid}*\n\nWait for review or hit an admin`
+              : `❌ ERROR\n\nYou already have a pending ${teamKey} application ${pick(SLANG.vibe)}\nApp ID: *${dup.appUid}*\n\nWait for review or hit an admin`
+          );
+        }
       }
 
       // Create the application (DB generates a short UID)

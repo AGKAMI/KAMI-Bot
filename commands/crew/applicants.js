@@ -83,6 +83,25 @@ module.exports = {
         teamLabel = teamArg;
       }
 
+      // Passive cleanup — expire old pending apps (7+ days) and notify applicants
+      const expired = database.expireOldPendingApps();
+      if (expired.length > 0) {
+        console.log(`[APPLICANTS] Expired ${expired.length} stale pending app(s)`);
+        for (const app of expired) {
+          if (app.jid) {
+            try {
+              await sock.sendMessage(app.jid, {
+                text: `⏰ *APPLICATION EXPIRED*\n\n` +
+                      `Your *${app.team}* application (ID: *${app.appUid}*) has expired after 7 days with no review.\n\n` +
+                      `🔄 You can reapply anytime: \`${prefix}crew apply ${app.team}\``
+              });
+            } catch (e) {
+              console.error(`[APPLICANTS] Expiry DM failed for ${app.jid}:`, e.message);
+            }
+          }
+        }
+      }
+
       const applicants = database.getApplicants(targetGroupJid);
       const entries = Object.entries(applicants).filter(([, a]) => a.status === 'pending');
 

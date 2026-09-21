@@ -436,6 +436,34 @@ const getProcessedApp = (uid) => {
   return null;
 };
 
+// Remove pending applications older than maxAgeMs (default 7 days)
+// Returns list of expired apps for notification
+const expireOldPendingApps = (maxAgeMs = 7 * 24 * 60 * 60 * 1000) => {
+  const crew = getCrew();
+  const now = Date.now();
+  const expired = [];
+  for (const [groupJid, team] of Object.entries(crew.groups || {})) {
+    if (!team.applicants) continue;
+    for (const [uid, app] of Object.entries(team.applicants)) {
+      if (app.status === 'pending' && (now - app.appliedAt) > maxAgeMs) {
+        expired.push({ ...app, groupJid, appUid: uid });
+        delete team.applicants[uid];
+        // Track as expired-processed
+        if (!team.processedApps) team.processedApps = {};
+        team.processedApps[uid] = {
+          action: 'expired',
+          admin: 'system',
+          processedAt: now,
+          applicantJid: app.jid,
+          team: app.team,
+        };
+      }
+    }
+  }
+  if (expired.length > 0) writeDB(CREW_DB, crew);
+  return expired;
+};
+
 // Does this user have any pending application anywhere?
 // Used to exempt applicants from the DM blocker during the application window.
 const hasPendingApplication = (jid) => {
@@ -865,6 +893,7 @@ module.exports = {
     removeApplicant,
     trackProcessedApp,
     getProcessedApp,
+    expireOldPendingApps,
     hasPendingApplication,
     getAllTeams,
     generateAppUid,
