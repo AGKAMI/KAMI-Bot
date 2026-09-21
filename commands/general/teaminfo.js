@@ -127,9 +127,12 @@ module.exports = {
           caption: text,
           mentions: [applicantJid],
         }, { quoted: msg });
-        // Small delay to avoid rate limiter (2s cooldown between button messages)
-        await new Promise(r => setTimeout(r, 2500));
+      } else {
+        await sock.sendMessage(extra.from, { text }, { quoted: msg });
       }
+
+      // Delay before buttons to avoid rate limiter
+      await new Promise(r => setTimeout(r, 2500));
 
       // Send buttons (apply or status)
       const buttons = [];
@@ -151,7 +154,7 @@ module.exports = {
       }
 
       await sendButtons(sock, extra.from, {
-        text: fs.existsSync(imgPath) ? '' : text,
+        text: fs.existsSync(imgPath) ? 'Tap a button 👇' : text,
         footer: config.botName || 'KAMI Bot',
         buttons,
       }, msg);

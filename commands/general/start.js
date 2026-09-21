@@ -64,40 +64,39 @@ async function sendTeamCards(sock, from, applicantJid) {
     return;
   }
 
-  // Build one rich text message with all team info + buttons
-  let summary = `🛡️ *SLAMMED SOCIETY SECURITY TEAMS*\n\n`;
   for (const teamKey of available) {
+    const imgPath = getTeamImage(teamKey);
     const team = config.crewTeams[teamKey];
     const meta = TEAMS[teamKey];
     const emoji = TEAM_EMOJI[teamKey];
-    summary += `${emoji} *${team.name}*\n${meta.role}`;
-    if (team.cars) summary += ` • 🚗 ${team.cars}`;
-    summary += `\n${team.description || ''}\n\n`;
-  }
 
-  const teamButtons = available.slice(0, 3).map(teamKey => ({
-    id: `start:join:${teamKey}`,
-    text: `${TEAM_EMOJI[teamKey]} Join ${teamKey}`,
-  }));
+    const caption =
+      `${emoji} *${team.name}*\n` +
+      `${meta.role}\n` +
+      (team.description ? `${team.description}\n` : '') +
+      (team.cars ? `🚗 ${team.cars}` : '');
 
-  await sendButtons(sock, from, {
-    text: summary + (available.length > 3
-      ? `_Type ${config.prefix || '.'}teaminfo <team> for the 4th team_`
-      : ''),
-    footer: config.botName || 'KAMI Bot',
-    buttons: teamButtons,
-  });
-
-  // Send images separately (WhatsApp limitation — no images in button messages)
-  for (const teamKey of available) {
-    const imgPath = getTeamImage(teamKey);
+    // Send image + caption
     if (fs.existsSync(imgPath)) {
       const imageBuffer = fs.readFileSync(imgPath);
       await sock.sendMessage(from, {
         image: imageBuffer,
-        caption: `${TEAM_EMOJI[teamKey]} *${config.crewTeams[teamKey].name}*`,
+        caption,
+        mentions: applicantJid ? [applicantJid] : [],
       });
+    } else {
+      await sock.sendMessage(from, { text: caption });
     }
+
+    // Send join button (2.5s delay to avoid rate limiter)
+    await new Promise(r => setTimeout(r, 2500));
+    await sendButtons(sock, from, {
+      text: '',
+      footer: config.botName || 'KAMI Bot',
+      buttons: [
+        { id: `start:join:${teamKey}`, text: `${emoji} Join ${teamKey} — ${team.name}` },
+      ],
+    });
   }
 }
 
