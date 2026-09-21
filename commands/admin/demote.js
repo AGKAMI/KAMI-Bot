@@ -60,9 +60,10 @@ module.exports = {
         // Target is the owner (they were mentioned)
         await sock.sendMessage(extra.from, {
           text:
-            `🚫 *NAH*\n\n` +
-            `@${demoterNum} — you can't demote the owner\n` +
-            `That's not happening`,
+            `🚫 *YOH THE AUDACITY* 💀\n\n` +
+            `@${demoterNum} — you really just tried to demote KAMI??\n\n` +
+            `No way you tryna demote the owner bru 😭\n` +
+            `Don't act like a laaitie man, ${pick(SLANG.dismiss)}`,
           mentions: [extra.sender],
         });
         return;
@@ -75,9 +76,10 @@ module.exports = {
       if (!extra.isOwner && isTargetOwner) {
         await sock.sendMessage(extra.from, {
           text:
-            `🚫 *NAH*\n\n` +
-            `@${demoterNum} — you can't demote the owner\n` +
-            `That's not happening`,
+            `🚫 *YOH THE AUDACITY* 💀\n\n` +
+            `@${demoterNum} — you really just tried to demote KAMI??\n\n` +
+            `No way you tryna demote the owner bru 😭\n` +
+            `Don't act like a laaitie man, ${pick(SLANG.dismiss)}`,
           mentions: [extra.sender],
         });
         return;
@@ -103,13 +105,13 @@ module.exports = {
             // Group — show authority
             await sock.sendMessage(extra.from, {
               text:
-                `🚫 *NAH*\n\n` +
+                `🚫 *NAH BRU* 💀\n\n` +
                 `@${demoterNum} tried demoting @${targetNum}\n\n` +
                 (ownerNum
-                  ? `That's @${ownerNum}'s admin\n`
-                  : `That's KAMI's admin\n`) +
+                  ? `That's @${ownerNum}'s admin wena 💀\n`
+                  : `That's KAMI's admin wena 💀\n`) +
                 `You can't touch them\n\n` +
-                `_Try that again and see what happens_`,
+                `_Try that again and see what happens ${pick(SLANG.dismiss)}_`,
               mentions: ownerNum
                 ? [target, extra.sender, ownerJid]
                 : [target, extra.sender],
@@ -119,10 +121,10 @@ module.exports = {
             try {
               await sock.sendMessage(target, {
                 text:
-                  `🛡️ *YOU GOOD*\n\n` +
-                  `@${demoterNum} tried demoting you\n` +
-                  `Blocked — you're still the admin\n` +
-                  `_KAMI put you there, nobody else decides_ 👑`,
+                  `🛡️ *YOU GOOD* 💪\n\n` +
+                  `@${demoterNum} tried demoting you hey 💀\n` +
+                  `Blocked — you're still the admin\n\n` +
+                  `KAMI put you there, nobody else decides 👑`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
@@ -131,10 +133,10 @@ module.exports = {
             try {
               await sock.sendMessage(extra.sender, {
                 text:
-                  `🚫 *Oi*\n\n` +
-                  `You just tried demoting someone KAMI promoted\n` +
-                  `That's not how this works\n\n` +
-                  `One more time and you're losing your admin too`,
+                  `🚫 *OOF* 💀\n\n` +
+                  `You really just tried demoting someone KAMI promoted??\n\n` +
+                  `Yoh the audacity bru 😭\n` +
+                  `One more time and you're losing your admin too hey`,
               });
             } catch (e) {}
 
@@ -145,9 +147,10 @@ module.exports = {
                 const oJid = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
                 await sock.sendMessage(oJid, {
                   text:
-                    `🛡️ *PROTECTION*\n\n` +
+                    `🛡️ *PROTECTION* 💀\n\n` +
                     `@${demoterNum} tried demoting @${targetNum}\n` +
-                    `Blocked ${pick(SLANG.vibe)}`,
+                    `Blocked — they really thought they could tho 😭\n\n` +
+                    `${pick(SLANG.roast)}`,
                   mentions: [target, extra.sender],
                 });
               } catch (e) {}
@@ -179,8 +182,8 @@ module.exports = {
             // Group — show who's boss
             await sock.sendMessage(extra.from, {
               text:
-                `🚨 *ADMIN PROTECTION*\n\n` +
-                `@${demoterNum} got demoted\n` +
+                `🚨 *CAUGHT IN 4K* 📸\n\n` +
+                `@${demoterNum} got demoted 💀\n` +
                 (ownerNum
                   ? `Kept trying to touch @${ownerNum}'s admin\n\n`
                   : `Kept trying to touch KAMI's admin\n\n`) +
@@ -195,11 +198,11 @@ module.exports = {
             try {
               await sock.sendMessage(target, {
                 text:
-                  `🛡️ *SORTED*\n\n` +
-                  `@${demoterNum} tried demoting you twice\n` +
+                  `🛡️ *SORTED* 💪\n\n` +
+                  `@${demoterNum} tried demoting you twice hey 💀\n` +
                   `They got demoted for it\n` +
                   `You're back as admin\n\n` +
-                  `_KAMI's word is final_ 👑`,
+                `${pick(SLANG.protected)}`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
@@ -208,9 +211,10 @@ module.exports = {
             try {
               await sock.sendMessage(extra.sender, {
                 text:
-                  `🚨 *YOU GOT DEMOTED*\n\n` +
+                  `🚨 *YOU GOT DEMOTED* 💀\n\n` +
                   `Kept trying to demote KAMI's admin\n` +
                   `Now you're regular\n\n` +
+                  `Yoh you really didn't listen the first time tho 😭\n` +
                   `_Should've left it alone_`,
               });
             } catch (e) {}
@@ -222,10 +226,11 @@ module.exports = {
                 const oJid2 = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
                 await sock.sendMessage(oJid2, {
                   text:
-                    `🛡️ *ADMIN PROTECTION*\n\n` +
+                    `🛡️ *ADMIN PROTECTION* 💀\n\n` +
                     `@${demoterNum} tried demoting @${targetNum} twice\n` +
                     `They got demoted for it\n` +
-                    `@${targetNum} back where they belong`,
+                    `@${targetNum} back where they belong\n\n` +
+                    `${pick(SLANG.protected)}`,
                   mentions: [target, extra.sender],
                 });
               } catch (e) {}

@@ -73,9 +73,10 @@ module.exports = {
             const kickerNum = extra.sender.split(':')[0].split('@')[0];
             await sock.sendMessage(chatId, {
               text:
-                `🚫 *NAH*\n\n` +
-                `@${kickerNum} — you can't kick the owner\n` +
-                `That's not happening`,
+                `🚫 *YOH THE AUDACITY* 💀\n\n` +
+                `@${kickerNum} — you really just tried to kick KAMI??\n\n` +
+                `No way you tryna kick the owner bru 😭\n` +
+                `Don't act like a laaitie man, ${pick(SLANG.dismiss)}`,
               mentions: [extra.sender],
             });
             return;
@@ -95,12 +96,13 @@ module.exports = {
             // Block — group message
             await sock.sendMessage(chatId, {
               text:
-                `🚫 *ACCESS DENIED*\n\n` +
-                `@${kickerNum} — nah you can't kick @${targetNum}\n\n` +
+                `🚫 *NAH BRU* 💀\n\n` +
+                `@${kickerNum} — you really thought you could kick @${targetNum}??\n\n` +
                 (ownerNum
-                  ? `That's @${ownerNum}'s person\n`
-                  : `That's KAMI's person\n`) +
-                `Only KAMI-Bot can remove them`,
+                  ? `That's @${ownerNum}'s person wena 💀\n`
+                  : `That's KAMI's person wena 💀\n`) +
+                `Only KAMI-Bot decides who stays and who goes\n\n` +
+                `${pick(SLANG.roast)}`,
               mentions: ownerNum
                 ? [target, extra.sender, ownerJid]
                 : [target, extra.sender],
@@ -110,9 +112,10 @@ module.exports = {
             try {
               await sock.sendMessage(target, {
                 text:
-                  `🛡️ *YOU GOOD*\n\n` +
-                  `@${kickerNum} tried to kick you\n` +
-                  `Blocked — you're staying`,
+                  `🛡️ *YOU GOOD* 💪\n\n` +
+                  `@${kickerNum} tried kicking you hey 💀\n` +
+                  `Sorted — you're not going anywhere\n\n` +
+                  `${pick(SLANG.protected)}`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
@@ -121,10 +124,10 @@ module.exports = {
             try {
               await sock.sendMessage(extra.sender, {
                 text:
-                  `🚫 *Oi*\n\n` +
-                  `You just tried kicking someone KAMI added\n` +
-                  `That's not happening\n\n` +
-                  `Don't try that again`,
+                  `🚫 *OOF* 💀\n\n` +
+                  `You really just tried kicking someone KAMI added??\n\n` +
+                  `Yoh the audacity bru 😭\n` +
+                  `Don't try that again hey, ${pick(SLANG.dismiss)}`,
               });
             } catch (e) {}
 
@@ -145,9 +148,10 @@ module.exports = {
                 const oJid = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
                 await sock.sendMessage(oJid, {
                   text:
-                    `🛡️ *PROTECTION*\n\n` +
+                    `🛡️ *PROTECTION* 💀\n\n` +
                     `@${kickerNum} tried kicking @${targetNum}\n` +
-                    `Blocked ${pick(SLANG.vibe)}`,
+                    `Blocked — they really thought they could tho 😭\n\n` +
+                    `${pick(SLANG.roast)}`,
                   mentions: [target, extra.sender],
                 });
               } catch (e) {}

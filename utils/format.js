@@ -78,28 +78,59 @@ const status = {
 
 const SLANG = {
   // Greetings
-  greeting: ['howzit', 'aweh', 'heita'],
+  greeting: ['howzit', 'aweh', 'heita', 'heita mbokodo', 'yoh wena'],
 
   // Positive feedback
-  good: ['lekke', 'kiff', 'kwaai', 'scores'],
+  good: ['lekke', 'kiff', 'kwaai', 'scores', 'clocked it', 'sharp sharp'],
 
   // Addressing users
-  friend: ['chommie', 'oke'],
+  friend: ['laaitie', 'my bru', 'wena', 'mbokodo', 'sisi', 'baba'],
 
   // Errors / negative
-  error: ['moegoe', 'sleg', 'stukkend'],
+  error: ['moegoe', 'sleg', 'stukkend', 'yoh', 'haiibo', 'cima'],
 
   // Intensity
-  intensifier: ['lank', 'lekker'],
+  intensifier: ['lank', 'lekker', 'phanda', 'yoh'],
 
   // General
-  yes: ['yebo', 'yebo shame'],
-  no: ['awu', 'hayi'],
-  thanks: ['enkosi', 'ke a leboha', 'thanks shame'],
-  bye: ['totsiens', 'later hey'],
+  yes: ['yebo', 'yebo shame', 'sho', 'aweh'],
+  no: ['awu', 'hayi', 'yoh nah', 'khona into e-off'],
+  thanks: ['enkosi', 'ke a leboha', 'thanks shame', 'sho lekke'],
+  bye: ['totsiens', 'later hey', 'shiya gentleman'],
 
   // Filler / vibe
-  vibe: ['sho', 'yazi', 'manje', 'nje'],
+  vibe: ['sho', 'yazi', 'manje', 'nje', 'bathong', 'mos'],
+
+  // Protection / roast energy
+  roast: [
+    'yoh the audacity 💀',
+    'not you trying that 💀',
+    'shame man... cima 😭',
+    'you thought hey 💀',
+    'bathong the boldness 😭',
+    'agine the nerve 💀',
+    'hao khonahale bru 💀',
+  ],
+
+  // Dismissal energy
+  dismiss: [
+    'nah not happening 💀',
+    'try again boet 💀',
+    'yoh nice try tho 😭',
+    'not today laaitie 💀',
+    'wena you really tried 😭',
+    'sho... anyway 💀',
+    'cima man, cima 😭',
+  ],
+
+  // Protection success
+  protected: [
+    'sorted lekke ✅',
+    'handled, don\'t worry about it 💪',
+    'KAMI\'s people stay protected 🔒',
+    'caught in 4k, handled 📸',
+    'yebo, that\'s how we do it 💪',
+  ],
 };
 
 /**

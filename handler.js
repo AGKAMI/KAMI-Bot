@@ -1418,10 +1418,10 @@ const handleGroupUpdate = async (sock, update) => {
                 if (reAdded) {
                   await sock.sendMessage(jid, {
                     text:
-                      `🛡️ *YOU GOOD*\n\n` +
-                      `Someone kicked you from a crew group\n` +
+                      `🛡️ *YOU GOOD* 💪\n\n` +
+                      `Someone kicked you from a crew group 💀\n` +
                       `KAMI-Bot brought you back\n\n` +
-                      `_KAMI's people stay_ 👑`,
+                      `${pick(SLANG.protected)}`,
                   });
                 } else {
                   // Re-add failed — send invite link
@@ -1433,12 +1433,12 @@ const handleGroupUpdate = async (sock, update) => {
 
                   await sock.sendMessage(jid, {
                     text:
-                      `🛡️ *YOU GOOD*\n\n` +
-                      `Someone kicked you from a crew group\n` +
+                      `🛡️ *YOU GOOD* 💪\n\n` +
+                      `Someone kicked you from a crew group 💀\n` +
                       `KAMI-Bot tried bringing you back but couldn't\n\n` +
                       (inviteLink
                         ? `🔗 *Jump back in:*\n${inviteLink}\n\nWhen you're back, you'll be admin again`
-                        : `Hit up KAMI to get back in`),
+                        : `Hit up KAMI to get back in hey`),
                   });
                 }
               } catch (e) {}
@@ -1450,12 +1450,12 @@ const handleGroupUpdate = async (sock, update) => {
                   const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
                   await sock.sendMessage(ownerJid, {
                     text:
-                      `🛡️ *PROTECTION*\n\n` +
+                      `🛡️ *PROTECTION* 💀\n\n` +
                       `@${memberNum} got kicked from a crew group\n\n` +
                       (reAdded
-                        ? `KAMI-Bot brought them back ${pick(SLANG.vibe)}`
+                        ? `KAMI-Bot brought them back ${pick(SLANG.protected)}`
                         : `Couldn't re-add — sent them the invite link\nThey'll be admin again when they join`) +
-                      `\nCheck who did it`,
+                      `\nCheck who did it ${pick(SLANG.roast)}`,
                     mentions: [jid],
                   });
                 } catch (e) {}
@@ -1547,11 +1547,12 @@ const handleGroupUpdate = async (sock, update) => {
                           const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
                           await sock.sendMessage(ownerJid, {
                             text:
-                              `🛡️ *ADMIN PROTECTION*\n\n` +
+                              `🛡️ *ADMIN PROTECTION* 💀\n\n` +
                               `@${number} was demoted in a crew group\n` +
                               `They were promoted by you and are *protected*\n\n` +
                               `✅ They have been automatically re-promoted\n` +
-                              `⚠️ If this keeps happening, check who is demoting admins`,
+                              `⚠️ If this keeps happening, check who is demoting admins\n\n` +
+                              `${pick(SLANG.roast)}`,
                             mentions: [jid],
                           });
                         } catch (e) {}
