@@ -262,7 +262,8 @@ module.exports = {
 
     } catch (error) {
       console.error('Demote error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't demote`);
+      const reason = error?.message || error?.output?.payload?.message || 'Unknown error';
+      await extra.reply(`❌ ERROR\n\nCouldn't demote — ${reason}`);
     }
   },
 };
