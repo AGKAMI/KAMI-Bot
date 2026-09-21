@@ -30,17 +30,19 @@ module.exports = {
       const { from, sender } = extra;
       let target;
 
-      const rawArg = args.join(' ');
-      if (rawArg && /\d/.test(rawArg)) {
-        target = parseNumber(rawArg);
-        if (!target) return extra.reply(`❌ ERROR\n\n_Invalid number_`);
+      // Priority: @mention → reply → phone number
+      const ctx = msg.message?.extendedTextMessage?.contextInfo;
+      const mentioned = ctx?.mentionedJid || [];
+
+      if (mentioned.length > 0) {
+        target = mentioned[0];
+      } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
+        target = ctx.participant;
       } else {
-        const ctx = msg.message?.extendedTextMessage?.contextInfo;
-        const mentioned = ctx?.mentionedJid || [];
-        if (mentioned.length > 0) {
-          target = mentioned[0];
-        } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
-          target = ctx.participant;
+        const rawArg = args.join(' ');
+        if (rawArg && /\d/.test(rawArg)) {
+          target = parseNumber(rawArg);
+          if (!target) return extra.reply(`❌ ERROR\n\n_Invalid number_`);
         } else {
           return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Example: ${prefix}ban 27833882383_`);
         }

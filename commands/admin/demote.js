@@ -41,10 +41,11 @@ module.exports = {
 
       let target = null;
 
-      if (replyJid) {
-        target = replyJid;
-      } else if (mentioned.length > 0) {
+      // Priority: @mention → reply
+      if (mentioned.length > 0) {
         target = mentioned[0];
+      } else if (replyJid) {
+        target = replyJid;
       }
 
       if (!target) {

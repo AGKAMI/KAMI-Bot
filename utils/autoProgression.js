@@ -66,13 +66,17 @@ const checkGroup = async (sock, groupJid, teamKey) => {
     // Cooldown: check DB timestamp — survives bot restarts (in-memory Map was lost on restart)
     if (data.lastPromoted && (Date.now() - data.lastPromoted) < MEMBER_COOLDOWN) continue;
 
-    // Find current rank in hierarchy
-    const currentRankIndex = ranks.indexOf(data.role);
+    // Find current rank in hierarchy (case-insensitive match)
+    const currentRankIndex = ranks.findIndex(r => r.toLowerCase() === data.role?.toLowerCase());
     if (currentRankIndex === -1) continue; // Role not in hierarchy
     if (currentRankIndex >= ranks.length - 1) continue; // Already at top rank
 
     // Next rank
     const nextRank = ranks[currentRankIndex + 1];
+
+    // Skip if already at this rank (safety check)
+    if (data.role?.toLowerCase() === nextRank.toLowerCase()) continue;
+
     const { minMessages, minDaysActive } = getThresholds(currentRankIndex, ranks.length);
 
     // Check thresholds
@@ -81,6 +85,11 @@ const checkGroup = async (sock, groupJid, teamKey) => {
       try {
         const member = database.getCrewMember(groupJid, memberJid);
         if (!member) continue;
+
+        // Double-check: verify current role in DB still matches (prevent double-promote)
+        const dbRoleIndex = ranks.findIndex(r => r.toLowerCase() === member.role?.toLowerCase());
+        if (dbRoleIndex === -1 || dbRoleIndex >= ranks.length - 1) continue;
+        if (member.role?.toLowerCase() === nextRank.toLowerCase()) continue;
 
         // Update role + persist cooldown timestamp in DB (survives restarts)
         database.addCrewMember(groupJid, memberJid, { ...member, role: nextRank, lastPromoted: Date.now() });
