@@ -127,6 +127,8 @@ module.exports = {
           caption: text,
           mentions: [applicantJid],
         }, { quoted: msg });
+        // Small delay to avoid rate limiter (2s cooldown between button messages)
+        await new Promise(r => setTimeout(r, 2500));
       }
 
       // Send buttons (apply or status)

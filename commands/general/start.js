@@ -67,7 +67,6 @@ async function sendTeamCards(sock, from, applicantJid) {
   for (const teamKey of available) {
     const imgPath = getTeamImage(teamKey);
     const caption = buildTeamCaption(teamKey);
-    const btnText = `${TEAM_EMOJI[teamKey]} Join ${teamKey} — ${config.crewTeams[teamKey].name}`;
 
     if (fs.existsSync(imgPath)) {
       const imageBuffer = fs.readFileSync(imgPath);
@@ -76,16 +75,23 @@ async function sendTeamCards(sock, from, applicantJid) {
         caption,
         mentions: applicantJid ? [applicantJid] : [],
       });
+    } else {
+      await sock.sendMessage(from, { text: caption });
     }
-
-    await sendButtons(sock, from, {
-      text: fs.existsSync(imgPath) ? '' : caption,
-      footer: config.botName || 'KAMI Bot',
-      buttons: [
-        { id: `start:join:${teamKey}`, text: btnText },
-      ],
-    });
   }
+
+  // Single button message with all teams — avoids rate limiter (2s cooldown)
+  const teamButtons = available.slice(0, 3).map(teamKey => ({
+    id: `start:join:${teamKey}`,
+    text: `${TEAM_EMOJI[teamKey]} Join ${teamKey}`,
+  }));
+  await sendButtons(sock, from, {
+    text: available.length > 3
+      ? `Tap a button to apply 👇 (Type ${config.prefix || '.'}teaminfo <team> for the 4th)`
+      : 'Tap a button to apply 👇',
+    footer: config.botName || 'KAMI Bot',
+    buttons: teamButtons,
+  });
 }
 
 // ── Send confirmation message ──
