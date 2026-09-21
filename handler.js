@@ -138,6 +138,17 @@ const getLiveGroupMetadata = async (sock, groupId) => {
 // Alias for backward compatibility (non-admin features use cached)
 const getGroupMetadata = getCachedGroupMetadata;
 
+// Resolve a JID to a human-readable name from group metadata
+const resolveName = (groupMetadata, jid) => {
+  if (!groupMetadata || !groupMetadata.participants || !jid) return null;
+  const num = jid.split(':')[0].split('@')[0].replace(/\D/g, '');
+  for (const p of groupMetadata.participants) {
+    const pNum = p.id.split(':')[0].split('@')[0].replace(/\D/g, '');
+    if (pNum === num) return p.name || null;
+  }
+  return null;
+};
+
 // Helper functions
 const isOwner = (sender) => {
   if (!sender) return false;
@@ -1221,33 +1232,58 @@ const handleMessage = async (sock, msg) => {
     // Execute command
     console.log(`Executing command: ${commandName} from ${sender}`);
     
-    await command.execute(sock, msg, args, {
-      from,
-      sender,
-      isGroup,
-      groupMetadata,
-      isOwner: isOwner(sender),
-      isOwnerMentioned: ownerMentioned,
-      ownerMentions: msgMentions.filter(jid => isOwner(jid)),
-      isAdmin: await isAdmin(sock, sender, from, groupMetadata),
-      isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
-      isMod: isMod(sender),
-      reply: async (text) => {
-        try {
-          return await sock.sendMessage(from, { text }, { quoted: msg });
-        } catch (err) {
-          console.error(`[REPLY ERROR] Failed to send to ${from}:`, err.message);
-          throw err;
+    try {
+      await command.execute(sock, msg, args, {
+        from,
+        sender,
+        isGroup,
+        groupMetadata,
+        isOwner: isOwner(sender),
+        isOwnerMentioned: ownerMentioned,
+        ownerMentions: msgMentions.filter(jid => isOwner(jid)),
+        isAdmin: await isAdmin(sock, sender, from, groupMetadata),
+        isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
+        isMod: isMod(sender),
+        reply: async (text) => {
+          try {
+            return await sock.sendMessage(from, { text }, { quoted: msg });
+          } catch (err) {
+            console.error(`[REPLY ERROR] Failed to send to ${from}:`, err.message);
+            throw err;
+          }
+        },
+        react: async (emoji) => {
+          try {
+            return await sock.sendMessage(from, { react: { text: emoji, key: msg.key } });
+          } catch (err) {
+            console.error(`[REACT ERROR] Failed to react in ${from}:`, err.message);
+          }
         }
-      },
-      react: async (emoji) => {
-        try {
-          return await sock.sendMessage(from, { react: { text: emoji, key: msg.key } });
-        } catch (err) {
-          console.error(`[REACT ERROR] Failed to react in ${from}:`, err.message);
-        }
-      }
-    });
+      });
+      // Log successful command
+      database.logCommand({
+        command: commandName,
+        args: args.join(' '),
+        user: sender,
+        group: isGroup ? from : null,
+        isOwner: isOwner(sender),
+        isAdmin: await isAdmin(sock, sender, from, groupMetadata),
+        success: true,
+      });
+    } catch (cmdErr) {
+      // Log failed command
+      database.logCommand({
+        command: commandName,
+        args: args.join(' '),
+        user: sender,
+        group: isGroup ? from : null,
+        isOwner: isOwner(sender),
+        isAdmin: await isAdmin(sock, sender, from, groupMetadata),
+        success: false,
+        error: cmdErr.message,
+      });
+      throw cmdErr;
+    }
     
   } catch (error) {
     console.error('Error in message handler:', error);
@@ -1343,6 +1379,15 @@ const handleGroupUpdate = async (sock, update) => {
                 console.error(`[MEMBER PROTECTION] Failed to re-add ${memberNum}:`, e.message);
               }
 
+              // Log the protection event
+              database.logProtection({
+                action: 'kick',
+                target: jid,
+                triggeredBy: 'unknown',
+                group: id,
+                result: reAdded ? 're-added' : 'failed',
+              });
+
               // DM the victim
               try {
                 if (reAdded) {
@@ -1429,16 +1474,6 @@ const handleGroupUpdate = async (sock, update) => {
                     }
                   }
                   console.log(`[TEAM ADMIN SYNC] Auto-added ${number} (promoted in ${id})`);
-                  
-                  // Unblock them if their team has pending applications
-                  if (database.hasPendingApplicationsForTeam(id) && !isOwner(jid)) {
-                    try {
-                      await sock.updateBlockStatus(jid, 'block');
-                      await sock.updateBlockStatus(jid, 'unblock');
-                      database.addAutoUnblockedTeamAdmin(jid);
-                      console.log(`[TEAM ADMIN SYNC] Unblocked ${number} for pending applications`);
-                    } catch (e) {}
-                  }
                 } else if (action === 'demote') {
                   // ── Owner-Promoted Admin Protection ────────
                   // Check if the demoted person is a protected admin (promoted by owner)
@@ -1451,6 +1486,14 @@ const handleGroupUpdate = async (sock, update) => {
                       try {
                         await sock.groupParticipantsUpdate(id, [jid], 'promote');
                       } catch (e) {}
+                      // Log the protection event
+                      database.logProtection({
+                        action: 'demote',
+                        target: jid,
+                        triggeredBy: 'unknown',
+                        group: id,
+                        result: 're-promoted',
+                      });
                       // Notify owner(s)
                       const ownerNumbers = config.ownerNumber || [];
                       for (const ownerNum of ownerNumbers) {

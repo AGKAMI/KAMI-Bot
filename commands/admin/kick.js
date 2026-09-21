@@ -105,6 +105,16 @@ module.exports = {
               });
             } catch (e) {}
 
+            // Log protection event
+            database.logProtection({
+              action: 'kick',
+              target: target,
+              targetName: targetName || null,
+              triggeredBy: extra.sender,
+              group: chatId,
+              result: 'blocked',
+            });
+
             // DM owner
             const ownerNumbers = config.ownerNumber || [];
             for (const oNum of ownerNumbers) {

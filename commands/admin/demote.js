@@ -137,6 +137,16 @@ module.exports = {
 
             database.removeOwnerPromotedAdmin(extra.from, target);
 
+            // Log protection event
+            database.logProtection({
+              action: 'demote',
+              target: target,
+              targetName: targetName || null,
+              triggeredBy: extra.sender,
+              group: extra.from,
+              result: 'demoted-violator',
+            });
+
             // Group — show who's boss
             await sock.sendMessage(extra.from, {
               text:

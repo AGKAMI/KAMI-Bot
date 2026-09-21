@@ -57,6 +57,16 @@ module.exports = {
         team: teamKey,
       });
 
+      // Log admin action for audit trail
+      database.logAdminAction({
+        action: 'cancelled',
+        appUid: uid,
+        team: teamKey,
+        admin: extra.sender,
+        applicant: applicantJid,
+        reason: reason || null,
+      });
+
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
 

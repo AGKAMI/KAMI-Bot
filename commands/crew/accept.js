@@ -123,6 +123,16 @@ module.exports = {
         team: teamKey,
       });
 
+      // Log admin action for audit trail
+      database.logAdminAction({
+        action: 'accepted',
+        appUid: app.appUid,
+        team: teamKey,
+        admin: extra.sender,
+        applicant: applicantJid,
+        role: role,
+      });
+
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
 

@@ -16,6 +16,7 @@ const CREW_DB = path.join(DB_PATH, 'crew.json');
 const GLOBAL_DB = path.join(DB_PATH, 'global.json');
 const OWNER_PROMOTED_DB = path.join(DB_PATH, 'ownerPromotedAdmins.json');
 const OWNER_ADDED_DB = path.join(DB_PATH, 'ownerAddedMembers.json');
+const AUDIT_DB = path.join(DB_PATH, 'audit.json');
 
 // Initialize database directory
 if (!fs.existsSync(DB_PATH)) {
@@ -852,6 +853,121 @@ const isOwnerProtected = (groupJid, memberJid) => {
   return isOwnerPromotedAdmin(groupJid, memberJid) || isOwnerAddedMember(groupJid, memberJid);
 };
 
+// ── Audit Log ─────────────────────────────────────────────────
+// Tracks every command execution, protection event, and admin action.
+// Structure: { entries: [...], capped at 500 most recent }
+
+const AUDIT_MAX = 500;
+
+const _readAudit = () => {
+  try {
+    return JSON.parse(fs.readFileSync(AUDIT_DB, 'utf8'));
+  } catch {
+    return { entries: [] };
+  }
+};
+
+const _writeAudit = (data) => {
+  // Keep only the last AUDIT_MAX entries
+  if (data.entries.length > AUDIT_MAX) {
+    data.entries = data.entries.slice(-AUDIT_MAX);
+  }
+  return writeDB(AUDIT_DB, data);
+};
+
+// Log a command execution
+const logCommand = (data) => {
+  const audit = _readAudit();
+  audit.entries.push({
+    type: 'command',
+    command: data.command,
+    args: data.args || '',
+    user: data.user,
+    userName: data.userName || null,
+    group: data.group || null,
+    isOwner: data.isOwner || false,
+    isAdmin: data.isAdmin || false,
+    success: data.success !== false,
+    error: data.error || null,
+    timestamp: Date.now(),
+  });
+  return _writeAudit(audit);
+};
+
+// Log a protection event (kick/demote attempt on protected member)
+const logProtection = (data) => {
+  const audit = _readAudit();
+  audit.entries.push({
+    type: 'protection',
+    action: data.action,        // 'kick' or 'demote'
+    target: data.target,        // JID of protected member
+    targetName: data.targetName || null,
+    triggeredBy: data.triggeredBy, // JID of who tried it
+    triggerName: data.triggerName || null,
+    group: data.group,
+    result: data.result,        // 're-added', 're-promoted', 'blocked'
+    timestamp: Date.now(),
+  });
+  return _writeAudit(audit);
+};
+
+// Log an admin action (accept/deny/cancel/reroll)
+const logAdminAction = (data) => {
+  const audit = _readAudit();
+  audit.entries.push({
+    type: 'admin_action',
+    action: data.action,        // 'accepted', 'denied', 'cancelled', 'rerolled', 'expired'
+    appUid: data.appUid,
+    team: data.team,
+    admin: data.admin,
+    adminName: data.adminName || null,
+    applicant: data.applicant || null,
+    applicantName: data.applicantName || null,
+    reason: data.reason || null,
+    role: data.role || null,
+    timestamp: Date.now(),
+  });
+  return _writeAudit(audit);
+};
+
+// Get audit entries with optional filters
+const getAuditLog = (filters = {}) => {
+  const audit = _readAudit();
+  let entries = audit.entries || [];
+
+  if (filters.type) entries = entries.filter(e => e.type === filters.type);
+  if (filters.user) entries = entries.filter(e => e.user === filters.user || e.admin === filters.user);
+  if (filters.command) entries = entries.filter(e => e.command === filters.command);
+  if (filters.since) entries = entries.filter(e => e.timestamp >= filters.since);
+  if (filters.limit) entries = entries.slice(-filters.limit);
+
+  return entries;
+};
+
+// Get a summary of admin activity
+const getAdminActivity = (days = 7) => {
+  const since = Date.now() - (days * 24 * 60 * 60 * 1000);
+  const entries = getAuditLog({ since });
+  const activity = {};
+
+  for (const entry of entries) {
+    const admin = entry.admin || entry.user;
+    if (!admin) continue;
+    if (!activity[admin]) {
+      activity[admin] = { accepted: 0, denied: 0, cancelled: 0, rerolled: 0, commands: 0 };
+    }
+    if (entry.type === 'admin_action') {
+      if (entry.action === 'accepted') activity[admin].accepted++;
+      else if (entry.action === 'denied') activity[admin].denied++;
+      else if (entry.action === 'cancelled') activity[admin].cancelled++;
+      else if (entry.action === 'rerolled') activity[admin].rerolled++;
+    }
+    if (entry.type === 'command') activity[admin].commands++;
+  }
+
+  return activity;
+};
+
 module.exports = {
   getGroupSettings,
   updateGroupSettings,
@@ -939,4 +1055,11 @@ module.exports = {
   addOwnerAddedMember,
   removeOwnerAddedMember,
   isOwnerProtected,
+
+  // Audit log
+  logCommand,
+  logProtection,
+  logAdminAction,
+  getAuditLog,
+  getAdminActivity,
 };

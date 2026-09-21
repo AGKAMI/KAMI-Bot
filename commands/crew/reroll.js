@@ -65,6 +65,15 @@ module.exports = {
         database.updateTeam(teamGroupJid, crew);
       }
 
+      // Log admin action for audit trail
+      database.logAdminAction({
+        action: 'rerolled',
+        appUid: uid,
+        team: teamKey,
+        admin: extra.sender,
+        applicant: applicantJid,
+      });
+
       // Notify the applicant
       try {
         await sock.sendMessage(applicantJid, {
