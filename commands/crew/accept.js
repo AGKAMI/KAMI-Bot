@@ -35,7 +35,7 @@ module.exports = {
       const uid = (args[0] || '').toUpperCase();
       if (!uid) {
         return extra.reply(
-          '❌ ERROR\n\nProvide the applicant\'s App ID\n\nUsage: ${prefix}crew accept SS-XXXXX [role]'
+          `❌ ERROR\n\nProvide the applicant's App ID\n\nUsage: ${prefix}crew accept SS-XXXXX [role]`
         );
       }
 

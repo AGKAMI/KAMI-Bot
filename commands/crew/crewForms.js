@@ -55,19 +55,16 @@ const buildFormMessage = (teamKey) => {
     `_${teamKey} APPLICATION_\n` +
     `${team.emoji} ${team.role.toUpperCase()} ${team.emoji}\n\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
-    `📋 *BEFORE YOU APPLY — MINIMUM REQUIREMENTS:*\n` +
-    REQUIREMENTS.map(r => `• ${r}`).join('\n') + '\n\n' +
-    `━━━━━━━━━━━━━━━━\n\n` +
     `*Send all answers in ONE message. Do not send each answer separately.*\n\n` +
     `${questions}\n\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `✍️ *HOW TO SUBMIT:*\n` +
     `Go to any Slammed Society group and reply:\n` +
-    `\`${prefix}crew applied ${teamKey} <your answer here>\`\n\n` +
+    `\`.crew applied ${teamKey} <your answer here>\`\n\n` +
     `Example:\n` +
-    `\`${prefix}crew applied ${teamKey} 1) 3 hours 2) 18 3) yes did vip before 4) yes 5) active 6) i move the vip to safe zone\`\n\n` +
+    `\`.crew applied ${teamKey} 1) 3 hours 2) 18 3) yes did vip before 4) yes 5) active 6) i move the vip to safe zone\`\n\n` +
     (crewTeam ? `You'll get an application ID to track it. ` : ``) +
-    `_${pickGood()}, good luck with the tryout!_`;
+    `_Good luck with the tryout!_`;
 };
 
 // Build the "hired" DM message (sent to applicant on accept) with group invite

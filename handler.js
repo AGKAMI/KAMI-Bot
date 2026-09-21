@@ -1164,7 +1164,7 @@ const handleMessage = async (sock, msg) => {
     if (!isGroup && !database.isTeamAdmin(sender) && !isOwner(sender) && database.hasPendingApplication(sender)) {
       const lowerBody = (body || '').trim().toLowerCase();
       const prefixEscaped = config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const isApplyCmd = new RegExp('^\\' + prefixEscaped + 'crew\\s+apply\\b').test(lowerBody);
+      const isApplyCmd = new RegExp('^' + prefixEscaped + 'crew\\s+apply(?=\\s|$)').test(lowerBody);
       if (!isApplyCmd) {
         return sock.sendMessage(from, {
           text: `⏳ APPLICATION PENDING\n\n` +

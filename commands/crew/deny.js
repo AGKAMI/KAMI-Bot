@@ -27,7 +27,7 @@ module.exports = {
       const uid = (args[0] || '').toUpperCase();
       if (!uid) {
         return extra.reply(
-          '❌ ERROR\n\nProvide the applicant\'s App ID\n\nUsage: ${prefix}crew deny SS-XXXXX <reason>'
+          `❌ ERROR\n\nProvide the applicant's App ID\n\nUsage: ${prefix}crew deny SS-XXXXX <reason>`
         );
       }
 

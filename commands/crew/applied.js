@@ -45,7 +45,9 @@ module.exports = {
       const rawText = msg.message?.extendedTextMessage?.text ||
                       msg.message?.conversation ||
                       '';
-      const match = rawText.match(/^\.?\s*crew\s+applied\s+\S+\s*([\s\S]*)$/i);
+      // Use dynamic prefix instead of hardcoded dot
+      const prefixPattern = config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const match = rawText.match(new RegExp('^' + prefixPattern + '?\\s*crew\\s+applied\\s+\\S+\\s*([\\s\\S]*)$', 'i'));
       let answers = (match ? match[1] : args.slice(1).join('\n')).trim();
 
       // Fallback: strip leading command tokens from raw if regex missed (custom prefix)
