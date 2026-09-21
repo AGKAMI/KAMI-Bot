@@ -65,7 +65,7 @@ module.exports = {
           return extra.reply(
             `❌ ERROR\n\n` +
             `Specify a team\n\n` +
-            `Usage: ${prefix}crew applicants <team>\n` +
+            `Usage: \`${prefix}crew applicants <team>\`\n` +
             `Teams: ${Object.keys(TEAMS).join(', ')}`
           );
         }
@@ -90,7 +90,7 @@ module.exports = {
         return extra.reply(
           `📋 PENDING APPLICATIONS\n\n` +
           `No pending applications for ${teamLabel || 'this team'} ${pick(SLANG.vibe)}\n` +
-          `Recruits can use ${prefix}crew apply <team> to apply`
+          `Recruits can use \`${prefix}crew apply <team>\` to apply`
         );
       }
 

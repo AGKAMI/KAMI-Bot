@@ -48,6 +48,7 @@ const getQuestions = (teamKey) => {
 const buildFormMessage = (teamKey) => {
   const team = TEAMS[teamKey];
   const crewTeam = config.crewTeams[teamKey];
+  const prefix = config.prefix || '.';
   const questions = getQuestions(teamKey).join('\n\n');
   return `━━━━━━━━━━━━━━━━\n` +
     `*${team.label.toUpperCase()}*\n` +
@@ -60,9 +61,9 @@ const buildFormMessage = (teamKey) => {
     `━━━━━━━━━━━━━━━━\n\n` +
     `✍️ *HOW TO SUBMIT:*\n` +
     `Go to any Slammed Society group and send:\n\n` +
-    `\`.crew applied ${teamKey} <your answers>\`\n\n` +
+    `\`${prefix}crew applied ${teamKey} <your answers>\`\n\n` +
     `Put each answer on its own line. Example:\n\n` +
-    `\`.crew applied ${teamKey}\`\n` +
+    `\`${prefix}crew applied ${teamKey}\`\n` +
     `\`1) 3 hours\`\n` +
     `\`2) 18\`\n` +
     `\`3) yes did vip before\`\n` +

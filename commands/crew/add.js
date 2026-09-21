@@ -79,8 +79,8 @@ module.exports = {
         return extra.reply(
           `❌ ERROR\n\nTag or add a number\n\n` +
           `Usage:\n` +
-          `• ${prefix}crew add @user <role>\n` +
-          `• ${prefix}crew add 0833882383 <role>`
+          `\`${prefix}crew add @user <role>\`\n` +
+          `\`${prefix}crew add 0833882383 <role>\``
         );
       }
 

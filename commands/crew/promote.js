@@ -35,8 +35,7 @@ module.exports = {
 
       if (!resolved.jid) {
         return extra.reply(
-          `❌ ERROR\n\nTag or add a number\n\n` +
-          `Usage: ${prefix}crew promote @user|number <role>`
+          `❌ ERROR\n\nTag or add a number\n\nUsage: \`${prefix}crew promote @user|number <role>\``
         );
       }
 
