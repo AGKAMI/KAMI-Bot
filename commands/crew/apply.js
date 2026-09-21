@@ -12,6 +12,7 @@ const { pick, SLANG } = require('../../utils/format');
 const { TEAMS, buildFormMessage } = require('./crewForms');
 const { resolveUser } = require('./crewHelpers');
 const { buildComparableIds } = require('../../utils/jidHelper');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   subName: 'apply',
@@ -141,6 +142,16 @@ module.exports = {
             `━━━━━━━━━━━━━━━━\n\n` +
             formText,
         });
+        // Send quick buttons for activity level after the form
+        await sendButtons(sock, applicantJid, {
+          text: `⏱️ *Quick pick your activity level:*`,
+          footer: `${teamKey} Application`,
+          buttons: [
+            { id: `crew:apply:activity:1-2`, text: '1-2 hrs/day' },
+            { id: `crew:apply:activity:3-4`, text: '3-4 hrs/day' },
+            { id: `crew:apply:activity:5+`,  text: '5+ hrs/day' },
+          ],
+        });
       } catch (dmErr) {
         console.error('[CREW APPLY] form DM failed:', dmErr.message);
         // Remove the app so applicant isn't stuck in a dead state
@@ -164,10 +175,20 @@ module.exports = {
         `\`${prefix}crew applied ${teamKey} <your answers>\`\n\n` +
         `_${pick(SLANG.greeting)}, good luck!_`;
 
+      // Send confirmation + action buttons
       await sock.sendMessage(extra.from, {
         text: confirmText,
         mentions: [applicantJid],
       }, { quoted: msg });
+      await sendButtons(sock, extra.from, {
+        text: `📝 *Quick actions:*`,
+        footer: `${teamKey} Application`,
+        buttons: [
+          { id: `run:${prefix}crew applied ${teamKey}`, text: '✍️ Submit Answers' },
+          { id: `run:${prefix}crew applicants ${teamKey}`, text: '📋 View Pending' },
+          { id: `run:${prefix}menu crew`, text: '🔰 Crew Menu' },
+        ],
+      });
 
     } catch (error) {
       console.error('Crew apply error:', error);
@@ -175,3 +196,31 @@ module.exports = {
     }
   },
 };
+
+// ── Activity Button Handler ──────────────────────────────────
+// When applicant taps an activity level button in the DM, show the full form with that pre-selected
+onButton('crew:apply:activity', async (sock, msg, from, sender, btnId) => {
+  const level = btnId.replace('crew:apply:activity:', '');
+  const prefix = config.prefix || '.';
+  const activityMap = {
+    '1-2': '1-2 hours',
+    '3-4': '3-4 hours',
+    '5+':  '5+ hours',
+  };
+  const activity = activityMap[level] || level;
+  await sock.sendMessage(from, {
+    text:
+      `━━━━━━━━━━━━━━━━\n` +
+      `✅ *ACTIVITY SET: ${activity.toUpperCase()}*\n` +
+      `━━━━━━━━━━━━━━━━\n\n` +
+      `Now answer the remaining 5 questions and submit everything in ONE message:\n\n` +
+      `\`${prefix}crew applied <TEAM>\`\n` +
+      `\`1) ${activity}\`\n` +
+      `\`2) <your age>\`\n` +
+      `\`3) <experience>\`\n` +
+      `\`4) <loyalty>\`\n` +
+      `\`5) <communication>\`\n` +
+      `\`6) <scenario answer>\`\n\n` +
+      `_Go to any SS group and send the above._`,
+  });
+});
