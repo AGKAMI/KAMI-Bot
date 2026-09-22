@@ -36,6 +36,24 @@ const floodTracker = new Map(); // key: `group:sender` -> { count, firstMsgTime 
 const groupMetadataCache = new Map();
 const CACHE_TTL = 60000; // 1 minute cache
 
+// Cleanup stale entries periodically (prevents memory leaks on long-running bots)
+setInterval(() => {
+  const now = Date.now();
+  // floodTracker: clear entries older than 5 minutes
+  for (const [key, val] of floodTracker) {
+    if (now - val.firstMsgTime > 300000) floodTracker.delete(key);
+  }
+  // groupMetadataCache: clear entries older than 5 minutes
+  for (const [key, val] of groupMetadataCache) {
+    if (now - val.timestamp > 300000) groupMetadataCache.delete(key);
+  }
+  // lidMappingCache: clear entirely (entries don't have timestamps, small cache)
+  lidMappingCache.clear();
+  // Clear bot action sets (safe to clear periodically — they're just "skip once" flags)
+  if (_botDemoted.size > 100) _botDemoted.clear();
+  if (_botKicked.size > 100) _botKicked.clear();
+}, 300000); // every 5 minutes
+
 // Load all commands
 const commands = loadCommands();
 

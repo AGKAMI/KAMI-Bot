@@ -222,7 +222,15 @@ const runProgressionCheck = async (sock) => {
  * Start the progression timer
  * Call this once from index.js after bot connects
  */
+let _progressionInterval = null;
+
 const startProgressionEngine = (sock) => {
+  // Clear any previous engine (prevents duplicate intervals on reconnect)
+  if (_progressionInterval) {
+    clearInterval(_progressionInterval);
+    _progressionInterval = null;
+  }
+
   console.log(`[AUTO-PROGRESSION] Engine started (checking every ${CHECK_INTERVAL / 60000} min)`);
 
   // Run first check after 5 minutes (give bot time to settle)
@@ -232,10 +240,18 @@ const startProgressionEngine = (sock) => {
   }, 5 * 60 * 1000);
 
   // Then run on interval
-  setInterval(() => {
+  _progressionInterval = setInterval(() => {
     runProgressionCheck(sock);
     runInactiveCheck(sock);
   }, CHECK_INTERVAL);
+};
+
+const stopProgressionEngine = () => {
+  if (_progressionInterval) {
+    clearInterval(_progressionInterval);
+    _progressionInterval = null;
+    console.log('[AUTO-PROGRESSION] Engine stopped');
+  }
 };
 
 // ── Inactive Member Alerts ────────────────────────────────
@@ -301,5 +317,6 @@ module.exports = {
   runProgressionCheck,
   runInactiveCheck,
   startProgressionEngine,
+  stopProgressionEngine,
   getTeamRanks,
 };

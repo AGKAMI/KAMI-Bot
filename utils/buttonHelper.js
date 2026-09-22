@@ -31,6 +31,14 @@ const adminOnlyButtons = new Set(); // button ID prefixes that require admin
 const COOLDOWN_MS = 500; // 500ms between interactive messages per chat
 const lastInteractive = new Map(); // jid → timestamp
 
+// Cleanup stale entries every 5 minutes (prevents memory leaks)
+setInterval(() => {
+  const now = Date.now();
+  for (const [jid, ts] of lastInteractive) {
+    if (now - ts > 300000) lastInteractive.delete(jid);
+  }
+}, 300000);
+
 function isButtonModeOn() {
   return config.buttonMode === true || config.buttonMode === 'on';
 }
