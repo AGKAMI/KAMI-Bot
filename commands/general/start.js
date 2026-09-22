@@ -1,9 +1,9 @@
 /**
- * Start Command ΓÇö onboarding entry point (like Telegram /start).
+ * Start Command — onboarding entry point (like Telegram /start).
  * Works in DMs + groups. Shows welcome + 3 buttons:
  *   Menu, Apply for Security Team, Make Order
  *
- * Apply flow: shows team cards ΓåÆ confirmation ΓåÆ DM application form.
+ * Apply flow: shows team cards -> confirmation -> DM application form.
  * Already-accepted teams are hidden from the team card list.
  */
 
@@ -20,10 +20,10 @@ const TEAM_ORDER = ['KSSMP', 'KSSPS', 'SSRS', 'KSSMS'];
 
 // Team theme emojis
 const TEAM_EMOJI = {
-  SSRS:  '≡ƒƒó≡ƒö╡≡ƒƒí',
-  KSSPS: 'ΓÜ½≡ƒö┤ΓÜ¬',
-  KSSMP: '≡ƒö╡ΓÜ¬≡ƒ⌐╡',
-  KSSMS: 'ΓÜ½ΓÜ¬≡ƒö┤',
+  SSRS:  '\u{1F7E2}\u{1F535}\u{1F7E1}',
+  KSSPS: '\u{26AB}\u{1F534}\u{26AA}',
+  KSSMP: '\u{1F535}\u{26AA}\u{1FA75}',
+  KSSMS: '\u{26AB}\u{26AA}\u{1F534}',
 };
 
 // Fallback image
@@ -45,13 +45,13 @@ function buildTeamCaption(teamKey) {
   const meta = TEAMS[teamKey];
   let text = `${TEAM_EMOJI[teamKey]} *${team.name.toUpperCase()}*\n`;
   text += `----------\n`;
-  text += `≡ƒÅó *Role:* ${meta.role}\n`;
-  if (team.description) text += `≡ƒô¥ *Info:* ${team.description}\n`;
-  if (team.cars) text += `≡ƒÜù *Cars:* ${team.cars}`;
+  text += `\u{1F6E1}\uFE0F *Role:* ${meta.role}\n`;
+  if (team.description) text += `\u{1F4CB} *Info:* ${team.description}\n`;
+  if (team.cars) text += `\u{1F697} *Cars:* ${team.cars}`;
   return text;
 }
 
-// ΓöÇΓöÇ Send the 4 team cards (filtered by user's existing membership) ΓöÇΓöÇ
+// Send the 4 team cards (filtered by user's existing membership)
 async function sendTeamCards(sock, from, applicantJid) {
   const userTeam = getUserTeam(applicantJid);
   const pendingTeam = getUserPendingTeam(applicantJid);
@@ -61,7 +61,7 @@ async function sendTeamCards(sock, from, applicantJid) {
   if (available.length === 0) {
     await sock.sendMessage(from, {
       text:
-        `≡ƒ¢í∩╕Å *SECURITY TEAMS*\n\n` +
+        `\u{1F4CB} *SECURITY TEAMS*\n\n` +
         (userTeam
           ? `You're already part of *${config.crewTeams[userTeam].name}*\n\n` +
             `Contact an admin if you want to switch teams.`
@@ -80,7 +80,7 @@ async function sendTeamCards(sock, from, applicantJid) {
       `${emoji} *${team.name}*\n` +
       `${meta.role}\n` +
       (team.description ? `${team.description}\n` : '') +
-      (team.cars ? `≡ƒÜù ${team.cars}` : '');
+      (team.cars ? `\u{1F697} ${team.cars}` : '');
 
     // Send image + caption
     if (fs.existsSync(imgPath)) {
@@ -100,13 +100,13 @@ async function sendTeamCards(sock, from, applicantJid) {
       text: '',
       footer: config.botName || 'KAMI Bot',
       buttons: [
-        { id: `start:join:${teamKey}`, text: `${emoji} Join ${teamKey} ΓÇö ${team.name}` },
+        { id: `start:join:${teamKey}`, text: `${emoji} Join ${teamKey} \u2014 ${team.name}` },
       ],
     });
   }
 }
 
-// ΓöÇΓöÇ Send confirmation message ΓöÇΓöÇ
+// Send confirmation message
 async function sendConfirmation(sock, from, teamKey) {
   const team = config.crewTeams[teamKey];
   const meta = TEAMS[teamKey];
@@ -115,29 +115,29 @@ async function sendConfirmation(sock, from, teamKey) {
   const text =
     `${emoji} *${team.name.toUpperCase()}*\n` +
     `----------\n\n` +
-    `≡ƒÅó *Role:* ${meta.role}\n` +
-    (team.cars ? `≡ƒÜù *Cars:* ${team.cars}\n\n` : '\n') +
+    `\u{1F6E1}\uFE0F *Role:* ${meta.role}\n` +
+    (team.cars ? `\u{1F697} *Cars:* ${team.cars}\n\n` : '\n') +
     `_Apply for ${team.name}?_`;
 
   await sendButtons(sock, from, {
     text,
     footer: config.botName || 'KAMI Bot',
     buttons: [
-      { id: `start:confirm:${teamKey}`, text: 'Γ£à Yes, Apply' },
-      { id: 'start:back', text: 'Γå⌐∩╕Å Not Sure / Go Back' },
+      { id: `start:confirm:${teamKey}`, text: '\u2705 Yes, Apply' },
+      { id: 'start:back', text: '\u21A9\uFE0F Not Sure / Go Back' },
     ],
   });
 }
 
-// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// ============================================================
 // COMMAND
-// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// ============================================================
 
 module.exports = {
   name: 'start',
   aliases: [],
   category: 'general',
-  description: 'Start menu ΓÇö apply for security teams, view commands',
+  description: 'Start menu - apply for security teams, view commands',
   usage: '.start',
 
   async execute(sock, msg, args, extra) {
@@ -146,10 +146,10 @@ module.exports = {
 
       // Welcome text
       const summary =
-        `≡ƒæï *KAMI BOT*\n` +
+        `\u{1F916} *KAMI BOT*\n` +
         `----------\n\n` +
         `Welcome to the Slammed Society, ${pick(SLANG.greeting)}\n\n` +
-        `Tap a button to get started ≡ƒæç`;
+        `Tap a button to get started \u2B05\uFE0F`;
 
       // Send bot image + buttons
       if (fs.existsSync(BOT_IMAGE)) {
@@ -166,32 +166,31 @@ module.exports = {
         footer: config.botName || 'KAMI Bot',
         header: 'KAMI BOT',
         buttons: [
-          { id: 'start:menu', text: '≡ƒôï Menu' },
-          { id: 'start:apply', text: '≡ƒ¢í∩╕Å Apply for Security Team' },
-          { id: 'start:order', text: '≡ƒ¢Æ Make Order' },
+          { id: 'start:menu', text: '\u{1F4CB} Menu' },
+          { id: 'start:apply', text: '\u{1F4CB} Apply for Security Team' },
+          { id: 'start:order', text: '\u{1F451} Make Order' },
         ],
       }, msg);
 
     } catch (error) {
       console.error('[START] Error:', error);
-      await extra.reply(`Γ¥î _${pick(SLANG.error)} ΓÇö ${error.message}_`);
+      await extra.reply(`\u274C _${pick(SLANG.error)} - ${error.message}_`);
     }
   },
 };
 
-// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// ============================================================
 // BUTTON HANDLERS
-// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// ============================================================
 
-// Menu ΓåÆ show the menu
+// Menu -> show the menu
 onButton('start:menu', async (sock, msg, from) => {
   const prefix = config.prefix || '.';
-  const menuCmd = require('./menu');
   // Build and send the menu text (button mode version)
   const summary =
-    `≡ƒæï *KAMI BOT*\n` +
+    `\u{1F916} *KAMI BOT*\n` +
     `----------\n\n` +
-    `≡ƒñû Tap a button to see that section's commands ≡ƒæç\n\n` +
+    `\u{1F44B} Tap a button to see that section's commands \u2B05\uFE0F\n\n` +
     `_Full list: ${prefix}menu all_`;
 
   await sendButtons(sock, from, {
@@ -199,33 +198,33 @@ onButton('start:menu', async (sock, msg, from) => {
     footer: config.botName || 'KAMI Bot',
     header: 'KAMI BOT',
     buttons: [
-      { id: 'menu:admin', text: '≡ƒ¢í∩╕Å Admin' },
-      { id: 'menu:crew',  text: '≡ƒö░ Crew' },
-      { id: 'menu:more1', text: '≡ƒôé More' },
+      { id: 'menu:admin', text: '\u{1F4CB} Admin' },
+      { id: 'menu:crew',  text: '\u{1F6E1}\uFE0F Crew' },
+      { id: 'menu:more1', text: '\u2795 More' },
     ],
   });
 });
 
-// Apply ΓåÆ show team cards
+// Apply -> show team cards
 onButton('start:apply', async (sock, msg, from, sender) => {
   await sendTeamCards(sock, from, sender);
 });
 
-// Make Order ΓåÆ placeholder
+// Make Order -> placeholder
 onButton('start:order', async (sock, msg, from) => {
   await sock.sendMessage(from, {
-    text: `≡ƒ¢Æ *MAKE ORDER*\n\n_Coming soon ΓÇö business catalog will be available here._`,
+    text: `\u{1F451} *MAKE ORDER*\n\n_Coming soon \u2014 business catalog will be available here._`,
   });
 });
 
-// Join a team ΓåÆ send confirmation
+// Join a team -> send confirmation
 onButton('start:join:', async (sock, msg, from, sender, btnId) => {
   const teamKey = btnId.replace('start:join:', '');
   if (!config.crewTeams[teamKey]) return;
   await sendConfirmation(sock, from, teamKey);
 });
 
-// Confirm ΓåÆ create application + DM wizard
+// Confirm -> create application + DM wizard
 onButton('start:confirm:', async (sock, msg, from, sender, btnId) => {
   const teamKey = btnId.replace('start:confirm:', '');
   if (!config.crewTeams[teamKey]) return;
@@ -239,17 +238,17 @@ onButton('start:confirm:', async (sock, msg, from, sender, btnId) => {
   if (result.ok) {
     await sock.sendMessage(from, {
       text:
-        `Γ£à *APPLICATION STARTED*\n\n` +
-        `≡ƒÅ╖∩╕Å *Team:* ${teamKey} ΓÇö ${config.crewTeams[teamKey].name}\n` +
-        `≡ƒåö *App ID:* ${result.app.appUid}\n\n` +
-        `≡ƒô▓ I've DM'd you the application form.\n\n` +
+        `\u2705 *APPLICATION STARTED*\n\n` +
+        `\u{1F6E1}\uFE0F *Team:* ${teamKey} \u2014 ${config.crewTeams[teamKey].name}\n` +
+        `\u{1F4CB} *App ID:* ${result.app.appUid}\n\n` +
+        `\u{1F4AC} I've DM'd you the application form.\n\n` +
         `_${pick(SLANG.greeting)}, good luck!_`,
       mentions: [sender],
     });
   }
 });
 
-// Back ΓåÆ re-show team cards
+// Back -> re-show team cards
 onButton('start:back', async (sock, msg, from, sender) => {
   await sendTeamCards(sock, from, sender);
 });

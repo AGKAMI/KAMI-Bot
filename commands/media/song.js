@@ -28,12 +28,10 @@ module.exports = {
   description: 'Download audio from YouTube',
   usage: '.song <song name or YouTube link>',
   
-  async execute(sock, msg, args) {
+  async execute(sock, msg, args, extra) {
     const prefix = config.prefix || '.';
     if (activeAudioDownloads >= 2) {
-      return await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ _too many downloads — try again in a few seconds_`
-      }, { quoted: msg });
+      return await extra.reply(`❌ _too many downloads — try again in a few seconds_`);
     }
     activeAudioDownloads++;
     try {
@@ -41,10 +39,11 @@ module.exports = {
       const chatId = msg.key.remoteJid;
       
       if (!text) {
-        return await sock.sendMessage(chatId, { 
-          text: `📝 _${pick(SLANG.vibe)}, give me a song name or YouTube link_\n\n_Example:_ ${prefix}song Shape of You` 
-        }, { quoted: msg });
+        return await extra.reply(`📝 _${pick(SLANG.vibe)}, give me a song name or YouTube link_\n\n_Example:_ ${prefix}song Shape of You`);
       }
+      
+      // Send loading message
+      const sent = await extra.reply(`🔍 _searching for that one..._`);
       
       let video;
       
@@ -53,18 +52,13 @@ module.exports = {
       } else {
         const search = await yts(text);
         if (!search || !search.videos.length) {
-          return await sock.sendMessage(chatId, { 
-            text: `❌ _${pick(SLANG.error)}, no results found for that one_`
-          }, { quoted: msg });
+          return await extra.edit(sent.key, `❌ _${pick(SLANG.error)}, no results found for that one_`);
         }
         video = search.videos[0];
       }
       
-      // Inform user
-      await sock.sendMessage(chatId, {
-        image: { url: video.thumbnail },
-        caption: `🎵 Downloading: *${video.title}*\n⏱ Duration: ${video.timestamp}`
-      }, { quoted: msg });
+      // Edit to show downloading status
+      await extra.edit(sent.key, `🎵 *Downloading:* ${video.title}\n⏱ *Duration:* ${video.timestamp}`);
       
       // Try loader.to API
       let audioData;
@@ -72,16 +66,12 @@ module.exports = {
         audioData = await APIs.ytDownload(video.url, 'audio');
       } catch (err) {
         console.log('YouTube download failed:', err.message);
-        return await sock.sendMessage(chatId, { 
-          text: `❌ _${pick(SLANG.error)} — failed to download: ${err.message}_`
-        }, { quoted: msg });
+        return await extra.edit(sent.key, `❌ _${pick(SLANG.error)} — failed to download: ${err.message}_`);
       }
       
       const audioUrl = audioData.download;
       if (!audioUrl) {
-        return await sock.sendMessage(chatId, { 
-          text: `❌ _${pick(SLANG.error)}, no download URL received_`
-        }, { quoted: msg });
+        return await extra.edit(sent.key, `❌ _${pick(SLANG.error)}, no download URL received_`);
       }
       
       // Download the audio file
@@ -102,9 +92,7 @@ module.exports = {
           throw new Error('Empty audio buffer');
         }
       } catch (dlErr) {
-        return await sock.sendMessage(chatId, { 
-          text: `❌ _download failed hey — ${dlErr.message}_`
-        }, { quoted: msg });
+        return await extra.edit(sent.key, `❌ _download failed hey — ${dlErr.message}_`);
       }
 
       // Send audio
@@ -115,11 +103,12 @@ module.exports = {
         ptt: false
       }, { quoted: msg });
       
+      // Edit status to done
+      await extra.edit(sent.key, `✅ *Sent!* _${video.title}_`);
+      
     } catch (err) {
       console.error('Song command error:', err);
-      await sock.sendMessage(msg.key.remoteJid, { 
-        text: `❌ _${pick(SLANG.error)} — something went stukkend — ${err.message}_`
-      }, { quoted: msg });
+      await extra.reply(`❌ _${pick(SLANG.error)} — something went stukkend — ${err.message}_`);
     } finally {
       activeAudioDownloads--;
     }

@@ -700,7 +700,9 @@ const handleMessage = async (sock, msg) => {
             isAdmin: await isAdmin(sock, sender, from, groupMetadata),
             isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
             isMod: isMod(sender),
+            sock,
             reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+            edit: (key, text) => sock.sendMessage(from, { text, edit: key }),
             react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
           });
         }
@@ -718,7 +720,9 @@ const handleMessage = async (sock, msg) => {
             isAdmin: await isAdmin(sock, sender, from, groupMetadata),
             isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
             isMod: isMod(sender),
+            sock,
             reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+            edit: (key, text) => sock.sendMessage(from, { text, edit: key }),
             react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
           });
         }
@@ -736,7 +740,9 @@ const handleMessage = async (sock, msg) => {
             isAdmin: await isAdmin(sock, sender, from, groupMetadata),
             isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
             isMod: isMod(sender),
+            sock,
             reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+            edit: (key, text) => sock.sendMessage(from, { text, edit: key }),
             react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
           });
         }
@@ -883,7 +889,9 @@ const handleMessage = async (sock, msg) => {
                   isAdmin: await isAdmin(sock, sender, from, groupMetadata),
                   isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
                   isMod: isMod(sender),
+                  sock,
                   reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+                  edit: (key, text) => sock.sendMessage(from, { text, edit: key }),
                   react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
                 });
                 return; // Don't process as command after auto-converting
@@ -913,7 +921,9 @@ const handleMessage = async (sock, msg) => {
             isAdmin: await isAdmin(sock, sender, from, groupMetadata),
             isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
             isMod: isMod(sender),
+            sock,
             reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+            edit: (key, text) => sock.sendMessage(from, { text, edit: key }),
             react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
           });
           return; // Don't process as command
@@ -1078,7 +1088,9 @@ const handleMessage = async (sock, msg) => {
                       isOwner: isOwner(sender),
                       isAdmin: await isAdmin(sock, sender, from, groupMetadata),
                       isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
-                      reply: (text) => sock.sendMessage(from, { text }, { quoted: msg })
+                      sock,
+                      reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+                      edit: (key, text) => sock.sendMessage(from, { text, edit: key })
                     });
                   }
                 } catch (e) {}
@@ -1251,11 +1263,20 @@ const handleMessage = async (sock, msg) => {
         isAdmin: await isAdmin(sock, sender, from, groupMetadata),
         isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
         isMod: isMod(sender),
+        sock,
         reply: async (text) => {
           try {
             return await sock.sendMessage(from, { text }, { quoted: msg });
           } catch (err) {
             console.error(`[REPLY ERROR] Failed to send to ${from}:`, err.message);
+            throw err;
+          }
+        },
+        edit: async (key, text) => {
+          try {
+            return await sock.sendMessage(from, { text, edit: key });
+          } catch (err) {
+            console.error(`[EDIT ERROR] Failed to edit in ${from}:`, err.message);
             throw err;
           }
         },

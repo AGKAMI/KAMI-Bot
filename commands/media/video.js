@@ -40,6 +40,7 @@ module.exports = {
     }
 
     const doDownload = async () => {
+      let sent;
       try {
         const text = args.join(' ').trim();
         if (!text) return extra.reply(`📝 _${pick(SLANG.vibe)}, what video do you want to download?_`);
@@ -65,18 +66,19 @@ module.exports = {
           return extra.reply(`❌ _${pick(SLANG.error)}, invalid YouTube link_\n_Use:_ ${prefix}video <url or search>`);
         }
 
+        sent = await extra.reply(`🔄 _searching..._`);
         await extra.react('🔄');
 
         let videoData;
         try {
           videoData = await APIs.ytDownload(videoUrl, 'video');
         } catch (err) {
-          return extra.reply(`❌ _download failed hey — ${err.message}_`);
+          return await extra.edit(sent.key, `❌ _download failed hey — ${err.message}_`);
         }
 
-        if (!videoData.download) return extra.reply(`❌ _${pick(SLANG.error)}, no download URL received_`);
+        if (!videoData.download) return await extra.edit(sent.key, `❌ _${pick(SLANG.error)}, no download URL received_`);
 
-        const caption = '*DOWNLOADED BY KAMI BOT*\n\n' + (videoData.title ? '📝 ' + videoData.title : '') + `\n_${pick(SLANG.vibe)}, enjoy_`;
+        await extra.edit(sent.key, `⬇️ *Downloading:* ${videoData.title || 'video'}...`);
 
         let videoBuffer;
         try {
@@ -88,12 +90,12 @@ module.exports = {
           videoBuffer = Buffer.from(res.data);
           if (!videoBuffer || videoBuffer.length === 0) throw new Error('Empty buffer');
         } catch (dlErr) {
-          return extra.reply(`❌ _download failed hey — ${dlErr.message}_`);
+          return await extra.edit(sent.key, `❌ _download failed hey — ${dlErr.message}_`);
         }
 
         const sizeMB = videoBuffer.length / (1024 * 1024);
         if (sizeMB > MAX_SIZE_MB) {
-          return extra.reply(`❌ _video too large (${sizeMB.toFixed(1)}MB) — WhatsApp limit is 16MB_`);
+          return await extra.edit(sent.key, `❌ _video too large (${sizeMB.toFixed(1)}MB) — WhatsApp limit is 16MB_`);
         }
 
         let sendBuffer = videoBuffer;
@@ -105,17 +107,24 @@ module.exports = {
           console.log('[VIDEO] encode skipped:', encErr?.message || encErr);
         }
 
+        const caption = '*DOWNLOADED BY KAMI BOT*\n\n' + (videoData.title ? '📝 ' + videoData.title : '') + `\n_${pick(SLANG.vibe)}, enjoy_`;
+
         await sock.sendMessage(extra.from, {
           video: sendBuffer,
           mimetype: 'video/mp4',
           caption,
         }, { quoted: msg });
 
+        await extra.edit(sent.key, `✅ *Sent!* _${videoData.title || 'video'}_`);
         await extra.react('✅');
       } catch (error) {
         console.error('[VIDEO] Error:', error?.message || error);
         try { await extra.react('❌'); } catch (_) {}
-        try { await extra.reply(`❌ _${pick(SLANG.error)} — ${(error?.message || 'try again')}_`); } catch (_) {}
+        if (sent) {
+          try { await extra.edit(sent.key, `❌ _${pick(SLANG.error)} — ${(error?.message || 'try again')}_`); } catch (_) {}
+        } else {
+          try { await extra.reply(`❌ _${pick(SLANG.error)} — ${(error?.message || 'try again')}_`); } catch (_) {}
+        }
       }
     };
 
