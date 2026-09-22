@@ -84,26 +84,23 @@ async function sendTeamCards(sock, from, applicantJid) {
       (team.description ? `${team.description}\n` : '') +
       (team.cars ? `\u{1F697} ${team.cars}` : '');
 
-    // Send image + caption (no mentions in DM — they don't work there)
+    // Send image with join button in ONE message (iPhone needs this)
+    const joinBtn = { id: `start:join:${teamKey}`, text: `${emoji} Join ${teamKey} \u2014 ${team.name}` };
     if (fs.existsSync(imgPath)) {
       const imageBuffer = fs.readFileSync(imgPath);
-      await sock.sendMessage(from, {
+      await sendButtons(sock, from, {
+        text: caption,
+        footer: config.botName || 'KAMI Bot',
+        buttons: [joinBtn],
         image: imageBuffer,
-        caption,
       });
     } else {
-      await sock.sendMessage(from, { text: caption });
+      await sendButtons(sock, from, {
+        text: caption,
+        footer: config.botName || 'KAMI Bot',
+        buttons: [joinBtn],
+      });
     }
-
-    // Send join button (5s delay — WhatsApp throttles buttons after images)
-    await new Promise(r => setTimeout(r, 5000));
-    await sendButtons(sock, from, {
-      text: '',
-      footer: config.botName || 'KAMI Bot',
-      buttons: [
-        { id: `start:join:${teamKey}`, text: `${emoji} Join ${teamKey} \u2014 ${team.name}` },
-      ],
-    });
   }
 }
 

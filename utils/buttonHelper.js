@@ -127,13 +127,16 @@ function normalizeButton(b) {
  * @param {object} quoted - message to quote (optional, must have .key)
  */
 async function sendButtons(sock, jid, opts, quoted) {
-  const { text, footer = '', buttons = [], header = '', mentions = [] } = opts;
+  const { text, footer = '', buttons = [], header = '', mentions = [], image } = opts;
 
   // Guard: some callers pass { quoted: msg } by mistake — only real
   // WAMessage objects (with .key) are usable as a quote.
   const safeQuoted = quoted && quoted.key ? quoted : undefined;
 
   if (!isButtonModeOn() || buttons.length === 0) {
+    if (image) {
+      return sock.sendMessage(jid, { image, caption: text, mentions }, safeQuoted ? { quoted: safeQuoted } : {});
+    }
     return safeQuoted
       ? sock.sendMessage(jid, { text, mentions }, { quoted: safeQuoted })
       : sock.sendMessage(jid, { text, mentions });
@@ -141,12 +144,54 @@ async function sendButtons(sock, jid, opts, quoted) {
 
   // ── Rate limit: if we sent an interactive message recently, fall back to plain text ──
   if (!canSendInteractive(jid)) {
+    if (image) {
+      return sock.sendMessage(jid, { image, caption: text, mentions }, safeQuoted ? { quoted: safeQuoted } : {});
+    }
     return safeQuoted
       ? sock.sendMessage(jid, { text, mentions }, { quoted: safeQuoted })
       : sock.sendMessage(jid, { text, mentions });
   }
 
   const rows = buttons.slice(0, 3).map(normalizeButton);
+
+  // If image provided, send as image+buttons in one message (iPhone fix)
+  if (image) {
+    try {
+      const { generateWAMessage } = require('@whiskeysockets/baileys');
+      const mediaMsg = await generateWAMessage(jid, {
+        image,
+        caption: text,
+        footer: footer || undefined,
+        buttons: buttons.slice(0, 3).map(b => ({
+          buttonId: b.id,
+          buttonText: { displayText: b.text || b.id },
+          type: 1,
+        })),
+        headerType: 4,
+      }, { userJid: sock.user?.id?.replace(/:\d+(?=@)/, '') });
+
+      const additionalNodes = [
+        {
+          tag: 'biz',
+          attrs: {},
+          content: [{
+            tag: 'interactive',
+            attrs: { type: 'native_flow', v: '1' },
+            content: [{ tag: 'native_flow', attrs: { name: 'mixed', v: '9' } }],
+          }],
+        },
+      ];
+
+      await sock.relayMessage(jid, mediaMsg.message, {
+        messageId: mediaMsg.key.id,
+        additionalNodes,
+      });
+      return mediaMsg;
+    } catch (err) {
+      console.error('[BUTTON] image relay failed, falling back:', err.message);
+      return sock.sendMessage(jid, { image, caption: text, mentions }, safeQuoted ? { quoted: safeQuoted } : {});
+    }
+  }
 
   const interactiveMsg = {
     ...(header ? { header: { title: header, subtitle: '', hasMediaAttachment: false } } : {}),

@@ -119,13 +119,22 @@ async function sendCategoryMenu(sock, chatId, catId, quoted) {
     }, quoted);
   }
 
-  // Send items in batches of 3
+  // Send items in batches of 3, with back button in last batch (iPhone fix)
   for (let i = 0; i < items.length; i += 3) {
     const batch = items.slice(i, i + 3);
-    const buttons = batch.map(([key, item]) => ({
+    const isLastBatch = i + 3 >= items.length;
+
+    // In last batch, reserve 1 slot for back button
+    const itemSlice = isLastBatch && batch.length === 3 ? batch.slice(0, 2) : batch;
+    const buttons = itemSlice.map(([key, item]) => ({
       id: `order:item:${key}`,
       text: `\u{1F697} ${item.name} \u2014 ${item.price}`,
     }));
+
+    // Add back button to last batch
+    if (isLastBatch) {
+      buttons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back to categories' });
+    }
 
     const text = i === 0
       ? `${cat.emoji} *${cat.label.toUpperCase()}*\n\n_Pick an item:_`
@@ -134,30 +143,28 @@ async function sendCategoryMenu(sock, chatId, catId, quoted) {
     await sendButtons(sock, chatId, { text, buttons }, quoted);
     if (i + 3 < items.length) await delay(600);
   }
-
-  await delay(600);
-
-  // Back button
-  await sendButtons(sock, chatId, {
-    text: '',
-    buttons: [{ id: 'order:main', text: '\u2B05\u{FE0F} Back to categories' }],
-  }, quoted);
 }
 
 async function sendModsMenu(sock, chatId, quoted) {
   for (let i = 0; i < MOD_SUBS.length; i++) {
     const sub = MOD_SUBS[i];
 
-    // Batch items in groups of 3 (WhatsApp cap)
+    // Batch items in groups of 3, reserve 1 slot for back button (iPhone fix)
     for (let j = 0; j < sub.items.length; j += 3) {
       const batch = sub.items.slice(j, j + 3);
-      const buttons = batch.map(item => ({
+      const isLastBatch = j + 3 >= sub.items.length;
+
+      // In last batch, take only 2 items to leave room for back button
+      const itemSlice = isLastBatch && batch.length === 3 ? batch.slice(0, 2) : batch;
+      const buttons = itemSlice.map(item => ({
         id: `order:sub:${sub.id}:${item.key}`,
         text: item.label,
       }));
 
-      // Add back button to every batch so user can always go back
-      buttons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back' });
+      // Add back button to last batch only
+      if (isLastBatch) {
+        buttons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back' });
+      }
 
       const text = j === 0
         ? `*${sub.label}*\n_Pick a ${sub.id === 'roofrack' ? 'mod' : 'color'}:_`
@@ -177,13 +184,20 @@ async function sendModColorMenu(sock, chatId, subId, quoted) {
 
   const items = sub.items;
 
-  // Send items in batches of 3
+  // Send items in batches of 3, back button in last batch (iPhone fix)
   for (let i = 0; i < items.length; i += 3) {
     const batch = items.slice(i, i + 3);
-    const buttons = batch.map(item => ({
+    const isLastBatch = i + 3 >= items.length;
+
+    const itemSlice = isLastBatch && batch.length === 3 ? batch.slice(0, 2) : batch;
+    const buttons = itemSlice.map(item => ({
       id: `order:item:${item.key}`,
       text: item.label,
     }));
+
+    if (isLastBatch) {
+      buttons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back to categories' });
+    }
 
     const text = i === 0
       ? `*${sub.label}*\n_Pick a color:_`
@@ -192,13 +206,6 @@ async function sendModColorMenu(sock, chatId, subId, quoted) {
     await sendButtons(sock, chatId, { text, buttons }, quoted);
     if (i + 3 < items.length) await delay(600);
   }
-
-  await delay(600);
-
-  await sendButtons(sock, chatId, {
-    text: '',
-    buttons: [{ id: 'order:cat:mods', text: '\u2B05\u{FE0F} Back to Mods' }],
-  }, quoted);
 }
 
 async function sendPremiumMenu(sock, chatId, page, quoted) {
@@ -221,20 +228,26 @@ async function sendPremiumMenu(sock, chatId, page, quoted) {
     };
   });
 
+  // Add back button to item batch (iPhone fix — back always renders)
+  buttons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back' });
+
   const text = page === 0
     ? `\u{1F48E}\u{1F3CE}\u{FE0F} *PREMIUM CARS*\n\n_Page ${page + 1}/${totalPages}_`
     : `Page ${page + 1}/${totalPages}:`;
 
+  // Send items + back button together
+  await sendButtons(sock, chatId, { text, buttons }, quoted);
+
+  // Send prev/next as separate message (may not render on iPhone — pagination trade-off)
   const navButtons = [];
   if (page > 0) navButtons.push({ id: `order:cat:premium:${page - 1}`, text: '\u{1F519} Prev' });
-  navButtons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back' });
   if (start + PREMIUM_PER_PAGE < PREMIUM_KEYS.length) {
     navButtons.push({ id: `order:cat:premium:${page + 1}`, text: 'Next \u{1F51B}' });
   }
-
-  await sendButtons(sock, chatId, { text, buttons }, quoted);
-  await delay(600);
-  await sendButtons(sock, chatId, { text: '', buttons: navButtons }, quoted);
+  if (navButtons.length > 0) {
+    await delay(600);
+    await sendButtons(sock, chatId, { text: '', buttons: navButtons }, quoted);
+  }
 }
 
 async function sendItemDetail(sock, chatId, itemId, quoted) {
@@ -281,32 +294,23 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
     (item.desc ? `\u{1F4DD} *Details:* ${item.desc}\n` : '') +
     `\n\u{1F6CD}\u{FE0F} _Tap below to order from the catalog_`;
 
-  // Try to send image if available
+  const buttons = [
+    { text: '\u{1F6D2} Order Now', url: catalogLink },
+    { id: backId, text: '\u2B05\u{FE0F} Back' },
+  ];
+
+  // Send image + buttons in ONE message (iPhone fix)
   const imgPath = item.image ? path.join(__dirname, '../../', item.image) : null;
   if (imgPath && fs.existsSync(imgPath)) {
     try {
       const imgBuffer = fs.readFileSync(imgPath);
-      await sock.sendMessage(chatId, {
-        image: imgBuffer,
-        caption: text,
-      });
+      await sendButtons(sock, chatId, { text, buttons, image: imgBuffer }, quoted);
     } catch (e) {
-      await sendButtons(sock, chatId, { text }, quoted);
+      await sendButtons(sock, chatId, { text, buttons }, quoted);
     }
   } else {
-    await sendButtons(sock, chatId, { text }, quoted);
+    await sendButtons(sock, chatId, { text, buttons }, quoted);
   }
-
-  await delay(600);
-
-  // CTA button (opens catalog link) + Back button
-  await sendButtons(sock, chatId, {
-    text: '',
-    buttons: [
-      { text: '\u{1F6D2} Order Now', url: catalogLink },
-      { id: backId, text: '\u2B05\u{FE0F} Back' },
-    ],
-  }, quoted);
 }
 
 // ── Button handlers ──────────────────────────────────────────
