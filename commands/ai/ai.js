@@ -17,19 +17,21 @@ module.exports = {
     const prefix = config.prefix || '.';
     try {
       if (args.length === 0) {
-        return extra.reply(`❌ _${pick(SLANG.error)} — usage: ${prefix}ai <question>_\n\n_example: ${prefix}ai what is the capital of france?_`);
+        return extra.reply(`\u274C _${pick(SLANG.error)} - usage: ${prefix}ai <question>_\n\n_example: ${prefix}ai what is the capital of france?_`);
       }
       
       const question = args.join(' ');
+      
+      const sent = await extra.reply(`\u{1F916} _thinking..._`);
       
       const response = await APIs.chatAI(question);
       
       // Send only the answer without labels
       const answer = response.response || response.msg || response.data?.msg || response;
-      await extra.reply(answer);
+      await extra.edit(sent.key, answer);
       
     } catch (error) {
-      await extra.reply(`❌ _${pick(SLANG.error)} — ai error: ${error.message}_`);
+      await extra.reply(`\u274C _${pick(SLANG.error)} - ai error: ${error.message}_`);
     }
   }
 };

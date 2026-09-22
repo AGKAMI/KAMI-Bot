@@ -58,6 +58,8 @@ module.exports = {
     let tempFiles = [tempInput, tempOutput];
     
     try {
+      const sent = await extra.reply(`\u{1F3A8} _converting to sticker..._`);
+      
       const mediaBuffer = await downloadMediaMessage(
         targetMessage,
         'buffer',
@@ -135,9 +137,11 @@ module.exports = {
       
       await sock.sendMessage(extra.from, { sticker: finalBuffer }, { quoted: msg });
       
+      await extra.edit(sent.key, `\u2705 _sticker sent!_`);
+      
     } catch (error) {
       console.error('Sticker command error:', error);
-      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't make the sticker, check if the media is valid`);
+      await extra.reply(`\u274C *ERROR*\n\u{1F4A1} ${pick(SLANG.error)} - couldn't make the sticker, check if the media is valid`);
     } finally {
       // Always cleanup temp files
       tempFiles.forEach(file => deleteTempFile(file));

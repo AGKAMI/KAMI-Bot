@@ -107,6 +107,9 @@ module.exports = {
         finalImageBuffer = imageBuffer;
       }
       
+      // Send loading message
+      const sent = await extra.reply(`\u{1F5BC}\uFE0F _processing your image..._`);
+      
       // Prepare form data
       const form = new FormData();
       form.append('image', finalImageBuffer, {
@@ -129,21 +132,21 @@ module.exports = {
       });
       
       if (!response.data) {
-        return await extra.reply(`❌ _${pick(SLANG.error)} — no image came back — try again_`);
+        return await extra.edit(sent.key, `\u274C _${pick(SLANG.error)} - no image came back - try again_`);
       }
       
       const resultImageBuffer = Buffer.from(response.data);
       
       // Validate buffer
       if (!resultImageBuffer || resultImageBuffer.length === 0) {
-        return await extra.reply(`❌ _${pick(SLANG.error)} — empty image returned — try again_`);
+        return await extra.edit(sent.key, `\u274C _${pick(SLANG.error)} - empty image returned - try again_`);
       }
       
       // Check file size (WhatsApp image limit is 5MB)
       const maxImageSize = 5 * 1024 * 1024; // 5MB
       if (resultImageBuffer.length > maxImageSize) {
-        return await extra.reply(
-          `❌ _${pick(SLANG.error)} — image too large: ${(resultImageBuffer.length / 1024 / 1024).toFixed(2)}MB (max 5MB)_\n` +
+        return await extra.edit(sent.key,
+          `\u274C _${pick(SLANG.error)} - image too large: ${(resultImageBuffer.length / 1024 / 1024).toFixed(2)}MB (max 5MB)_\n` +
           '_The API returned an image that exceeds WhatsApp limits._'
         );
       }
@@ -151,8 +154,10 @@ module.exports = {
       // Send the modified image
       await sock.sendMessage(extra.from, {
         image: resultImageBuffer,
-        caption: `✨ _kiff, here's your GPT Vision result_\n\n📝 Prompt: ${prompt}`
+        caption: `\u2728 _kiff, here's your GPT Vision result_\n\n\u{1F4DD} Prompt: ${prompt}`
       }, { quoted: msg });
+      
+      await extra.edit(sent.key, `\u2728 _done! check the image above_`);
       
     } catch (error) {
       console.error('Error in gptimage command:', error);
