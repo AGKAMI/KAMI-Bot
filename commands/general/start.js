@@ -90,7 +90,7 @@ async function sendTeamCards(sock, from, applicantJid) {
       const imageBuffer = fs.readFileSync(imgPath);
       await sendButtons(sock, from, {
         text: caption,
-        buttonText: `\u{1F4AC} Tap below to apply`,
+        buttonText: '',
         footer: config.botName || 'KAMI Bot',
         buttons: [joinBtn],
         image: imageBuffer,

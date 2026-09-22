@@ -306,7 +306,7 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
       const imgBuffer = fs.readFileSync(imgPath);
       await sendButtons(sock, chatId, {
         text,
-        buttonText: `\u{1F6CD}\u{FE0F} Tap below to order`,
+        buttonText: '',
         buttons,
         image: imgBuffer,
       }, quoted);
