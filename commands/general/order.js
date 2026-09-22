@@ -11,6 +11,14 @@ const path = require('path');
 const config = require('../../config');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { pick, SLANG } = require('../../utils/format');
+const { normalizeJidWithLid } = require('../../utils/jidHelper');
+
+// Resolve DM JID from sender (redirects group clicks to DM)
+function toDmJid(sender) {
+  const resolved = normalizeJidWithLid(sender);
+  const phone = resolved.split(':')[0].split('@')[0];
+  return phone + '@s.whatsapp.net';
+}
 
 // ── Load catalog ────────────────────────────────────────────
 const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../catalog.json'), 'utf8'));
@@ -302,39 +310,43 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
 }
 
 // ── Button handlers ──────────────────────────────────────────
+// All handlers redirect to DM if triggered from a group
 
 // Main menu
 onButton('order:main', async (sock, msg, from, sender, btnId) => {
-  await sendMainMenu(sock, from, msg);
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  await sendMainMenu(sock, target, msg);
 });
 
 // Category menus
 onButton('order:cat:', async (sock, msg, from, sender, btnId) => {
-  // Extract category ID from btnId: order:cat:<catId> or order:cat:<catId>:<page>
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
   const parts = btnId.split(':');
   const catId = parts[2];
 
   if (catId === 'premium') {
     const page = parseInt(parts[3]) || 0;
-    await sendPremiumMenu(sock, from, page, msg);
+    await sendPremiumMenu(sock, target, page, msg);
   } else if (catId === 'mods') {
-    await sendModsMenu(sock, from, msg);
+    await sendModsMenu(sock, target, msg);
   } else {
-    await sendCategoryMenu(sock, from, catId, msg);
+    await sendCategoryMenu(sock, target, catId, msg);
   }
 });
 
 // Mod sub-category menus
 onButton('order:sub:', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
   const parts = btnId.split(':');
   const subId = parts[2];
-  await sendModColorMenu(sock, from, subId, msg);
+  await sendModColorMenu(sock, target, subId, msg);
 });
 
 // Item detail
 onButton('order:item:', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
   const itemId = btnId.replace('order:item:', '');
-  await sendItemDetail(sock, from, itemId, msg);
+  await sendItemDetail(sock, target, itemId, msg);
 });
 
 // ── Command definition ───────────────────────────────────────
@@ -348,7 +360,18 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
     try {
-      await sendMainMenu(sock, extra.from, msg);
+      const isGroup = extra.from.endsWith('@g.us');
+      if (isGroup) {
+        await sock.sendMessage(extra.from, {
+          text: `\u{1F4AC} _check your DMs to browse the catalog._`,
+        });
+        const dmJid = toDmJid(extra.sender);
+        // Unblock so DMs land (same as crew application)
+        try { await sock.updateBlockStatus(dmJid, 'unblock'); } catch (e) {}
+        await sendMainMenu(sock, dmJid, msg);
+      } else {
+        await sendMainMenu(sock, extra.from, msg);
+      }
     } catch (error) {
       console.error('[ORDER] command error:', error);
       await extra.reply(`❌ _${pick(SLANG.error)} — couldn't load the catalog_`);

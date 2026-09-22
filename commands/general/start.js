@@ -221,9 +221,18 @@ onButton('start:apply', async (sock, msg, from, sender) => {
   await sendTeamCards(sock, dmJid, sender);
 });
 
-// Make Order -> placeholder (admin only)
-onButton('start:order', async (sock, msg, from) => {
-  await sendOrderMenu(sock, from, msg);
+// Make Order -> send order menu to DM
+onButton('start:order', async (sock, msg, from, sender) => {
+  const isGroup = from.endsWith('@g.us');
+  if (isGroup) {
+    await sock.sendMessage(from, {
+      text: `\u{1F4AC} _check your DMs to browse the catalog._`,
+    });
+  }
+  const dmJid = toDmJid(sender);
+  // Unblock so DMs land (same as crew application)
+  try { await sock.updateBlockStatus(dmJid, 'unblock'); } catch (e) {}
+  await sendOrderMenu(sock, dmJid, msg);
 });
 
 // Join a team -> send confirmation
