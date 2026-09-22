@@ -291,22 +291,21 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
     `\u{1F6D2} *ORDER*\n\n` +
     `\u{1F195} *${item.name}*\n\n` +
     `\u{1F4B0} *Price:* ${item.price}\n` +
-    (item.desc ? `\u{1F4DD} *Details:* ${item.desc}\n` : '') +
-    `\n\u{1F6CD}\u{FE0F} _Tap below to order from the catalog_`;
+    (item.desc ? `\u{1F4DD} *Details:* ${item.desc}\n` : '');
 
   const buttons = [
     { text: '\u{1F6D2} Order Now', url: catalogLink },
     { id: backId, text: '\u2B05\u{FE0F} Back' },
   ];
 
-  // Send image + buttons (image gets full caption, buttons get short text)
+  // Send image + buttons (image gets details, button message gets instruction)
   const imgPath = item.image ? path.join(__dirname, '../../', item.image) : null;
   if (imgPath && fs.existsSync(imgPath)) {
     try {
       const imgBuffer = fs.readFileSync(imgPath);
       await sendButtons(sock, chatId, {
         text,
-        buttonText: '',
+        buttonText: `\u{1F6CD}\u{FE0F} _Tap below to order from the catalog_`,
         buttons,
         image: imgBuffer,
       }, quoted);
