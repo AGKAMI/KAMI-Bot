@@ -2,23 +2,18 @@
  * Auto Progression Engine
  * Promotes crew members based on activity — uses per-team ranks from config.
  *
- * Each team's rank hierarchy is defined in config.crewTeams[teamKey].ranks.
- * Progression thresholds scale with position in the hierarchy:
- *   lower ranks = easier thresholds
- *   higher ranks = harder thresholds
+ * Dual cooldown system:
+ *   1. In-memory Set (`promotedThisCycle`) — immediate, survives within session
+ *   2. DB field (`lastPromoted`) — survives bot restarts
  *
- * WhatsApp admin promotion:
- *   SS General: moderator and above
- *   Security teams: grade b / shift supervisor and above
+ * Both must be clear for a member to be eligible.
  */
 
 const database = require('../database');
 const config = require('../config');
 
 // ── Progression Thresholds ────────────────────────────────
-// Scales with index in the team's rank array
 const getThresholds = (index, total) => {
-  // Earlier promotions = easier, later = harder
   const msgMultiplier = index + 1;
   const dayMultiplier = index + 1;
 
@@ -30,16 +25,23 @@ const getThresholds = (index, total) => {
 
 // WhatsApp admin threshold — rank index must be >= this
 const getAdminThresholdIndex = (teamKey) => {
-  if (teamKey === 'SSGENERAL') return 3; // moderator+ gets admin
-  if (teamKey === 'KSSMP') return 3; // inspector+ (metro police)
-  return 3; // grade b / shift supervisor+ for security teams
+  if (teamKey === 'SSGENERAL') return 3;
+  if (teamKey === 'KSSMP') return 3;
+  return 3;
 };
 
 // How often to run (in ms) — default every hour
 const CHECK_INTERVAL = 60 * 60 * 1000;
 
-// Cooldown per member — don't re-check same member within this window
+// Cooldown per member — don't re-promote within this window
 const MEMBER_COOLDOWN = 24 * 60 * 60 * 1000; // 24 hours
+
+// ── In-memory cooldown Set ────────────────────────────────
+// Primary guard: tracks JIDs promoted during this session.
+// Survives within the session even if DB reads fail or lastPromoted
+// was never set for older members. Cleared on bot restart (which is
+// fine because the DB lastPromoted field is the persistent backup).
+const promotedThisSession = new Set();
 
 /**
  * Get rank hierarchy for a team from config
@@ -47,7 +49,6 @@ const MEMBER_COOLDOWN = 24 * 60 * 60 * 1000; // 24 hours
 const getTeamRanks = (teamKey) => {
   const configRanks = config.crewTeams?.[teamKey]?.ranks;
   if (configRanks && configRanks.length > 0) return configRanks;
-  // Fallback — shouldn't happen if config is correct
   return ['member', 'senior member', 'moderator', 'admin', 'co-leader', 'leader'];
 };
 
@@ -58,18 +59,33 @@ const getTeamRanks = (teamKey) => {
 const checkGroup = async (sock, groupJid, teamKey) => {
   const promotions = [];
   const allActivity = database.getGroupMemberActivity(groupJid);
-  const roles = database.getCustomRoles(groupJid);
   const ranks = getTeamRanks(teamKey);
   const adminThreshold = getAdminThresholdIndex(teamKey);
 
   for (const [memberJid, data] of Object.entries(allActivity)) {
-    // Cooldown: check DB timestamp — survives bot restarts (in-memory Map was lost on restart)
-    if (data.lastPromoted && (Date.now() - data.lastPromoted) < MEMBER_COOLDOWN) continue;
+    const memberNum = memberJid.split(':')[0].split('@')[0].replace(/\D/g, '');
+
+    // ── Cooldown check #1: in-memory Set (primary) ──
+    if (promotedThisSession.has(memberJid)) {
+      console.log(`[AUTO-PROGRESSION] SKIP ${memberNum} — promoted this session (in-memory cooldown)`);
+      continue;
+    }
+
+    // ── Cooldown check #2: DB lastPromoted field (backup) ──
+    const lastPromoted = data.lastPromoted;
+    if (lastPromoted && typeof lastPromoted === 'number' && lastPromoted > 0) {
+      const elapsed = Date.now() - lastPromoted;
+      if (elapsed < MEMBER_COOLDOWN) {
+        const hoursLeft = Math.ceil((MEMBER_COOLDOWN - elapsed) / (60 * 60 * 1000));
+        console.log(`[AUTO-PROGRESSION] SKIP ${memberNum} — DB cooldown: ${hoursLeft}h remaining`);
+        continue;
+      }
+    }
 
     // Find current rank in hierarchy (case-insensitive match)
     const currentRankIndex = ranks.findIndex(r => r.toLowerCase() === data.role?.toLowerCase());
-    if (currentRankIndex === -1) continue; // Role not in hierarchy
-    if (currentRankIndex >= ranks.length - 1) continue; // Already at top rank
+    if (currentRankIndex === -1) continue;
+    if (currentRankIndex >= ranks.length - 1) continue;
 
     // Next rank
     const nextRank = ranks[currentRankIndex + 1];
@@ -91,8 +107,22 @@ const checkGroup = async (sock, groupJid, teamKey) => {
         if (dbRoleIndex === -1 || dbRoleIndex >= ranks.length - 1) continue;
         if (member.role?.toLowerCase() === nextRank.toLowerCase()) continue;
 
-        // Update role + persist cooldown timestamp in DB (survives restarts)
-        database.addCrewMember(groupJid, memberJid, { ...member, role: nextRank, lastPromoted: Date.now() });
+        // ── Set in-memory cooldown FIRST (immediate protection) ──
+        promotedThisSession.add(memberJid);
+
+        // ── Update DB with role + lastPromoted timestamp ──
+        const now = Date.now();
+        database.addCrewMember(groupJid, memberJid, {
+          ...member,
+          role: nextRank,
+          lastPromoted: now,
+        });
+
+        // Verify the write succeeded by reading back
+        const verifyMember = database.getCrewMember(groupJid, memberJid);
+        if (!verifyMember?.lastPromoted) {
+          console.error(`[AUTO-PROGRESSION] WARNING: lastPromoted not persisted for ${memberNum}! In-memory cooldown will hold.`);
+        }
 
         // Promote to WhatsApp admin if reaching threshold
         const nextRankIndex = currentRankIndex + 1;
@@ -103,8 +133,6 @@ const checkGroup = async (sock, groupJid, teamKey) => {
             // WhatsApp promote might fail — role is still updated in DB
           }
         }
-
-        const memberNum = memberJid.split(':')[0].split('@')[0].replace(/\D/g, '');
 
         // Notify the group
         await sock.sendMessage(groupJid, {
