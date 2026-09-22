@@ -139,24 +139,28 @@ async function sendCategoryMenu(sock, chatId, catId, quoted) {
 async function sendModsMenu(sock, chatId, quoted) {
   for (let i = 0; i < MOD_SUBS.length; i++) {
     const sub = MOD_SUBS[i];
-    const buttons = sub.items.map(item => ({
-      id: `order:sub:${sub.id}:${item.key}`,
-      text: item.label,
-    }));
 
-    await sendButtons(sock, chatId, {
-      text: `*${sub.label}*\n_Pick a ${sub.id === 'other' ? 'mod' : 'color'}:_`,
-      buttons,
-    }, quoted);
+    // Batch items in groups of 3 (WhatsApp cap)
+    for (let j = 0; j < sub.items.length; j += 3) {
+      const batch = sub.items.slice(j, j + 3);
+      const buttons = batch.map(item => ({
+        id: `order:sub:${sub.id}:${item.key}`,
+        text: item.label,
+      }));
+
+      // Add back button to every batch so user can always go back
+      buttons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back' });
+
+      const text = j === 0
+        ? `*${sub.label}*\n_Pick a ${sub.id === 'other' ? 'mod' : 'color'}:_`
+        : `More ${sub.id === 'other' ? 'mods' : 'colors'}:`;
+
+      await sendButtons(sock, chatId, { text, buttons }, quoted);
+      if (j + 3 < sub.items.length) await delay(600);
+    }
+
     if (i < MOD_SUBS.length - 1) await delay(600);
   }
-
-  await delay(600);
-
-  await sendButtons(sock, chatId, {
-    text: '',
-    buttons: [{ id: 'order:main', text: '\u2B05\u{FE0F} Back to categories' }],
-  }, quoted);
 }
 
 async function sendModColorMenu(sock, chatId, subId, quoted) {
