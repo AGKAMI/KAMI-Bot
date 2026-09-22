@@ -4,6 +4,7 @@
 
 const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const database = require('../../database');
 
 module.exports = {
     name: 'mute',
@@ -18,8 +19,16 @@ module.exports = {
     async execute(sock, msg, args, extra) {
       try {
         await sock.groupSettingUpdate(extra.from, 'announcement');
+
+        // Track owner mute — blocks unmute by others
+        let muteNote = '';
+        if (extra.isOwner) {
+          database.setOwnerMuted(extra.from, extra.sender);
+          muteNote = '\n\n🔒 Only *you* can unmute this group';
+        }
+
         await sendButtons(sock, extra.from, {
-          text: `🔒 MUTED\n\nGroup closed ${pick(SLANG.vibe)}\nOnly admins can talk now`,
+          text: `🔒 MUTED\n\nGroup closed ${pick(SLANG.vibe)}\nOnly admins can talk now${muteNote}`,
           footer: 'Mute Management',
           buttons: [
             { id: 'admin:unmute', text: '🔓 Unmute' },

@@ -43,6 +43,16 @@ module.exports = {
         );
       }
 
+      // ── Check owner-demoted blacklist ─────────────────────
+      if (!extra.isOwner && database.isOwnerDemoted(extra.from, target)) {
+        return extra.reply(
+          `🚫 *PROMOTE BLOCKED*\n\n` +
+          `${mention(target)} was demoted by the owner\n\n` +
+          `Only the owner can promote them again`,
+          { mentions: [target] }
+        );
+      }
+
       // ── Check if already admin ────────────────────────────
       const meta = await sock.groupMetadata(extra.from).catch(() => null);
       if (meta && meta.participants) {
@@ -112,11 +122,22 @@ onButton('admin:demote', async (sock, msg, from, sender, btnId) => {
     }
 
     await sock.groupParticipantsUpdate(from, [target], 'demote');
+
+    // Track owner demotions — blocks future promotes by anyone else
+    const config = require('../../config');
+    const senderNum = sender.split(':')[0].split('@')[0].replace(/\D/g, '');
+    const isSenderOwner = (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === senderNum);
+    let demoteNote = '';
+    if (isSenderOwner) {
+      database.addOwnerDemoted(from, target, sender);
+      demoteNote = '\n\n🚫 This person can *never be promoted* by anyone else — only you can';
+    }
+
     await sock.sendMessage(from, {
       text:
         `✅ SUCCESS\n\n` +
         `⬇️ DEMOTED\n\n` +
-        `${mention(target)} is no longer a group admin\n\n` +
+        `${mention(target)} is no longer a group admin${demoteNote}\n\n` +
         `_${pick(SLANG.vibe)}_`,
       mentions: [target],
     });

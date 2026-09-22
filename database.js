@@ -1128,6 +1128,60 @@ const getInactiveMembers = (groupJid, days = 30) => {
   return inactive;
 };
 
+// ── Owner-Demoted Blacklist ──────────────────────────────────
+// When owner demotes someone, they can NEVER be promoted by anyone else
+// Structure: { "groupJid": { "memberJid": { demotedBy, date } } }
+
+const OWNER_DEMOTED_DB = path.join(DB_PATH, 'ownerDemoted.json');
+
+const addOwnerDemoted = (groupJid, memberJid, ownerJid) => {
+  const data = readDB(OWNER_DEMOTED_DB);
+  if (!data[groupJid]) data[groupJid] = {};
+  const num = _normalizeJid(memberJid);
+  data[groupJid][num] = { demotedBy: ownerJid, date: new Date().toISOString() };
+  writeDB(OWNER_DEMOTED_DB, data);
+};
+
+const isOwnerDemoted = (groupJid, memberJid) => {
+  const data = readDB(OWNER_DEMOTED_DB);
+  if (!data[groupJid]) return false;
+  const num = _normalizeJid(memberJid);
+  return !!data[groupJid][num];
+};
+
+const removeOwnerDemoted = (groupJid, memberJid) => {
+  const data = readDB(OWNER_DEMOTED_DB);
+  if (data[groupJid]) {
+    const num = _normalizeJid(memberJid);
+    delete data[groupJid][num];
+    if (Object.keys(data[groupJid]).length === 0) delete data[groupJid];
+    writeDB(OWNER_DEMOTED_DB, data);
+  }
+};
+
+// ── Owner-Muted Groups ───────────────────────────────────────
+// When owner mutes, only owner can unmute
+// Structure: { "groupJid": { mutedBy, date } }
+
+const OWNER_MUTED_DB = path.join(DB_PATH, 'ownerMuted.json');
+
+const setOwnerMuted = (groupJid, ownerJid) => {
+  const data = readDB(OWNER_MUTED_DB);
+  data[groupJid] = { mutedBy: ownerJid, date: new Date().toISOString() };
+  writeDB(OWNER_MUTED_DB, data);
+};
+
+const isOwnerMuted = (groupJid) => {
+  const data = readDB(OWNER_MUTED_DB);
+  return !!data[groupJid];
+};
+
+const clearOwnerMuted = (groupJid) => {
+  const data = readDB(OWNER_MUTED_DB);
+  delete data[groupJid];
+  writeDB(OWNER_MUTED_DB, data);
+};
+
 module.exports = {
   getGroupSettings,
   updateGroupSettings,
@@ -1232,6 +1286,16 @@ module.exports = {
   getMemberActivity,
   getGroupMemberActivity,
   getInactiveMembers,
+
+  // Owner-demoted blacklist (promote blocked unless owner)
+  addOwnerDemoted,
+  isOwnerDemoted,
+  removeOwnerDemoted,
+
+  // Owner-muted groups (unmute blocked unless owner)
+  setOwnerMuted,
+  isOwnerMuted,
+  clearOwnerMuted,
 
   // Cache management
   flushAll,

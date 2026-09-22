@@ -268,11 +268,18 @@ module.exports = {
       await sock.groupParticipantsUpdate(extra.from, [target], 'demote');
       setTimeout(() => handler._botDemoted.delete(target), 5000);
 
+      // Track owner demotions — blocks future promotes by anyone else
+      let demoteNote = '';
+      if (extra.isOwner) {
+        database.addOwnerDemoted(extra.from, target, extra.sender);
+        demoteNote = '\n\n🚫 This person can *never be promoted* by anyone else — only you can';
+      }
+
       await sendButtons(sock, extra.from, {
         text:
           `✅ SUCCESS\n\n` +
           `⬇️ DEMOTED\n\n` +
-          `${mention(target)} is no longer a group admin\n\n` +
+          `${mention(target)} is no longer a group admin${demoteNote}\n\n` +
           `_${pick(SLANG.vibe)}_`,
         mentions: [target],
         footer: 'Admin Actions',
