@@ -18,25 +18,25 @@ module.exports = {
   const prefix = config.prefix || '.';
     try {
       if (args.length < 2) {
-        return extra.reply(`❌ *ERROR*\n💡 Usage: ${prefix}translate <lang> <text>\n\n📝 *Example:* ${prefix}translate es Hello world`);
+        return extra.reply(`\u274C *ERROR*\n\u{1F4A1} Usage: ${prefix}translate <lang> <text>\n\n\u{1F4DD} *Example:* ${prefix}translate es Hello world`);
       }
       
       const targetLang = args[0];
       const text = args.slice(1).join(' ');
       
-      await extra.reply(`⏳ *TRANSLATING...*\n💡 _translating..._`);
+      const sent = await extra.reply(`\u23F3 _translating..._`);
       
       const result = await APIs.translate(text, targetLang);
       
-      let replyText = `✅ *TRANSLATION*\n\n`;
-      replyText += `📝 *Original:* ${text}\n`;
-      replyText += `🌐 *Translated:* ${result.translation || result}\n`;
-      replyText += `🗣️ *Language:* ${targetLang.toUpperCase()}`;
+      let replyText = `\u2705 *TRANSLATION*\n\n`;
+      replyText += `\u{1F4DD} *Original:* ${text}\n`;
+      replyText += `\u{1F310} *Translated:* ${result.translation || result}\n`;
+      replyText += `\u{1F5E3}\uFE0F *Language:* ${targetLang.toUpperCase()}`;
       
-      await extra.reply(replyText);
+      await extra.edit(sent.key, replyText);
       
     } catch (error) {
-      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)}, translation failed — ${error.message}\n\n💡 Supported codes: en, es, fr, de, it, pt, ru, ja, ko, zh`);
+      await extra.reply(`\u274C *ERROR*\n\u{1F4A1} ${pick(SLANG.error)}, translation failed - ${error.message}\n\n\u{1F4A1} Supported codes: en, es, fr, de, it, pt, ru, ja, ko, zh`);
     }
   }
 };
