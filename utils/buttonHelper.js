@@ -28,7 +28,7 @@ const adminOnlyButtons = new Set(); // button ID prefixes that require admin
 // ── Rate limiter: WhatsApp throttles interactive messages ──────────
 // Only allow 1 interactive message per JID every COOLDOWN_MS.
 // After that, fall back to plain text.
-const COOLDOWN_MS = 2000; // 2 seconds between interactive messages per chat
+const COOLDOWN_MS = 500; // 500ms between interactive messages per chat
 const lastInteractive = new Map(); // jid → timestamp
 
 function isButtonModeOn() {

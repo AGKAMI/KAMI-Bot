@@ -56,6 +56,8 @@ const PREMIUM_KEYS = Object.keys(catalog.premium);
 const PREMIUM_PER_PAGE = 3;
 
 // ── Helpers ──────────────────────────────────────────────────
+const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
 function getItem(itemId) {
   for (const cat of ['flags', 'security', 'police', 'premium', 'mods', 'accounts']) {
     if (catalog[cat]?.[itemId]) return catalog[cat][itemId];
@@ -84,6 +86,8 @@ async function sendMainMenu(sock, chatId, quoted) {
       text: c.label,
     })),
   }, quoted);
+
+  await delay(600);
 
   // Msg 2: remaining 3 categories
   await sendButtons(sock, chatId, {
@@ -120,7 +124,10 @@ async function sendCategoryMenu(sock, chatId, catId, quoted) {
       : `More items:`;
 
     await sendButtons(sock, chatId, { text, buttons }, quoted);
+    if (i + 3 < items.length) await delay(600);
   }
+
+  await delay(600);
 
   // Back button
   await sendButtons(sock, chatId, {
@@ -130,7 +137,8 @@ async function sendCategoryMenu(sock, chatId, catId, quoted) {
 }
 
 async function sendModsMenu(sock, chatId, quoted) {
-  for (const sub of MOD_SUBS) {
+  for (let i = 0; i < MOD_SUBS.length; i++) {
+    const sub = MOD_SUBS[i];
     const buttons = sub.items.map(item => ({
       id: `order:sub:${sub.id}:${item.key}`,
       text: item.label,
@@ -140,7 +148,10 @@ async function sendModsMenu(sock, chatId, quoted) {
       text: `*${sub.label}*\n_Pick a ${sub.id === 'other' ? 'mod' : 'color'}:_`,
       buttons,
     }, quoted);
+    if (i < MOD_SUBS.length - 1) await delay(600);
   }
+
+  await delay(600);
 
   await sendButtons(sock, chatId, {
     text: '',
@@ -167,7 +178,10 @@ async function sendModColorMenu(sock, chatId, subId, quoted) {
       : `More colors:`;
 
     await sendButtons(sock, chatId, { text, buttons }, quoted);
+    if (i + 3 < items.length) await delay(600);
   }
+
+  await delay(600);
 
   await sendButtons(sock, chatId, {
     text: '',
@@ -207,6 +221,7 @@ async function sendPremiumMenu(sock, chatId, page, quoted) {
   }
 
   await sendButtons(sock, chatId, { text, buttons }, quoted);
+  await delay(600);
   await sendButtons(sock, chatId, { text: '', buttons: navButtons }, quoted);
 }
 
@@ -266,6 +281,8 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
   } else {
     await sendButtons(sock, chatId, { text }, quoted);
   }
+
+  await delay(600);
 
   // CTA button (opens catalog link) + Back button
   await sendButtons(sock, chatId, {
