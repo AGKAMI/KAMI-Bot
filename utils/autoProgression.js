@@ -62,6 +62,8 @@ const checkGroup = async (sock, groupJid, teamKey) => {
   const ranks = getTeamRanks(teamKey);
   const adminThreshold = getAdminThresholdIndex(teamKey);
 
+  console.log(`[AUTO-PROGRESSION] Checking ${teamKey} — ${Object.keys(allActivity).length} members, Set size: ${promotedThisSession.size}`);
+
   for (const [memberJid, data] of Object.entries(allActivity)) {
     const memberNum = memberJid.split(':')[0].split('@')[0].replace(/\D/g, '');
 
@@ -84,7 +86,10 @@ const checkGroup = async (sock, groupJid, teamKey) => {
 
     // Find current rank in hierarchy (case-insensitive match)
     const currentRankIndex = ranks.findIndex(r => r.toLowerCase() === data.role?.toLowerCase());
-    if (currentRankIndex === -1) continue;
+    if (currentRankIndex === -1) {
+      console.log(`[AUTO-PROGRESSION] SKIP ${memberNum} — role "${data.role}" not in ranks`);
+      continue;
+    }
     if (currentRankIndex >= ranks.length - 1) continue;
 
     // Next rank
@@ -95,8 +100,11 @@ const checkGroup = async (sock, groupJid, teamKey) => {
 
     const { minMessages, minDaysActive } = getThresholds(currentRankIndex, ranks.length);
 
+    console.log(`[AUTO-PROGRESSION] CHECK ${memberNum}: role="${data.role}" msgs=${data.totalMessages}/${minMessages} days=${data.daysActive}/${minDaysActive} lastPromoted=${lastPromoted || 'NONE'}`);
+
     // Check thresholds
     if (data.totalMessages >= minMessages && data.daysActive >= minDaysActive) {
+      console.log(`[AUTO-PROGRESSION] ELIGIBLE ${memberNum} → ${nextRank}`);
       // Auto-promote
       try {
         const member = database.getCrewMember(groupJid, memberJid);
@@ -122,6 +130,8 @@ const checkGroup = async (sock, groupJid, teamKey) => {
         const verifyMember = database.getCrewMember(groupJid, memberJid);
         if (!verifyMember?.lastPromoted) {
           console.error(`[AUTO-PROGRESSION] WARNING: lastPromoted not persisted for ${memberNum}! In-memory cooldown will hold.`);
+        } else {
+          console.log(`[AUTO-PROGRESSION] DB VERIFIED: ${memberNum} role="${verifyMember.role}" lastPromoted=${verifyMember.lastPromoted} — Set now has ${promotedThisSession.size} entries`);
         }
 
         // Promote to WhatsApp admin if reaching threshold
