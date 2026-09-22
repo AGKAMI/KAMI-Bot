@@ -2060,8 +2060,9 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
     
     if (!body || !body.trim()) return;
     
-    // Comprehensive link detection - matches links with or without protocols
-    const linkPattern = /(https?:\/\/)?([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}(\/[^\s]*)?/i;
+    // Link detection — only matches explicit URLs (http/https/www) or known TLDs
+    // Avoids false positives on file.txt, bot.name, abbreviations, etc.
+    const linkPattern = /(https?:\/\/|www\.)\S+|(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+(?:com|co\.za|org|net|edu|gov|mil|info|biz|io|me|tv|cc|uk|za|us|de|fr|jp|cn|br|in|au|ca)\b(?:\/\S*)?/i;
     
     if (!linkPattern.test(body)) return;
     
