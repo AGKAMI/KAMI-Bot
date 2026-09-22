@@ -299,12 +299,17 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
     { id: backId, text: '\u2B05\u{FE0F} Back' },
   ];
 
-  // Send image + buttons in ONE message (iPhone fix)
+  // Send image + buttons (image gets full caption, buttons get short text)
   const imgPath = item.image ? path.join(__dirname, '../../', item.image) : null;
   if (imgPath && fs.existsSync(imgPath)) {
     try {
       const imgBuffer = fs.readFileSync(imgPath);
-      await sendButtons(sock, chatId, { text, buttons, image: imgBuffer }, quoted);
+      await sendButtons(sock, chatId, {
+        text,
+        buttonText: `\u{1F6CD}\u{FE0F} Tap below to order`,
+        buttons,
+        image: imgBuffer,
+      }, quoted);
     } catch (e) {
       await sendButtons(sock, chatId, { text, buttons }, quoted);
     }

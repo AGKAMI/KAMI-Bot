@@ -84,12 +84,13 @@ async function sendTeamCards(sock, from, applicantJid) {
       (team.description ? `${team.description}\n` : '') +
       (team.cars ? `\u{1F697} ${team.cars}` : '');
 
-    // Send image with join button in ONE message (iPhone needs this)
+    // Send image with join button — caption on image, short text on buttons
     const joinBtn = { id: `start:join:${teamKey}`, text: `${emoji} Join ${teamKey} \u2014 ${team.name}` };
     if (fs.existsSync(imgPath)) {
       const imageBuffer = fs.readFileSync(imgPath);
       await sendButtons(sock, from, {
         text: caption,
+        buttonText: `\u{1F4AC} Tap below to apply`,
         footer: config.botName || 'KAMI Bot',
         buttons: [joinBtn],
         image: imageBuffer,

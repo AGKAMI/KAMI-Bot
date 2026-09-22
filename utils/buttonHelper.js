@@ -127,7 +127,11 @@ function normalizeButton(b) {
  * @param {object} quoted - message to quote (optional, must have .key)
  */
 async function sendButtons(sock, jid, opts, quoted) {
-  const { text, footer = '', buttons = [], header = '', mentions = [], image } = opts;
+  const { text, footer = '', buttons = [], header = '', mentions = [], image, buttonText } = opts;
+
+  // When image is present, buttonText is used for the button message body
+  // (avoids duplicating the full caption text in the button message)
+  const btnBody = buttonText || text;
 
   // Guard: some callers pass { quoted: msg } by mistake — only real
   // WAMessage objects (with .key) are usable as a quote.
@@ -164,12 +168,12 @@ async function sendButtons(sock, jid, opts, quoted) {
     }
     // Delay before buttons — WhatsApp throttles interactive messages after images
     await new Promise(r => setTimeout(r, 3000));
-    // Fall through to send buttons as separate message
+    // Fall through to send buttons as separate message — use btnBody (short text)
   }
 
   const interactiveMsg = {
     ...(header ? { header: { title: header, subtitle: '', hasMediaAttachment: false } } : {}),
-    body: { text },
+    body: { text: image ? btnBody : text },
     ...(footer ? { footer: { text: footer } } : {}),
     nativeFlowMessage: { buttons: rows },
   };
