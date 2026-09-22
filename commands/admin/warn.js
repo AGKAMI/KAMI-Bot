@@ -79,8 +79,8 @@ module.exports = {
           footer: `${remaining} strikes left`,
           mentions: [target],
           buttons: [
-            { id: `admin:undowarn:${target.split(':')[0].split('@')[0]}`, text: '↩️ Undo Warning' },
-            { id: `admin:kick:${target.split(':')[0].split('@')[0]}`, text: '🔨 Kick Now' },
+            { id: `admin:undowarn:${target.split(':')[0]}`, text: '↩️ Undo Warning' },
+            { id: `admin:kick:${target.split(':')[0]}`, text: '🔨 Kick Now' },
           ],
         }, { quoted: msg });
       }
@@ -93,9 +93,8 @@ module.exports = {
 
 // Button handlers
 onButton('admin:undowarn', async (sock, msg, from, sender, btnId) => {
-  const num = btnId.replace('admin:undowarn:', '');
-  if (!num) return;
-  const target = `${num}@s.whatsapp.net`;
+  const target = btnId.replace('admin:undowarn:', '');
+  if (!target) return;
   try {
     const database = require('../../database');
     database.removeWarning(from, target);
@@ -110,9 +109,8 @@ onButton('admin:undowarn', async (sock, msg, from, sender, btnId) => {
 });
 
 onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
-  const num = btnId.replace('admin:kick:', '');
-  if (!num) return;
-  const target = `${num}@s.whatsapp.net`;
+  const target = btnId.replace('admin:kick:', '');
+  if (!target) return;
   try {
     await sock.groupParticipantsUpdate(from, [target], 'remove');
     await sock.sendMessage(from, {

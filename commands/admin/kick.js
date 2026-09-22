@@ -176,8 +176,6 @@ module.exports = {
 
       const usernames = usersToKick.map((jid) => mention(jid));
       const primaryTarget = usersToKick[0];
-      const targetNum = primaryTarget.split(':')[0].split('@')[0];
-
       await sendButtons(sock, chatId, {
         text:
           `🔨 KICKED\n\n` +
@@ -186,7 +184,7 @@ module.exports = {
         mentions: usersToKick,
         footer: 'Kick Management',
         buttons: [
-          { id: `admin:readd:${targetNum}`, text: '🔄 Re-add User' },
+          { id: `admin:readd:${primaryTarget.split(':')[0]}`, text: '🔄 Re-add User' },
         ],
       }, { quoted: msg });
 
@@ -200,9 +198,8 @@ module.exports = {
 
 // Button handlers
 onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
-  const num = btnId.replace('admin:readd:', '');
-  if (!num) return;
-  const target = `${num}@s.whatsapp.net`;
+  const target = btnId.replace('admin:readd:', '');
+  if (!target) return;
   try {
     await sock.groupParticipantsUpdate(from, [target], 'add');
     await sock.sendMessage(from, {

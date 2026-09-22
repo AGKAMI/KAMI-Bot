@@ -11,6 +11,7 @@ const path = require('path');
 const fs = require('fs');
 const config = require('../../config');
 const { pick, SLANG, mention } = require('../../utils/format');
+const { normalizeJidWithLid } = require('../../utils/jidHelper');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { TEAMS } = require('../crew/crewForms');
 const { createApplication, getUserTeam, getUserPendingTeam } = require('../crew/applyHelper');
@@ -82,13 +83,12 @@ async function sendTeamCards(sock, from, applicantJid) {
       (team.description ? `${team.description}\n` : '') +
       (team.cars ? `\u{1F697} ${team.cars}` : '');
 
-    // Send image + caption
+    // Send image + caption (no mentions in DM — they don't work there)
     if (fs.existsSync(imgPath)) {
       const imageBuffer = fs.readFileSync(imgPath);
       await sock.sendMessage(from, {
         image: imageBuffer,
         caption,
-        mentions: applicantJid ? [applicantJid] : [],
       });
     } else {
       await sock.sendMessage(from, { text: caption });
@@ -104,6 +104,15 @@ async function sendTeamCards(sock, from, applicantJid) {
       ],
     });
   }
+}
+
+// Convert sender JID (may be LID) to a proper DM JID
+function toDmJid(sender) {
+  const resolved = normalizeJidWithLid(sender);
+  // normalizeJidWithLid returns full JID like 27840820712@s.whatsapp.net
+  // If it returned a hosted JID, strip to phone + @s.whatsapp.net
+  const phone = resolved.split(':')[0].split('@')[0];
+  return phone + '@s.whatsapp.net';
 }
 
 // Send confirmation message
@@ -210,15 +219,15 @@ onButton('start:apply', async (sock, msg, from, sender) => {
   const isGroup = from.endsWith('@g.us');
   
   if (isGroup) {
-    // In group: send confirmation that DM was sent
+    // In group: tell user to check DMs (no @mention needed — bot is sending TO them)
     await sock.sendMessage(from, {
-      text: `\u{1F4AC} _check your DMs for the application form, ${mention(sender)}_`,
-      mentions: [sender],
+      text: `\u{1F4AC} _check your DMs for the application form._`,
     });
   }
   
   // Send team cards to user's DM
-  const dmJid = sender.split('@')[0] + '@s.whatsapp.net';
+  const dmJid = toDmJid(sender);
+  console.log('[APPLY BTN] sender:', sender, '→ dmJid:', dmJid);
   await sendTeamCards(sock, dmJid, sender);
 });
 
@@ -236,15 +245,14 @@ onButton('start:join:', async (sock, msg, from, sender, btnId) => {
   const isGroup = from.endsWith('@g.us');
   
   if (isGroup) {
-    // In group: send confirmation that DM was sent
     await sock.sendMessage(from, {
-      text: `\u{1F4AC} _check your DMs for the confirmation, ${mention(sender)}_`,
-      mentions: [sender],
+      text: `\u{1F4AC} _check your DMs for the confirmation._`,
     });
   }
   
   // Send confirmation to DM
-  const dmJid = sender.split('@')[0] + '@s.whatsapp.net';
+  const dmJid = toDmJid(sender);
+  console.log('[JOIN BTN] sender:', sender, '→ dmJid:', dmJid);
   await sendConfirmation(sock, dmJid, teamKey);
 });
 
@@ -267,13 +275,12 @@ onButton('start:confirm:', async (sock, msg, from, sender, btnId) => {
         `\u{1F4CB} *App ID:* ${result.app.appUid}\n\n` +
         `\u{1F4AC} I've DM'd you the application form.\n\n` +
         `_${pick(SLANG.greeting)}, good luck!_`,
-      mentions: [sender],
     });
   }
 });
 
 // Back -> re-show team cards (via DM)
 onButton('start:back', async (sock, msg, from, sender) => {
-  const dmJid = sender.split('@')[0] + '@s.whatsapp.net';
+  const dmJid = toDmJid(sender);
   await sendTeamCards(sock, dmJid, sender);
 });

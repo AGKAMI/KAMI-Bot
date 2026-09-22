@@ -262,7 +262,7 @@ module.exports = {
         mentions: [target],
         footer: 'Admin Actions',
         buttons: [
-          { id: `admin:promote:${target.split(':')[0].split('@')[0]}`, text: '⬆️ Promote Back' },
+          { id: `admin:promote:${target.split(':')[0]}`, text: '⬆️ Promote Back' },
         ],
       }, { quoted: msg });
 
@@ -276,9 +276,8 @@ module.exports = {
 
 // Button handlers
 onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
-  const num = btnId.replace('admin:promote:', '');
-  if (!num) return;
-  const target = `${num}@s.whatsapp.net`;
+  const target = btnId.replace('admin:promote:', '');
+  if (!target) return;
   try {
     await sock.groupParticipantsUpdate(from, [target], 'promote');
     await sock.sendMessage(from, {

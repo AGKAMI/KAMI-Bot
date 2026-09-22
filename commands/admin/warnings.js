@@ -97,14 +97,12 @@ module.exports = {
         text += `\n_${remaining} more and they're gone_\n`;
       }
 
-      const targetNum = target.split(':')[0].split('@')[0];
-
       await sendButtons(sock, extra.from, {
         text,
         mentions: [target],
         footer: 'Warning Management',
         buttons: [
-          { id: `admin:clearwarnings:${targetNum}`, text: '🗑️ Clear All' },
+          { id: `admin:clearwarnings:${target.split(':')[0]}`, text: '🗑️ Clear All' },
         ],
       }, { quoted: msg });
 
@@ -116,9 +114,8 @@ module.exports = {
 
 // Button handlers
 onButton('admin:clearwarnings', async (sock, msg, from, sender, btnId) => {
-  const num = btnId.replace('admin:clearwarnings:', '');
-  if (!num) return;
-  const target = `${num}@s.whatsapp.net`;
+  const target = btnId.replace('admin:clearwarnings:', '');
+  if (!target) return;
   try {
     database.clearWarnings(from, target);
     await sock.sendMessage(from, {

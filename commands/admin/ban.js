@@ -79,7 +79,7 @@ module.exports = {
         mentions: [target],
         footer: 'Ban Management',
         buttons: [
-          { id: `admin:unban:${target.split(':')[0].split('@')[0]}`, text: '♻️ Unban User' },
+          { id: `admin:unban:${target.split(':')[0]}`, text: '♻️ Unban User' },
         ],
       }, { quoted: msg });
 
@@ -91,9 +91,8 @@ module.exports = {
 
 // Button handlers
 onButton('admin:unban', async (sock, msg, from, sender, btnId) => {
-  const num = btnId.replace('admin:unban:', '');
-  if (!num) return;
-  const target = `${num}@s.whatsapp.net`;
+  const target = btnId.replace('admin:unban:', '');
+  if (!target) return;
   try {
     await sock.updateBlockStatus(target, 'unblock');
     await sock.sendMessage(from, {
