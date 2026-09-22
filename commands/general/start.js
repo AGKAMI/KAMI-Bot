@@ -153,27 +153,19 @@ module.exports = {
     try {
       const applicantJid = extra.sender;
 
-      // Welcome text
+      // Welcome text with inline options (buttons are interactive overlay, text is fallback for iOS)
       const summary =
         `\u{1F916} *KAMI BOT*\n` +
         `----------\n\n` +
         `Welcome to the Slammed Society, ${pick(SLANG.greeting)}\n\n` +
-        `Tap a button to get started \u2B05\uFE0F`;
-
-      // Send bot image + buttons
-      if (fs.existsSync(BOT_IMAGE)) {
-        const imageBuffer = fs.readFileSync(BOT_IMAGE);
-        await sock.sendMessage(extra.from, {
-          image: imageBuffer,
-          caption: summary,
-          mentions: [applicantJid],
-        }, { quoted: msg });
-      }
+        `Tap a button to get started \u2B05\uFE0F\n\n` +
+        `1. \u{1F4CB} Menu\n` +
+        `2. \u{1F4CB} Apply for Security Team\n` +
+        `3. \u{1F451} Make Order`;
 
       await sendButtons(sock, extra.from, {
-        text: fs.existsSync(BOT_IMAGE) ? '' : summary,
+        text: summary,
         footer: config.botName || 'KAMI Bot',
-        header: 'KAMI BOT',
         buttons: [
           { id: 'start:menu', text: '\u{1F4CB} Menu' },
           { id: 'start:apply', text: '\u{1F4CB} Apply for Security Team' },

@@ -141,11 +141,19 @@ async function sendButtons(sock, jid, opts, quoted) {
       : sock.sendMessage(jid, { text: fallback, mentions });
   }
 
+  // ── iOS fallback: append button labels to body text so iPhone users see options ──
+  // iOS WhatsApp doesn't render nativeFlowMessage buttons — body text is all they get
+  let bodyText = text;
+  if (buttons.length > 0) {
+    const btnLabels = buttons.slice(0, 3).map((b, i) => `${i + 1}. ${b.text}`).join('\n');
+    bodyText = `${text}\n\n${btnLabels}`;
+  }
+
   const rows = buttons.slice(0, 3).map(normalizeButton);
 
   const interactiveMsg = {
     ...(header ? { header: { title: header, subtitle: '', hasMediaAttachment: false } } : {}),
-    body: { text },
+    body: { text: bodyText },
     ...(footer ? { footer: { text: footer } } : {}),
     nativeFlowMessage: { buttons: rows },
   };
@@ -188,8 +196,8 @@ async function sendButtons(sock, jid, opts, quoted) {
   }
 
   return safeQuoted
-    ? sock.sendMessage(jid, { text, mentions }, { quoted: safeQuoted })
-    : sock.sendMessage(jid, { text, mentions });
+    ? sock.sendMessage(jid, { text: bodyText, mentions }, { quoted: safeQuoted })
+    : sock.sendMessage(jid, { text: bodyText, mentions });
 }
 
 function onButton(id, handler) {
