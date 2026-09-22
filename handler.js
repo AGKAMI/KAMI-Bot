@@ -14,6 +14,9 @@ const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG } = requ
 const { buildImage } = require('./utils/imageText');
 const { handleButtonResponse, requireAdmin } = require('./utils/buttonHelper');
 
+// All admin command buttons are admin-only
+requireAdmin('admin');
+
 // Slowmode enforcement (in-memory cooldown tracking)
 let slowmodeModule;
 try {

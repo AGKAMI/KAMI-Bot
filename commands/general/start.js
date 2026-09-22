@@ -11,7 +11,7 @@ const path = require('path');
 const fs = require('fs');
 const config = require('../../config');
 const { pick, SLANG, mention } = require('../../utils/format');
-const { sendButtons, onButton, requireAdmin } = require('../../utils/buttonHelper');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { TEAMS } = require('../crew/crewForms');
 const { createApplication, getUserTeam, getUserPendingTeam } = require('../crew/applyHelper');
 
@@ -182,10 +182,6 @@ module.exports = {
 // ============================================================
 // BUTTON HANDLERS
 // ============================================================
-
-// Register admin-only buttons
-requireAdmin('start:order');
-requireAdmin('menu:admin');
 
 // Menu -> show the menu
 onButton('start:menu', async (sock, msg, from) => {
