@@ -23,11 +23,15 @@ async function confirm(sock, chatId, msg, text, onConfirm, onCancel) {
       if (reaction.message?.reactionMessage?.text === '✅') {
         sock.ev.off('messages.update', handler);
         resolve(true);
-        if (onConfirm) onConfirm();
+        if (onConfirm) {
+          try { onConfirm(); } catch (e) { console.error('[confirm] onConfirm error:', e.message); }
+        }
       } else if (reaction.message?.reactionMessage?.text === '❌') {
         sock.ev.off('messages.update', handler);
         resolve(false);
-        if (onCancel) onCancel();
+        if (onCancel) {
+          try { onCancel(); } catch (e) { console.error('[confirm] onCancel error:', e.message); }
+        }
       }
     };
 

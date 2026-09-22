@@ -94,7 +94,7 @@ module.exports = {
         // Unban if banned
         let wasBanned = false;
         const user = database.getUser(targetJid);
-        if (user.banned) {
+        if (user && user.banned) {
           database.updateUser(targetJid, { banned: false, bannedIn: null });
           wasBanned = true;
         }

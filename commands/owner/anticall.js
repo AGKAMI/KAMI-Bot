@@ -2,6 +2,7 @@
  * Anti-Call Command - Enable or disable anti-call system
  */
 
+const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -29,7 +30,6 @@ module.exports = {
     // Update the default setting in config
     const fs = require('fs');
     const path = require('path');
-const config = require('../../config');
     const configPath = path.join(__dirname, '../../config.js');
     
     try {

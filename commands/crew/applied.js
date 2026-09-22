@@ -253,10 +253,12 @@ onButton('crew:accept', async (sock, msg, from, sender, btnId) => {
   if (!uid) return;
   // Load lazily to avoid circular dependency (applied.js ↔ handler.js)
   const acceptCmd = require('./accept');
+  const config = require('../../config');
+  const senderIsOwner = (config.ownerNumber || []).some(n => sender.includes(n));
   await acceptCmd.execute(sock, msg, [uid], {
     from, sender,
     isGroup: false,
-    isOwner: false,
+    isOwner: senderIsOwner,
     reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
   });
 });

@@ -38,9 +38,10 @@ module.exports = {
       
       db.updateGroupSettings(groupId, { welcomeMessage });
       
+      const senderJid = msg.key.participant || msg.key.remoteJid || 'unknown';
       await sock.sendMessage(groupId, {
-        text: `✅ _${pick(SLANG.vibe)}, welcome message updated!_\n\n*preview:*\n${welcomeMessage.replace('@user', '@' + msg.key.participant.split('@')[0])}`,
-        mentions: [msg.key.participant]
+        text: `✅ _${pick(SLANG.vibe)}, welcome message updated!_\n\n*preview:*\n${welcomeMessage.replace('@user', '@' + senderJid.split('@')[0])}`,
+        mentions: [senderJid]
       }, { quoted: msg });
       
     } catch (error) {

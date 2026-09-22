@@ -50,9 +50,10 @@ setInterval(() => {
   }
   // lidMappingCache: clear entirely (entries don't have timestamps, small cache)
   lidMappingCache.clear();
-  // Clear bot action sets (safe to clear periodically — they're just "skip once" flags)
-  if (_botDemoted.size > 100) _botDemoted.clear();
-  if (_botKicked.size > 100) _botKicked.clear();
+  // Bot action sets are "skip once" flags — keep them small but don't wipe entirely
+  // Only prune if they've grown unbounded (indicates a bug in cleanup logic)
+  if (_botDemoted.size > 500) _botDemoted.clear();
+  if (_botKicked.size > 500) _botKicked.clear();
 }, 300000); // every 5 minutes
 
 // Load all commands
@@ -1248,6 +1249,7 @@ const handleMessage = async (sock, msg) => {
     if (!isGroup && database.isTeamAdmin(sender) && !isOwner(sender) && !database.isApprovedNumber(sender)) {
       const lowerBody = (body || '').trim().toLowerCase();
       const prefixEscaped = config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const prefix = config.prefix || '.';
       const isAllowedCmd = new RegExp('^\\' + prefixEscaped +
         'crew\\s+(accept|deny|hire|reject|fire|applicants|pending)\\b').test(lowerBody);
       if (!isAllowedCmd) {
@@ -1267,6 +1269,7 @@ const handleMessage = async (sock, msg) => {
     if (!isGroup && !database.isTeamAdmin(sender) && !isOwner(sender) && database.hasPendingApplication(sender)) {
       const lowerBody = (body || '').trim().toLowerCase();
       const prefixEscaped = config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const prefix = config.prefix || '.';
       const isAllowedCmd = new RegExp('^' + prefixEscaped +
         'crew\\s+(apply|applied|withdraw|applicants|pending)(?=\\s|$)').test(lowerBody);
       if (!isAllowedCmd) {

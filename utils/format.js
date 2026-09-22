@@ -16,6 +16,7 @@ const strike = (text) => `~${text}~`;
 const mono = (text) => '`' + text + '`';
 const { normalizeJidWithLid } = require('./jidHelper');
 const mention = (jid) => {
+  if (!jid) return '@unknown';
   const resolved = normalizeJidWithLid(jid);
   return `@${resolved.split(':')[0].split('@')[0]}`;
 };

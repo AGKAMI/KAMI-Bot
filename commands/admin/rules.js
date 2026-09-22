@@ -7,6 +7,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
+const prefix = config.prefix || '.';
 
 module.exports = {
   name: 'rules',

@@ -14,6 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const config = require('../../config');
+const prefix = config.prefix || '.';
 // Load all crew sub-handlers
 const subHandlers = {};
 const handlersPath = path.join(__dirname);
@@ -95,6 +96,17 @@ module.exports = {
         const isTeamAdmin = database.isTeamAdmin(extra.sender);
         const isOwner = !!extra.isOwner;
 
+        const aliasMap = {
+          'rm': 'remove',
+          'setrole': 'role',
+          'rsvp': 'attend',
+          'winner': 'result',
+          'join': 'apply',
+          'hire': 'accept',
+          'fire': 'deny',
+          'pending': 'applicants'
+        };
+
         if (isDM) {
           // DM context — enforce team-admin access rules
           const isApproved = database.isApprovedNumber(extra.sender);
@@ -156,27 +168,30 @@ module.exports = {
       // Route to sub-handler
       const handler = subHandlers[actualSub];
       if (handler) {
+        // Check sub-handler permission flags
+        if (handler.adminOnly && !extra.isAdmin && !isOwner) {
+          return extra.reply(`❌ ERROR\n\nThis command requires admin privileges`);
+        }
+        if (handler.groupOnly && isDM) {
+          return extra.reply(`❌ ERROR\n\nThis command can only be used in groups`);
+        }
         // Inject resolved group JID into extra
         const patchedExtra = { ...extra, from: targetJid };
         return handler.execute(sock, msg, actualArgs, patchedExtra);
       }
 
       // Check for aliased commands
-      const aliasMap = {
-        'rm': 'remove',
-        'setrole': 'role',
-        'rsvp': 'attend',
-        'winner': 'result',
-        'join': 'apply',
-        'hire': 'accept',
-        'fire': 'deny',
-        'pending': 'applicants'
-      };
-
       const aliased = aliasMap[actualSub];
       if (aliased && subHandlers[aliased]) {
+        const aliasedHandler = subHandlers[aliased];
+        if (aliasedHandler.adminOnly && !extra.isAdmin && !isOwner) {
+          return extra.reply(`❌ ERROR\n\nThis command requires admin privileges`);
+        }
+        if (aliasedHandler.groupOnly && isDM) {
+          return extra.reply(`❌ ERROR\n\nThis command can only be used in groups`);
+        }
         const patchedExtra = { ...extra, from: targetJid };
-        return subHandlers[aliased].execute(sock, msg, actualArgs, patchedExtra);
+        return aliasedHandler.execute(sock, msg, actualArgs, patchedExtra);
       }
 
       return extra.reply(

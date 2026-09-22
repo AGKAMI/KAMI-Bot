@@ -12,8 +12,15 @@ const path = require('path');
  */
 const downloadMedia = async (message) => {
   try {
-    const messageType = Object.keys(message)[0];
-    const stream = await downloadContentFromMessage(message[messageType], messageType.replace('Message', ''));
+    if (!message || typeof message !== 'object') {
+      throw new Error('Invalid message object');
+    }
+    const keys = Object.keys(message);
+    if (keys.length === 0) throw new Error('Empty message object');
+    const messageType = keys[0];
+    const content = message[messageType];
+    if (!content) throw new Error(`No content for message type: ${messageType}`);
+    const stream = await downloadContentFromMessage(content, messageType.replace('Message', ''));
     
     let buffer = Buffer.from([]);
     for await (const chunk of stream) {

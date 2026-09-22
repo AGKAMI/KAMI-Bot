@@ -279,16 +279,18 @@ async function handleButtonResponse(sock, msg, isAdmin) {
     // Exact match first
     let handler = buttonHandlers.get(btnId);
     if (!handler) {
-      // Prefix match — check if any registered ID is a prefix of btnId
+      // Prefix match — only match if btnId starts with "key:" (colon separator)
       for (const [key, hnd] of buttonHandlers) {
-        if (btnId.startsWith(key + ':') || btnId.startsWith(key)) {
+        if (btnId.startsWith(key + ':')) {
           handler = hnd;
           break;
         }
       }
     }
     if (handler) {
-      handler(sock, msg, from, sender, btnId);
+      Promise.resolve(handler(sock, msg, from, sender, btnId)).catch(err => {
+        console.error('[ButtonHelper] Handler error:', err.message);
+      });
       return true;
     }
     return false;

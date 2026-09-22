@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 

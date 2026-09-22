@@ -25,6 +25,7 @@ const SESSION_DIR_NAME = config.sessionName || 'session';
 const NUKEABLE_DIRS = ['.cache', '.npm', 'temp', 'tmp'];
 
 let cleanupInterval = null;
+let cacheNukeInterval = null;
 
 /**
  * Recursively calculate directory size
@@ -207,7 +208,7 @@ function startCleanup() {
   }, CLEANUP_INTERVAL_MS);
 
   // Cache nuke every 10 minutes (less aggressive)
-  setInterval(() => {
+  cacheNukeInterval = setInterval(() => {
     nukeCacheDirs();
   }, 10 * 60 * 1000);
 
@@ -221,8 +222,12 @@ function stopCleanup() {
   if (cleanupInterval) {
     clearInterval(cleanupInterval);
     cleanupInterval = null;
-    console.log('🛑 Cleanup system stopped');
   }
+  if (cacheNukeInterval) {
+    clearInterval(cacheNukeInterval);
+    cacheNukeInterval = null;
+  }
+  console.log('🛑 Cleanup system stopped');
 }
 
 // Handle process termination gracefully

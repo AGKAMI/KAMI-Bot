@@ -309,8 +309,9 @@ module.exports = {
 
       // ── Timer ───────────────────────────────────────────
       setTimeout(async () => {
-        sock.ev.off('messages.upsert', messageListener);
-        activeGiveaways.delete(from);
+        try {
+          sock.ev.off('messages.upsert', messageListener);
+          activeGiveaways.delete(from);
 
         const entryList = Array.from(entries);
 
@@ -365,6 +366,9 @@ module.exports = {
         }
 
         pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuffer, sock);
+        } catch (e) {
+          console.error('[giveaway] Timer error:', e.message);
+        }
 
       }, durationMs);
 

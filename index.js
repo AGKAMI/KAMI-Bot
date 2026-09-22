@@ -50,13 +50,7 @@ console.log = (...args) => {
   }
 };
 
-console.error = (...args) => {
-  const message = args.map(a => typeof a === 'string' ? a : typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ').toLowerCase();
-  if (!forbiddenPatternsConsole.some(pattern => message.includes(pattern))) {
-    originalConsoleError.apply(console, args);
-  }
-};
-
+// Don't filter console.error — real errors should always be visible
 console.warn = (...args) => {
   const message = args.map(a => typeof a === 'string' ? a : typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ').toLowerCase();
   if (!forbiddenPatternsConsole.some(pattern => message.includes(pattern))) {

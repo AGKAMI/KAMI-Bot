@@ -10,6 +10,7 @@ const path = require('path');
 
 const config = require('../../config');
 const DB_PATH = path.join(__dirname, '..', '..', 'database');
+const prefix = config.prefix || '.';
 
 const TABLES = {
   'groups': { file: 'groups.json', desc: 'Group settings & config' },

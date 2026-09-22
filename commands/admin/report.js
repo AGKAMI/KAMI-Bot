@@ -2,6 +2,7 @@
  * Report Command - DM reports to admins, block admin reports
  */
 
+const config = require('../../config');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 const reportStore = new Map();

@@ -934,6 +934,9 @@ const isOwnerProtected = (groupJid, memberJid) => {
 const AUDIT_MAX = 500;
 
 const _readAudit = () => {
+  if (dbCache[AUDIT_DB]) {
+    return dbCache[AUDIT_DB];
+  }
   try {
     return JSON.parse(fs.readFileSync(AUDIT_DB, 'utf8'));
   } catch {

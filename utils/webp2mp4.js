@@ -5,7 +5,12 @@
 const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
-const ffmpegPath = require('ffmpeg-static');
+let ffmpegPath;
+try {
+  ffmpegPath = require('ffmpeg-static');
+} catch {
+  console.warn('[webp2mp4] ffmpeg-static not installed — media conversion unavailable');
+}
 const { getTempDir, deleteTempFile } = require('./tempManager');
 
 /**

@@ -45,7 +45,12 @@ async function writeExifImg(img, metadata) {
  */
 async function writeExifVid(videoBuffer, metadata) {
   const { packname } = metadata;
-  const ffmpegPath = require('ffmpeg-static');
+  let ffmpegPath;
+  try {
+    ffmpegPath = require('ffmpeg-static');
+  } catch {
+    throw new Error('ffmpeg-static not installed — run: npm install ffmpeg-static');
+  }
   const { spawn } = require('child_process');
   
   // Check file size
