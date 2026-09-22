@@ -13,14 +13,17 @@ const database = require('../database');
 const config = require('../config');
 
 // ── Progression Thresholds ────────────────────────────────
-const getThresholds = (index, total) => {
-  const msgMultiplier = index + 1;
-  const dayMultiplier = index + 1;
+// Hardcoded per rank — 8 msgs/day ratio
+const PROMOTION_THRESHOLDS = [
+  { minMessages: 100,  minDaysActive: 13 },  // member → senior member
+  { minMessages: 300,  minDaysActive: 38 },  // senior member → moderator
+  { minMessages: 600,  minDaysActive: 75 },  // moderator → admin
+  { minMessages: 800,  minDaysActive: 100 }, // admin → co-leader
+  { minMessages: 1000, minDaysActive: 125 }, // co-leader → leader
+];
 
-  const minMessages = Math.floor(40 * Math.pow(msgMultiplier, 1.5));
-  const minDaysActive = Math.floor(5 * Math.pow(dayMultiplier, 1.2));
-
-  return { minMessages, minDaysActive };
+const getThresholds = (index) => {
+  return PROMOTION_THRESHOLDS[index] || PROMOTION_THRESHOLDS[PROMOTION_THRESHOLDS.length - 1];
 };
 
 // WhatsApp admin threshold — rank index must be >= this
@@ -98,7 +101,7 @@ const checkGroup = async (sock, groupJid, teamKey) => {
     // Skip if already at this rank (safety check)
     if (data.role?.toLowerCase() === nextRank.toLowerCase()) continue;
 
-    const { minMessages, minDaysActive } = getThresholds(currentRankIndex, ranks.length);
+    const { minMessages, minDaysActive } = getThresholds(currentRankIndex);
 
     console.log(`[AUTO-PROGRESSION] CHECK ${memberNum}: role="${data.role}" msgs=${data.totalMessages}/${minMessages} days=${data.daysActive}/${minDaysActive} lastPromoted=${lastPromoted || 'NONE'}`);
 
