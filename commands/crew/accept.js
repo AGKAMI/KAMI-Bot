@@ -143,44 +143,42 @@ module.exports = {
         }
       }
 
-      // Only update DB if group add succeeded (or no group to add to)
-      if (addedToGroup || !teamGroupJid) {
-        // Add to crew
-        if (teamGroupJid) {
-          database.addCrewMember(teamGroupJid, applicantJid, {
-            role,
-            joined: Date.now(),
-            addedBy: extra.sender,
-          });
-
-          // Track owner-added members for protection
-          if (extra.isOwner) {
-            database.addOwnerAddedMember(teamGroupJid, applicantJid, extra.sender);
-          }
-        }
-
-        // Track as processed before removing
-        database.trackProcessedApp(teamGroupJid, app.appUid, {
-          action: 'accepted',
-          admin: extra.sender,
+      // Always update DB — person is accepted regardless of group add success
+      // If group add failed, admin can manually add them later and DB is already correct
+      if (teamGroupJid) {
+        database.addCrewMember(teamGroupJid, applicantJid, {
           role,
-          applicantJid,
-          team: teamKey,
+          joined: Date.now(),
+          addedBy: extra.sender,
         });
 
-        // Log admin action for audit trail
-        database.logAdminAction({
-          action: 'accepted',
-          appUid: app.appUid,
-          team: teamKey,
-          admin: extra.sender,
-          applicant: applicantJid,
-          role: role,
-        });
-
-        // Remove the pending application
-        database.removeApplicant(teamGroupJid, app.appUid);
+        // Track owner-added members for protection
+        if (extra.isOwner) {
+          database.addOwnerAddedMember(teamGroupJid, applicantJid, extra.sender);
+        }
       }
+
+      // Track as processed before removing
+      database.trackProcessedApp(teamGroupJid, app.appUid, {
+        action: 'accepted',
+        admin: extra.sender,
+        role,
+        applicantJid,
+        team: teamKey,
+      });
+
+      // Log admin action for audit trail
+      database.logAdminAction({
+        action: 'accepted',
+        appUid: app.appUid,
+        team: teamKey,
+        admin: extra.sender,
+        applicant: applicantJid,
+        role: role,
+      });
+
+      // Remove the pending application
+      database.removeApplicant(teamGroupJid, app.appUid);
 
       // Build the hired message with the team's invite link
       const inviteLink = config.crewTeams[teamKey]?.invite
