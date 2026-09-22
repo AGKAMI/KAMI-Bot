@@ -33,6 +33,7 @@ const MOD_SUBS = [
     { key: 'headlights-green',  label: '\u{1F7E2} Green',  color: '\u{1F7E2}' },
     { key: 'headlights-yellow', label: '\u{1F7E1} Yellow', color: '\u{1F7E1}' },
     { key: 'headlights-purple', label: '\u{1F7E3} Purple', color: '\u{1F7E3}' },
+    { key: 'headlights-orange', label: '\u{1F7E0} Orange', color: '\u{1F7E0}' },
     { key: 'headlights-cyan',   label: '\u{1F535}\u{FE0F} Cyan', color: '\u{1F535}\u{FE0F}' },
     { key: 'headlights-pink',   label: '\u{1F496} Pink',   color: '\u{1F496}' },
   ]},

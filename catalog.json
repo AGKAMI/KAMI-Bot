@@ -20,7 +20,8 @@
     "jmpd-i8": { "name": "JMPD BMW i8", "price": "R20", "desc": "JMPD high-speed interceptor", "catalog": "https://wa.me/p/35573931782206271/27683993925", "image": "assets/police/jmpd-i8.png" },
     "jmpd-m5": { "name": "JMPD BMW M5", "price": "R20", "desc": "JMPD pursuit vehicle", "catalog": "https://wa.me/p/26280635224900768/27683993925", "image": "assets/police/jmpd-m5.png" },
     "jmpd-scirocco": { "name": "JMPD Scirocco", "price": "R20", "desc": "JMPD undercover unit", "catalog": "https://wa.me/p/34148213144825987/27683993925", "image": "assets/police/jmpd-scirocco.png" },
-    "metro-gle": { "name": "Metro Police Mercedes GLE", "price": "R20", "desc": "Metro Police command vehicle", "catalog": "https://wa.me/p/26119228937739052/27683993925", "image": "assets/police/metro-gle.png" }
+    "metro-gle": { "name": "Metro Police Mercedes GLE", "price": "R20", "desc": "Metro Police command vehicle", "catalog": "https://wa.me/p/26119228937739052/27683993925", "image": "assets/police/metro-gle.png" },
+    "saps-dodge-charger": { "name": "SAPS Dodge Charger", "price": "R20", "desc": "SAPS highway patrol", "catalog": "https://wa.me/c/27683993925", "image": "assets/police/saps-dodge-charger.png" }
   },
   "premium": {
     "nissan-350z": { "name": "Nissan 350Z", "price": "R20", "catalog": "" },
