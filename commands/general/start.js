@@ -70,7 +70,8 @@ async function sendTeamCards(sock, from, applicantJid) {
     return;
   }
 
-  for (const teamKey of available) {
+  // Send all images in parallel (no waiting between them)
+  const sendPromises = available.map(async (teamKey) => {
     const imgPath = getTeamImage(teamKey);
     const team = config.crewTeams[teamKey];
     const meta = TEAMS[teamKey];
@@ -82,7 +83,6 @@ async function sendTeamCards(sock, from, applicantJid) {
       (team.description ? `${team.description}\n` : '') +
       (team.cars ? `🚗 ${team.cars}` : '');
 
-    // Send image + caption
     if (fs.existsSync(imgPath)) {
       const imageBuffer = fs.readFileSync(imgPath);
       await sock.sendMessage(from, {
@@ -93,9 +93,17 @@ async function sendTeamCards(sock, from, applicantJid) {
     } else {
       await sock.sendMessage(from, { text: caption });
     }
+  });
 
-    // Send join button (2.5s delay to avoid rate limiter)
-    await new Promise(r => setTimeout(r, 2500));
+  await Promise.all(sendPromises);
+
+  // Short delay then send all buttons (rate limiter needs ~2s between interactive msgs)
+  await new Promise(r => setTimeout(r, 1500));
+
+  for (const teamKey of available) {
+    const team = config.crewTeams[teamKey];
+    const emoji = TEAM_EMOJI[teamKey];
+
     await sendButtons(sock, from, {
       text: '',
       footer: config.botName || 'KAMI Bot',
@@ -103,6 +111,11 @@ async function sendTeamCards(sock, from, applicantJid) {
         { id: `start:join:${teamKey}`, text: `${emoji} Join ${teamKey} — ${team.name}` },
       ],
     });
+
+    // Small delay between buttons to avoid rate limiter
+    if (available.indexOf(teamKey) < available.length - 1) {
+      await new Promise(r => setTimeout(r, 2200));
+    }
   }
 }
 
