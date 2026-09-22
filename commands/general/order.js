@@ -27,15 +27,6 @@ const CATEGORIES = [
 
 // ── Mod sub-categories ──────────────────────────────────────
 const MOD_SUBS = [
-  { id: 'callipers', label: '\u{1F534} Glowing Callipers', items: [
-    { key: 'callipers-red',    label: '\u{1F534} Red',    color: '\u{1F534}' },
-    { key: 'callipers-blue',   label: '\u{1F535} Blue',   color: '\u{1F535}' },
-    { key: 'callipers-green',  label: '\u{1F7E2} Green',  color: '\u{1F7E2}' },
-    { key: 'callipers-yellow', label: '\u{1F7E1} Yellow', color: '\u{1F7E1}' },
-    { key: 'callipers-purple', label: '\u{1F7E3} Purple', color: '\u{1F7E3}' },
-    { key: 'callipers-orange', label: '\u{1F7E0} Orange', color: '\u{1F7E0}' },
-    { key: 'callipers-cyan',   label: '\u{1F535}\u{FE0F} Cyan', color: '\u{1F535}\u{FE0F}' },
-  ]},
   { id: 'headlights', label: '\u{1F4A1} Glowing Headlights', items: [
     { key: 'headlights-red',    label: '\u{1F534} Red',    color: '\u{1F534}' },
     { key: 'headlights-blue',   label: '\u{1F535} Blue',   color: '\u{1F535}' },
@@ -45,9 +36,17 @@ const MOD_SUBS = [
     { key: 'headlights-cyan',   label: '\u{1F535}\u{FE0F} Cyan', color: '\u{1F535}\u{FE0F}' },
     { key: 'headlights-pink',   label: '\u{1F496} Pink',   color: '\u{1F496}' },
   ]},
-  { id: 'other', label: '\u2728 Other Mods', items: [
-    { key: 'shiny-rims', label: '\u{1F6DE}\u{FE0F} Shiny Rims', emoji: '\u{1F6DE}\u{FE0F}' },
-    { key: 'roof-rack',  label: '\u{1F4E6} Roof Rack/Box',      emoji: '\u{1F4E6}' },
+  { id: 'callipers', label: '\u{1F534} Glowing Callipers', items: [
+    { key: 'callipers-red',    label: '\u{1F534} Red',    color: '\u{1F534}' },
+    { key: 'callipers-blue',   label: '\u{1F535} Blue',   color: '\u{1F535}' },
+    { key: 'callipers-green',  label: '\u{1F7E2} Green',  color: '\u{1F7E2}' },
+    { key: 'callipers-yellow', label: '\u{1F7E1} Yellow', color: '\u{1F7E1}' },
+    { key: 'callipers-purple', label: '\u{1F7E3} Purple', color: '\u{1F7E3}' },
+    { key: 'callipers-orange', label: '\u{1F7E0} Orange', color: '\u{1F7E0}' },
+    { key: 'callipers-cyan',   label: '\u{1F535}\u{FE0F} Cyan', color: '\u{1F535}\u{FE0F}' },
+  ]},
+  { id: 'roofrack', label: '\u{1F4E6} Roof Rack', items: [
+    { key: 'roof-rack', label: '\u{1F4E6} Roof Rack/Box', emoji: '\u{1F4E6}' },
   ]},
 ];
 
@@ -152,8 +151,8 @@ async function sendModsMenu(sock, chatId, quoted) {
       buttons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back' });
 
       const text = j === 0
-        ? `*${sub.label}*\n_Pick a ${sub.id === 'other' ? 'mod' : 'color'}:_`
-        : `More ${sub.id === 'other' ? 'mods' : 'colors'}:`;
+        ? `*${sub.label}*\n_Pick a ${sub.id === 'roofrack' ? 'mod' : 'color'}:_`
+        : `More ${sub.id === 'roofrack' ? 'mods' : 'colors'}:`;
 
       await sendButtons(sock, chatId, { text, buttons }, quoted);
       if (j + 3 < sub.items.length) await delay(600);
