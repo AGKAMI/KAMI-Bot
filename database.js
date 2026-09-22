@@ -317,6 +317,14 @@ const removeCrewMember = (groupJid, memberJid) => {
   return updateTeam(groupJid, team);
 };
 
+// Update fields on an existing crew member
+const updateCrewMember = (groupJid, memberJid, data) => {
+  const team = getTeam(groupJid);
+  if (!team.members || !team.members[memberJid]) return false;
+  Object.assign(team.members[memberJid], data);
+  return updateTeam(groupJid, team);
+};
+
 // Get member from a specific group
 const getCrewMember = (groupJid, memberJid) => {
   const team = getTeam(groupJid);
@@ -1096,6 +1104,7 @@ module.exports = {
   updateTeam,
   addCrewMember,
   removeCrewMember,
+  updateCrewMember,
   getCrewMember,
   getCrewMembers,
   addCrewEvent,

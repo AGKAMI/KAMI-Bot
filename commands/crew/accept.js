@@ -150,6 +150,8 @@ module.exports = {
           role,
           joined: Date.now(),
           addedBy: extra.sender,
+          accepted: true,
+          inGroup: addedToGroup,
         });
 
         // Track owner-added members for protection

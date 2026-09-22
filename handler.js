@@ -1382,8 +1382,17 @@ const handleGroupUpdate = async (sock, update) => {
                 role: 'member',
                 joined: Date.now(),
                 addedBy: 'auto-sync',
+                accepted: false,
+                inGroup: true,
               });
               console.log(`[CREW SYNC] Auto-added ${jid.split('@')[0]} to ${id}`);
+            } else {
+              // Already in crew DB — update inGroup status (e.g. manually added after accept)
+              const member = database.getCrewMember(id, jid);
+              if (member && !member.inGroup) {
+                database.updateCrewMember(id, jid, { inGroup: true });
+                console.log(`[CREW SYNC] Updated ${jid.split('@')[0]} inGroup → true in ${id}`);
+              }
             }
 
             // ── Auto-repromote protected admins on rejoin ────
@@ -1403,12 +1412,19 @@ const handleGroupUpdate = async (sock, update) => {
             }
           } else if (action === 'remove') {
             if (isInCrew) {
-              // Remove using the JID variant that matched
+              // Update inGroup status instead of removing — they're still a crew member
               for (const variant of jidVariants) {
-                database.removeCrewMember(id, variant);
+                const member = database.getCrewMember(id, variant);
+                if (member) {
+                  database.updateCrewMember(id, variant, { inGroup: false });
+                  break;
+                }
               }
-              database.removeCrewMember(id, jid);
-              console.log(`[CREW SYNC] Auto-removed ${jid.split('@')[0]} from ${id}`);
+              const directMember = database.getCrewMember(id, jid);
+              if (directMember) {
+                database.updateCrewMember(id, jid, { inGroup: false });
+              }
+              console.log(`[CREW SYNC] Updated ${jid.split('@')[0]} inGroup → false in ${id}`);
             }
 
             // ── Owner Kick Protection ──────────────────────
