@@ -123,7 +123,7 @@ const getGroupSettings = (groupId) => {
     groups[groupId] = { ...config.defaultGroupSettings };
     writeDB(GROUPS_DB, groups);
   }
-  return groups[groupId];
+  return { ...groups[groupId] };
 };
 
 const updateGroupSettings = (groupId, settings) => {
@@ -201,7 +201,7 @@ const clearWarnings = (groupId, userId) => {
 // Moderators System
 const getModerators = () => {
   const mods = readDB(MODS_DB);
-  return mods.moderators || [];
+  return [...(mods.moderators || [])];
 };
 
 const addModerator = (userId) => {
@@ -230,7 +230,7 @@ const isModerator = (userId) => {
 
 // Global Settings
 const getGlobalSettings = () => {
-  return readDB(GLOBAL_DB);
+  return { ...readDB(GLOBAL_DB) };
 };
 
 const updateGlobalSettings = (settings) => {
@@ -934,8 +934,8 @@ const isOwnerProtected = (groupJid, memberJid) => {
 const AUDIT_MAX = 500;
 
 const _readAudit = () => {
-  if (dbCache[AUDIT_DB]) {
-    return dbCache[AUDIT_DB];
+  if (_cache.has(AUDIT_DB)) {
+    return _cache.get(AUDIT_DB);
   }
   try {
     return JSON.parse(fs.readFileSync(AUDIT_DB, 'utf8'));

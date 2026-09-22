@@ -1082,11 +1082,7 @@ const handleMessage = async (sock, msg) => {
               for (const word of badwords) {
                 const normWord = getNormalizedBadword(word);
                 if (!normWord) continue;
-                const wl = word.toLowerCase().trim();
-                const isWildcard = wl.includes('*');
-                const hit = isWildcard
-                  ? normBody.includes(normWord)
-                  : (normBody.includes(normWord));
+                const hit = normBody.includes(normWord);
                 if (hit) {
                   const action = groupSettings.badwordAction || 'delete';
                   // Delete the bad message first for delete/kick
@@ -1169,7 +1165,7 @@ const handleMessage = async (sock, msg) => {
                 } catch (e) {}
                 // Direct DM to the spammer so THEY get the warning personally
                 try {
-                  const targetJid = sender.startsWith('@lid') || sender.includes('@g.us')
+                  const targetJid = sender.includes('@lid') || sender.includes('@g.us')
                     ? sender.split('@')[0] + '@s.whatsapp.net'
                     : sender;
                   await sock.sendMessage(targetJid, {
@@ -1229,7 +1225,7 @@ const handleMessage = async (sock, msg) => {
     // Check self mode (private mode) - only owner/approved can use commands (DMs ONLY, groups unaffected)
     // Pending applicants and team admins are exempt so the .crew apply / accept / deny flow works in DMs.
     const globalSettings = database.getGlobalSettings();
-    if (!isGroup && globalSettings.selfMode && !isOwner(sender) && !database.isApprovedNumber(sender) && !database.isTeamAdmin(sender) && !database.hasPendingApplication(sender)) {
+    if (!isGroup && globalSettings.selfMode && !isOwner(sender) && !database.isApprovedNumber(sender) && !database.isTeamAdmin(sender) && !database.hasPendingApplication(sender) && !hasActiveSession(sender)) {
       // Send warning then block (owner can never reach here due to isOwner check above)
       try {
         await sock.sendMessage(from, {
@@ -1829,7 +1825,12 @@ const handleGroupUpdate = async (sock, update) => {
           });
           
           // Resolve display name (username > contact name > formatted phone)
-          const displayName = resolveDisplayName(participantJid, realPhone, participantInfo, sock);
+          let displayName;
+          try {
+            displayName = resolveDisplayName(participantJid, realPhone, participantInfo, sock);
+          } catch {
+            displayName = participantNumber || 'User';
+          }
           
           // Create formatted welcome message
           const joinedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -1938,7 +1939,12 @@ const handleGroupUpdate = async (sock, update) => {
           const realPhone = participantInfo?.phoneNumber || participantNumber;
           
           // Resolve display name (username > contact name > formatted phone)
-          const displayName = resolveDisplayName(participantJid, realPhone, participantInfo, sock);
+          let displayName;
+          try {
+            displayName = resolveDisplayName(participantJid, realPhone, participantInfo, sock);
+          } catch {
+            displayName = participantNumber || 'User';
+          }
           
           // Get group name
           const groupName = groupMetadata.subject || 'the group';
