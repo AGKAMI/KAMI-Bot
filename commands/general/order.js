@@ -103,7 +103,7 @@ async function sendCategoryMenu(sock, chatId, catId, quoted) {
   const cat = CATEGORIES.find(c => c.id === catId);
   if (!cat) return;
 
-  const items = Object.entries(catalog[catId === 'flags' ? 'flags' : catId] || {});
+  const items = Object.entries(catalog[catId === 'flag' ? 'flags' : catId] || {});
   if (items.length === 0) {
     return sendButtons(sock, chatId, {
       text: `${cat.emoji} *${cat.label.toUpperCase()}*\n\n_Coming soon — no items yet_`,
