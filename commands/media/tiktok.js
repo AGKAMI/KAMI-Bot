@@ -67,16 +67,64 @@ async function sendVideo(sock, chatId, videoUrl, title, msg) {
   }
 }
 
+async function sendSlideshow(sock, chatId, images, title, msg) {
+  try {
+    const botName = config.botName.toUpperCase();
+    const total = images.length;
+
+    // Send header text
+    const header = title
+      ? `*DOWNLOADED BY ${botName}*\n\n${title}\n_${total} images_\n_${pick(SLANG.vibe)}, enjoy_`
+      : `*DOWNLOADED BY ${botName}*\n_${total} images_\n_${pick(SLANG.vibe)}, enjoy_`;
+    await sock.sendMessage(chatId, { text: header }, { quoted: msg });
+
+    // Send each image
+    let sent = 0;
+    for (let i = 0; i < total; i++) {
+      try {
+        const imgUrl = images[i];
+        const imgRes = await dlAxios.get(imgUrl);
+        const buf = Buffer.from(imgRes.data);
+        if (buf.length < 500) continue;
+
+        await sock.sendMessage(chatId, {
+          image: buf,
+          caption: `📸 ${i + 1}/${total}`
+        });
+        sent++;
+      } catch (e) {
+        console.error(`[TT] slideshow image ${i + 1} failed: ${e.message}`);
+      }
+    }
+
+    return sent > 0;
+  } catch (e) {
+    console.error('[TT] slideshow failed:', e.message);
+    return false;
+  }
+}
+
 async function methodTikwm(url) {
   const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`;
   const { data } = await axios.get(apiUrl, { timeout: 20000 });
 
   if (data?.code !== 0 || !data?.data) throw new Error('tikwm: invalid response');
 
+  // Slideshow — has images array
+  const images = data.data.images || [];
+  if (images.length > 0) {
+    return {
+      type: 'slideshow',
+      images,
+      title: data.data.title || null
+    };
+  }
+
   const videoUrl = data.data.hdplay || data.data.play;
   if (!videoUrl) throw new Error('tikwm: no video URL');
 
   return {
+    type: 'video',
     videoUrl: videoUrl.startsWith('http') ? videoUrl : `https://www.tikwm.com${videoUrl}`,
     title: data.data.title || null
   };
@@ -86,10 +134,20 @@ async function methodRuhend(url) {
   const result = await ttdl(url);
   if (!result) throw new Error('ruhend: no result');
 
+  // Slideshow — has images array
+  const images = result.images || [];
+  if (images.length > 0) {
+    return {
+      type: 'slideshow',
+      images,
+      title: result.title || null
+    };
+  }
+
   const videoUrl = result.video_hd || result.video;
   if (!videoUrl) throw new Error('ruhend: no video URL');
 
-  return { videoUrl, title: result.title || null };
+  return { type: 'video', videoUrl, title: result.title || null };
 }
 
 async function methodTikcdn(url) {
@@ -140,9 +198,15 @@ module.exports = {
         try {
           console.log(`[TT] trying ${method.name}...`);
           const result = await method.fn();
-          console.log(`[TT] ${method.name} succeeded`);
+          console.log(`[TT] ${method.name} succeeded — type: ${result.type || 'video'}`);
 
-          const sent = await sendVideo(sock, extra.from, result.videoUrl, result.title, msg);
+          let sent = false;
+          if (result.type === 'slideshow' && result.images?.length > 0) {
+            sent = await sendSlideshow(sock, extra.from, result.images, result.title, msg);
+          } else if (result.videoUrl) {
+            sent = await sendVideo(sock, extra.from, result.videoUrl, result.title, msg);
+          }
+
           if (sent) {
             success = true;
             break;

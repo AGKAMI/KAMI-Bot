@@ -6,6 +6,7 @@
  *   .announce all    → ALL CPM groups + Community + SS crew groups + Newsletter
  *
  * Requires: reply to a message. Supports text, image, video, document, audio, sticker.
+ * Sends all targets in parallel — no delays.
  */
 
 const config = require('../../config');
@@ -13,27 +14,37 @@ const database = require('../../database');
 const { pick, SLANG } = require('../../utils/format');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
-// ── Group lists ──────────────────────────────────────────────
+// ── Group lists with human-readable names ────────────────────
 const GROUPS = {
-  SSRS:      '120363402129417473@g.us',
-  KSSPS:     '120363421626159074@g.us',
-  KSSMP:     '120363409819775730@g.us',
-  KSSMS:     '120363423238834158@g.us',
-  GENERAL:   '120363417242897528@g.us',
-  TESTING:   '120363424309756901@g.us',
-  GARAGE:    '120363404874858785@g.us',
-  COMMUNITY: '120363418980604721@g.us',
-  NEWSLETTER: '120363399255608558@newsletter',
+  SSRS:      { jid: '120363402129417473@g.us', name: 'SSRS Royal Security' },
+  KSSPS:     { jid: '120363421626159074@g.us', name: 'Metro Police' },
+  KSSMP:     { jid: '120363409819775730@g.us', name: 'KSSMP Private Security' },
+  KSSMS:     { jid: '120363423238834158@g.us', name: 'Maganyeni Security' },
+  GENERAL:   { jid: '120363417242897528@g.us', name: 'SS Crew General' },
+  TESTING:   { jid: '120363424309756901@g.us', name: 'Bot Testing' },
+  GARAGE:    { jid: '120363404874858785@g.us', name: 'Exclusive Garage' },
+  COMMUNITY: { jid: '120363418980604721@g.us', name: 'Community Announcements' },
+  NEWSLETTER:{ jid: '120363399255608558@newsletter', name: 'Slammed Society Channel' },
 };
 
-const SS_CREW = [GROUPS.SSRS, GROUPS.KSSPS, GROUPS.KSSMP, GROUPS.KSSMS];
-const EXTRAS  = [GROUPS.TESTING, GROUPS.GARAGE];
-const BASE    = [GROUPS.COMMUNITY, GROUPS.GENERAL, GROUPS.NEWSLETTER];
+// Build reverse lookup: jid → name
+const JID_TO_NAME = {};
+for (const [, g] of Object.entries(GROUPS)) {
+  JID_TO_NAME[g.jid] = g.name;
+}
+
+const SS_CREW = [GROUPS.SSRS.jid, GROUPS.KSSPS.jid, GROUPS.KSSMP.jid, GROUPS.KSSMS.jid];
+const EXTRAS  = [GROUPS.TESTING.jid, GROUPS.GARAGE.jid];
+const BASE    = [GROUPS.COMMUNITY.jid, GROUPS.GENERAL.jid, GROUPS.NEWSLETTER.jid];
 
 function getTargets(mode) {
   if (mode === 'all') return [...BASE, ...SS_CREW, ...EXTRAS];
   if (mode === 'ss')  return [...BASE, ...SS_CREW];
   return BASE;
+}
+
+function getGroupName(jid) {
+  return JID_TO_NAME[jid] || jid.split('@')[0];
 }
 
 // ── Newsletter context for group messages ────────────────────
@@ -72,6 +83,48 @@ function getText(quoted) {
 // ── Get caption from media message ───────────────────────────
 function getCaption(quoted) {
   return quoted.imageMessage?.caption || quoted.videoMessage?.caption || '';
+}
+
+// ── Send to a single target ─────────────────────────────────
+async function sendToTarget(sock, target, type, quoted, mediaBuffer) {
+  const isNewsletter = target.endsWith('@newsletter');
+  const nlCtx = isNewsletter ? {} : newsletterContext();
+
+  if (type === 'text') {
+    await sock.sendMessage(target, { text: getText(quoted), ...nlCtx });
+  } else if (type === 'image' && mediaBuffer) {
+    await sock.sendMessage(target, {
+      image: mediaBuffer,
+      caption: getCaption(quoted),
+      ...nlCtx,
+    });
+  } else if (type === 'video' && mediaBuffer) {
+    await sock.sendMessage(target, {
+      video: mediaBuffer,
+      caption: getCaption(quoted),
+      ...nlCtx,
+    });
+  } else if (type === 'document' && mediaBuffer) {
+    await sock.sendMessage(target, {
+      document: mediaBuffer,
+      fileName: quoted.documentMessage?.fileName || 'document',
+      mimetype: quoted.documentMessage?.mimetype || 'application/octet-stream',
+      ...nlCtx,
+    });
+  } else if (type === 'audio' && mediaBuffer) {
+    await sock.sendMessage(target, {
+      audio: mediaBuffer,
+      mimetype: quoted.audioMessage?.mimetype || 'audio/ogg; codecs=opus',
+      ...nlCtx,
+    });
+  } else if (type === 'sticker') {
+    const stickerObj = { mimetype: quoted.stickerMessage?.mimetype || 'image/webp' };
+    if (mediaBuffer) stickerObj.sticker = mediaBuffer;
+    if (!isNewsletter) stickerObj.contextInfo = newsletterContext().contextInfo;
+    await sock.sendMessage(target, stickerObj);
+  } else {
+    throw new Error('Unsupported type or missing media');
+  }
 }
 
 module.exports = {
@@ -151,68 +204,35 @@ module.exports = {
       // ── React ⏳ ──────────────────────────────────────────
       await extra.react('⏳');
 
-      // ── Send to each target ───────────────────────────────
+      // ── Send ALL targets in parallel — no delays ──────────
+      const results = await Promise.allSettled(
+        targets.map(target => sendToTarget(sock, target, type, quoted, mediaBuffer))
+      );
+
+      // ── Tally results ────────────────────────────────────
       let success = 0;
       let failed = 0;
       const failedGroups = [];
 
-      for (const target of targets) {
-        try {
-          const isNewsletter = target.endsWith('@newsletter');
-          const nlCtx = isNewsletter ? {} : newsletterContext();
-
-          if (type === 'text') {
-            await sock.sendMessage(target, { text: getText(quoted), ...nlCtx });
-          } else if (type === 'image' && mediaBuffer) {
-            await sock.sendMessage(target, {
-              image: mediaBuffer,
-              caption: getCaption(quoted),
-              ...nlCtx,
-            });
-          } else if (type === 'video' && mediaBuffer) {
-            await sock.sendMessage(target, {
-              video: mediaBuffer,
-              caption: getCaption(quoted),
-              ...nlCtx,
-            });
-          } else if (type === 'document' && mediaBuffer) {
-            await sock.sendMessage(target, {
-              document: mediaBuffer,
-              fileName: quoted.documentMessage?.fileName || 'document',
-              mimetype: quoted.documentMessage?.mimetype || 'application/octet-stream',
-              ...nlCtx,
-            });
-          } else if (type === 'audio' && mediaBuffer) {
-            await sock.sendMessage(target, {
-              audio: mediaBuffer,
-              mimetype: quoted.audioMessage?.mimetype || 'audio/ogg; codecs=opus',
-              ...nlCtx,
-            });
-          } else if (type === 'sticker') {
-            const stickerObj = { mimetype: quoted.stickerMessage?.mimetype || 'image/webp' };
-            if (mediaBuffer) stickerObj.sticker = mediaBuffer;
-            if (!isNewsletter) stickerObj.contextInfo = newsletterContext().contextInfo;
-            await sock.sendMessage(target, stickerObj);
-          } else {
-            failed++;
-            failedGroups.push(target.split('@')[0]);
-            continue;
-          }
-
+      results.forEach((result, i) => {
+        if (result.status === 'fulfilled') {
           success++;
-        } catch (sendErr) {
-          console.error(`[ANNOUNCE] Failed → ${target}:`, sendErr.message);
+        } else {
           failed++;
-          failedGroups.push(target.split('@')[0]);
+          const name = getGroupName(targets[i]);
+          failedGroups.push(`${name}: ${result.reason?.message || 'send failed'}`);
+          console.error(`[ANNOUNCE] Failed → ${name} (${targets[i]}):`, result.reason?.message);
         }
-      }
+      });
 
       // ── Summary ───────────────────────────────────────────
       const summary =
         `✅ *ANNOUNCE COMPLETE*\n\n` +
         `📢 Mode: *${modeLabel}*\n` +
         `✅ Sent: *${success}*\n` +
-        (failed > 0 ? `❌ Failed: *${failed}* — ${failedGroups.join(', ')}\n` : '') +
+        (failed > 0
+          ? `❌ Failed: *${failed}*\n${failedGroups.map(g => `  • ${g}`).join('\n')}\n`
+          : '') +
         `\n_Slammed Society CPM_ ${pick(SLANG.vibe)}`;
 
       await extra.reply(summary);
