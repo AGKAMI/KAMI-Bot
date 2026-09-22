@@ -320,6 +320,7 @@ module.exports = {
   category: 'general',
   description: 'Browse and order CPM products',
   usage: '.order',
+  sendMainMenu, // export for start.js to use
 
   async execute(sock, msg, args, extra) {
     try {

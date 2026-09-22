@@ -15,6 +15,7 @@ const { normalizeJidWithLid } = require('../../utils/jidHelper');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { TEAMS } = require('../crew/crewForms');
 const { createApplication, getUserTeam, getUserPendingTeam } = require('../crew/applyHelper');
+const { sendMainMenu: sendOrderMenu } = require('./order');
 
 // Team display order
 const TEAM_ORDER = ['KSSMP', 'KSSPS', 'SSRS', 'KSSMS'];
@@ -222,9 +223,7 @@ onButton('start:apply', async (sock, msg, from, sender) => {
 
 // Make Order -> placeholder (admin only)
 onButton('start:order', async (sock, msg, from) => {
-  await sock.sendMessage(from, {
-    text: `\u{1F451} *MAKE ORDER*\n\n_Coming soon \u2014 business catalog will be available here._`,
-  });
+  await sendOrderMenu(sock, from, msg);
 });
 
 // Join a team -> send confirmation
