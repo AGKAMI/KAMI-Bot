@@ -59,10 +59,10 @@ module.exports = {
 
       // Send ban message first (before block so it delivers)
       await sock.sendMessage(from, {
-        text: `🔨 *BANNED FROM KAMI BOT* 🤖\n` +
-              `⛔ *You are permanently banned from this bot*\n` +
-              `⚠️ *Do NOT contact this number — your message will be ignored*\n\n` +
-              `_For ban appeals, contact the bot owner directly._`,
+        text:
+          `🚫 BANNED FROM KAMI BOT\n\n` +
+          `${mention(target)} has been permanently banned from this bot\n\n` +
+          `_For ban appeals, contact the bot owner directly._`,
         mentions: [target]
       });
 
@@ -75,7 +75,11 @@ module.exports = {
 
       // Confirm in chat
       await sendButtons(sock, from, {
-        text: `🔨 *BANNED*\n\n${mention(target)} _has been banned, ${pick(SLANG.good)}!_`,
+        text:
+          `✅ SUCCESS\n\n` +
+          `🔨 BANNED\n\n` +
+          `${mention(target)} has been banned\n\n` +
+          `_${pick(SLANG.vibe)}_`,
         mentions: [target],
         footer: 'Ban Management',
         buttons: [
@@ -96,11 +100,19 @@ onButton('admin:unban', async (sock, msg, from, sender, btnId) => {
   try {
     await sock.updateBlockStatus(target, 'unblock');
     await sock.sendMessage(from, {
-      text: `✅ *UNBANNED*\n\n${mention(target)} _has been unbanned_`,
+      text:
+        `✅ SUCCESS\n\n` +
+        `♻️ UNBANNED\n\n` +
+        `${mention(target)} has been unbanned\n\n` +
+        `_${pick(SLANG.vibe)}_`,
       mentions: [target],
     });
   } catch (e) {
     console.error('[UNBAN BTN] Error:', e.message);
-    await sock.sendMessage(from, { text: `❌ *UNBAN FAILED*\n\n${e.message || "Couldn't unblock user"}` });
+    await sock.sendMessage(from, {
+      text:
+        `❌ ERROR\n\n` +
+        `Couldn't unban — ${e.message || 'Unknown error'}`,
+    });
   }
 });

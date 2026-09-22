@@ -32,9 +32,10 @@ module.exports = {
         target = ctx.participant;
       } else {
         return extra.reply(
-          `⚠️ *WARNINGS*\n\n` +
-          `_Tag or reply to the person you wanna check ${pick(SLANG.vibe)}_\n\n` +
-          `_Example: ${prefix}warnings @user_`
+          `❌ ERROR\n\n` +
+          `Tag or reply to someone\n\n` +
+          `Usage:\n` +
+          `• ${prefix}warnings @user`
         );
       }
 
@@ -119,11 +120,19 @@ onButton('admin:clearwarnings', async (sock, msg, from, sender, btnId) => {
   try {
     database.clearWarnings(from, target);
     await sock.sendMessage(from, {
-      text: `✅ *WARNINGS CLEARED*\n\n${mention(target)} _has been cleared of all warnings_`,
+      text:
+        `✅ SUCCESS\n\n` +
+        `🗑️ WARNINGS CLEARED\n\n` +
+        `${mention(target)} has been cleared of all warnings\n\n` +
+        `_${pick(SLANG.vibe)}_`,
       mentions: [target],
     });
   } catch (e) {
     console.error('[CLEAR WARNINGS BTN] Error:', e.message);
-    await sock.sendMessage(from, { text: `❌ *CLEAR FAILED*\n\n${e.message || "Couldn't clear warnings"}` });
+    await sock.sendMessage(from, {
+      text:
+        `❌ ERROR\n\n` +
+        `Couldn't clear warnings — ${e.message || 'Unknown error'}`,
+    });
   }
 });

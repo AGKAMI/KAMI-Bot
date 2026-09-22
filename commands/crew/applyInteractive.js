@@ -54,10 +54,13 @@ function getQuestions(teamKey) {
       label: 'ACTIVITY',
       text: 'How many hours per day do you play CPM?',
       options: [
-        { id: '1 hr or less',   label: '1 hr or less' },
-        { id: '2-3 hours',      label: '2-3 hours' },
-        { id: '4-5 hours',      label: '4-5 hours' },
-        { id: '6+ hours',       label: '6+ hours' },
+        { id: '1 hr or less',         label: '1 hr or less' },
+        { id: '1-2 hours',            label: '1-2 hours' },
+        { id: '2-3 hours',            label: '2-3 hours' },
+        { id: '3-4 hours',            label: '3-4 hours' },
+        { id: '4-5 hours',            label: '4-5 hours' },
+        { id: '5-6 hours',            label: '5-6 hours' },
+        { id: '6+ hours',             label: '6+ hours' },
       ],
     },
     {
@@ -66,10 +69,13 @@ function getQuestions(teamKey) {
       label: 'AGE',
       text: 'How old are you?',
       options: [
-        { id: '7-11 (Minor)',    label: '7-11 (Minor)' },
-        { id: '12-14',           label: '12-14' },
-        { id: '15-17',           label: '15-17' },
-        { id: '18+',             label: '18+' },
+        { id: '7-10 (Very young)',     label: '7-10' },
+        { id: '11-12',                 label: '11-12' },
+        { id: '13-14',                 label: '13-14' },
+        { id: '15-16',                 label: '15-16' },
+        { id: '17-18',                 label: '17-18' },
+        { id: '19-21',                 label: '19-21' },
+        { id: '22+',                   label: '22+' },
       ],
     },
     {
@@ -78,9 +84,13 @@ function getQuestions(teamKey) {
       label: 'EXPERIENCE',
       text: getExperienceQuestion(teamKey),
       options: [
-        { id: 'Yes — experienced',  label: 'Yes — experienced' },
-        { id: 'A little',          label: 'A little' },
-        { id: 'No — but willing to learn', label: 'No — willing to learn' },
+        { id: 'Yes — multiple teams',          label: 'Multiple teams' },
+        { id: 'Yes — one team only',            label: 'One team only' },
+        { id: 'Yes — solo experience',          label: 'Solo experience' },
+        { id: 'A little — casual play',         label: 'Casual play' },
+        { id: 'A little — watched others',      label: 'Watched others' },
+        { id: 'No — but willing to learn',      label: 'No — willing' },
+        { id: 'No — completely new',            label: 'Completely new' },
       ],
     },
     {
@@ -89,9 +99,12 @@ function getQuestions(teamKey) {
       label: 'LOYALTY',
       text: getLoyaltyQuestion(teamKey),
       options: [
-        { id: 'Yes — SS first always',     label: 'Yes — SS first' },
-        { id: 'Yes — fully committed',     label: 'Yes — committed' },
-        { id: 'I need to think about it',  label: 'Need to think' },
+        { id: 'Yes — SS first always',          label: 'SS first always' },
+        { id: 'Yes — fully committed',          label: 'Fully committed' },
+        { id: 'Yes — but I have other crews',   label: 'Other crews too' },
+        { id: 'Depends on the situation',       label: 'Depends' },
+        { id: 'I need to think about it',       label: 'Need to think' },
+        { id: 'What does loyalty mean here?',   label: 'What does it mean?' },
       ],
     },
     {
@@ -100,9 +113,11 @@ function getQuestions(teamKey) {
       label: 'COMMUNICATION',
       text: getCommunicationQuestion(teamKey),
       options: [
-        { id: 'Yes — very active',    label: 'Yes — very active' },
-        { id: 'Sometimes',            label: 'Sometimes' },
-        { id: 'Rarely / No',          label: 'Rarely / No' },
+        { id: 'Yes — very active',              label: 'Very active' },
+        { id: 'Yes — but sometimes busy',       label: 'Sometimes busy' },
+        { id: 'Sometimes — depends on mood',    label: 'Depends on mood' },
+        { id: 'Rarely — I check when I can',    label: 'Rarely' },
+        { id: 'No — I prefer not to chat',      label: 'No chat' },
       ],
     },
     {
@@ -149,30 +164,37 @@ function getScenarioQuestion(teamKey) {
 }
 
 function getScenarioOptions(teamKey) {
-  // First option is always the correct answer
   const scenarios = {
     KSSPS: [
-      { id: 'Correct: Stay calm, call backup, escort KAMI to safety',     label: '🛡️ Stay calm + call backup', correct: true },
-      { id: 'Rush the player alone without backup',                       label: '😡 Rush them alone', correct: false },
-      { id: 'Ignore it — it\'s not my problem',                           label: '🤷 Ignore it', correct: false },
+      { id: 'Correct: Stay calm, call backup, escort KAMI to safety',     label: '🛡️ Stay calm + backup', correct: true },
+      { id: 'Stay calm but wait and see what happens',                    label: '👁️ Wait and see', correct: false },
+      { id: 'Rush the player alone without backup',                       label: '😡 Rush alone', correct: false },
+      { id: 'Tell KAMI to just drive faster',                             label: '🏎️ Tell KAMI to go', correct: false },
       { id: 'Yell at the player over voice chat',                         label: '📢 Yell at them', correct: false },
+      { id: 'Ignore it — it\'s not my problem',                           label: '🤷 Ignore it', correct: false },
     ],
     KSSMS: [
       { id: 'Correct: Mediate calmly, remind both of the mission goal',   label: '🤝 Mediate + refocus', correct: true },
+      { id: 'Listen to both sides then decide',                           label: '👂 Listen then decide', correct: false },
       { id: 'Take sides with the senior member',                          label: '⚖️ Side with senior', correct: false },
       { id: 'Punish both immediately',                                    label: '🔨 Punish both', correct: false },
+      { id: 'Report it to higher-ups and wait',                           label: '📤 Report it', correct: false },
       { id: 'Do nothing — let them sort it out',                          label: '🤷 Do nothing', correct: false },
     ],
     KSSMP: [
-      { id: 'Correct: Signal them to stop, call for backup if needed',    label: '🚨 Signal + call backup', correct: true },
+      { id: 'Correct: Signal them to stop, call for backup if needed',    label: '🚨 Signal + backup', correct: true },
+      { id: 'Follow them at a safe distance',                             label: '👁️ Follow safely', correct: false },
       { id: 'Chase them at high speed',                                   label: '🏎️ Chase them', correct: false },
+      { id: 'Radio other officers to set up a roadblock',                 label: '🚧 Roadblock', correct: false },
       { id: 'Ignore it — focus on the event perimeter',                   label: '🤷 Ignore it', correct: false },
-      { id: 'Block the road with my own car',                             label: '🚗 Block the road', correct: false },
+      { id: 'Block the road with my own car',                             label: '🚗 Block road', correct: false },
     ],
   };
   return scenarios[teamKey] || [
     { id: 'Correct: Protect the VIP, call for backup, document the incident', label: '🛡️ Protect + backup', correct: true },
+    { id: 'Stay with the VIP but don\'t call backup',                        label: '👁️ Stay but no call', correct: false },
     { id: 'Chase the rammer',                                                 label: '🏎️ Chase them', correct: false },
+    { id: 'Take photos for evidence first',                                   label: '📸 Photos first', correct: false },
     { id: 'Ignore it',                                                        label: '🤷 Ignore', correct: false },
     { id: 'Blame the VIP driver',                                             label: '❌ Blame the VIP', correct: false },
   ];
@@ -202,7 +224,8 @@ async function sendCurrentQuestion(sock, session) {
 
   text += `Pick an answer below 👇`;
 
-  const buttons = q.options.map(o => ({
+  // Split options into rows of 3 (Baileys limit)
+  const buttons = q.options.slice(0, 3).map(o => ({
     id: `cwiz:a:${session.teamKey}:${session.appUid}:${q.num}:${o.id}`,
     text: o.label,
   }));
@@ -212,6 +235,28 @@ async function sendCurrentQuestion(sock, session) {
     footer: `${TEAMS[session.teamKey]?.label || session.teamKey} Application`,
     buttons,
   });
+
+  // If more than 3 options, send additional rows
+  if (q.options.length > 3) {
+    await sendButtons(sock, session.jid, {
+      text: `More options:`,
+      footer: `${TEAMS[session.teamKey]?.label || session.teamKey} Application`,
+      buttons: q.options.slice(3, 6).map(o => ({
+        id: `cwiz:a:${session.teamKey}:${session.appUid}:${q.num}:${o.id}`,
+        text: o.label,
+      })),
+    });
+  }
+  if (q.options.length > 6) {
+    await sendButtons(sock, session.jid, {
+      text: `Last option:`,
+      footer: `${TEAMS[session.teamKey]?.label || session.teamKey} Application`,
+      buttons: q.options.slice(6, 9).map(o => ({
+        id: `cwiz:a:${session.teamKey}:${session.appUid}:${q.num}:${o.id}`,
+        text: o.label,
+      })),
+    });
+  }
 }
 
 // ── Send the review screen ───────────────────────────────────

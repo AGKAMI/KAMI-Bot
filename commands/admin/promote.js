@@ -18,8 +18,7 @@ module.exports = {
   botAdminNeeded: true,
 
   async execute(sock, msg, args, extra) {
-
-  const prefix = config.prefix || '.';
+    const prefix = config.prefix || '.';
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
@@ -36,11 +35,27 @@ module.exports = {
 
       if (!target) {
         return extra.reply(
-          `❌ ERROR\n\nTag or reply to someone\n\n` +
+          `❌ ERROR\n\n` +
+          `Tag or reply to someone\n\n` +
           `Usage:\n` +
           `• ${prefix}promote @user\n` +
           `• Reply with ${prefix}promote`
         );
+      }
+
+      // ── Check if already admin ────────────────────────────
+      const meta = await sock.groupMetadata(extra.from).catch(() => null);
+      if (meta && meta.participants) {
+        const isAlreadyAdmin = meta.participants.some(
+          p => (p.id === target || p.lid === target) && (p.admin === 'admin' || p.admin === 'superadmin')
+        );
+        if (isAlreadyAdmin) {
+          return extra.reply(
+            `❌ ERROR\n\n` +
+            `${mention(target)} is already an admin\n\n` +
+            `No need to promote them again`
+          );
+        }
       }
 
       await sock.groupParticipantsUpdate(extra.from, [target], 'promote');
@@ -53,7 +68,11 @@ module.exports = {
       }
 
       await sendButtons(sock, extra.from, {
-        text: `✅ SUCCESS\n\n⬆️ PROMOTED\n\n${mention(target)} is now a group admin${protectionNote}`,
+        text:
+          `✅ SUCCESS\n\n` +
+          `⬆️ PROMOTED\n\n` +
+          `${mention(target)} is now a group admin${protectionNote}\n\n` +
+          `_${pick(SLANG.vibe)}_`,
         mentions: [target],
         footer: 'Admin Actions',
         buttons: [
@@ -73,14 +92,40 @@ module.exports = {
 onButton('admin:demote', async (sock, msg, from, sender, btnId) => {
   const target = btnId.replace('admin:demote:', '');
   if (!target) return;
+
+  // ── Check if target is actually an admin before demoting ──
   try {
+    const meta = await sock.groupMetadata(from).catch(() => null);
+    if (meta && meta.participants) {
+      const isAdmin = meta.participants.some(
+        p => (p.id === target || p.lid === target) && (p.admin === 'admin' || p.admin === 'superadmin')
+      );
+      if (!isAdmin) {
+        return await sock.sendMessage(from, {
+          text:
+            `❌ ERROR\n\n` +
+            `${mention(target)} is not an admin\n\n` +
+            `Can't demote someone who isn't an admin`,
+          mentions: [target],
+        });
+      }
+    }
+
     await sock.groupParticipantsUpdate(from, [target], 'demote');
     await sock.sendMessage(from, {
-      text: `⬇️ *DEMOTED*\n\n${mention(target)} _has been removed from admin_`,
+      text:
+        `✅ SUCCESS\n\n` +
+        `⬇️ DEMOTED\n\n` +
+        `${mention(target)} is no longer a group admin\n\n` +
+        `_${pick(SLANG.vibe)}_`,
       mentions: [target],
     });
   } catch (e) {
     console.error('[DEMOTE BTN] Error:', e.message);
-    await sock.sendMessage(from, { text: `❌ *DEMOTE FAILED*\n\n${e.message || "Couldn't demote user"}` });
+    await sock.sendMessage(from, {
+      text:
+        `❌ ERROR\n\n` +
+        `Couldn't demote — ${e.message || 'Unknown error'}`,
+    });
   }
 });

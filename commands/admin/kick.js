@@ -46,8 +46,26 @@ module.exports = {
 
       if (usersToKick.length === 0) {
         return extra.reply(
-          `❌ ERROR\n\nTag or reply to the person you wanna kick`
+          `❌ ERROR\n\n` +
+          `Tag or reply to the person you wanna kick`
         );
+      }
+
+      // ── Check if target is actually in the group ──────────
+      const meta = await sock.groupMetadata(chatId).catch(() => null);
+      if (meta && meta.participants) {
+        for (const target of usersToKick) {
+          const isInGroup = meta.participants.some(
+            p => p.id === target || p.lid === target
+          );
+          if (!isInGroup) {
+            return extra.reply(
+              `❌ ERROR\n\n` +
+              `${mention(target)} is not in this group\n\n` +
+              `Can't kick someone who's not here`
+            );
+          }
+        }
       }
 
       // ── Self-kick prevention ──────────────────────────────
@@ -178,6 +196,7 @@ module.exports = {
       const primaryTarget = usersToKick[0];
       await sendButtons(sock, chatId, {
         text:
+          `✅ SUCCESS\n\n` +
           `🔨 KICKED\n\n` +
           `${usernames.join(', ')} has been kicked\n\n` +
           `_${pick(SLANG.vibe)}_`,
@@ -200,14 +219,39 @@ module.exports = {
 onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
   const target = btnId.replace('admin:readd:', '');
   if (!target) return;
+
+  // Check if already in the group
   try {
+    const meta = await sock.groupMetadata(from).catch(() => null);
+    if (meta && meta.participants) {
+      const isInGroup = meta.participants.some(
+        p => p.id === target || p.lid === target
+      );
+      if (isInGroup) {
+        return await sock.sendMessage(from, {
+          text:
+            `❌ ERROR\n\n` +
+            `${mention(target)} is already in the group`,
+          mentions: [target],
+        });
+      }
+    }
+
     await sock.groupParticipantsUpdate(from, [target], 'add');
     await sock.sendMessage(from, {
-      text: `✅ *RE-ADDED*\n\n${mention(target)} _has been re-added to the group_`,
+      text:
+        `✅ SUCCESS\n\n` +
+        `🔄 RE-ADDED\n\n` +
+        `${mention(target)} has been re-added to the group\n\n` +
+        `_${pick(SLANG.vibe)}_`,
       mentions: [target],
     });
   } catch (e) {
     console.error('[READD BTN] Error:', e.message);
-    await sock.sendMessage(from, { text: `❌ *RE-ADD FAILED*\n\n${e.message || "Couldn't add user back"}` });
+    await sock.sendMessage(from, {
+      text:
+        `❌ ERROR\n\n` +
+        `Couldn't re-add — ${e.message || 'Unknown error'}`,
+    });
   }
 });

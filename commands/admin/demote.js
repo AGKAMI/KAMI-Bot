@@ -50,7 +50,8 @@ module.exports = {
 
       if (!target) {
         return extra.reply(
-          `❌ ERROR\n\nTag or reply to someone\n\n` +
+          `❌ ERROR\n\n` +
+          `Tag or reply to someone\n\n` +
           `Usage:\n` +
           `• .demote @user\n` +
           `• Reply with .demote`
@@ -60,10 +61,24 @@ module.exports = {
       const targetNum = target.split(':')[0].split('@')[0];
       const demoterNum = extra.sender.split(':')[0].split('@')[0];
 
+      // ── Check if target is actually an admin ──────────────
+      const meta = await sock.groupMetadata(extra.from).catch(() => null);
+      if (meta && meta.participants) {
+        const isAdmin = meta.participants.some(
+          p => (p.id === target || p.lid === target) && (p.admin === 'admin' || p.admin === 'superadmin')
+        );
+        if (!isAdmin) {
+          return extra.reply(
+            `❌ ERROR\n\n` +
+            `${mention(target)} is not an admin\n\n` +
+            `Can't demote someone who isn't an admin`
+          );
+        }
+      }
+
       // ── Owner Demote Protection ────────────────────────────
       // Nobody can demote the owner — block silently
       if (!extra.isOwner && extra.isOwnerMentioned) {
-        // Target is the owner (they were mentioned)
         await sock.sendMessage(extra.from, {
           text:
             `🚫 *YOH THE AUDACITY* 💀\n\n` +
@@ -278,14 +293,39 @@ module.exports = {
 onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
   const target = btnId.replace('admin:promote:', '');
   if (!target) return;
+
+  // ── Check if target is already admin before promoting ──
   try {
+    const meta = await sock.groupMetadata(from).catch(() => null);
+    if (meta && meta.participants) {
+      const isAlreadyAdmin = meta.participants.some(
+        p => (p.id === target || p.lid === target) && (p.admin === 'admin' || p.admin === 'superadmin')
+      );
+      if (isAlreadyAdmin) {
+        return await sock.sendMessage(from, {
+          text:
+            `❌ ERROR\n\n` +
+            `${mention(target)} is already an admin`,
+          mentions: [target],
+        });
+      }
+    }
+
     await sock.groupParticipantsUpdate(from, [target], 'promote');
     await sock.sendMessage(from, {
-      text: `⬆️ *PROMOTED*\n\n${mention(target)} _is now a group admin_`,
+      text:
+        `✅ SUCCESS\n\n` +
+        `⬆️ PROMOTED\n\n` +
+        `${mention(target)} is now a group admin\n\n` +
+        `_${pick(SLANG.vibe)}_`,
       mentions: [target],
     });
   } catch (e) {
     console.error('[PROMOTE BTN] Error:', e.message);
-    await sock.sendMessage(from, { text: `❌ *PROMOTE FAILED*\n\n${e.message || "Couldn't promote user"}` });
+    await sock.sendMessage(from, {
+      text:
+        `❌ ERROR\n\n` +
+        `Couldn't promote — ${e.message || 'Unknown error'}`,
+    });
   }
 });

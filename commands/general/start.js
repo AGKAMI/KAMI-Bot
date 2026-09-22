@@ -153,15 +153,12 @@ module.exports = {
     try {
       const applicantJid = extra.sender;
 
-      // Welcome text with inline options (buttons are interactive overlay, text is fallback for iOS)
+      // Welcome text
       const summary =
         `\u{1F916} *KAMI BOT*\n` +
         `----------\n\n` +
         `Welcome to the Slammed Society, ${pick(SLANG.greeting)}\n\n` +
-        `Tap a button to get started \u2B05\uFE0F\n\n` +
-        `1. \u{1F4CB} Menu\n` +
-        `2. \u{1F4CB} Apply for Security Team\n` +
-        `3. \u{1F451} Make Order`;
+        `Tap a button to get started \u2B05\uFE0F`;
 
       await sendButtons(sock, extra.from, {
         text: summary,
