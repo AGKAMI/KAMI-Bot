@@ -95,8 +95,7 @@ async function sendTeamCards(sock, from, applicantJid) {
       await sock.sendMessage(from, { text: caption });
     }
 
-    // Send join button (2.5s delay to avoid rate limiter)
-    await new Promise(r => setTimeout(r, 2500));
+    // Send join button (rate limiter in buttonHelper handles throttling)
     await sendButtons(sock, from, {
       text: '',
       footer: config.botName || 'KAMI Bot',
