@@ -657,6 +657,54 @@ async function startBot() {
     await handler.handleGroupUpdate(sock, update);
   });
 
+  // Group settings updates (mute/unmute via WhatsApp UI)
+  sock.ev.on('group-settings-update', async (update) => {
+    try {
+      const { jid, actor, announce } = update;
+      if (!jid || !actor) return;
+
+      // announce = true means group was MUTED, false means UNMUTED
+      const wasMuted = announce === true;
+      const wasUnmuted = announce === false;
+
+      if (!wasUnmuted) return; // only care about unmutes
+
+      // Check if this group is owner-muted
+      if (!database.isOwnerMuted(jid)) return;
+
+      // Check if the person who unmuted is the owner
+      const actorNum = actor.split(':')[0].split('@')[0].replace(/\D/g, '');
+      const isActorOwner = (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === actorNum);
+
+      if (isActorOwner) {
+        // Owner unmuted — clear the owner-muted flag
+        database.clearOwnerMuted(jid);
+        return;
+      }
+
+      // Someone other than owner unmuted — warn and re-mute if bot is admin
+      const botIsAdmin = await handler.isAdmin(sock, sock.user?.id, jid, null);
+      if (botIsAdmin) {
+        try {
+          await sock.groupSettingUpdate(jid, 'announcement');
+          await sock.sendMessage(jid, {
+            text: `🚫 *NICE TRY* 💀\n\n@${actorNum} tried unmuting the group\nOwner only — re-muted`,
+            mentions: [actor],
+          });
+        } catch (e) {
+          console.error('[GROUP SETTINGS] Failed to re-mute:', e.message);
+        }
+      } else {
+        await sock.sendMessage(jid, {
+          text: `⚠️ *GROUP UNMUTED*\n\n@${actorNum} unmuted the group outside the bot\n_Owner muted protection bypassed — bot is not admin_`,
+          mentions: [actor],
+        });
+      }
+    } catch (e) {
+      console.error('[GROUP SETTINGS UPDATE] Error:', e.message);
+    }
+  });
+
   // Handle errors - suppress common stream errors
   sock.ev.on('error', (error) => {
     const statusCode = error?.output?.statusCode;
