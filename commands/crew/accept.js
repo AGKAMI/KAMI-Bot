@@ -116,43 +116,7 @@ module.exports = {
         }
       }
 
-      // Add to crew
-      if (teamGroupJid) {
-        database.addCrewMember(teamGroupJid, applicantJid, {
-          role,
-          joined: Date.now(),
-          addedBy: extra.sender,
-        });
-
-        // Track owner-added members for protection
-        if (extra.isOwner) {
-          database.addOwnerAddedMember(teamGroupJid, applicantJid, extra.sender);
-        }
-      }
-
-      // Track as processed before removing
-      database.trackProcessedApp(teamGroupJid, app.appUid, {
-        action: 'accepted',
-        admin: extra.sender,
-        role,
-        applicantJid,
-        team: teamKey,
-      });
-
-      // Log admin action for audit trail
-      database.logAdminAction({
-        action: 'accepted',
-        appUid: app.appUid,
-        team: teamKey,
-        admin: extra.sender,
-        applicant: applicantJid,
-        role: role,
-      });
-
-      // Remove the pending application
-      database.removeApplicant(teamGroupJid, app.appUid);
-
-      // Add the applicant to the team's WhatsApp group
+      // Add the applicant to the team's WhatsApp group FIRST
       let addedToGroup = false;
       let addErrorMsg = '';
       if (teamGroupJid) {
@@ -177,6 +141,45 @@ module.exports = {
             }
           } catch (e) { /* all variants failed */ }
         }
+      }
+
+      // Only update DB if group add succeeded (or no group to add to)
+      if (addedToGroup || !teamGroupJid) {
+        // Add to crew
+        if (teamGroupJid) {
+          database.addCrewMember(teamGroupJid, applicantJid, {
+            role,
+            joined: Date.now(),
+            addedBy: extra.sender,
+          });
+
+          // Track owner-added members for protection
+          if (extra.isOwner) {
+            database.addOwnerAddedMember(teamGroupJid, applicantJid, extra.sender);
+          }
+        }
+
+        // Track as processed before removing
+        database.trackProcessedApp(teamGroupJid, app.appUid, {
+          action: 'accepted',
+          admin: extra.sender,
+          role,
+          applicantJid,
+          team: teamKey,
+        });
+
+        // Log admin action for audit trail
+        database.logAdminAction({
+          action: 'accepted',
+          appUid: app.appUid,
+          team: teamKey,
+          admin: extra.sender,
+          applicant: applicantJid,
+          role: role,
+        });
+
+        // Remove the pending application
+        database.removeApplicant(teamGroupJid, app.appUid);
       }
 
       // Build the hired message with the team's invite link
@@ -222,9 +225,9 @@ module.exports = {
           '🏷️ Role: ' + roleEmoji + ' ' + bold(role) + '\n\n' +
           (addedToGroup
             ? '✅ Added to the ' + teamKey + ' group\n'
-            : '⚠️ Couldn\'t auto-add them to the group' +
+            : '⚠️ Couldn\'t add them to the group' +
               (addErrorMsg ? ` (${addErrorMsg})` : '') +
-              '\nSend the invite manually: https://chat.whatsapp.com/' + (config.crewTeams[teamKey]?.invite || '???')) +
+              '\n Invite link sent to them in DM') +
           roleWarn + '\n' +
           (ownerVIP
             ? '_The owner himself has accepted this member. Welcome to the squad._ 👑'
