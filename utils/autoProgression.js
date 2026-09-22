@@ -13,15 +13,13 @@ const database = require('../database');
 const config = require('../config');
 
 // ── Progression Thresholds ────────────────────────────────
-// New messages: 100/300/600/800/1000
-// Days: (oldMsgs × oldDays) - newMsgs
-// Old thresholds were: 40/113/242/423/660 msgs, 5/12/19/27/35 days
+// Days = 1.5% of message count (rounded up)
 const PROMOTION_THRESHOLDS = [
-  { minMessages: 100,  minDaysActive: 100 },  // (40×5)-100 = 100 days
-  { minMessages: 300,  minDaysActive: 1056 }, // (113×12)-300 = 1056 days
-  { minMessages: 600,  minDaysActive: 3998 }, // (242×19)-600 = 3998 days
-  { minMessages: 800,  minDaysActive: 10621 },// (423×27)-800 = 10621 days
-  { minMessages: 1000, minDaysActive: 22100 },// (660×35)-1000 = 22100 days
+  { minMessages: 100,  minDaysActive: 2 },   // 100 × 1.5% = 1.5 → 2
+  { minMessages: 300,  minDaysActive: 5 },   // 300 × 1.5% = 4.5 → 5
+  { minMessages: 600,  minDaysActive: 9 },   // 600 × 1.5% = 9
+  { minMessages: 800,  minDaysActive: 12 },  // 800 × 1.5% = 12
+  { minMessages: 1000, minDaysActive: 15 },  // 1000 × 1.5% = 15
 ];
 
 const getThresholds = (index) => {
