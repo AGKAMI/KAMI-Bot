@@ -39,26 +39,81 @@ initDB(GLOBAL_DB, { selfMode: false, approvedNumbers: [] });
 initDB(OWNER_PROMOTED_DB, {});
 initDB(OWNER_ADDED_DB, {});
 
-// Read database
-const readDB = (filePath) => {
+// ── In-memory cache layer ────────────────────────────────────────
+// All reads hit memory. Writes go to memory + debounced disk flush.
+// Eliminates 9+ synchronous fs.readFileSync calls per message.
+const _cache = new Map();
+const _dirty = new Set(); // filePaths that need disk write
+const FLUSH_INTERVAL_MS = 2000; // flush dirty files every 2 seconds
+
+function _loadToCache(filePath) {
+  if (_cache.has(filePath)) return _cache.get(filePath);
+  let data;
   try {
-    const data = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error(`Error reading database: ${error.message}`);
-    return {};
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    data = JSON.parse(raw);
+  } catch (e) {
+    data = {};
   }
+  _cache.set(filePath, data);
+  return data;
+}
+
+// Load all DBs into memory at startup
+_loadToCache(GROUPS_DB);
+_loadToCache(USERS_DB);
+_loadToCache(WARNINGS_DB);
+_loadToCache(MODS_DB);
+_loadToCache(CREW_DB);
+_loadToCache(GLOBAL_DB);
+_loadToCache(OWNER_PROMOTED_DB);
+_loadToCache(OWNER_ADDED_DB);
+_loadToCache(AUDIT_DB);
+
+// Periodic disk flush — write only dirty files
+setInterval(() => {
+  if (_dirty.size === 0) return;
+  const toFlush = [..._dirty];
+  _dirty.clear();
+  for (const filePath of toFlush) {
+    const data = _cache.get(filePath);
+    if (data === undefined) continue;
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    } catch (e) {
+      console.error(`[DB-FLUSH] Error writing ${path.basename(filePath)}: ${e.message}`);
+    }
+  }
+}, FLUSH_INTERVAL_MS);
+
+// Read database — from memory cache
+const readDB = (filePath) => {
+  return _loadToCache(filePath);
 };
 
-// Write database
+// Write database — to memory + mark dirty for disk flush
 const writeDB = (filePath, data) => {
-  try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-    return true;
-  } catch (error) {
-    console.error(`Error writing database: ${error.message}`);
-    return false;
+  _cache.set(filePath, data);
+  _dirty.add(filePath);
+  return true;
+};
+
+// Flush all dirty files to disk (call on shutdown)
+const flushAll = () => {
+  for (const filePath of _dirty) {
+    const data = _cache.get(filePath);
+    if (data === undefined) continue;
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    } catch (e) {}
   }
+  _dirty.clear();
+};
+
+// Force re-read from disk (for external edits)
+const reloadDB = (filePath) => {
+  _cache.delete(filePath);
+  return _loadToCache(filePath);
 };
 
 // Group Settings
@@ -1177,4 +1232,8 @@ module.exports = {
   getMemberActivity,
   getGroupMemberActivity,
   getInactiveMembers,
+
+  // Cache management
+  flushAll,
+  reloadDB,
 };

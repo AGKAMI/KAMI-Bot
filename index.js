@@ -726,5 +726,18 @@ process.on('unhandledRejection', (err) => {
   }
   console.error('Unhandled Rejection:', err);
 });
+
+// Flush DB cache on shutdown
+const _flushAndExit = () => {
+  try {
+    const db = require('./database');
+    db.flushAll();
+    console.log('💾 Database cache flushed to disk');
+  } catch (e) {}
+  process.exit(0);
+};
+process.on('SIGINT', _flushAndExit);
+process.on('SIGTERM', _flushAndExit);
+
 // Export store for use in commands
 module.exports = { store };
