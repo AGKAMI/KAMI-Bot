@@ -70,53 +70,44 @@ async function sendTeamCards(sock, from, applicantJid) {
     return;
   }
 
-  // Send all images in parallel (no waiting between them)
-  const sendPromises = available.map(async (teamKey) => {
-    const imgPath = getTeamImage(teamKey);
+  // Build one caption listing all available teams
+  let caption = `🛡️ *CHOOSE YOUR TEAM*\n----------\n\n`;
+  for (const teamKey of available) {
     const team = config.crewTeams[teamKey];
     const meta = TEAMS[teamKey];
     const emoji = TEAM_EMOJI[teamKey];
+    caption += `${emoji} *${team.name}*\n`;
+    caption += `${meta.role}\n`;
+    if (team.description) caption += `${team.description}\n`;
+    if (team.cars) caption += `🚗 ${team.cars}\n`;
+    caption += `\n`;
+  }
 
-    const caption =
-      `${emoji} *${team.name}*\n` +
-      `${meta.role}\n` +
-      (team.description ? `${team.description}\n` : '') +
-      (team.cars ? `🚗 ${team.cars}` : '');
+  // Send one image (first team's) with the full caption
+  const firstImg = getTeamImage(available[0]);
+  if (fs.existsSync(firstImg)) {
+    const imageBuffer = fs.readFileSync(firstImg);
+    await sock.sendMessage(from, {
+      image: imageBuffer,
+      caption,
+      mentions: applicantJid ? [applicantJid] : [],
+    });
+  } else {
+    await sock.sendMessage(from, { text: caption });
+  }
 
-    if (fs.existsSync(imgPath)) {
-      const imageBuffer = fs.readFileSync(imgPath);
-      await sock.sendMessage(from, {
-        image: imageBuffer,
-        caption,
-        mentions: applicantJid ? [applicantJid] : [],
-      });
-    } else {
-      await sock.sendMessage(from, { text: caption });
-    }
-  });
-
-  await Promise.all(sendPromises);
-
-  // Short delay then send all buttons (rate limiter needs ~2s between interactive msgs)
-  await new Promise(r => setTimeout(r, 1500));
-
-  for (const teamKey of available) {
+  // Send ONE button message with all 4 join buttons
+  const buttons = available.map(teamKey => {
     const team = config.crewTeams[teamKey];
     const emoji = TEAM_EMOJI[teamKey];
+    return { id: `start:join:${teamKey}`, text: `${emoji} Join ${teamKey}` };
+  });
 
-    await sendButtons(sock, from, {
-      text: '',
-      footer: config.botName || 'KAMI Bot',
-      buttons: [
-        { id: `start:join:${teamKey}`, text: `${emoji} Join ${teamKey} — ${team.name}` },
-      ],
-    });
-
-    // Small delay between buttons to avoid rate limiter
-    if (available.indexOf(teamKey) < available.length - 1) {
-      await new Promise(r => setTimeout(r, 2200));
-    }
-  }
+  await sendButtons(sock, from, {
+    text: 'Tap a team to apply 👇',
+    footer: config.botName || 'KAMI Bot',
+    buttons,
+  });
 }
 
 // ── Send confirmation message ──
