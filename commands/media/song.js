@@ -83,7 +83,8 @@ module.exports = {
           maxContentLength: 50 * 1024 * 1024,
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': '*/*'
+            'Accept': '*/*',
+            'Referer': 'https://loader.to/',
           }
         });
         audioBuffer = Buffer.from(audioResponse.data);

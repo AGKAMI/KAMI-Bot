@@ -86,6 +86,11 @@ module.exports = {
             responseType: 'arraybuffer',
             timeout: 180000,
             maxContentLength: 20 * 1024 * 1024,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Accept': '*/*',
+              'Referer': 'https://loader.to/',
+            }
           });
           videoBuffer = Buffer.from(res.data);
           if (!videoBuffer || videoBuffer.length === 0) throw new Error('Empty buffer');
