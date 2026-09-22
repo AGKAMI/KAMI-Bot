@@ -213,6 +213,17 @@ const isMod = (sender) => {
 // LID mapping cache
 const lidMappingCache = new Map();
 
+// Per-message admin cache — cleared at start of each message to avoid 8x network calls
+let _adminCacheKey = null;
+const _adminCache = new Map(); // `${participant}:${groupId}` → boolean
+const _botAdminCache = new Map(); // `${groupId}` → boolean
+
+function clearAdminCache() {
+  _adminCache.clear();
+  _botAdminCache.clear();
+  _adminCacheKey = null;
+}
+
 // Track bot-initiated demotes to skip protection handler
 const _botDemoted = new Set();
 
@@ -371,6 +382,10 @@ const isAdmin = async (sock, participant, groupId, groupMetadata = null) => {
     return false;
   }
   
+  // Check per-message cache
+  const cacheKey = `${participant}:${groupId}`;
+  if (_adminCache.has(cacheKey)) return _adminCache.get(cacheKey);
+  
   // Always fetch live metadata for admin checks
   let liveMetadata = groupMetadata;
   if (!liveMetadata || !liveMetadata.participants) {
@@ -381,13 +396,21 @@ const isAdmin = async (sock, participant, groupId, groupMetadata = null) => {
     }
   }
   
-  if (!liveMetadata || !liveMetadata.participants) return false;
+  if (!liveMetadata || !liveMetadata.participants) {
+    _adminCache.set(cacheKey, false);
+    return false;
+  }
   
   // Use findParticipant to handle LID matching
   const foundParticipant = findParticipant(liveMetadata.participants, participant);
-  if (!foundParticipant) return false;
+  if (!foundParticipant) {
+    _adminCache.set(cacheKey, false);
+    return false;
+  }
   
-  return foundParticipant.admin === 'admin' || foundParticipant.admin === 'superadmin';
+  const result = foundParticipant.admin === 'admin' || foundParticipant.admin === 'superadmin';
+  _adminCache.set(cacheKey, result);
+  return result;
 };
 
 const isBotAdmin = async (sock, groupId, groupMetadata = null) => {
@@ -398,12 +421,15 @@ const isBotAdmin = async (sock, groupId, groupMetadata = null) => {
     return false;
   }
   
+  // Check per-message cache
+  if (_botAdminCache.has(groupId)) return _botAdminCache.get(groupId);
+  
   try {
     // Get bot's JID - Baileys stores it in sock.user.id
     const botId = sock.user.id;
     const botLid = sock.user.lid;
     
-    if (!botId) return false;
+    if (!botId) { _botAdminCache.set(groupId, false); return false; }
     
     // Prepare bot JIDs to check - findParticipant will normalize them via buildComparableIds
     const botJids = [botId];
@@ -414,13 +440,16 @@ const isBotAdmin = async (sock, groupId, groupMetadata = null) => {
     // ALWAYS fetch live metadata for bot admin checks (never use cached)
     const liveMetadata = await getLiveGroupMetadata(sock, groupId);
     
-    if (!liveMetadata || !liveMetadata.participants) return false;
+    if (!liveMetadata || !liveMetadata.participants) { _botAdminCache.set(groupId, false); return false; }
     
     const participant = findParticipant(liveMetadata.participants, botJids);
-    if (!participant) return false;
+    if (!participant) { _botAdminCache.set(groupId, false); return false; }
     
-    return participant.admin === 'admin' || participant.admin === 'superadmin';
+    const result = participant.admin === 'admin' || participant.admin === 'superadmin';
+    _botAdminCache.set(groupId, result);
+    return result;
   } catch (error) {
+    _botAdminCache.set(groupId, false);
     return false;
   }
 };
@@ -454,6 +483,21 @@ const normalizeBadword = (text) => {
   t = t.replace(/(.)\1+/g, '$1');
   return t;
 };
+
+// Pre-normalized badword cache: word → normalized form (computed once, not per message)
+const _normBadwordCache = new Map();
+function getNormalizedBadword(word) {
+  const wl = word.toLowerCase().trim();
+  if (!wl) return null;
+  if (_normBadwordCache.has(wl)) return _normBadwordCache.get(wl);
+  const norm = normalizeBadword(wl).replace(/\*/g, '');
+  _normBadwordCache.set(wl, norm);
+  return norm;
+}
+// Pre-normalize config defaultBadwords at load time
+if (config.defaultBadwords) {
+  for (const w of config.defaultBadwords) getNormalizedBadword(w);
+}
 
 const formatPhone = (raw) => {
   if (!raw) return '';
@@ -517,6 +561,9 @@ const isSystemJid = (jid) => {
 const handleMessage = async (sock, msg) => {
   try {
     const from = msg.key.remoteJid;
+
+    // Clear per-message admin cache (avoids 8x redundant network calls)
+    clearAdminCache();
 
     if (!msg.message) {
       // Button taps might not have msg.message — check anyway
@@ -636,17 +683,17 @@ const handleMessage = async (sock, msg) => {
         if (mode === 'bot') {
           const prefixList = ['.', '/', '#'];
           if (prefixList.includes(text?.trim()[0])) {
-            await sock.sendMessage(jid, {
+            sock.sendMessage(jid, {
               react: { text: '⏳', key: msg.key }
-            });
+            }).catch(() => {});
           }
         }
 
         if (mode === 'all') {
           const rand = emojis[Math.floor(Math.random() * emojis.length)];
-          await sock.sendMessage(jid, {
+          sock.sendMessage(jid, {
             react: { text: rand, key: msg.key }
-          });
+          }).catch(() => {});
         }
       }
     } catch (e) {
@@ -926,10 +973,10 @@ const handleMessage = async (sock, msg) => {
       }
     }
 
-     // Check for active bomb games (before prefix check)
+     // Check for active bomb games (before prefix check) — skip if no active games
     try {
       const bombModule = require('./commands/fun/bomb');
-      if (bombModule.gameState && bombModule.gameState.has(sender)) {
+      if (bombModule.gameState && bombModule.gameState.size > 0 && bombModule.gameState.has(sender)) {
         const bombCommand = commands.get('bomb');
         if (bombCommand && bombCommand.execute) {
           // User has active game, process input
@@ -954,10 +1001,10 @@ const handleMessage = async (sock, msg) => {
       // Silently ignore if bomb command doesn't exist or has errors
     }
     
-    // Check for active tictactoe games (before prefix check)
+    // Check for active tictactoe games (before prefix check) — skip if no active games
     try {
       const tictactoeModule = require('./commands/fun/tictactoe');
-      if (tictactoeModule.handleTicTacToeMove) {
+      if (tictactoeModule.handleTicTacToeMove && Object.keys(tictactoeModule.games || {}).length > 0) {
         // Check if user is in an active game
         const isInGame = Object.values(tictactoeModule.games || {}).some(room => 
           room.id.startsWith('tictactoe') && 
@@ -1027,10 +1074,9 @@ const handleMessage = async (sock, msg) => {
               // Normalize once: lowercase, leetspeak, collapse repeats, strip separators.
               const normBody = normalizeBadword(body);
               for (const word of badwords) {
-                const wl = word.toLowerCase().trim();
-                if (!wl) continue;
-                const normWord = normalizeBadword(wl).replace(/\*/g, '');
+                const normWord = getNormalizedBadword(word);
                 if (!normWord) continue;
+                const wl = word.toLowerCase().trim();
                 const isWildcard = wl.includes('*');
                 const hit = isWildcard
                   ? normBody.includes(normWord)
@@ -1261,9 +1307,9 @@ const handleMessage = async (sock, msg) => {
       }
     }
     
-    // Auto-typing
+    // Auto-typing (fire-and-forget — don't block command execution)
     if (config.autoTyping) {
-      await sock.sendPresenceUpdate('composing', from);
+      sock.sendPresenceUpdate('composing', from).catch(() => {});
     }
     
     // Detect owner mentions in the message
@@ -1671,20 +1717,24 @@ const handleGroupUpdate = async (sock, update) => {
                     if (!allTeams[key]) allTeams[key] = info;
                   }
                   
-                  for (const teamInfo of Object.values(allTeams)) {
-                    try {
-                      const teamMeta = await sock.groupMetadata(teamInfo.jid).catch(() => null);
-                      if (teamMeta && teamMeta.participants) {
-                        const found = teamMeta.participants.find(p => {
-                          const pJid = p.id || p.jid;
-                          return pJid === jid && (p.admin === 'admin' || p.admin === 'superadmin');
-                        });
-                        if (found) {
-                          stillAdminAnywhere = true;
-                          break;
-                        }
+                  // Parallelize metadata fetches for all teams
+                  const teamMetas = await Promise.all(
+                    Object.values(allTeams).map(teamInfo =>
+                      sock.groupMetadata(teamInfo.jid).catch(() => null)
+                    )
+                  );
+                  
+                  for (const teamMeta of teamMetas) {
+                    if (teamMeta && teamMeta.participants) {
+                      const found = teamMeta.participants.find(p => {
+                        const pJid = p.id || p.jid;
+                        return pJid === jid && (p.admin === 'admin' || p.admin === 'superadmin');
+                      });
+                      if (found) {
+                        stillAdminAnywhere = true;
+                        break;
                       }
-                    } catch (e) {}
+                    }
                   }
                   
                   if (!stillAdminAnywhere) {
@@ -2201,8 +2251,6 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
 const initializeAntiCall = (sock, isOwner) => {
   sock.ev.on('call', async (calls) => {
     try {
-      delete require.cache[require.resolve('./config')];
-      const config = require('./config');
       if (!config.defaultGroupSettings.anticall) return;
 
       for (const call of calls) {
