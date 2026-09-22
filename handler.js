@@ -1188,7 +1188,7 @@ const handleMessage = async (sock, msg) => {
                 `✅ Accept: \`${prefix}crew accept <App ID>\`\n` +
                 `❌ Deny: \`${prefix}crew deny <App ID> <reason>\`\n` +
                 `📋 View pending: \`${prefix}crew applicants <team>\`\n\n` +
-                `_To get full DM access, ask the owner to run:_\n\`${prefix}approve ${sender.split('@')[0]}\``,
+                `_You need to be approved by KAMI to use other commands_`,
         }, { quoted: msg });
       }
     }
