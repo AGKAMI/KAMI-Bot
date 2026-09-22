@@ -8,8 +8,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { TEAMS, buildAdminNotice, formatAnswers } = require('./crewForms');
-const { buildComparableIds } = require('../../utils/jidHelper');
+const { TEAMS, buildAdminNotice } = require('./crewForms');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { pick, SLANG, mention } = require('../../utils/format');
 const { SSRS, KSSPS, KSSMP, KSSMS, shuffle } = require('./questionPools');
@@ -23,6 +22,27 @@ function getSession(jid) {
   if (!s) return null;
   if (Date.now() - s.startedAt > SESSION_TTL) {
     sessions.delete(jid);
+    return null;
+  }
+  return s;
+}
+
+//getSession with expiry feedback
+async function getSessionOrExpired(sock, jid) {
+  const s = sessions.get(jid);
+  if (!s) return null;
+  if (Date.now() - s.startedAt > SESSION_TTL) {
+    sessions.delete(jid);
+    try {
+      await sock.sendMessage(jid, {
+        text:
+          `━━━━━━━━━━━━━━━━\n` +
+          `⏰ *SESSION EXPIRED*\n` +
+          `━━━━━━━━━━━━━━━━\n\n` +
+          `Your application session has expired (30 min limit)\n\n` +
+          `_Start a new application with ${config.prefix || '.'}crew apply_`,
+      });
+    } catch (e) {}
     return null;
   }
   return s;
@@ -318,7 +338,7 @@ onButton('cwiz:a:', async (sock, msg, from, sender, btnId) => {
   const qNum = parseInt(parts[2]);
   const answer = parts.slice(3).join(':');
 
-  const session = getSession(from);
+  const session = await getSessionOrExpired(sock, from);
   if (!session || session.stage !== 'question') return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
   if (qNum !== session.currentQ) return;
@@ -342,7 +362,7 @@ onButton('cwiz:pick:', async (sock, msg, from, sender, btnId) => {
   const teamKey = parts[0];
   const appUid = parts[1];
 
-  const session = getSession(from);
+  const session = await getSessionOrExpired(sock, from);
   if (!session || session.stage !== 'review') return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
 
@@ -354,7 +374,7 @@ onButton('cwiz:submit:', async (sock, msg, from, sender, btnId) => {
   const teamKey = parts[0];
   const appUid = parts[1];
 
-  const session = getSession(from);
+  const session = await getSessionOrExpired(sock, from);
   if (!session || session.stage !== 'review') return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
 
@@ -382,6 +402,7 @@ onButton('cwiz:adminreview:', async (sock, msg, from, sender, btnId) => {
   const session = getSession(from);
   if (!session) return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
+  if (session.stage !== 'review') return;
 
   session.stage = 'done';
   await submitApplication(sock, session);
@@ -396,6 +417,7 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
   const session = getSession(from);
   if (!session) return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
+  if (session.stage !== 'review') return;
 
   const questions = session.questions;
   const team = TEAMS[teamKey];
@@ -414,7 +436,10 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
     // Find the selected option's score
     const selectedOption = q.options.find(o => o.id === answer);
     const score = selectedOption ? (selectedOption.score || 0) : 0;
-    const maxPossible = isScenario ? 14 : 7; // scenario = 2x weight
+
+    // Dynamic maxPossible: scenario correct = 14, else highest option score
+    const highestScore = Math.max(...q.options.map(o => o.score || 0));
+    const maxPossible = isScenario ? 14 : highestScore;
 
     maxScore += maxPossible;
 
@@ -569,11 +594,14 @@ onButton('cwiz:redo:', async (sock, msg, from, sender, btnId) => {
   if (!session) return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
 
-  // Reset
+  // Reset with fresh questions
+  const { questions, indices } = getRandomQuestions(teamKey);
   session.answers = {};
   session.currentQ = 1;
   session.stage = 'question';
   session.startedAt = Date.now();
+  session.questions = questions;
+  session.questionIndices = indices;
 
   await sock.sendMessage(from, {
     text: `🔄 *Answers cleared!*\n\nStarting over from Q1...`,
