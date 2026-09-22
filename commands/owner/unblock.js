@@ -50,27 +50,7 @@ module.exports = {
         }
       }
 
-      // Check actual blocklist first
-      let blocklist = [];
-      try {
-        blocklist = await sock.fetchBlocklist();
-      } catch (e) {
-        console.error('[UNBLOCK] Failed to fetch blocklist:', e.message);
-      }
-
-      const isBlocked = blocklist.some(b => {
-        const blockNum = b.split(':')[0].split('@')[0].replace(/\D/g, '');
-        const targetNum = target.split(':')[0].split('@')[0].replace(/\D/g, '');
-        return blockNum === targetNum;
-      });
-
-      if (!isBlocked) {
-        return sock.sendMessage(extra.from, {
-          text: `*⚠️ NOT BLOCKED*\n\n@${target.split('@')[0]} _is not currently blocked._`,
-          mentions: [target]
-        }, { quoted: msg });
-      }
-      
+      // Unblock directly — fetchBlocklist is unreliable
       await sock.updateBlockStatus(target, 'unblock');
       
       await sock.sendMessage(extra.from, {

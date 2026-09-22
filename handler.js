@@ -13,6 +13,7 @@ const axios = require('axios');
 const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG } = require('./utils/format');
 const { buildImage } = require('./utils/imageText');
 const { handleButtonResponse, requireAdmin } = require('./utils/buttonHelper');
+const { hasActiveSession } = require('./commands/crew/applyInteractive');
 
 // All admin command buttons are admin-only
 requireAdmin('admin');
@@ -641,6 +642,10 @@ const handleMessage = async (sock, msg) => {
               // Applicant check — allowed if they have a pending application
               else if (database.hasPendingApplication(dmSender) || isApplyCmd) {
                 // Applicant with pending app or starting application — let through
+              }
+              // Active crew wizard session — allow through (user typing answers)
+              else if (hasActiveSession(dmSender)) {
+                // User is in the middle of the crew application wizard
               }
               // Regular user — block
               else {

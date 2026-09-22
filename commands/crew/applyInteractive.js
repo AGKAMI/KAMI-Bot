@@ -27,6 +27,11 @@ function getSession(jid) {
   return s;
 }
 
+// Check if user has an active crew wizard session (used by DM blocker)
+function hasActiveSession(jid) {
+  return getSession(jid) !== null;
+}
+
 //getSession with expiry feedback
 async function getSessionOrExpired(sock, jid) {
   const s = sessions.get(jid);
@@ -639,4 +644,4 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
-module.exports = { startWizard, getQuestions };
+module.exports = { startWizard, getQuestions, hasActiveSession };
