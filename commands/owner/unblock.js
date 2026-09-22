@@ -53,10 +53,25 @@ module.exports = {
       // Unblock directly — fetchBlocklist is unreliable
       await sock.updateBlockStatus(target, 'unblock');
       
+      // Confirmation to owner
       await sock.sendMessage(extra.from, {
         text: `*✅ UNBLOCKED*\n\n@${target.split('@')[0]} _has been unblocked, ${pick(SLANG.good)}!_`,
         mentions: [target]
       }, { quoted: msg });
+
+      // DM the unblocked user
+      try {
+        await sock.sendMessage(target, {
+          text:
+            `━━━━━━━━━━━━━━━━\n` +
+            `*KAMI UNLOCKED YOU* 🔓\n` +
+            `━━━━━━━━━━━━━━━━\n\n` +
+            `${pick(SLANG.greeting)} ${pick(SLANG.friend)}\n\n` +
+            `_You were blocked but you're free now.${pick(SLANG.closer)}_`
+        });
+      } catch (dmErr) {
+        console.error('[UNBLOCK] DM to unblocked user failed:', dmErr.message);
+      }
       
     } catch (error) {
       await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
