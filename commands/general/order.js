@@ -105,7 +105,7 @@ async function sendCategoryMenu(sock, chatId, catId, quoted) {
   const items = Object.entries(catalog[catId === 'flag' ? 'flags' : catId] || {});
   if (items.length === 0) {
     return sendButtons(sock, chatId, {
-      text: `${cat.emoji} *${cat.label.toUpperCase()}*\n\n_Coming soon — no items yet_`,
+      text: `${cat.emoji} *${cat.label.toUpperCase()}*\n\n\u23F3 _Coming soon — no items yet_`,
       buttons: [{ id: 'order:main', text: '\u2B05\u{FE0F} Back' }],
     }, quoted);
   }
@@ -115,7 +115,7 @@ async function sendCategoryMenu(sock, chatId, catId, quoted) {
     const batch = items.slice(i, i + 3);
     const buttons = batch.map(([key, item]) => ({
       id: `order:item:${key}`,
-      text: `${item.name} — ${item.price}`,
+      text: `\u{1F697} ${item.name} \u2014 ${item.price}`,
     }));
 
     const text = i === 0
@@ -208,7 +208,7 @@ async function sendPremiumMenu(sock, chatId, page, quoted) {
     const item = catalog.premium[key];
     return {
       id: `order:item:${key}`,
-      text: `${item.name} — ${item.price}`,
+      text: `\u{1F3CE}\u{FE0F} ${item.name} \u2014 ${item.price}`,
     };
   });
 
@@ -232,7 +232,7 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
   const item = getItem(itemId);
   if (!item) {
     return sendButtons(sock, chatId, {
-      text: '❌ Item not found',
+      text: '\u274C *ITEM NOT FOUND*\n\n_This item doesn\'t exist in the catalog_',
       buttons: [{ id: 'order:main', text: '\u2B05\u{FE0F} Back' }],
     }, quoted);
   }
@@ -265,9 +265,12 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
     backId = 'order:cat:premium:0';
   }
 
-  const text = `*${item.name}*\n\n💰 Price: *${item.price}*` +
-    (item.desc ? `\n📝 ${item.desc}` : '') +
-    `\n\n🛒 Tap to order:`;
+  const text =
+    `\u{1F6D2} *ORDER*\n\n` +
+    `\u{1F195} *${item.name}*\n\n` +
+    `\u{1F4B0} *Price:* ${item.price}\n` +
+    (item.desc ? `\u{1F4DD} *Details:* ${item.desc}\n` : '') +
+    `\n\u{1F6CD}\u{FE0F} _Tap below to order from the catalog_`;
 
   // Try to send image if available
   const imgPath = item.image ? path.join(__dirname, '../../', item.image) : null;
