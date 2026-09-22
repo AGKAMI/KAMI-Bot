@@ -95,7 +95,8 @@ async function sendTeamCards(sock, from, applicantJid) {
       await sock.sendMessage(from, { text: caption });
     }
 
-    // Send join button (rate limiter in buttonHelper handles throttling)
+    // Send join button (5s delay — WhatsApp throttles buttons after images)
+    await new Promise(r => setTimeout(r, 5000));
     await sendButtons(sock, from, {
       text: '',
       footer: config.botName || 'KAMI Bot',
