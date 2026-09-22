@@ -95,6 +95,9 @@ module.exports = {
           videoBuffer = Buffer.from(res.data);
           if (!videoBuffer || videoBuffer.length === 0) throw new Error('Empty buffer');
         } catch (dlErr) {
+          if (dlErr.message?.includes('maxContentLength') || dlErr.message?.includes('exceeded')) {
+            return await extra.edit(sent.key, `❌ _this video is too large — try a shorter video or one under 20MB_`);
+          }
           return await extra.edit(sent.key, `❌ _download failed hey — ${dlErr.message}_`);
         }
 
