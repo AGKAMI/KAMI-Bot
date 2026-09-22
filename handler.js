@@ -1175,8 +1175,8 @@ const handleMessage = async (sock, msg) => {
     }
     
     // Team admin DM restriction — can ONLY accept/deny/applicants/pending from DMs.
-    // Owner keeps universal access.
-    if (!isGroup && database.isTeamAdmin(sender) && !isOwner(sender)) {
+    // Owner keeps universal access. Approved team admins also get full access.
+    if (!isGroup && database.isTeamAdmin(sender) && !isOwner(sender) && !database.isApprovedNumber(sender)) {
       const lowerBody = (body || '').trim().toLowerCase();
       const prefixEscaped = config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const isAllowedCmd = new RegExp('^\\' + prefixEscaped +
@@ -1185,9 +1185,10 @@ const handleMessage = async (sock, msg) => {
         return sock.sendMessage(from, {
           text: `❌ ERROR\n\n` +
                 `As a team admin you're only allowed to accept or deny pending applications from DMs\n\n` +
-                `✅ Accept: \`.crew accept <App ID>\`\n` +
-                `❌ Deny: \`.crew deny <App ID> <reason>\`\n` +
-                `📋 View pending: \`.crew applicants <team>\``
+                `✅ Accept: \`${prefix}crew accept <App ID>\`\n` +
+                `❌ Deny: \`${prefix}crew deny <App ID> <reason>\`\n` +
+                `📋 View pending: \`${prefix}crew applicants <team>\`\n\n` +
+                `_To get full DM access, ask the owner to run:_\n\`${prefix}approve ${sender.split('@')[0]}\``,
         }, { quoted: msg });
       }
     }
