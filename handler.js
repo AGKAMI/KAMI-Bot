@@ -12,7 +12,7 @@ const path = require('path');
 const axios = require('axios');
 const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG } = require('./utils/format');
 const { buildImage } = require('./utils/imageText');
-const { handleButtonResponse } = require('./utils/buttonHelper');
+const { handleButtonResponse, requireAdmin } = require('./utils/buttonHelper');
 
 // Slowmode enforcement (in-memory cooldown tracking)
 let slowmodeModule;
@@ -499,7 +499,7 @@ const handleMessage = async (sock, msg) => {
 
     if (!msg.message) {
       // Button taps might not have msg.message — check anyway
-      if (handleButtonResponse(sock, msg)) return;
+      if (await handleButtonResponse(sock, msg, (sender, from) => isAdmin(sock, sender, from))) return;
       return;
     }
     
@@ -511,7 +511,7 @@ const handleMessage = async (sock, msg) => {
         // Interactive button responses — route to registered button handlers
         // BEFORE the DM blocker / prefix gate so button presses always work.
         try {
-          if (handleButtonResponse(sock, msg)) return;
+          if (await handleButtonResponse(sock, msg, (sender, from) => isAdmin(sock, sender, from))) return;
         } catch (btnErr) {
           if (!btnErr.message?.includes('Cannot find module')) {
             console.error('[BUTTON] route error:', btnErr.message);

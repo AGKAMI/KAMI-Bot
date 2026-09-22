@@ -11,7 +11,7 @@ const path = require('path');
 const fs = require('fs');
 const config = require('../../config');
 const { pick, SLANG, mention } = require('../../utils/format');
-const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { sendButtons, onButton, requireAdmin } = require('../../utils/buttonHelper');
 const { TEAMS } = require('../crew/crewForms');
 const { createApplication, getUserTeam, getUserPendingTeam } = require('../crew/applyHelper');
 
@@ -183,6 +183,10 @@ module.exports = {
 // BUTTON HANDLERS
 // ============================================================
 
+// Register admin-only buttons
+requireAdmin('start:order');
+requireAdmin('menu:admin');
+
 // Menu -> show the menu
 onButton('start:menu', async (sock, msg, from) => {
   const prefix = config.prefix || '.';
@@ -205,12 +209,24 @@ onButton('start:menu', async (sock, msg, from) => {
   });
 });
 
-// Apply -> show team cards
+// Apply -> send team cards via DM (not in group)
 onButton('start:apply', async (sock, msg, from, sender) => {
-  await sendTeamCards(sock, from, sender);
+  const isGroup = from.endsWith('@g.us');
+  
+  if (isGroup) {
+    // In group: send confirmation that DM was sent
+    await sock.sendMessage(from, {
+      text: `\u{1F4AC} _check your DMs for the application form, ${mention(sender)}_`,
+      mentions: [sender],
+    });
+  }
+  
+  // Send team cards to user's DM
+  const dmJid = sender.split('@')[0] + '@s.whatsapp.net';
+  await sendTeamCards(sock, dmJid, sender);
 });
 
-// Make Order -> placeholder
+// Make Order -> placeholder (admin only)
 onButton('start:order', async (sock, msg, from) => {
   await sock.sendMessage(from, {
     text: `\u{1F451} *MAKE ORDER*\n\n_Coming soon \u2014 business catalog will be available here._`,
@@ -221,7 +237,19 @@ onButton('start:order', async (sock, msg, from) => {
 onButton('start:join:', async (sock, msg, from, sender, btnId) => {
   const teamKey = btnId.replace('start:join:', '');
   if (!config.crewTeams[teamKey]) return;
-  await sendConfirmation(sock, from, teamKey);
+  const isGroup = from.endsWith('@g.us');
+  
+  if (isGroup) {
+    // In group: send confirmation that DM was sent
+    await sock.sendMessage(from, {
+      text: `\u{1F4AC} _check your DMs for the confirmation, ${mention(sender)}_`,
+      mentions: [sender],
+    });
+  }
+  
+  // Send confirmation to DM
+  const dmJid = sender.split('@')[0] + '@s.whatsapp.net';
+  await sendConfirmation(sock, dmJid, teamKey);
 });
 
 // Confirm -> create application + DM wizard
@@ -248,7 +276,8 @@ onButton('start:confirm:', async (sock, msg, from, sender, btnId) => {
   }
 });
 
-// Back -> re-show team cards
+// Back -> re-show team cards (via DM)
 onButton('start:back', async (sock, msg, from, sender) => {
-  await sendTeamCards(sock, from, sender);
+  const dmJid = sender.split('@')[0] + '@s.whatsapp.net';
+  await sendTeamCards(sock, dmJid, sender);
 });

@@ -23,6 +23,7 @@ const config = require('../config');
 const { generateWAMessageFromContent } = require('@whiskeysockets/baileys');
 
 const buttonHandlers = new Map();
+const adminOnlyButtons = new Set(); // button ID prefixes that require admin
 
 // ── Rate limiter: WhatsApp throttles interactive messages ──────────
 // Only allow 1 interactive message per JID every COOLDOWN_MS.
@@ -39,6 +40,27 @@ function canSendInteractive(jid) {
   if (Date.now() - last < COOLDOWN_MS) return false;
   lastInteractive.set(jid, Date.now());
   return true;
+}
+
+/**
+ * Register a button ID prefix as admin-only.
+ * When a user presses this button, they must be an admin.
+ * @param {string} prefix - button ID prefix (e.g. 'admin:kick')
+ */
+function requireAdmin(prefix) {
+  adminOnlyButtons.add(prefix);
+}
+
+/**
+ * Check if a button ID requires admin privileges.
+ */
+function isAdminOnly(btnId) {
+  for (const prefix of adminOnlyButtons) {
+    if (btnId === prefix || btnId.startsWith(prefix + ':')) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -177,9 +199,12 @@ function onButton(id, handler) {
 /**
  * Handle incoming button press. Call this in the message handler.
  * Checks all known Baileys response formats.
+ * @param {object} sock
+ * @param {object} msg
+ * @param {function} isAdmin - async (jid) => boolean, checks if sender is group admin
  * @returns {boolean} true if a registered button was handled
  */
-function handleButtonResponse(sock, msg) {
+async function handleButtonResponse(sock, msg, isAdmin) {
   try {
     const m = msg.message;
     if (!m) return false;
@@ -211,6 +236,18 @@ function handleButtonResponse(sock, msg) {
 
     if (!btnId) return false;
 
+    // Admin-only check
+    if (isAdminOnly(btnId)) {
+      const isSenderAdmin = typeof isAdmin === 'function' ? await isAdmin(sender, from) : false;
+      if (!isSenderAdmin) {
+        await sock.sendMessage(from, {
+          text: '\u274C *ADMIN ONLY*\n\u{1F6E1}\uFE0F This button is restricted to group admins.',
+          mentions: [sender],
+        });
+        return true; // consumed the event, just rejected it
+      }
+    }
+
     // Exact match first
     let handler = buttonHandlers.get(btnId);
     if (!handler) {
@@ -233,4 +270,4 @@ function handleButtonResponse(sock, msg) {
   }
 }
 
-module.exports = { sendButtons, onButton, handleButtonResponse, isButtonModeOn };
+module.exports = { sendButtons, onButton, handleButtonResponse, isButtonModeOn, requireAdmin, isAdminOnly };
