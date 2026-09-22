@@ -65,9 +65,24 @@ module.exports = {
         );
       }
 
-      const teamKey = app.team;
-      const teamGroupJid = app.groupJid || config.crewTeams[teamKey]?.jid;
       const applicantJid = app.jid;
+
+      // Resolve teamKey — verify app.team matches the stored groupJid
+      let teamKey = app.team;
+      const appGroupJid = app.groupJid;
+      const configTeam = config.crewTeams[teamKey];
+
+      // If app.team's config JID doesn't match the stored groupJid, find the correct team
+      if (appGroupJid && configTeam && configTeam.jid !== appGroupJid) {
+        for (const [key, team] of Object.entries(config.crewTeams)) {
+          if (team.jid === appGroupJid) {
+            teamKey = key;
+            break;
+          }
+        }
+      }
+
+      const teamGroupJid = config.crewTeams[teamKey]?.jid || appGroupJid;
 
       // Permission: owner, a team admin (DM-approved), or a group admin of the team's group
       let isTeamAdmin = database.isTeamAdmin(extra.sender);

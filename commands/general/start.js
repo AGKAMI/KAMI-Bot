@@ -166,7 +166,7 @@ module.exports = {
         buttons: [
           { id: 'start:menu', text: '\u{1F4CB} Menu' },
           { id: 'start:apply', text: '\u{1F4CB} Apply for Security Team' },
-          { id: 'start:order', text: '\u{1F451} Make Order' },
+          { id: 'start:order', text: '\u{1F6D2} Make Order' },
         ],
       }, msg);
 
