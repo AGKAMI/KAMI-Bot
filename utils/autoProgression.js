@@ -13,13 +13,15 @@ const database = require('../database');
 const config = require('../config');
 
 // ── Progression Thresholds ────────────────────────────────
-// Hardcoded per rank — 8 msgs/day ratio
+// New messages: 100/300/600/800/1000
+// Days: (oldMsgs × oldDays) - newMsgs
+// Old thresholds were: 40/113/242/423/660 msgs, 5/12/19/27/35 days
 const PROMOTION_THRESHOLDS = [
-  { minMessages: 100,  minDaysActive: 13 },  // member → senior member
-  { minMessages: 300,  minDaysActive: 38 },  // senior member → moderator
-  { minMessages: 600,  minDaysActive: 75 },  // moderator → admin
-  { minMessages: 800,  minDaysActive: 100 }, // admin → co-leader
-  { minMessages: 1000, minDaysActive: 125 }, // co-leader → leader
+  { minMessages: 100,  minDaysActive: 100 },  // (40×5)-100 = 100 days
+  { minMessages: 300,  minDaysActive: 1056 }, // (113×12)-300 = 1056 days
+  { minMessages: 600,  minDaysActive: 3998 }, // (242×19)-600 = 3998 days
+  { minMessages: 800,  minDaysActive: 10621 },// (423×27)-800 = 10621 days
+  { minMessages: 1000, minDaysActive: 22100 },// (660×35)-1000 = 22100 days
 ];
 
 const getThresholds = (index) => {
