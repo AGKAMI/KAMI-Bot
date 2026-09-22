@@ -154,43 +154,17 @@ async function sendButtons(sock, jid, opts, quoted) {
 
   const rows = buttons.slice(0, 3).map(normalizeButton);
 
-  // If image provided, send as image+buttons in one message (iPhone fix)
+  // If image provided, send image first then buttons (iPhone can't do both in one)
   if (image) {
     try {
-      const { generateWAMessage } = require('@whiskeysockets/baileys');
-      const mediaMsg = await generateWAMessage(jid, {
-        image,
-        caption: text,
-        footer: footer || undefined,
-        buttons: buttons.slice(0, 3).map(b => ({
-          buttonId: b.id,
-          buttonText: { displayText: b.text || b.id },
-          type: 1,
-        })),
-        headerType: 4,
-      }, { userJid: sock.user?.id?.replace(/:\d+(?=@)/, '') });
-
-      const additionalNodes = [
-        {
-          tag: 'biz',
-          attrs: {},
-          content: [{
-            tag: 'interactive',
-            attrs: { type: 'native_flow', v: '1' },
-            content: [{ tag: 'native_flow', attrs: { name: 'mixed', v: '9' } }],
-          }],
-        },
-      ];
-
-      await sock.relayMessage(jid, mediaMsg.message, {
-        messageId: mediaMsg.key.id,
-        additionalNodes,
-      });
-      return mediaMsg;
-    } catch (err) {
-      console.error('[BUTTON] image relay failed, falling back:', err.message);
-      return sock.sendMessage(jid, { image, caption: text, mentions }, safeQuoted ? { quoted: safeQuoted } : {});
+      await sock.sendMessage(jid, { image, caption: text, mentions }, safeQuoted ? { quoted: safeQuoted } : {});
+    } catch (imgErr) {
+      console.error('[BUTTON] image send failed:', imgErr.message);
+      await sock.sendMessage(jid, { text, mentions }, safeQuoted ? { quoted: safeQuoted } : {});
     }
+    // Delay before buttons — WhatsApp throttles interactive messages after images
+    await new Promise(r => setTimeout(r, 3000));
+    // Fall through to send buttons as separate message
   }
 
   const interactiveMsg = {

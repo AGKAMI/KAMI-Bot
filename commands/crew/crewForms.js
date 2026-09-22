@@ -123,15 +123,28 @@ const REQUIREMENTS = [
 const buildAdminNotice = (app) => {
   const team = TEAMS[app.team];
   const num = app.jid ? app.jid.split(':')[0].split('@')[0] : 'unknown';
-  const teamQuestions = getQuestionsForAdmin(app.team);
   const prefix = config.prefix || '.';
+
+  // Use actual questions from session if available, otherwise fallback
+  const questions = app.questions || null;
+  const answers = app.answers || '(not provided)';
+
+  let qaSection;
+  if (questions) {
+    // Inline Q&A — already formatted by submitApplication
+    qaSection = answers;
+  } else {
+    // Fallback: hardcoded questions + numbered answers
+    const teamQuestions = getQuestionsForAdmin(app.team);
+    qaSection = teamQuestions + '\n\n💬 *ANSWERS:*\n' + answers;
+  }
+
   const text = `━━━━━━━━━━━━━━━━\n` +
     `*NEW ${app.team} APPLICATION* ${team ? team.emoji : ''}\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `🆔 *App ID:* ${app.appUid}\n` +
     `👤 *Applicant:* ${num}\n\n` +
-    `📝 *QUESTIONS + ANSWERS:*\n${teamQuestions}\n\n` +
-    `💬 *APPLICANT'S ANSWERS:*\n${app.answers || '(not provided)'}\n\n` +
+    qaSection + '\n\n' +
     `━━━━━━━━━━━━━━━━\n\n` +
     `📋 *MINIMUM REQUIREMENTS:*\n` +
     REQUIREMENTS.map(r => `• ${r}`).join('\n') + '\n\n' +

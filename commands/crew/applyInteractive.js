@@ -240,15 +240,16 @@ async function submitApplication(sock, session) {
   const questions = session.questions;
   const team = TEAMS[session.teamKey];
 
-  // Format answers as numbered list
-  const answerLines = [];
+  // Format inline Q&A — question followed by answer
+  const qaLines = [];
   for (let i = 1; i <= session.totalQ; i++) {
     const q = questions[i - 1];
-    answerLines.push(`${i}. ${session.answers[i] || '(no answer)'}`);
+    const answer = session.answers[i] || '(no answer)';
+    qaLines.push(`${q.emoji} *${q.label}*\n${q.text}\n➜ ${answer}`);
   }
-  const answers = answerLines.join('\n');
+  const qaBlock = qaLines.join('\n\n');
 
-  // Update DB — attach answers to existing app
+  // Update DB — attach answers + questions to existing app
   const crewTeam = config.crewTeams[session.teamKey];
   const resolved = database.resolveTeamWithConfig(session.teamKey);
   const teamGroupJid = (resolved && resolved.jid) || (crewTeam ? crewTeam.jid : null);
@@ -257,7 +258,10 @@ async function submitApplication(sock, session) {
   const teamData = database.getTeam(storeGroupJid);
   let app = null;
   if (teamData && teamData.applicants && teamData.applicants[session.appUid]) {
-    teamData.applicants[session.appUid].answers = answers;
+    teamData.applicants[session.appUid].answers = qaBlock;
+    teamData.applicants[session.appUid].questions = questions.map(q => ({
+      emoji: q.emoji, label: q.label, text: q.text,
+    }));
     database.updateTeam(storeGroupJid, teamData);
     app = teamData.applicants[session.appUid];
   }
@@ -269,7 +273,8 @@ async function submitApplication(sock, session) {
       const { text: noticeText, buttons: noticeButtons } = buildAdminNotice({
         ...app,
         team: session.teamKey,
-        answers,
+        answers: qaBlock,
+        questions,
         jid: session.applicantJid,
         appUid: session.appUid,
       });
