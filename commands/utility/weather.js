@@ -1,8 +1,8 @@
 /**
- * Weather Command - Get weather information using OpenWeather API
+ * Weather Command - Get weather information
  */
 
-const axios = require('axios');
+const APIs = require('../../utils/api');
 const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
@@ -21,19 +21,24 @@ module.exports = {
       }
       
       const city = args.join(' ');
-      const apiKey = '4902c0f2550f58298ad4146a92b65e10';
-      
       const sent = await extra.reply(`\u{1F324}\uFE0F _fetching weather for ${city}..._`);
       
-      const response = await axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`);
-      const weather = response.data;
+      const weather = await APIs.getWeather(city);
       
-      const weatherText = `Weather in ${weather.name}: ${weather.weather[0].description}. Temperature: ${weather.main.temp}\u00B0C.`;
+      let text;
+      if (weather.text) {
+        text = weather.text;
+      } else {
+        text = `🌤️ *Weather in ${weather.city}*\n\n` +
+               `🌡️ *Temp:* ${weather.temp}°C (feels like ${weather.feelsLike}°C)\n` +
+               `💧 *Humidity:* ${weather.humidity}%\n` +
+               `💨 *Wind:* ${weather.wind} km/h\n` +
+               `📝 *Condition:* ${weather.desc}`;
+      }
       
-      await extra.edit(sent.key, weatherText);
+      await extra.edit(sent.key, text);
       
     } catch (error) {
-      console.error('Error fetching weather:', error);
       await extra.reply(`\u274C _${pick(SLANG.error)}, couldn't get the weather right now_`);
     }
   }

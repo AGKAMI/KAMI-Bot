@@ -105,7 +105,9 @@ const flushAll = () => {
     if (data === undefined) continue;
     try {
       fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-    } catch (e) {}
+    } catch (e) {
+      console.error(`[DB] flushAll FAILED: ${filePath}: ${e.message}`);
+    }
   }
   _dirty.clear();
 };

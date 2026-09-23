@@ -7,7 +7,15 @@ const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 // Store processed message IDs to prevent duplicates
-const processedMessages = new Set();
+const processedMessages = new Map(); // id → timestamp
+
+// Periodic sweep every 5 min
+setInterval(() => {
+  const cutoff = Date.now() - 5 * 60 * 1000;
+  for (const [id, ts] of processedMessages) {
+    if (ts < cutoff) processedMessages.delete(id);
+  }
+}, 5 * 60 * 1000);
 
 module.exports = {
   name: 'pinterest',
@@ -24,12 +32,7 @@ module.exports = {
       }
       
       // Add message ID to processed set
-      processedMessages.add(msg.key.id);
-      
-      // Clean up old message IDs after 5 minutes
-      setTimeout(() => {
-        processedMessages.delete(msg.key.id);
-      }, 5 * 60 * 1000);
+      processedMessages.set(msg.key.id, Date.now());
       
       const text = msg.message?.conversation || 
                    msg.message?.extendedTextMessage?.text ||

@@ -230,15 +230,13 @@ function stopCleanup() {
   console.log('🛑 Cleanup system stopped');
 }
 
-// Handle process termination gracefully
+// Handle process termination gracefully — don't call process.exit(), let index.js handle DB flush
 process.on('SIGINT', () => {
   stopCleanup();
-  process.exit(0);
 });
 
 process.on('SIGTERM', () => {
   stopCleanup();
-  process.exit(0);
 });
 
 module.exports = {

@@ -27,7 +27,7 @@ module.exports = {
         }
         
         try {
-          const result = eval(expression);
+          const result = new Function(`return (${expression})`)();
           
           let text = `🧮 *calculator*\n\n`;
           text += `📝 Expression: ${expression}\n`;

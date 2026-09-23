@@ -439,7 +439,6 @@ async function startBot() {
       // Team admin auto-detection — scan all crew groups for WhatsApp admins
       try {
         const db = require('./database');
-        const config = require('./config');
         const currentAdminsByGroup = {};
         let detected = 0;
 
