@@ -106,13 +106,33 @@ module.exports = {
         }
       }
 
-      // Add to WhatsApp group first
+      // Add to WhatsApp group first (with device-suffix + LID fallback)
       let groupAddFailed = false;
-      try {
-        await sock.groupParticipantsUpdate(extra.from, [target], 'add');
-      } catch (e) {
-        groupAddFailed = true;
-        console.error('[CREW ADD] WhatsApp add failed:', e.message);
+      const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
+      const candidateJids = [];
+      // Strip device suffix
+      const stripped = target.replace(/:\d+@/, '@');
+      if (stripped !== target) candidateJids.push(stripped);
+      // LID → PN mapping
+      const resolved = normalizeJidWithLid(target);
+      if (resolved && resolved !== target && resolved !== stripped) candidateJids.push(resolved);
+      // buildComparableIds variants
+      for (const v of buildComparableIds(target)) {
+        if (!candidateJids.includes(v)) candidateJids.push(v);
+      }
+      candidateJids.push(target);
+
+      for (const jid of candidateJids) {
+        try {
+          await sock.groupParticipantsUpdate(extra.from, [jid], 'add');
+          groupAddFailed = false;
+          break;
+        } catch (e) {
+          groupAddFailed = true;
+        }
+      }
+      if (groupAddFailed) {
+        console.error('[CREW ADD] WhatsApp add failed — all JID variants rejected');
       }
 
       // Save to database
