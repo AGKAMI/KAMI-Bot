@@ -142,9 +142,9 @@ module.exports = {
             caption: summary,
             mentions: [extra.sender],
           }, { quoted: msg });
-          // Send buttons separately (can't attach to image)
+          // Send buttons separately — body text must be non-empty for buttons to render
           await sendButtons(sock, extra.from, {
-            text: '',
+            text: '👇 Tap a button below',
             footer: btnFooter,
             buttons,
           });
