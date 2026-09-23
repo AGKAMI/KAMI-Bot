@@ -28,8 +28,8 @@ module.exports = {
       const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
       const quotedParticipant = msg.message?.extendedTextMessage?.contextInfo?.participant;
 
-      const msgs = store.messages[jid];
-      if (!msgs) {
+      const msgs = store.messages.get(jid);
+      if (!msgs || msgs.size === 0) {
         return extra.reply(`❌ ERROR\n\nNo stored messages found ${pick(SLANG.vibe)}`);
       }
 
@@ -37,7 +37,7 @@ module.exports = {
 
       if (quotedMsg && quotedParticipant) {
         // Mode: Delete specific user's messages
-        messagesToDelete = Object.values(msgs)
+        messagesToDelete = [...msgs.values()]
           .filter(m => {
             const sender = m.key.participant || m.key.remoteJid;
             return sender === quotedParticipant;
@@ -46,7 +46,7 @@ module.exports = {
           .slice(0, count);
       } else {
         // Mode: Delete last N messages from chat
-        messagesToDelete = Object.values(msgs)
+        messagesToDelete = [...msgs.values()]
           .sort((a, b) => (b.messageTimestamp || 0) - (a.messageTimestamp || 0))
           .slice(0, count);
       }

@@ -628,7 +628,7 @@ const resolveTeamWithConfig = (abbrev) => {
 // Check if a specific team has pending applications
 const hasPendingApplicationsForTeam = (groupJid) => {
   const team = getTeam(groupJid);
-  if (!team.applicants) return false;
+  if (!team || !team.applicants) return false;
   return Object.values(team.applicants).some(a => a.status === 'pending');
 };
 

@@ -68,8 +68,12 @@ module.exports = {
             isGroupAdmin = meta.participants.some(p =>
               p.id === extra.sender && (p.admin === 'admin' || p.admin === 'superadmin')
             );
+          } else {
+            console.error(`[DENY] metadata fetch failed for ${teamGroupJid}`);
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error('[DENY] metadata error:', e.message);
+        }
       }
       if (!extra.isOwner && !isTeamAdmin && !isGroupAdmin) {
         return extra.reply(

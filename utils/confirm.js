@@ -12,21 +12,25 @@ async function confirm(sock, chatId, msg, text, onConfirm, onCancel) {
 
   // Wait for reaction
   return new Promise((resolve) => {
+    let settled = false;
+
     const handler = (update) => {
+      if (settled) return;
       const reaction = update.reactions?.[0];
       if (!reaction) return;
       
       const jid = reaction.key?.participant || reaction.key?.remoteJid;
-      const msgId = reaction.key?.id;
       
       if (jid !== (msg.key.participant || msg.key.remoteJid)) return;
       if (reaction.message?.reactionMessage?.text === '✅') {
+        settled = true;
         sock.ev.off('messages.update', handler);
         resolve(true);
         if (onConfirm) {
           try { onConfirm(); } catch (e) { console.error('[confirm] onConfirm error:', e.message); }
         }
       } else if (reaction.message?.reactionMessage?.text === '❌') {
+        settled = true;
         sock.ev.off('messages.update', handler);
         resolve(false);
         if (onCancel) {
@@ -37,6 +41,8 @@ async function confirm(sock, chatId, msg, text, onConfirm, onCancel) {
 
     // Timeout after 30 seconds
     setTimeout(() => {
+      if (settled) return;
+      settled = true;
       sock.ev.off('messages.update', handler);
       resolve(false);
     }, 30000);
