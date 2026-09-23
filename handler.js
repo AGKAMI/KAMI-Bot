@@ -1904,13 +1904,13 @@ const handleGroupUpdate = async (sock, update) => {
               { text: `Member #${groupMetadata.participants.length} | ${joinedDate}`, size: 32, color: '#cccccc' },
             ];
             try {
-              const resultBuffer = await buildImage(bgBuffer, {
-                lines: textLines,
-                position: 'bottom',
-                avatar: userAvatarBuf,
-                avatarSize: 180,
-                bg: { color: ws.bgColor || 'rgba(0,0,0,0.55)', radius: 16, padding: 28 },
-              });
+            const resultBuffer = await buildImage(bgBuffer, {
+              lines: textLines,
+              position: 'bottom',
+              avatar: userAvatarBuf,
+              avatarSize: 150,
+              bg: { color: 'rgba(0,0,0,0.45)', radius: 12, padding: 18 },
+            });
               await sock.sendMessage(id, { image: resultBuffer, caption: welcomeMsg, mentions: [participantJid] });
             } catch (imgErr) {
               console.error('Welcome buildImage error:', imgErr.message);
