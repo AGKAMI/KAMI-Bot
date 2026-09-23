@@ -35,7 +35,7 @@ const CATEGORIES = [
 
 // ── Mod sub-categories ──────────────────────────────────────
 const MOD_SUBS = [
-  { id: 'headlights', label: '\u{1F4A1} Glowing Headlights', items: [
+  { id: 'headlights', label: '\u{1F4A1} Glowing Headlights', type: 'colors', items: [
     { key: 'headlights-red',    label: '\u{1F534} Red',    color: '\u{1F534}' },
     { key: 'headlights-blue',   label: '\u{1F535} Blue',   color: '\u{1F535}' },
     { key: 'headlights-green',  label: '\u{1F7E2} Green',  color: '\u{1F7E2}' },
@@ -45,7 +45,7 @@ const MOD_SUBS = [
     { key: 'headlights-cyan',   label: '\u{1F535}\u{FE0F} Cyan', color: '\u{1F535}\u{FE0F}' },
     { key: 'headlights-pink',   label: '\u{1F496} Pink',   color: '\u{1F496}' },
   ]},
-  { id: 'callipers', label: '\u{1F534} Glowing Callipers', items: [
+  { id: 'callipers', label: '\u{1F534} Glowing Callipers', type: 'colors', items: [
     { key: 'callipers-red',    label: '\u{1F534} Red',    color: '\u{1F534}' },
     { key: 'callipers-blue',   label: '\u{1F535} Blue',   color: '\u{1F535}' },
     { key: 'callipers-green',  label: '\u{1F7E2} Green',  color: '\u{1F7E2}' },
@@ -54,9 +54,7 @@ const MOD_SUBS = [
     { key: 'callipers-orange', label: '\u{1F7E0} Orange', color: '\u{1F7E0}' },
     { key: 'callipers-cyan',   label: '\u{1F535}\u{FE0F} Cyan', color: '\u{1F535}\u{FE0F}' },
   ]},
-  { id: 'roofrack', label: '\u{1F4E6} Roof Rack', items: [
-    { key: 'roof-rack', label: '\u{1F4E6} Roof Rack/Box', emoji: '\u{1F4E6}' },
-  ]},
+  { id: 'shinnyrims', label: '\u2728 Shinny Rims', type: 'single', itemKey: 'shiny-rims' },
 ];
 
 // ── Premium cars (paginated, 3 per page) ────────────────────
@@ -146,36 +144,17 @@ async function sendCategoryMenu(sock, chatId, catId, quoted) {
 }
 
 async function sendModsMenu(sock, chatId, quoted) {
-  for (let i = 0; i < MOD_SUBS.length; i++) {
-    const sub = MOD_SUBS[i];
+  // Show sub-category buttons: Headlights, Callipers, Shinny Rims
+  const buttons = MOD_SUBS.map(sub => ({
+    id: `order:sub:${sub.id}`,
+    text: sub.label,
+  }));
+  buttons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back' });
 
-    // Batch items in groups of 3, reserve 1 slot for back button (iPhone fix)
-    for (let j = 0; j < sub.items.length; j += 3) {
-      const batch = sub.items.slice(j, j + 3);
-      const isLastBatch = j + 3 >= sub.items.length;
-
-      // In last batch, take only 2 items to leave room for back button
-      const itemSlice = isLastBatch && batch.length === 3 ? batch.slice(0, 2) : batch;
-      const buttons = itemSlice.map(item => ({
-        id: `order:sub:${sub.id}:${item.key}`,
-        text: item.label,
-      }));
-
-      // Add back button to last batch only
-      if (isLastBatch) {
-        buttons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back' });
-      }
-
-      const text = j === 0
-        ? `*${sub.label}*\n_Pick a ${sub.id === 'roofrack' ? 'mod' : 'color'}:_`
-        : `More ${sub.id === 'roofrack' ? 'mods' : 'colors'}:`;
-
-      await sendButtons(sock, chatId, { text, buttons }, quoted);
-      if (j + 3 < sub.items.length) await delay(600);
-    }
-
-    if (i < MOD_SUBS.length - 1) await delay(600);
-  }
+  await sendButtons(sock, chatId, {
+    text: '\u{1F527} *MODS*\n\n_Pick a mod category:_',
+    buttons,
+  }, quoted);
 }
 
 async function sendModColorMenu(sock, chatId, subId, quoted) {
@@ -196,7 +175,7 @@ async function sendModColorMenu(sock, chatId, subId, quoted) {
     }));
 
     if (isLastBatch) {
-      buttons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back to categories' });
+      buttons.push({ id: 'order:cat:mods', text: '\u2B05\u{FE0F} Back to Mods' });
     }
 
     const text = i === 0
@@ -347,7 +326,16 @@ onButton('order:sub:', async (sock, msg, from, sender, btnId) => {
   const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
   const parts = btnId.split(':');
   const subId = parts[2];
-  await sendModColorMenu(sock, target, subId, msg);
+  const sub = MOD_SUBS.find(s => s.id === subId);
+  if (!sub) return;
+
+  if (sub.type === 'single') {
+    // Shinny Rims — go directly to item detail
+    await sendItemDetail(sock, target, sub.itemKey, msg);
+  } else {
+    // Headlights / Callipers — show color options
+    await sendModColorMenu(sock, target, subId, msg);
+  }
 });
 
 // Item detail

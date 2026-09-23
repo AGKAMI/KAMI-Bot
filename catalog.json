@@ -86,6 +86,7 @@
     "headlights-green": { "name": "Glowing Headlights — Green", "price": "R5", "catalog": "https://wa.me/p/26274803135511340/27683993925", "image": "assets/mods/headlights-green.png" },
     "headlights-yellow": { "name": "Glowing Headlights — Yellow", "price": "R5", "catalog": "https://wa.me/p/25633413236338624/27683993925", "image": "assets/mods/headlights-yellow.png" },
     "headlights-purple": { "name": "Glowing Headlights — Purple", "price": "R5", "catalog": "https://wa.me/p/26405561025776702/27683993925", "image": "assets/mods/headlights-purple.png" },
+    "headlights-orange": { "name": "Glowing Headlights — Orange", "price": "R5", "catalog": "https://wa.me/p/26405561025776702/27683993925", "image": "assets/mods/headlights-orange.png" },
     "headlights-cyan": { "name": "Glowing Headlights — Cyan", "price": "R5", "catalog": "https://wa.me/p/25722439314123768/27683993925", "image": "assets/mods/headlights-cyan.png" },
     "headlights-pink": { "name": "Glowing Headlights — Pink", "price": "R5", "catalog": "https://wa.me/p/26093723996987921/27683993925", "image": "assets/mods/headlights-pink.png" },
     "shiny-rims": { "name": "Shiny Rims Mod", "price": "R5", "desc": "Ultra-reflective finish", "catalog": "https://wa.me/p/26035156802813060/27683993925", "image": "assets/mods/shiny-rims.png" },
