@@ -220,6 +220,8 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
   const target = btnId.replace('admin:readd:', '');
   if (!target) return;
 
+  const { buildComparableIds } = require('../../utils/jidHelper');
+
   // Check if already in the group
   try {
     const meta = await sock.groupMetadata(from).catch(() => null);
@@ -237,7 +239,30 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
       }
     }
 
-    await sock.groupParticipantsUpdate(from, [target], 'add');
+    // Try original JID first, then LID/PN variants
+    let added = false;
+    try {
+      await sock.groupParticipantsUpdate(from, [target], 'add');
+      added = true;
+    } catch (e) {
+      // Try alternative JID formats (LID → PN, PN → LID)
+      const variants = buildComparableIds(target);
+      for (const variant of variants) {
+        if (variant === target) continue;
+        try {
+          await sock.groupParticipantsUpdate(from, [variant], 'add');
+          added = true;
+          break;
+        } catch (e2) { /* try next */ }
+      }
+    }
+
+    if (!added) {
+      return await sock.sendMessage(from, {
+        text: `❌ ERROR\n\nCouldn't re-add — WhatsApp rejected all JID formats`,
+      });
+    }
+
     await sock.sendMessage(from, {
       text:
         `✅ SUCCESS\n\n` +

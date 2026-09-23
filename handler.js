@@ -1509,7 +1509,22 @@ const handleGroupUpdate = async (sock, update) => {
                 await sock.groupParticipantsUpdate(id, [jid], 'add');
                 reAdded = true;
               } catch (e) {
-                console.error(`[OWNER PROTECTION] Failed to re-add owner:`, e.message);
+                // Try alternative JID formats (LID → PN, PN → LID)
+                try {
+                  const { buildComparableIds } = require('./utils/jidHelper');
+                  const variants = buildComparableIds(jid);
+                  for (const variant of variants) {
+                    if (variant === jid) continue;
+                    try {
+                      await sock.groupParticipantsUpdate(id, [variant], 'add');
+                      reAdded = true;
+                      break;
+                    } catch (e2) { /* try next */ }
+                  }
+                } catch (e3) {}
+                if (!reAdded) {
+                  console.error(`[OWNER PROTECTION] Failed to re-add owner:`, e.message);
+                }
               }
               database.logProtection({
                 action: 'kick',
@@ -1530,12 +1545,27 @@ const handleGroupUpdate = async (sock, update) => {
               const memberNum = jid.split(':')[0].split('@')[0];
               let reAdded = false;
 
-              // Try to re-add the protected member
+              // Try to re-add the protected member (with LID/PN fallback)
               try {
                 await sock.groupParticipantsUpdate(id, [jid], 'add');
                 reAdded = true;
               } catch (e) {
-                console.error(`[MEMBER PROTECTION] Failed to re-add ${memberNum}:`, e.message);
+                // Try alternative JID formats (LID → PN, PN → LID)
+                try {
+                  const { buildComparableIds } = require('./utils/jidHelper');
+                  const variants = buildComparableIds(jid);
+                  for (const variant of variants) {
+                    if (variant === jid) continue;
+                    try {
+                      await sock.groupParticipantsUpdate(id, [variant], 'add');
+                      reAdded = true;
+                      break;
+                    } catch (e2) { /* try next */ }
+                  }
+                } catch (e3) {}
+                if (!reAdded) {
+                  console.error(`[MEMBER PROTECTION] Failed to re-add ${memberNum}:`, e.message);
+                }
               }
 
               // Log the protection event
