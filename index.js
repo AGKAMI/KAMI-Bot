@@ -75,21 +75,6 @@ const path = require('path');
 const zlib = require('zlib');
 const os = require('os');
 
-// Remove Puppeteer cache (if some dependency downloaded Chromium into ~/.cache/puppeteer)
-function cleanupPuppeteerCache() {
-  try {
-    const home = os.homedir();
-    const cacheDir = path.join(home, '.cache', 'puppeteer');
-
-    if (fs.existsSync(cacheDir)) {
-      console.log('🧹 Removing Puppeteer cache at:', cacheDir);
-      fs.rmSync(cacheDir, { recursive: true, force: true });
-      console.log('✅ Puppeteer cache removed');
-    }
-  } catch (err) {
-    console.error('⚠️ Failed to cleanup Puppeteer cache:', err.message || err);
-  }
-}
 // Optimized in-memory store with hard limits (Map-based for better memory management)
 const store = {
   messages: new Map(), // Use Map instead of plain object
@@ -732,9 +717,6 @@ console.log(`📦 Bot Name: ${config.botName}`);
 console.log(`⚡ Prefix: ${config.prefix}`);
 const ownerNames = Array.isArray(config.ownerName) ? config.ownerName.join(',') : config.ownerName;
 console.log(`👑 Owner: ${ownerNames}\n`);
-
-// Proactively delete Puppeteer cache so it doesn't fill disk on panels
-cleanupPuppeteerCache();
 
 // Keepalive — prevents the event loop from draining between reconnects
 // Without this, the process exits during the setTimeout gap before startBot() runs again

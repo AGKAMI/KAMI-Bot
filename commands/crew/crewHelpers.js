@@ -2,13 +2,15 @@
  * Crew helpers — shared functions for crew commands
  */
 
+const config = require('../../config');
+
 // Convert phone number to WhatsApp JID
 function phoneToJid(phone) {
   if (!phone) return null;
   if (phone.includes('@s.whatsapp.net')) return phone;
   let digits = phone.replace(/\D/g, '');
   if (digits.startsWith('0') && digits.length >= 10) {
-    digits = '27' + digits.slice(1);
+    digits = (config.defaultCountryCode || '27') + digits.slice(1);
   }
   if (digits.length < 10) return null;
   return digits + '@s.whatsapp.net';

@@ -44,10 +44,10 @@ module.exports = {
         throw new Error('Empty response from API');
       }
       
-      // Check file size (WhatsApp image limit is 5MB)
-      const maxImageSize = 5 * 1024 * 1024; // 5MB
+      // Check file size (WhatsApp image limit is 16MB)
+      const maxImageSize = 16 * 1024 * 1024; // 16MB
       if (imageBuffer.length > maxImageSize) {
-        throw new Error(`Image too large: ${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB (max 5MB)`);
+        throw new Error(`Image too large: ${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB (max 16MB)`);
       }
       
       // Send the generated image

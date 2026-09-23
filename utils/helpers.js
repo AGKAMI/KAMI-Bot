@@ -124,6 +124,7 @@ const extractUrl = (text) => {
  * Random element from array
  */
 const random = (array) => {
+  if (!array || array.length === 0) return undefined;
   return array[Math.floor(Math.random() * array.length)];
 };
 

@@ -35,7 +35,8 @@ module.exports = {
         active.delete(ctx.from);
         return ctx.reply(`🎉 ${pick(SLANG.good)}, ${winner} guessed it! ${g.answer}`);
       }
-      return ctx.reply(`❌ ${pick(SLANG.error)}, wrong! hint: ${g.answer.split(' ').join(' / ')}`);
+      const hint = g.answer.split(' ').map(w => w[0] + '_'.repeat(w.length - 1)).join(' / ');
+      return ctx.reply(`❌ ${pick(SLANG.error)}, wrong! hint: ${hint}`);
     }
     const r = rounds[Math.floor(Math.random() * rounds.length)];
     active.set(ctx.from, { answer: r.answer, emojis: r.emojis });

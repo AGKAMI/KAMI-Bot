@@ -3,6 +3,7 @@ const axios = require('axios');
 const APIs = require('../../utils/api');
 const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { toVideo } = require('../../utils/converter');
 
 const processedMessages = new Set();
 const MAX_SIZE_MB = 16;
@@ -108,7 +109,6 @@ module.exports = {
 
         let sendBuffer = videoBuffer;
         try {
-          const { toVideo } = require('../../utils/converter');
           sendBuffer = await toVideo(videoBuffer, 'mp4');
           console.log('[VIDEO] re-encoded successfully');
         } catch (encErr) {
@@ -135,10 +135,6 @@ module.exports = {
         }
       }
     };
-
-    if (activeDownloads >= MAX_CONCURRENT) {
-      return extra.reply(`❌ _another video is downloading — please wait_`);
-    }
 
     activeDownloads++;
     doDownload().finally(() => {

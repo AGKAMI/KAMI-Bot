@@ -10,8 +10,8 @@ const parsePhoneNumber = (input) => {
   // Strip everything except digits
   let digits = input.replace(/\D/g, '');
   if (!digits || digits.length < 8) return null;
-  // Convert leading 0 to 27 (South Africa)
-  if (digits.startsWith('0')) digits = '27' + digits.slice(1);
+  // Convert leading 0 to default country code
+  if (digits.startsWith('0')) digits = (config.defaultCountryCode || '27') + digits.slice(1);
   return digits + '@s.whatsapp.net';
 };
 

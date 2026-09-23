@@ -81,7 +81,7 @@ module.exports = {
             text: `❌ ERROR\n\n_Invalid number_`
           }, { quoted: msg });
         }
-        if (digits.startsWith('0')) digits = '27' + digits.slice(1);
+        if (digits.startsWith('0')) digits = (config.defaultCountryCode || '27') + digits.slice(1);
         const targetJid = digits + '@s.whatsapp.net';
 
         // Add to approved list

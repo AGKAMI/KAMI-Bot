@@ -2,13 +2,14 @@
  * Unblock Command - Unblock a user
  */
 
+const config = require('../../config');
 const { bold, pick, SLANG } = require('../../utils/format');
 
 const parsePhoneNumber = (input) => {
   if (!input) return null;
   let digits = input.replace(/\D/g, '');
   if (!digits || digits.length < 8) return null;
-  if (digits.startsWith('0')) digits = '27' + digits.slice(1);
+  if (digits.startsWith('0')) digits = (config.defaultCountryCode || '27') + digits.slice(1);
   return digits + '@s.whatsapp.net';
 };
 

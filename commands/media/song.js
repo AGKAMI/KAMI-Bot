@@ -44,6 +44,7 @@ module.exports = {
       
       // Send loading message
       const sent = await extra.reply(`🔍 _searching for that one..._`);
+      if (!sent?.key) return extra.reply(`❌ _${pick(SLANG.error)} — failed to send loading message_`);
       
       let video;
       

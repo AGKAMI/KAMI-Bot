@@ -3,7 +3,12 @@
  * Creates images locally without external APIs
  */
 
-const canvas = require('canvas');
+let canvas;
+try {
+  canvas = require('canvas');
+} catch {
+  // canvas not available — image generation will return null
+}
 const fs = require('fs');
 const path = require('path');
 
@@ -27,6 +32,7 @@ async function getBackgroundImage() {
 }
 
 async function createWelcomeImage(options) {
+  if (!canvas) return null;
   const {
     memberName,
     memberPic = null,
@@ -154,6 +160,7 @@ async function createWelcomeImage(options) {
 }
 
 async function createGoodbyeImage(options) {
+  if (!canvas) return null;
   const {
     memberName,
     memberPic = null,
