@@ -138,10 +138,13 @@ const findParticipant = (participants = [], userIds) => {
   }) || null;
 };
 
+const clearLidCache = () => lidMappingCache.clear();
+
 module.exports = {
   findParticipant,
   buildComparableIds,
   normalizeJidWithLid,
-  getLidMappingValue
+  getLidMappingValue,
+  clearLidCache
 };
 

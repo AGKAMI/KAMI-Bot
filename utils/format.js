@@ -26,7 +26,7 @@ const mention = (jid) => {
 const SEP = '----------';
 
 /** Horizontal rule / separator line */
-const line = (width = 16) => SEP;
+const line = (width = 16) => '-'.repeat(width);
 
 // ─── Structured Message Builders ──────────────────────────────────────────────
 
@@ -203,7 +203,10 @@ const SLANG = {
 /**
  * Pick a random item from an array
  */
-const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const pick = (arr) => {
+  if (!arr || arr.length === 0) return '';
+  return arr[Math.floor(Math.random() * arr.length)];
+};
 
 /**
  * Get a random greeting

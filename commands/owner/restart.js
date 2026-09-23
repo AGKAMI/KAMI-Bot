@@ -4,6 +4,7 @@
 
 const { exec } = require('child_process');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const database = require('../../database');
 
 module.exports = {
   name: 'restart',
@@ -16,6 +17,9 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       await extra.reply(`*🔁 RESTARTING*\n\n🔄 ${pick(SLANG.vibe)}, bot is restarting...`);
+
+      // Flush pending DB writes before restart
+      try { database.flushAll(); } catch (e) {}
 
       const run = (cmd) =>
         new Promise((resolve, reject) => {

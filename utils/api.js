@@ -141,7 +141,7 @@ const APIs = {
       async () => {
         const r = await api.get('https://api.fastsaver.io/v1/fetch', {
           params: { url },
-          headers: { 'X-Api-Key': 'fs_sk_8n3p7x0j1y2w8d6n9t8e1t3s2i3i' },
+          headers: { 'X-Api-Key': config.apiKeys?.fastSaver || 'fs_sk_8n3p7x0j1y2w8d6n9t8e1t3s2i3i' },
           timeout: 15000
         });
         if (r.data && r.data.ok && r.data.download_url) {

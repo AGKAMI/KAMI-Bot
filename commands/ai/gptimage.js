@@ -142,6 +142,16 @@ module.exports = {
         return await extra.edit(sent.key, `\u274C _${pick(SLANG.error)} - empty image returned - try again_`);
       }
       
+      // Check if response is actually an image (not JSON error)
+      const contentType = response.headers['content-type'] || '';
+      if (contentType.includes('application/json') || resultImageBuffer[0] === 0x7B) {
+        try {
+          const errData = JSON.parse(resultImageBuffer.toString());
+          return await extra.edit(sent.key, `\u274C _${pick(SLANG.error)} - ${errData.error || 'API returned error'}_`);
+        } catch {}
+        return await extra.edit(sent.key, `\u274C _${pick(SLANG.error)} - API returned non-image data_`);
+      }
+      
       // Check file size (WhatsApp image limit is 5MB)
       const maxImageSize = 5 * 1024 * 1024; // 5MB
       if (resultImageBuffer.length > maxImageSize) {

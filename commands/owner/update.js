@@ -167,6 +167,9 @@ module.exports = {
 
       await sock.sendMessage(chatId, { text: `${summary}\n\n🔁 Restarting…` }, { quoted: msg });
 
+      // Flush pending DB writes before restart
+      try { require('../../database').flushAll(); } catch (e) {}
+
       // Attempt restart via pm2 if available, else exit to allow panel auto-restart
       try {
         await run('pm2 restart all');

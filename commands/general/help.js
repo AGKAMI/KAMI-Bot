@@ -2,6 +2,12 @@ const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
+let cachedCommands = null;
+function getCommands() {
+  if (!cachedCommands) cachedCommands = loadCommands();
+  return cachedCommands;
+}
+
 module.exports = {
   name: 'help',
   aliases: ['cmd', 'command'],
@@ -11,7 +17,7 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
     try {
-      const commands = loadCommands();
+      const commands = getCommands();
       const prefix = config.prefix || '.';
 
       if (!args[0]) {
@@ -23,7 +29,7 @@ module.exports = {
         );
       }
 
-      const cmdName = args[0].toLowerCase().replace(prefix, '');
+      const cmdName = args[0].toLowerCase().startsWith(prefix) ? args[0].toLowerCase().slice(prefix.length) : args[0].toLowerCase();
       const cmd = commands.get(cmdName);
 
       if (!cmd) {

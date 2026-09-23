@@ -24,6 +24,10 @@ module.exports = {
       const m = mask(word, new Set());
       return ctx.reply(`📝 hangman started!\n\n${m}\nLength: ${word.length}\nGuesses: 6/6\nUse ${prefix}hangman <letter>`);
     }
+    // No args and game active — show current state
+    if (!sub) {
+      return ctx.reply(`📝 hangman active!\n\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6\nUse ${prefix}hangman <letter>`);
+    }
     if (sub.length === 1 && /^[a-z]$/.test(sub)) {
       if (g.guessed.has(sub)) return ctx.reply(`already guessed that letter, ${pick(SLANG.vibe)}`);
       g.guessed.add(sub);

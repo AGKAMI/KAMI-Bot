@@ -1,5 +1,8 @@
 const config = require('../../config');
 const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
+
+const tttGames = new Map();
+
 module.exports = {
   name: 'tictactoe',
   description: 'Play tic tac toe in a group',
@@ -8,16 +11,12 @@ module.exports = {
   groupOnly: true,
   execute: async (sock, msg, args, ctx) => {
     const prefix = config.prefix || '.';
-    const games = require('./grouphangman.js');
     const from = ctx.from;
     const sub = (args[0] || '').toLowerCase();
     const boardKey = 'ttt_' + from;
 
-    // We'll reuse games Map by attaching ttt state
-    if (!games.ttt) games.ttt = new Map();
-
     if (sub === 'start' || sub === 'new') {
-      games.ttt.set(boardKey, {
+      tttGames.set(boardKey, {
         board: Array(9).fill(' '),
         turn: 'X',
         players: { X: null, O: null },
@@ -26,7 +25,7 @@ module.exports = {
     }
 
     if (['stop', 'end'].includes(sub)) {
-      games.ttt.delete(boardKey);
+      tttGames.delete(boardKey);
       return ctx.reply(`${pick(SLANG.vibe)}, tic tac toe stopped!`);
     }
 
@@ -34,7 +33,7 @@ module.exports = {
       return ctx.reply(`❌ _${pick(SLANG.error)} — use: ${prefix}ttt start | ${prefix}ttt <1-9> | ${prefix}ttt stop_`);
     }
 
-    const g = games.ttt.get(boardKey);
+    const g = tttGames.get(boardKey);
     if (!g) return ctx.reply(`❌ _no active game — use ${prefix}ttt start_`);
 
     const pos = parseInt(sub) - 1;
@@ -62,11 +61,11 @@ module.exports = {
     const full = g.board.every(c => c !== ' ');
 
     if (winner) {
-      games.ttt.delete(boardKey);
+      tttGames.delete(boardKey);
       return ctx.reply(`🎉 ${mention(sender)} ${pick(SLANG.good)}! wins with ${token}!\n\n${formatBoard(g.board)}`);
     }
     if (full) {
-      games.ttt.delete(boardKey);
+      tttGames.delete(boardKey);
       return ctx.reply(`🤝 ${pick(SLANG.vibe)}, draw!\n\n${formatBoard(g.board)}`);
     }
 

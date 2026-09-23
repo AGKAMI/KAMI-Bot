@@ -88,7 +88,7 @@ welcome: false,
     
     // API Keys (add your own)
     apiKeys: {
-      // Add API keys here if needed
+      fastSaver: process.env.FASTSAVER_KEY || 'fs_sk_8n3p7x0j1y2w8d6n9t8e1t3s2i3i',
       openai: '',
       deepai: '',
       remove_bg: ''
