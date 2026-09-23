@@ -50,6 +50,6 @@ module.exports = {
       games.delete(ctx.from);
       return ctx.reply(`💀 ${pick(SLANG.error)}, wrong word! it was: ${g.word}`);
     }
-    return ctx.reply('Use ${prefix}hangman <letter> or ${prefix}hangman stop');
+    return ctx.reply(`Use ${prefix}hangman <letter> or ${prefix}hangman stop`);
   }
 };

@@ -1,4 +1,5 @@
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const config = require('../../config');
 const WORDS = ['python','javascript','banana','computer','elephant','guitar','house','internet','jacket','king','lion','monkey','notebook','orange','piano','queen','rabbit','sun','tree','umbrella','violin','water','yellow','zebra','mountain','river','ocean','rocket','phone','castle'];
 function mask(word, guessed) {
   return word.split('').map(c => guessed.has(c) ? c : '_').join(' ');
@@ -21,7 +22,7 @@ module.exports = {
       const word = WORDS[Math.floor(Math.random() * WORDS.length)];
       games.set(ctx.from, { word, guessed: new Set(), wrong: 0 });
       const m = mask(word, new Set());
-      return ctx.reply(`📝 group hangman!\n\n${m}\nLength: ${word.length}\nGuesses: 6/6\nUse .ghang <letter>`);
+      return ctx.reply(`📝 group hangman!\n\n${m}\nLength: ${word.length}\nGuesses: 6/6\nUse ${config.prefix}ghang <letter>`);
     }
     if (sub.length === 1 && /^[a-z]$/.test(sub)) {
       if (g.guessed.has(sub)) return ctx.reply(`already guessed that, ${pick(SLANG.vibe)}`);
@@ -41,6 +42,6 @@ module.exports = {
       }
       return ctx.reply(`❌ ${sub} not in word!\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6`);
     }
-    return ctx.reply('Use .ghang <letter> or .ghang stop');
+    return ctx.reply(`Use ${config.prefix}ghang <letter> or ${config.prefix}ghang stop`);
   }
 };

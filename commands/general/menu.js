@@ -88,7 +88,7 @@ function buildFullMenu(pushName) {
 
 module.exports = {
   name: 'menu',
-  aliases: ['help', 'commands'],
+  aliases: ['commands'],
   category: 'general',
   description: 'Show all available commands',
   usage: '.menu',

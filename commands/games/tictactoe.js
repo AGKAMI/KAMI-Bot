@@ -1,3 +1,4 @@
+const config = require('../../config');
 const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 module.exports = {
   name: 'tictactoe',
@@ -8,7 +9,6 @@ module.exports = {
   execute: async (sock, msg, args, ctx) => {
     const prefix = config.prefix || '.';
     const games = require('./grouphangman.js');
-const config = require('../../config');
     const from = ctx.from;
     const sub = (args[0] || '').toLowerCase();
     const boardKey = 'ttt_' + from;

@@ -746,8 +746,8 @@ const handleMessage = async (sock, msg) => {
       }
     }
     
-    // Track group message statistics
-    if (isGroup) {
+    // Track group message statistics (exclude bot's own messages)
+    if (isGroup && !msg.key.fromMe) {
       addMessage(from, sender);
     }
     
@@ -1071,9 +1071,11 @@ const handleMessage = async (sock, msg) => {
       }
     }
 
-    // Antibadword — handle messages with banned words (warn/delete/kick per setting)
+    // Antibadword — handle messages with banned words (warn/delete/kick per setting) — admins/owners exempt
         if (isGroup && !msg.key.fromMe) {
           try {
+            const senderIsAdmin = await isAdmin(sock, sender, from, groupMetadata);
+            if (!senderIsAdmin && !isOwner(sender)) {
             const groupSettings = database.getGroupSettings(from);
             const badwords = (groupSettings.badwords || []).concat(config.defaultBadwords || []);
             if (groupSettings.antibadword && badwords.length > 0 && body) {
@@ -1109,12 +1111,15 @@ const handleMessage = async (sock, msg) => {
                 }
               }
             }
+            }
           } catch (e) {}
         }
 
-    // Antiflood — auto-warn/kick spammers
+    // Antiflood — auto-warn/kick spammers — admins/owners exempt
     if (isGroup && !msg.key.fromMe) {
       try {
+        const senderIsAdmin = await isAdmin(sock, sender, from, groupMetadata);
+        if (!senderIsAdmin && !isOwner(sender)) {
         const groupSettings = database.getGroupSettings(from);
         if (groupSettings.antiflood) {
           const limit = groupSettings.antifloodLimit || 5;
@@ -1177,11 +1182,14 @@ const handleMessage = async (sock, msg) => {
             }
           }
         }
+        }
       } catch (e) {}
     }
 
-// Slowmode enforcement (group messages only)
+// Slowmode enforcement (group messages only — admins bypass)
     if (isGroup && slowmodeModule && !msg.key.fromMe) {
+      const senderIsAdmin = await isAdmin(sock, sender, from, groupMetadata);
+      if (!senderIsAdmin && !isOwner(sender)) {
       const slowSettings = database.getGroupSettings(from);
       const slowSec = slowSettings.slowmode || 0;
       if (slowSec > 0) {
@@ -1777,9 +1785,10 @@ const handleGroupUpdate = async (sock, update) => {
                       if (found) {
                         stillAdminAnywhere = true;
                         break;
-                      }
-                    }
-                  }
+        }
+      }
+      }
+    }
                   
                   if (!stillAdminAnywhere) {
                     database.removeTeamAdmin(number);
