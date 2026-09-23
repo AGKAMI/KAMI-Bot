@@ -304,18 +304,38 @@ async function startBot() {
     if (qr) {
       console.log('\n⚠️ Scan this QR code in WhatsApp → Linked Devices:\n');
       qrcode.generate(qr, { small: true });
+      // Also save QR as image for panel/console that can't render ASCII
+      try {
+        const QRCode = require('qrcode');
+        const qrPath = path.join(__dirname, 'qr.png');
+        await QRCode.toFile(qrPath, qr, { width: 400, margin: 2 });
+        console.log(`📸 QR saved to: ${qrPath} (download from panel Files tab if console is garbled)\n`);
+      } catch (_) {}
     }
 
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const errorMessage = lastDisconnect?.error?.message || 'Unknown error';
 
-      // Conflict = another session is active (phone/Web). Back off longer.
+      // 401 = loggedOut, 440 = conflict — both mean session is dead. Delete and show QR.
       if (statusCode === 401 || statusCode === 440 || errorMessage.includes('conflict')) {
-        console.log('⚠️ Session conflict — another WhatsApp session is active on this number.');
-        console.log('   Log out of WhatsApp Web / close other sessions, then the bot will reconnect in 30s.');
-        setTimeout(() => startBot().catch(e => console.error('[CONFLICT] reconnect failed:', e.message)), 30000);
-        return;
+        console.log('⚠️ Session conflict or logged out — clearing stale session...');
+        // Delete session folder so bot shows QR on next start
+        try {
+          const sessionDir = path.join(__dirname, config.sessionName);
+          if (fs.existsSync(sessionDir)) {
+            fs.rmSync(sessionDir, { recursive: true, force: true });
+            console.log('🗑️  Deleted stale session folder');
+          }
+        } catch (e) {
+          console.error('Failed to delete session folder:', e.message);
+        }
+        if (config.sessionID) {
+          console.log('⚠️  SESSION_ID env var is set — it will re-inject stale session on restart!');
+          console.log('   Delete the SESSION_ID env var from the panel Env tab, then restart.');
+        }
+        console.log('   Restart the bot — QR code will appear for fresh pairing.\n');
+        process.exit(0);
       }
 
       // Always reconnect unless explicitly logged out (QR needed)
