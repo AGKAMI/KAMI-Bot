@@ -178,6 +178,9 @@ const createSuppressedLogger = (level = 'silent') => {
   return logger;
 };
 
+// Session reconnect retry counter — module-level so it persists across startBot() reconnects
+let sessionRetryCount = 0;
+
 // Main connection function
 async function startBot() {
   const sessionFolder = `./${config.sessionName}`;
@@ -385,6 +388,7 @@ async function startBot() {
       // Crew sync — auto-add existing group members to crew DB
       try {
         const db = require('./database');
+        const { buildComparableIds } = require('./utils/jidHelper');
         const crewData = db.getCrew();
         const teamMap = crewData.teamMap || {};
         let synced = 0;
@@ -413,12 +417,24 @@ async function startBot() {
             for (const p of groupMeta.participants) {
               const jid = p.id;
               if (!jid) continue;
-              // Skip if already in crew DB
-              if (db.getCrewMember(info.jid, jid)) continue;
-              // Skip the bot itself
               if (jid === sock.user?.id) continue;
-              // Only add non-admins as members (admins are managed manually)
               if (p.admin) continue;
+
+              // Skip if already in crew DB — use JID variants + phone number fallback
+              const jidVariants = buildComparableIds(jid);
+              const alreadyInCrew = jidVariants.some(v => db.getCrewMember(info.jid, v));
+              if (alreadyInCrew) continue;
+
+              // Phone number fallback — covers LID/PN mismatch when mapping files are missing
+              const incomingNum = jid.split(':')[0].split('@')[0].replace(/\D/g, '');
+              if (incomingNum) {
+                const teamMembers = db.getTeam(info.jid).members || {};
+                const phoneMatch = Object.keys(teamMembers).some(memberJid => {
+                  const memberNum = memberJid.split(':')[0].split('@')[0].replace(/\D/g, '');
+                  return memberNum && memberNum === incomingNum;
+                });
+                if (phoneMatch) continue;
+              }
 
               db.addCrewMember(info.jid, jid, {
                 role: 'member',

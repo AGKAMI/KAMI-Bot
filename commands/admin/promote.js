@@ -103,6 +103,26 @@ onButton('admin:demote', async (sock, msg, from, sender, btnId) => {
   const target = btnId.replace('admin:demote:', '');
   if (!target) return;
 
+  // Permission check — only group admins or owner can demote
+  try {
+    const meta = await sock.groupMetadata(from).catch(() => null);
+    if (meta && meta.participants) {
+      const clickerIsAdmin = meta.participants.some(
+        p => (p.id === sender || p.lid === sender) && (p.admin === 'admin' || p.admin === 'superadmin')
+      );
+      const config = require('../../config');
+      const clickerIsOwner = (config.ownerNumber || []).some(n => sender.includes(n));
+      if (!clickerIsAdmin && !clickerIsOwner) {
+        return await sock.sendMessage(from, {
+          text: `❌ *ADMIN ONLY*\n\nOnly group admins can demote members.`,
+          mentions: [sender],
+        });
+      }
+    }
+  } catch (e) {
+    console.error('[DEMOTE BTN] permission check failed:', e.message);
+  }
+
   // ── Check if target is actually an admin before demoting ──
   try {
     const meta = await sock.groupMetadata(from).catch(() => null);
