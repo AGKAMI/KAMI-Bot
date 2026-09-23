@@ -35,15 +35,15 @@ const CATEGORIES = [
 
 // ── Mod sub-categories ──────────────────────────────────────
 const MOD_SUBS = [
-  { id: 'headlights', label: '\u{1F4A1} Glowing Headlights', type: 'colors', items: [
-    { key: 'headlights-red',    label: '\u{1F534} Red',    color: '\u{1F534}' },
-    { key: 'headlights-blue',   label: '\u{1F535} Blue',   color: '\u{1F535}' },
-    { key: 'headlights-green',  label: '\u{1F7E2} Green',  color: '\u{1F7E2}' },
-    { key: 'headlights-yellow', label: '\u{1F7E1} Yellow', color: '\u{1F7E1}' },
-    { key: 'headlights-purple', label: '\u{1F7E3} Purple', color: '\u{1F7E3}' },
-    { key: 'headlights-orange', label: '\u{1F7E0} Orange', color: '\u{1F7E0}' },
-    { key: 'headlights-cyan',   label: '\u{1F535}\u{FE0F} Cyan', color: '\u{1F535}\u{FE0F}' },
-    { key: 'headlights-pink',   label: '\u{1F496} Pink',   color: '\u{1F496}' },
+  { id: 'headlights', label: '\u{1F526} Glowing Headlights', type: 'colors', items: [
+    { key: 'headlights-red',    label: '\u{1F534} Red \u{1F526}',    color: '\u{1F534}' },
+    { key: 'headlights-blue',   label: '\u{1F535} Blue \u{1F526}',   color: '\u{1F535}' },
+    { key: 'headlights-green',  label: '\u{1F7E2} Green \u{1F526}',  color: '\u{1F7E2}' },
+    { key: 'headlights-yellow', label: '\u{1F7E1} Yellow \u{1F526}', color: '\u{1F7E1}' },
+    { key: 'headlights-purple', label: '\u{1F7E3} Purple \u{1F526}', color: '\u{1F7E3}' },
+    { key: 'headlights-orange', label: '\u{1F7E0} Orange \u{1F526}', color: '\u{1F7E0}' },
+    { key: 'headlights-cyan',   label: '\u{1F535}\u{FE0F} Cyan \u{1F526}', color: '\u{1F535}\u{FE0F}' },
+    { key: 'headlights-pink',   label: '\u{1F496} Pink \u{1F526}',   color: '\u{1F496}' },
   ]},
   { id: 'callipers', label: '\u{1F534} Glowing Callipers', type: 'colors', items: [
     { key: 'callipers-red',    label: '\u{1F534} Red',    color: '\u{1F534}' },
