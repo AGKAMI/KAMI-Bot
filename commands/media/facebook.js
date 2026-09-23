@@ -151,7 +151,7 @@ module.exports = {
           const videoResponse = await axios.get(videoData.url, {
             responseType: 'arraybuffer',
             timeout: 120000,
-            maxContentLength: 500 * 1024 * 1024,
+            maxContentLength: 16 * 1024 * 1024, // 16MB — WhatsApp limit
             proxy: false,
           });
           const buffer = Buffer.from(videoResponse.data);

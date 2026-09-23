@@ -82,7 +82,7 @@ module.exports = {
         const audioResponse = await axios.get(audioUrl, {
           responseType: 'arraybuffer',
           timeout: 120000,
-          maxContentLength: 50 * 1024 * 1024,
+          maxContentLength: 16 * 1024 * 1024, // 16MB — WhatsApp limit
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Accept': '*/*',

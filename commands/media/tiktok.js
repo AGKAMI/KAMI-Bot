@@ -22,7 +22,7 @@ const TIKTOK_REGEX = /(?:https?:\/\/)?(?:(?:www|vt|vm)\.)?tiktok\.com\/.+|(?:htt
 
 const dlAxios = axios.create({
   timeout: 120000,
-  maxContentLength: 200 * 1024 * 1024,
+  maxContentLength: 16 * 1024 * 1024, // 16MB — WhatsApp limit
   responseType: 'arraybuffer',
   headers: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',

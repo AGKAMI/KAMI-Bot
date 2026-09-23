@@ -142,7 +142,7 @@ module.exports = {
           const videoResponse = await axios.get(imageUrl, {
             responseType: 'arraybuffer',
             timeout: 120000, // 2 minutes for video download
-            maxContentLength: 100 * 1024 * 1024, // 100MB limit
+            maxContentLength: 16 * 1024 * 1024, // 16MB — WhatsApp limit
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
               'Accept': 'video/mp4,video/*,*/*',
