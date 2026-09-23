@@ -67,8 +67,17 @@ const checkGroup = async (sock, groupJid, teamKey) => {
 
   console.log(`[AUTO-PROGRESSION] Checking ${teamKey} — ${Object.keys(allActivity).length} members, Set size: ${promotedThisSession.size}`);
 
+  const { buildComparableIds } = require('../utils/jidHelper');
+
   for (const [memberJid, data] of Object.entries(allActivity)) {
     const memberNum = memberJid.split(':')[0].split('@')[0].replace(/\D/g, '');
+
+    // ── Owner-demoted blacklist — never auto-promote them ──
+    const demotedVariants = buildComparableIds(memberJid);
+    if (demotedVariants.some(v => database.isOwnerDemoted(groupJid, v))) {
+      console.log(`[AUTO-PROGRESSION] SKIP ${memberNum} — demoted by owner (blacklist)`);
+      continue;
+    }
 
     // ── Cooldown check #1: in-memory Set (primary) ──
     if (promotedThisSession.has(memberJid)) {
@@ -257,6 +266,17 @@ const stopProgressionEngine = () => {
 // ── Inactive Member Alerts ────────────────────────────────
 const INACTIVE_THRESHOLD_DAYS = 30;
 
+// Alert dedup: notify about each member once per 7 days (prevents hourly DM spam)
+const ALERT_COOLDOWN = 7 * 24 * 60 * 60 * 1000;
+const lastAlerted = new Map(); // jid → last notified timestamp
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [jid, ts] of lastAlerted) {
+    if (now - ts > 30 * 24 * 60 * 60 * 1000) lastAlerted.delete(jid);
+  }
+}, 60 * 60 * 1000);
+
 const runInactiveCheck = async (sock) => {
   console.log('[INACTIVE-CHECK] Scanning for inactive members...');
 
@@ -275,13 +295,22 @@ const runInactiveCheck = async (sock) => {
 
       if (inactiveList.length === 0) continue;
 
+      // Only alert about members not already alerted in the last 7 days
+      const dueList = inactiveList.filter(([jid]) => {
+        const last = lastAlerted.get(jid) || 0;
+        return Date.now() - last > ALERT_COOLDOWN;
+      });
+
+      if (dueList.length === 0) continue;
+      dueList.forEach(([jid]) => lastAlerted.set(jid, Date.now()));
+
       // Notify owner
       for (const ownerNum of ownerNumbers) {
         try {
           const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
-          const mentions = inactiveList.map(([jid]) => jid);
+          const mentions = dueList.map(([jid]) => jid);
 
-          const memberList = inactiveList.slice(0, 5).map(([jid, data]) => {
+          const memberList = dueList.slice(0, 5).map(([jid, data]) => {
             const num = jid.split(':')[0].split('@')[0].replace(/\D/g, '');
             const days = data.lastActive
               ? Math.floor((Date.now() - data.lastActive) / (24 * 60 * 60 * 1000))
@@ -289,13 +318,13 @@ const runInactiveCheck = async (sock) => {
             return `• @${num} — ${data.role} — ${data.totalMessages} msgs — ${days}d ago`;
           }).join('\n');
 
-          const more = inactiveList.length > 5 ? `\n• ...and ${inactiveList.length - 5} more` : '';
+          const more = dueList.length > 5 ? `\n• ...and ${dueList.length - 5} more` : '';
 
           await sock.sendMessage(ownerJid, {
             text:
               `😴 *INACTIVE MEMBERS*\n\n` +
               `🏢 Team: *${teamKey}*\n` +
-              `👥 *${inactiveList.length}* members inactive for 30+ days\n\n` +
+              `👥 *${dueList.length}* members inactive for 30+ days\n\n` +
               `${memberList}${more}\n\n` +
               `_Consider reviewing the roster ${pick(SLANG.vibe)}_`,
             mentions,
@@ -303,7 +332,7 @@ const runInactiveCheck = async (sock) => {
         } catch (e) {}
       }
 
-      console.log(`[INACTIVE-CHECK] ${teamKey}: ${inactiveList.length} inactive members`);
+      console.log(`[INACTIVE-CHECK] ${teamKey}: ${dueList.length} inactive members alerted (${inactiveList.length} total)`);
     } catch (e) {
       console.error(`[INACTIVE-CHECK] Error checking ${teamKey}:`, e.message);
     }
