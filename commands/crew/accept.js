@@ -10,7 +10,7 @@ const config = require('../../config');
 const axios = require('axios');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { TEAMS, buildHiredMessage } = require('./crewForms');
-const { buildComparableIds } = require('../../utils/jidHelper');
+const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
 
 // Dynamic emoji mapping — first role gets 👤, last gets 👑
 const getRoleEmoji = (role, roles) => {
@@ -123,26 +123,33 @@ module.exports = {
       let addedToGroup = false;
       let addErrorMsg = '';
       if (teamGroupJid) {
-        try {
-          await sock.groupParticipantsUpdate(teamGroupJid, [applicantJid], 'add');
-          addedToGroup = true;
-        } catch (addErr) {
-          addErrorMsg = addErr.message || 'unknown error';
-          console.error('[CREW ACCEPT] group add failed:', addErrorMsg);
+        // Build candidate JIDs — same method as !add (prefer @s.whatsapp.net)
+        const candidateJids = [];
+        // 1. Strip device suffix: 27683993925:0@s.whatsapp.net → 27683993925@s.whatsapp.net
+        const stripped = applicantJid.replace(/:\d+@/, '@');
+        if (stripped !== applicantJid) candidateJids.push(stripped);
+        // 2. LID → PN mapping
+        const resolved = normalizeJidWithLid(applicantJid);
+        if (resolved && resolved !== applicantJid && resolved !== stripped) candidateJids.push(resolved);
+        // 3. buildComparableIds variants
+        for (const v of buildComparableIds(applicantJid)) {
+          if (!candidateJids.includes(v)) candidateJids.push(v);
+        }
+        // 4. Original as last resort
+        candidateJids.push(applicantJid);
 
-          // Retry with normalized JID (LID → PN or PN → LID)
+        for (const jid of candidateJids) {
           try {
-            const variants = buildComparableIds(applicantJid);
-            for (const variant of variants) {
-              if (variant === applicantJid) continue;
-              try {
-                await sock.groupParticipantsUpdate(teamGroupJid, [variant], 'add');
-                addedToGroup = true;
-                addErrorMsg = '';
-                break;
-              } catch (e) { /* try next variant */ }
-            }
-          } catch (e) { /* all variants failed */ }
+            await sock.groupParticipantsUpdate(teamGroupJid, [jid], 'add');
+            addedToGroup = true;
+            addErrorMsg = '';
+            break;
+          } catch (e) {
+            addErrorMsg = e.message || 'unknown error';
+          }
+        }
+        if (!addedToGroup) {
+          console.error('[CREW ACCEPT] group add failed:', addErrorMsg);
         }
       }
 
