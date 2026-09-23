@@ -76,9 +76,9 @@ module.exports = {
       
       // Try API 1 (Google Translate API)
       try {
-        const response = axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(textToTranslate)}`);
+        const response = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(textToTranslate)}`);
         if (response.status === 200) {
-          const data = await response.json();
+          const data = response.data;
           if (data && data[0] && data[0][0] && data[0][0][0]) {
             translatedText = data[0][0][0];
           }
@@ -90,9 +90,9 @@ module.exports = {
       // If API 1 fails, try API 2
       if (!translatedText) {
         try {
-          const response = axios.get(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=auto|${lang}`);
+          const response = await axios.get(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=auto|${lang}`);
           if (response.status === 200) {
-            const data = await response.json();
+            const data = response.data;
             if (data && data.responseData && data.responseData.translatedText) {
               translatedText = data.responseData.translatedText;
             }
@@ -105,9 +105,9 @@ module.exports = {
       // If API 2 fails, try API 3
       if (!translatedText) {
         try {
-          const response = axios.get(`https://api.dreaded.site/api/translate?text=${encodeURIComponent(textToTranslate)}&lang=${lang}`);
+          const response = await axios.get(`https://api.dreaded.site/api/translate?text=${encodeURIComponent(textToTranslate)}&lang=${lang}`);
           if (response.status === 200) {
-            const data = await response.json();
+            const data = response.data;
             if (data && data.translated) {
               translatedText = data.translated;
             }

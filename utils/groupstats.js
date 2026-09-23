@@ -75,7 +75,7 @@ function getStats(groupId) {
     return db[groupId][today];
 }
 
-process.on('SIGINT', () => { flushPending(); process.exit(0); });
-process.on('SIGTERM', () => { flushPending(); process.exit(0); });
+process.on('SIGINT', () => { flushPending(); });
+process.on('SIGTERM', () => { flushPending(); });
 
 module.exports = { addMessage, getStats };

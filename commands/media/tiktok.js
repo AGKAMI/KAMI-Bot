@@ -8,7 +8,15 @@ const { ttdl } = require('ruhend-scraper');
 const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
-const processedMessages = new Set();
+const processedMessages = new Map(); // id → timestamp
+
+// Periodic sweep every 5 min
+setInterval(() => {
+  const cutoff = Date.now() - 5 * 60 * 1000;
+  for (const [id, ts] of processedMessages) {
+    if (ts < cutoff) processedMessages.delete(id);
+  }
+}, 5 * 60 * 1000);
 
 const TIKTOK_REGEX = /(?:https?:\/\/)?(?:(?:www|vt|vm)\.)?tiktok\.com\/.+|(?:https?:\/\/)?tikcdn\.io\/ssstik\/\d+/i;
 
@@ -168,8 +176,7 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (processedMessages.has(msg.key.id)) return;
-      processedMessages.add(msg.key.id);
-      setTimeout(() => processedMessages.delete(msg.key.id), 5 * 60 * 1000);
+      processedMessages.set(msg.key.id, Date.now());
 
       const text = (msg.message?.conversation ||
         msg.message?.extendedTextMessage?.text || '').trim();

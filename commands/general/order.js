@@ -16,6 +16,7 @@ const { normalizeJidWithLid } = require('../../utils/jidHelper');
 // Resolve DM JID from sender (redirects group clicks to DM)
 function toDmJid(sender) {
   const resolved = normalizeJidWithLid(sender);
+  if (!resolved) return null;
   const phone = resolved.split(':')[0].split('@')[0];
   return phone + '@s.whatsapp.net';
 }
@@ -302,12 +303,14 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
 // Main menu
 onButton('order:main', async (sock, msg, from, sender, btnId) => {
   const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
   await sendMainMenu(sock, target, msg);
 });
 
 // Category menus
 onButton('order:cat:', async (sock, msg, from, sender, btnId) => {
   const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
   const parts = btnId.split(':');
   const catId = parts[2];
 
@@ -324,6 +327,7 @@ onButton('order:cat:', async (sock, msg, from, sender, btnId) => {
 // Mod sub-category menus
 onButton('order:sub:', async (sock, msg, from, sender, btnId) => {
   const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
   const parts = btnId.split(':');
   const subId = parts[2];
   const sub = MOD_SUBS.find(s => s.id === subId);
@@ -341,6 +345,7 @@ onButton('order:sub:', async (sock, msg, from, sender, btnId) => {
 // Item detail
 onButton('order:item:', async (sock, msg, from, sender, btnId) => {
   const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
   const itemId = btnId.replace('order:item:', '');
   await sendItemDetail(sock, target, itemId, msg);
 });
@@ -362,6 +367,7 @@ module.exports = {
           text: `\u{1F4AC} _check your DMs to browse the catalog._`,
         });
         const dmJid = toDmJid(extra.sender);
+        if (!dmJid) return;
         // Unblock so DMs land (same as crew application)
         try { await sock.updateBlockStatus(dmJid, 'unblock'); } catch (e) {}
         await sendMainMenu(sock, dmJid, msg);

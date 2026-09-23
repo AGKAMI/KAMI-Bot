@@ -5,9 +5,9 @@
 /* eslint-disable */
 
 const axios = require('axios');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const util = require('util');
-const execPromise = util.promisify(exec);
+const execFilePromise = util.promisify(execFile);
 const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 
@@ -23,15 +23,14 @@ setInterval(() => {
 
 async function fetchWithYtDlp(url) {
   try {
-    // Try system yt-dlp first, fall back to config path
     const ytDlpCmd = config.ytDlpPath || 'yt-dlp';
-    const { stdout } = await execPromise(`${ytDlpCmd} -g -f best "${url}"`, {
+    const { stdout } = await execFilePromise(ytDlpCmd, ['-g', '-f', 'best', url], {
       maxBuffer: 5 * 1024 * 1024,
       timeout: 60000,
     });
     const videoUrl = stdout.trim().split('\n').pop();
     if (!videoUrl) throw new Error('yt-dlp returned empty URL');
-    const { stdout: titleOut } = await execPromise(`${ytDlpCmd} --get-title "${url}"`, {
+    const { stdout: titleOut } = await execFilePromise(ytDlpCmd, ['--get-title', url], {
       maxBuffer: 1024 * 1024,
       timeout: 30000,
     });

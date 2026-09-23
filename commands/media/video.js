@@ -5,7 +5,15 @@ const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 const { toVideo } = require('../../utils/converter');
 
-const processedMessages = new Set();
+const processedMessages = new Map(); // id → timestamp
+
+// Periodic sweep every 5 min
+setInterval(() => {
+  const cutoff = Date.now() - 5 * 60 * 1000;
+  for (const [id, ts] of processedMessages) {
+    if (ts < cutoff) processedMessages.delete(id);
+  }
+}, 5 * 60 * 1000);
 const MAX_SIZE_MB = 16;
 const MAX_CONCURRENT = 1;
 let activeDownloads = 0;
@@ -32,8 +40,7 @@ module.exports = {
 
   const prefix = config.prefix || '.';
     if (processedMessages.has(msg.key.id)) return;
-    processedMessages.add(msg.key.id);
-    setTimeout(() => processedMessages.delete(msg.key.id), 5 * 60 * 1000);
+    processedMessages.set(msg.key.id, Date.now());
 
     if (activeDownloads >= MAX_CONCURRENT) {
       const pos = downloadQueue.length + 1;
