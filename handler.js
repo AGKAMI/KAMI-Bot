@@ -569,7 +569,7 @@ const handleMessage = async (sock, msg) => {
 
     if (!msg.message) {
       // Button taps might not have msg.message — check anyway
-      if (await handleButtonResponse(sock, msg, (sender, from) => isAdmin(sock, sender, from))) return;
+          if (await handleButtonResponse(sock, msg, async (sender, from) => (await isAdmin(sock, sender, from)) || isOwner(sender))) return;
       return;
     }
     
@@ -581,7 +581,7 @@ const handleMessage = async (sock, msg) => {
         // Interactive button responses — route to registered button handlers
         // BEFORE the DM blocker / prefix gate so button presses always work.
         try {
-          if (await handleButtonResponse(sock, msg, (sender, from) => isAdmin(sock, sender, from))) return;
+      if (await handleButtonResponse(sock, msg, async (sender, from) => (await isAdmin(sock, sender, from)) || isOwner(sender))) return;
         } catch (btnErr) {
           if (!btnErr.message?.includes('Cannot find module')) {
             console.error('[BUTTON] route error:', btnErr.message);

@@ -171,6 +171,11 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
       }
     }
 
+    // Mark as bot-initiated so handler.js skips member protection (prevents re-add loop)
+    const handler = require('../../handler');
+    handler._botKicked.add(target);
+    setTimeout(() => handler._botKicked.delete(target), 5000);
+
     await sock.groupParticipantsUpdate(from, [target], 'remove');
     await sock.sendMessage(from, {
       text:

@@ -3,7 +3,7 @@
  */
 
 const { bold, pick, SLANG, mention } = require('../../utils/format');
-const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { sendButtons } = require('../../utils/buttonHelper');
 const database = require('../../database');
 
 module.exports = {
@@ -40,16 +40,3 @@ module.exports = {
       }
     }
   };
-
-// Button handlers
-onButton('admin:unmute', async (sock, msg, from, sender, btnId) => {
-  try {
-    await sock.groupSettingUpdate(from, 'not_announcement');
-    await sock.sendMessage(from, {
-      text: `🔓 UNMUTED\n\nGroup opened — everyone can talk now`,
-    });
-  } catch (e) {
-    console.error('[UNMUTE BTN] Error:', e.message);
-    await sock.sendMessage(from, { text: `❌ *UNMUTE FAILED*\n\n${e.message || "Couldn't open the group"}` });
-  }
-});

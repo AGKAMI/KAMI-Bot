@@ -216,7 +216,7 @@ onButton('menu:more1', async (sock, msg, from) => {
       { id: 'menu:more2',   text: '📂 More' },
     ],
   });
-  await sendBtns(sock, from, { text: '', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
+  await sendBtns(sock, from, { text: '⬇️', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
 });
 onButton('menu:general', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('general') });
@@ -236,7 +236,7 @@ onButton('menu:more2', async (sock, msg, from) => {
       { id: 'menu:more3',  text: '📂 More' },
     ],
   });
-  await sendBtns(sock, from, { text: '', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
+  await sendBtns(sock, from, { text: '⬇️', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
 });
 onButton('menu:media', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('media') });
@@ -256,7 +256,7 @@ onButton('menu:more3', async (sock, msg, from) => {
       { id: 'menu:more4',    text: '📂 More' },
     ],
   });
-  await sendBtns(sock, from, { text: '', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
+  await sendBtns(sock, from, { text: '⬇️', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
 });
 onButton('menu:games', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('games') });
@@ -276,7 +276,7 @@ onButton('menu:more4', async (sock, msg, from) => {
       { id: 'menu:more5',     text: '📂 More' },
     ],
   });
-  await sendBtns(sock, from, { text: '', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
+  await sendBtns(sock, from, { text: '⬇️', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
 });
 onButton('menu:anime', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('anime') });

@@ -437,7 +437,7 @@ onButton('cwiz:adminreview:', async (sock, msg, from, sender, btnId) => {
   const teamKey = parts[0];
   const appUid = parts[1];
 
-  const session = getSessionOrExpired(sock, from);
+  const session = await getSessionOrExpired(sock, from);
   if (!session) return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
   if (session.stage !== 'review') return;
@@ -452,7 +452,7 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
   const teamKey = parts[0];
   const appUid = parts[1];
 
-  const session = getSessionOrExpired(sock, from);
+  const session = await getSessionOrExpired(sock, from);
   if (!session) return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
   if (session.stage !== 'review') return;
