@@ -718,18 +718,42 @@ console.log(`⚡ Prefix: ${config.prefix}`);
 const ownerNames = Array.isArray(config.ownerName) ? config.ownerName.join(',') : config.ownerName;
 console.log(`👑 Owner: ${ownerNames}\n`);
 
-// Clean bot-specific Puppeteer/Chromium cache to prevent disk bloat
+// Clean caches to prevent disk bloat on panels
 function cleanupBotCache() {
+  const home = os.homedir();
+  const targets = [
+    path.join(home, '.cache', 'puppeteer'),
+    path.join(home, '.cache', 'sharp'),
+    path.join(home, '.npm'),
+    path.join(home, '.cache', 'canvas'),
+    '/tmp/sharp-*',
+    '/tmp/canvas-*',
+  ];
+  let totalFreed = 0;
+  for (const target of targets) {
+    try {
+      if (!fs.existsSync(target)) continue;
+      const stat = fs.statSync(target);
+      if (!stat.isDirectory()) {
+        totalFreed += stat.size;
+        fs.unlinkSync(target);
+        continue;
+      }
+      const sz = getDirSize(target);
+      fs.rmSync(target, { recursive: true, force: true });
+      totalFreed += sz;
+    } catch {}
+  }
+  // Also nuke npm/_cacache which rebuilds each deploy
   try {
-    const home = os.homedir();
-    const cacheDir = path.join(home, '.cache', 'puppeteer');
-    if (fs.existsSync(cacheDir)) {
-      const sizeBefore = getDirSize(cacheDir);
-      fs.rmSync(cacheDir, { recursive: true, force: true });
-      console.log(`🧹 Cleaned puppeteer cache — freed ${(sizeBefore / 1024 / 1024).toFixed(1)}MB`);
+    const cachePath = path.join(home, '.npm', '_cacache');
+    if (fs.existsSync(cachePath)) {
+      totalFreed += getDirSize(cachePath);
+      fs.rmSync(cachePath, { recursive: true, force: true });
     }
-  } catch (err) {
-    // Non-fatal
+  } catch {}
+  if (totalFreed > 0) {
+    console.log(`🧹 Cache cleanup — freed ${(totalFreed / 1024 / 1024).toFixed(1)}MB`);
   }
 }
 function getDirSize(dir) {
