@@ -68,7 +68,21 @@ module.exports = {
       // Atomic: remove app immediately to prevent double-accept race condition
       database.removeApplicant(app.team, uid);
 
-      const applicantJid = app.jid;
+      // Resolve LID → phone JID for DMs (WhatsApp can't DM LID JIDs)
+      const rawJid = app.jid;
+      const applicantJid = (() => {
+        if (!rawJid) return rawJid;
+        // If already @s.whatsapp.net, use as-is
+        if (rawJid.includes('@s.whatsapp.net')) return rawJid;
+        // Try LID → PN mapping
+        const resolved = normalizeJidWithLid(rawJid);
+        if (resolved && resolved.includes('@s.whatsapp.net')) return resolved;
+        // Try stripping device suffix
+        const stripped = rawJid.replace(/:\d+@/, '@');
+        if (stripped.includes('@s.whatsapp.net')) return stripped;
+        // Last resort — return original
+        return rawJid;
+      })();
 
       // Resolve teamKey — verify app.team matches the stored groupJid
       let teamKey = app.team;

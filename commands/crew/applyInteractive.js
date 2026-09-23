@@ -294,7 +294,18 @@ async function submitApplication(sock, session) {
 
       if (admins.length > 0) {
         let dmed = 0;
-        for (const adminJid of admins) {
+        for (const rawAdminJid of admins) {
+          // Resolve LID → phone JID for DMs
+          const adminJid = (() => {
+            if (!rawAdminJid) return rawAdminJid;
+            if (rawAdminJid.includes('@s.whatsapp.net')) return rawAdminJid;
+            const { normalizeJidWithLid } = require('../../utils/jidHelper');
+            const resolved = normalizeJidWithLid(rawAdminJid);
+            if (resolved && resolved.includes('@s.whatsapp.net')) return resolved;
+            const stripped = rawAdminJid.replace(/:\d+@/, '@');
+            if (stripped.includes('@s.whatsapp.net')) return stripped;
+            return rawAdminJid;
+          })();
           try {
             await sendButtons(sock, adminJid, {
               text: noticeText,
