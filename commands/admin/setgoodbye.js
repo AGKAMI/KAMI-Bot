@@ -13,7 +13,7 @@ module.exports = {
   description: 'Set custom goodbye message',
   usage: 'setgoodbye <message> (use @user for member mention)',
   groupOnly: true,
-  ownerOnly: true, adminOnly: false,
+  ownerOnly: false, adminOnly: true,
   botAdminNeeded: true,
   execute: async (sock, msg, args) => {
 

@@ -65,6 +65,9 @@ module.exports = {
         );
       }
 
+      // Atomic: remove app immediately to prevent double-accept race condition
+      database.removeApplicant(app.team, uid);
+
       const applicantJid = app.jid;
 
       // Resolve teamKey — verify app.team matches the stored groupJid

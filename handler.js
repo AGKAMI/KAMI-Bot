@@ -1522,7 +1522,9 @@ const handleGroupUpdate = async (sock, update) => {
             }
 
             // ── Owner-Protected Member Removal ────────────
+            let kickProtectionFired = false;
             if (database.isOwnerProtected(id, jid) && !_botKicked.has(jid)) {
+              kickProtectionFired = true;
               console.log(`[MEMBER PROTECTION] Protected member ${jid.split('@')[0]} removed from ${id} — attempting re-add`);
 
               const memberNum = jid.split(':')[0].split('@')[0];
@@ -1596,7 +1598,8 @@ const handleGroupUpdate = async (sock, update) => {
 
             // ── Protected Member Left Tracker ──────────────
             // If a protected member left voluntarily (not kicked by bot), notify owner
-            if (database.isOwnerProtected(id, jid) && !_botKicked.has(jid)) {
+            // Skip if kick protection already handled this event
+            if (!kickProtectionFired && database.isOwnerProtected(id, jid) && !_botKicked.has(jid)) {
               const memberNum = jid.split(':')[0].split('@')[0];
               const ownerNumbers = config.ownerNumber || [];
               for (const ownerNum of ownerNumbers) {
@@ -1837,7 +1840,7 @@ const handleGroupUpdate = async (sock, update) => {
           const welcomeMsg = [
             `*New Member*`,
             `Welcome ${mention(participantJid)} to *${groupName}*`,
-            `Member #${groupMetadata.participants.length} | ${joinedDate}`,
+            `Member #${groupMetadata.participants.length + 1} | ${joinedDate}`,
             '',
             `_${pick(SLANG.vibe)}, enjoy your stay chommie_ 💀`,
           ].join('\n');
@@ -1852,7 +1855,9 @@ const handleGroupUpdate = async (sock, update) => {
           
           // Fetch group profile pic as background
           let bgBuffer = null;
-          const customWelcomePath = path.join(__dirname, 'utils/welcome_image.jpg');
+          const groupJidSafe = id.replace(/[^a-zA-Z0-9]/g, '_');
+          const customWelcomePath = path.join(__dirname, `utils/images/welcome/${groupJidSafe}.jpg`);
+          const fallbackWelcomePath = path.join(__dirname, 'utils/welcome_image.jpg');
           
           // Security groups always use group PP — skip custom image
           const isSecurityGroup = Object.values(config.crewTeams || {}).some(t => t.jid === id);
@@ -1870,9 +1875,11 @@ const handleGroupUpdate = async (sock, update) => {
               }
             }
           } else {
-            // Other groups: custom image > group pic > fallback
+            // Other groups: per-group custom image > global fallback > group pic > fallback
             if (fs.existsSync(customWelcomePath)) {
               bgBuffer = fs.readFileSync(customWelcomePath);
+            } else if (fs.existsSync(fallbackWelcomePath)) {
+              bgBuffer = fs.readFileSync(fallbackWelcomePath);
             } else {
               try {
                 const groupPicUrl = await sock.profilePictureUrl(id, 'image');
@@ -1962,14 +1969,16 @@ const handleGroupUpdate = async (sock, update) => {
           const goodbyeMsg = [
             `*Goodbye*`,
             `Farewell ${mention(participantJid)} from *${groupName}*`,
-            `Member #${groupMetadata.participants.length} | ${leftDate}`,
+            `Member #${Math.max(1, groupMetadata.participants.length - 1)} | ${leftDate}`,
             '',
             `_${pick(SLANG.vibe)}, we'll miss you hey._ 💀`,
           ].join('\n');
           
           // Fetch background image: custom > group pic > fallback
           let bgBuffer = null;
-          const customGoodbyePath = path.join(__dirname, 'utils/goodbye_image.jpg');
+          const groupJidSafeGbye = id.replace(/[^a-zA-Z0-9]/g, '_');
+          const customGoodbyePath = path.join(__dirname, `utils/images/goodbye/${groupJidSafeGbye}.jpg`);
+          const fallbackGoodbyePath = path.join(__dirname, 'utils/goodbye_image.jpg');
           
           // Security groups always use group PP — skip custom image
           const isSecurityGroupGbye = Object.values(config.crewTeams || {}).some(t => t.jid === id);
@@ -1987,9 +1996,11 @@ const handleGroupUpdate = async (sock, update) => {
               }
             }
           } else {
-            // Other groups: custom image > group pic > fallback
+            // Other groups: per-group custom image > global fallback > group pic > fallback
             if (fs.existsSync(customGoodbyePath)) {
               bgBuffer = fs.readFileSync(customGoodbyePath);
+            } else if (fs.existsSync(fallbackGoodbyePath)) {
+              bgBuffer = fs.readFileSync(fallbackGoodbyePath);
             } else {
               try {
                 const groupPicUrl = await sock.profilePictureUrl(id, 'image');

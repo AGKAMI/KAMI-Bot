@@ -54,6 +54,14 @@ async function getSessionOrExpired(sock, jid) {
 }
 
 function createSession(jid, teamKey, appUid, applicantJid, applyingForSomeone, originFrom) {
+  // Clean up any existing session — orphaned apps get removed
+  const oldSession = sessions.get(jid);
+  if (oldSession && oldSession.appUid && oldSession.teamKey) {
+    try {
+      database.removeApplicant(oldSession.teamKey, oldSession.appUid);
+    } catch {}
+  }
+
   const { questions, indices } = getRandomQuestions(teamKey);
   const session = {
     jid,
@@ -351,7 +359,15 @@ onButton('cwiz:a:', async (sock, msg, from, sender, btnId) => {
   const session = await getSessionOrExpired(sock, from);
   if (!session || session.stage !== 'question') return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
-  if (qNum !== session.currentQ) return;
+  if (qNum !== session.currentQ) {
+    // Stale button tap — send feedback
+    try {
+      await sock.sendMessage(from, {
+        text: `⚠️ That question already moved on — tap the latest buttons hey`
+      }, { quoted: msg });
+    } catch {}
+    return;
+  }
 
   // Store answer
   session.answers[qNum] = answer;
@@ -460,9 +476,9 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
     }
 
     if (isScenario) {
-      // Scenario: correct = 14 pts, wrong = score * 2
+      // Scenario: correct = 14 pts, wrong = 0 pts (too risky to give partial credit)
       const isCorrect = selectedOption && selectedOption.correct;
-      totalScore += isCorrect ? 14 : (score * 2);
+      totalScore += isCorrect ? 14 : 0;
       if (!isCorrect) issues.push(`Q${i} (${q.label}) — wrong scenario answer`);
     } else {
       // Other: score as-is (0-7)

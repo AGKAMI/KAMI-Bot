@@ -52,7 +52,10 @@ module.exports = {
         finalBuffer = await sharp(mediaBuffer).jpeg({ quality: 90 }).toBuffer();
       }
 
-      const imagePath = path.join(__dirname, '../../utils/goodbye_image.jpg');
+      const groupJid = extra.from.replace(/[^a-zA-Z0-9]/g, '_');
+      const imagesDir = path.join(__dirname, '../../utils/images/goodbye');
+      if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
+      const imagePath = path.join(imagesDir, `${groupJid}.jpg`);
       fs.writeFileSync(imagePath, finalBuffer);
 
       await extra.reply(`*✅ GOODBYE IMAGE UPDATED*\n\n_${pick(SLANG.good)}, departing members will see this image_`);
