@@ -302,12 +302,31 @@ async function startBot() {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const errorMessage = lastDisconnect?.error?.message || 'Unknown error';
 
-      // 401 = loggedOut, 440 = conflict — just retry, don't auto-delete session
+      // 401 = loggedOut, 440 = conflict — retry with backoff, clear session if stuck
       if (statusCode === 401 || statusCode === 440 || errorMessage.includes('conflict')) {
-        console.log(`⚠️ Session issue (${statusCode}) — retrying in 10s...`);
-        setTimeout(() => startBot().catch(e => console.error('[CONFLICT] reconnect failed:', e.message)), 10000);
+        sessionRetryCount = (sessionRetryCount || 0) + 1;
+        const retryDelay = Math.min(10000 * sessionRetryCount, 60000);
+        console.log(`⚠️ Session issue (${statusCode}) — retry ${sessionRetryCount}/5 in ${retryDelay / 1000}s...`);
+
+        if (sessionRetryCount >= 5) {
+          console.log('\n❌ Session stuck after 5 retries — clearing stale session files for fresh QR...');
+          try {
+            const sessionPath = path.join(__dirname, config.sessionName);
+            if (fs.existsSync(sessionPath)) {
+              fs.rmSync(sessionPath, { recursive: true, force: true });
+              console.log('🗑️  Session folder deleted. Restart to get a new QR code.\n');
+            }
+          } catch (e) {
+            console.error('Failed to clear session:', e.message);
+          }
+          process.exit(1);
+        }
+
+        setTimeout(() => startBot().catch(e => console.error('[CONFLICT] reconnect failed:', e.message)), retryDelay);
         return;
       }
+      // Reset retry counter on successful or non-session-related close
+      sessionRetryCount = 0;
 
       // Always reconnect unless explicitly logged out (QR needed)
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
