@@ -1072,48 +1072,46 @@ const handleMessage = async (sock, msg) => {
     }
 
     // Antibadword — handle messages with banned words (warn/delete/kick per setting) — admins/owners exempt
-        if (isGroup && !msg.key.fromMe) {
-          try {
-            const senderIsAdmin = await isAdmin(sock, sender, from, groupMetadata);
-            if (!senderIsAdmin && !isOwner(sender)) {
-            const groupSettings = database.getGroupSettings(from);
-            const badwords = (groupSettings.badwords || []).concat(config.defaultBadwords || []);
-            if (groupSettings.antibadword && badwords.length > 0 && body) {
-              // Normalize once: lowercase, leetspeak, collapse repeats, strip separators.
-              const normBody = normalizeBadword(body);
-              for (const word of badwords) {
-                const normWord = getNormalizedBadword(word);
-                if (!normWord) continue;
-                const hit = normBody.includes(normWord);
-                if (hit) {
-                  const action = groupSettings.badwordAction || 'delete';
-                  // Delete the bad message first for delete/kick
+    if (isGroup && !msg.key.fromMe) {
+      try {
+        const senderIsAdmin = await isAdmin(sock, sender, from, groupMetadata);
+        if (!senderIsAdmin && !isOwner(sender)) {
+          const groupSettings = database.getGroupSettings(from);
+          const badwords = (groupSettings.badwords || []).concat(config.defaultBadwords || []);
+          if (groupSettings.antibadword && badwords.length > 0 && body) {
+            const normBody = normalizeBadword(body);
+            for (const word of badwords) {
+              const normWord = getNormalizedBadword(word);
+              if (!normWord) continue;
+              const hit = normBody.includes(normWord);
+              if (hit) {
+                const action = groupSettings.badwordAction || 'delete';
+                try {
+                  if (action !== 'warn') await sock.sendMessage(from, { delete: msg.key });
+                } catch (e) {}
+                if (action === 'warn' || action === 'delete') {
+                  await sock.sendMessage(from, {
+                    text: action === 'warn'
+                      ? `⚠️ *BAD WORD*\n\n@${sender.split('@')[0]} _that word's not allowed here, ${pick(SLANG.vibe)}_`
+                      : `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _your message was deleted — bad word detected_`,
+                    mentions: [sender]
+                  });
+                } else if (action === 'kick') {
+                  await sock.sendMessage(from, {
+                    text: `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _kicked — bad word detected_`,
+                    mentions: [sender]
+                  });
                   try {
-                    if (action !== 'warn') await sock.sendMessage(from, { delete: msg.key });
+                    await sock.groupParticipantsUpdate(from, [sender], 'remove');
                   } catch (e) {}
-                  if (action === 'warn' || action === 'delete') {
-                    await sock.sendMessage(from, {
-                      text: action === 'warn'
-                        ? `⚠️ *BAD WORD*\n\n@${sender.split('@')[0]} _that word's not allowed here, ${pick(SLANG.vibe)}_`
-                        : `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _your message was deleted — bad word detected_`,
-                      mentions: [sender]
-                    });
-                  } else if (action === 'kick') {
-                    await sock.sendMessage(from, {
-                      text: `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _kicked — bad word detected_`,
-                      mentions: [sender]
-                    });
-                    try {
-                      await sock.groupParticipantsUpdate(from, [sender], 'remove');
-                    } catch (e) {}
-                  }
-                  return;
                 }
+                return;
               }
             }
-            }
-          } catch (e) {}
+          }
         }
+      } catch (e) {}
+    }
 
     // Antiflood — auto-warn/kick spammers — admins/owners exempt
     if (isGroup && !msg.key.fromMe) {
@@ -1216,6 +1214,7 @@ const handleMessage = async (sock, msg) => {
             if (now - time > 300000) trackMap.delete(key);
           }
         }
+      }
       }
     }
     
@@ -1785,10 +1784,9 @@ const handleGroupUpdate = async (sock, update) => {
                       if (found) {
                         stillAdminAnywhere = true;
                         break;
-        }
-      }
-      }
-    }
+                      }
+                    }
+                  }
                   
                   if (!stillAdminAnywhere) {
                     database.removeTeamAdmin(number);
