@@ -12,6 +12,7 @@ const { TEAMS, buildAdminNotice } = require('./crewForms');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { pick, SLANG, mention } = require('../../utils/format');
 const { SSRS, KSSPS, KSSMP, KSSMS, shuffle } = require('./questionPools');
+const { buildComparableIds } = require('../../utils/jidHelper');
 
 // ── In-memory session store ──────────────────────────────────
 const sessions = new Map();
@@ -194,11 +195,11 @@ async function sendReview(sock, session) {
   text += `━━━━━━━━━━━━━━━━\n\n`;
   text += `Tap a button below:`;
 
-  // 3 buttons max: Pick a question to change | Confirm | Redo
+  // 3 buttons max: Change Answer | Confirm | Cancel
   const buttons = [
     { id: `cwiz:pick:${session.teamKey}:${session.appUid}`, text: '✏️ Change Answer' },
     { id: `cwiz:submit:${session.teamKey}:${session.appUid}`, text: '✅ Confirm & Send' },
-    { id: `cwiz:redo:${session.teamKey}:${session.appUid}`, text: '🔄 Redo All' },
+    { id: `cwiz:cancel:${session.teamKey}:${session.appUid}`, text: '🚫 Cancel' },
   ];
 
   await sendButtons(sock, session.jid, {
@@ -622,8 +623,9 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
   sessions.delete(from);
 });
 
-onButton('cwiz:redo:', async (sock, msg, from, sender, btnId) => {
-  const parts = btnId.replace('cwiz:redo:', '').split(':');
+// Cancel application from review screen
+onButton('cwiz:cancel:', async (sock, msg, from, sender, btnId) => {
+  const parts = btnId.replace('cwiz:cancel:', '').split(':');
   const teamKey = parts[0];
   const appUid = parts[1];
 
@@ -631,19 +633,26 @@ onButton('cwiz:redo:', async (sock, msg, from, sender, btnId) => {
   if (!session) return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
 
-  // Reset with fresh questions
-  const { questions, indices } = getRandomQuestions(teamKey);
-  session.answers = {};
-  session.currentQ = 1;
-  session.stage = 'question';
-  session.startedAt = Date.now();
-  session.questions = questions;
-  session.questionIndices = indices;
+  // Remove from DB
+  const crewTeam = config.crewTeams[teamKey];
+  const resolved = database.resolveTeamWithConfig(teamKey);
+  const teamGroupJid = (resolved && resolved.jid) || (crewTeam ? crewTeam.jid : null);
+  if (teamGroupJid) {
+    database.removeApplicant(teamGroupJid, appUid);
+  }
 
+  // Delete session
+  sessions.delete(from);
+
+  const teamLabel = TEAMS[teamKey]?.label || teamKey;
   await sock.sendMessage(from, {
-    text: `🔄 *Answers cleared!*\n\nStarting over from Q1...`,
+    text:
+      `━━━━━━━━━━━━━━━━\n` +
+      `🚫 *APPLICATION CANCELLED*\n` +
+      `━━━━━━━━━━━━━━━━\n\n` +
+      `Your *${teamKey}* — ${teamLabel} application has been removed.\n\n` +
+      `💡 You can apply again anytime with ${config.prefix || '.'}crew apply ${teamKey}`
   });
-  await sendCurrentQuestion(sock, session);
 });
 
 // Edit buttons: cwiz:edit:<team>:<uid>:<qNum>
@@ -666,6 +675,111 @@ onButton('cwiz:edit:', async (sock, msg, from, sender, btnId) => {
   await sendCurrentQuestion(sock, session);
 });
 
+// ── Applicant State Detection ────────────────────────────────
+// Determines what stage of the application process a user is in.
+// Used by handler.js to send progressive responses.
+
+function getApplicantState(jid) {
+  // 1. Check in-memory wizard session
+  const session = getSession(jid);
+  if (session) {
+    if (session.stage === 'question') {
+      return {
+        state: 'wizard',
+        currentQ: session.currentQ,
+        totalQ: session.totalQ,
+        teamKey: session.teamKey,
+        appUid: session.appUid,
+      };
+    }
+    if (session.stage === 'review') {
+      return {
+        state: 'review',
+        teamKey: session.teamKey,
+        appUid: session.appUid,
+      };
+    }
+  }
+
+  // 2. Check DB — scan all teams for a pending/approved application
+  const crewTeams = config.crewTeams || {};
+  const inputVariants = buildComparableIds(jid);
+
+  for (const [key, team] of Object.entries(crewTeams)) {
+    if (key === 'SSGENERAL') continue;
+    const teamData = database.getTeam(team.jid);
+    if (!teamData?.applicants) continue;
+
+    // Check pending apps
+    for (const [uid, app] of Object.entries(teamData.applicants)) {
+      if (app.status !== 'pending') continue;
+      const appVariants = buildComparableIds(app.jid);
+      if (!appVariants.some(v => inputVariants.includes(v))) continue;
+
+      return app.answers
+        ? { state: 'pending_submitted', teamKey: app.team || key, appUid: uid }
+        : { state: 'pending_incomplete', teamKey: app.team || key, appUid: uid };
+    }
+
+    // Check bot-approved apps (status: 'approved', waiting for admin finalization)
+    for (const [uid, app] of Object.entries(teamData.applicants)) {
+      if (app.status !== 'approved') continue;
+      const appVariants = buildComparableIds(app.jid);
+      if (!appVariants.some(v => inputVariants.includes(v))) continue;
+      return { state: 'pending_approved', teamKey: app.team || key, appUid: uid };
+    }
+  }
+
+  return { state: 'none' };
+}
+
+// Send a progressive response based on the user's application state
+async function sendProgressiveResponse(sock, jid, state) {
+  const prefix = config.prefix || '.';
+  const teamLabel = TEAMS[state.teamKey]?.label || state.teamKey || '';
+
+  switch (state.state) {
+    case 'pending_submitted':
+      await sock.sendMessage(jid, {
+        text:
+          `━━━━━━━━━━━━━━━━\n` +
+          `⏳ *APPLICATION STATUS*\n` +
+          `━━━━━━━━━━━━━━━━\n\n` +
+          `Your *${state.teamKey}* — ${teamLabel} application is being reviewed by an admin.\n\n` +
+          `🆔 App ID: *${state.appUid}*\n\n` +
+          `💡 *What you can do:*\n` +
+          `• \`${prefix}crew applicants ${state.teamKey}\` — check status\n` +
+          `• \`${prefix}crew withdraw ${state.appUid}\` — withdraw application`
+      });
+      break;
+
+    case 'pending_incomplete':
+      await sock.sendMessage(jid, {
+        text:
+          `━━━━━━━━━━━━━━━━\n` +
+          `📋 *APPLICATION INCOMPLETE*\n` +
+          `━━━━━━━━━━━━━━━━\n\n` +
+          `You started a *${state.teamKey}* — ${teamLabel} application but didn't finish answering.\n\n` +
+          `🆔 App ID: *${state.appUid}*\n\n` +
+          `💡 *Start fresh:*\n` +
+          `\`${prefix}crew apply ${state.teamKey}\``
+      });
+      break;
+
+    case 'pending_approved':
+      await sock.sendMessage(jid, {
+        text:
+          `━━━━━━━━━━━━━━━━\n` +
+          `🤖 *APPLICATION AUTO-APPROVED*\n` +
+          `━━━━━━━━━━━━━━━━\n\n` +
+          `Your *${state.teamKey}* — ${teamLabel} application passed the bot review!\n\n` +
+          `🆔 App ID: *${state.appUid}*\n\n` +
+          `⏳ An admin will add you to the group shortly.`
+      });
+      break;
+  }
+}
+
 // ── Periodic cleanup (runs every 5 min) ─────────────────────
 setInterval(() => {
   const now = Date.now();
@@ -676,4 +790,4 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
-module.exports = { startWizard, getQuestions, hasActiveSession };
+module.exports = { startWizard, getQuestions, hasActiveSession, getApplicantState, sendProgressiveResponse };

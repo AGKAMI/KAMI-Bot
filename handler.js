@@ -13,7 +13,7 @@ const axios = require('axios');
 const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG } = require('./utils/format');
 const { buildImage } = require('./utils/imageText');
 const { handleButtonResponse, requireAdmin } = require('./utils/buttonHelper');
-const { hasActiveSession } = require('./commands/crew/applyInteractive');
+const { hasActiveSession, getApplicantState, sendProgressiveResponse } = require('./commands/crew/applyInteractive');
 
 // All admin command buttons are admin-only
 requireAdmin('admin');
@@ -614,7 +614,7 @@ const handleMessage = async (sock, msg) => {
                 (msg.message?.videoMessage?.caption) ||
                 '';
               const dmBody = (dmText || '').trim().toLowerCase();
-              const isApplyCmd = dmBody.startsWith('.crew apply') || dmBody.startsWith('.crew applied');
+              const isApplyCmd = dmBody.startsWith('.crew apply');
 
               // Team admin check — allowed only if they have pending applications for their teams
               if (database.isTeamAdmin(dmSender)) {
@@ -643,10 +643,39 @@ const handleMessage = async (sock, msg) => {
               // Applicant check — allowed if they have a pending application
               else if (database.hasPendingApplication(dmSender) || isApplyCmd) {
                 // Applicant with pending app or starting application — let through
+                // Send progressive response for non-command, non-button messages
+                if (!isApplyCmd && !btnId) {
+                  const state = getApplicantState(dmSender);
+                  if (state.state === 'wizard') {
+                    await sock.sendMessage(from, {
+                      text: `🔘 You're on question ${state.currentQ} of your ${state.teamKey} application — tap the answer buttons above ☝️`
+                    });
+                    return;
+                  }
+                  if (state.state === 'review') {
+                    await sock.sendMessage(from, {
+                      text: `✅ You're reviewing your answers — tap Confirm & Send or Change Answer above ☝️`
+                    });
+                    return;
+                  }
+                }
               }
               // Active crew wizard session — allow through (user typing answers)
               else if (hasActiveSession(dmSender)) {
                 // User is in the middle of the crew application wizard
+                const state = getApplicantState(dmSender);
+                if (state.state === 'wizard') {
+                  await sock.sendMessage(from, {
+                    text: `🔘 You're on question ${state.currentQ} of your ${state.teamKey} application — tap the answer buttons above ☝️`
+                  });
+                  return;
+                }
+                if (state.state === 'review') {
+                  await sock.sendMessage(from, {
+                    text: `✅ You're reviewing your answers — tap Confirm & Send or Change Answer above ☝️`
+                  });
+                  return;
+                }
               }
               // Regular user — block
               else {
@@ -669,6 +698,26 @@ const handleMessage = async (sock, msg) => {
             }
           } catch (dmErr) {
             console.error('[DMBLOCKER] early check error:', dmErr.message);
+          }
+        }
+
+        // Progressive responses for non-command DMs from applicants
+        // Catches messages that pass the DM blocker but aren't commands
+        if (!from.endsWith('@g.us') && !msg.key.fromMe) {
+          try {
+            const dmText2 =
+              (msg.message?.conversation) ||
+              (msg.message?.extendedTextMessage?.text) || '';
+            const dmBody2 = (dmText2 || '').trim();
+            if (dmBody2 && !dmBody2.startsWith(config.prefix)) {
+              const state = getApplicantState(sender);
+              if (state.state === 'pending_submitted' || state.state === 'pending_incomplete' || state.state === 'pending_approved') {
+                await sendProgressiveResponse(sock, from, state);
+                return;
+              }
+            }
+          } catch (progErr) {
+            console.error('[PROGRESSIVE] response error:', progErr.message);
           }
         }
     
@@ -1274,19 +1323,49 @@ const handleMessage = async (sock, msg) => {
       const prefixEscaped = config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const prefix = config.prefix || '.';
       const isAllowedCmd = new RegExp('^' + prefixEscaped +
-        'crew\\s+(apply|applied|withdraw|applicants|pending)(?=\\s|$)').test(lowerBody);
+        'crew\\s+(apply|withdraw|applicants|pending)(?=\\s|$)').test(lowerBody);
       if (!isAllowedCmd) {
-        return sock.sendMessage(from, {
-          text: `⏳ APPLICATION PENDING\n\n` +
-                `You have a pending application being reviewed by an admin.\n` +
-                `Wait for an admin to accept or deny your application.\n\n` +
-                `❌ You cannot use other commands while your application is being reviewed.\n\n` +
-                `💡 *Crew commands you can use:*\n` +
-                `\`${prefix}crew apply <team>\` — apply to another team\n` +
-                `\`${prefix}crew applied <team> <answers>\` — submit your answers\n` +
-                `\`${prefix}crew withdraw <UID>\` — withdraw your application\n` +
-                `\`${prefix}crew applicants <team>\` — check your app status`
-        }, { quoted: msg });
+        const state = getApplicantState(sender);
+        let restrictionMsg;
+        switch (state.state) {
+          case 'pending_submitted':
+            restrictionMsg =
+              `⏳ *APPLICATION PENDING*\n\n` +
+              `Your *${state.teamKey}* application is being reviewed by an admin.\n` +
+              `Wait for an admin to accept or deny your application.\n\n` +
+              `❌ You cannot use other commands while your application is being reviewed.\n\n` +
+              `💡 *Crew commands you can use:*\n` +
+              `\`${prefix}crew apply <team>\` — apply to another team\n` +
+              `\`${prefix}crew withdraw ${state.appUid}\` — withdraw your application\n` +
+              `\`${prefix}crew applicants ${state.teamKey}\` — check your app status`;
+            break;
+          case 'pending_incomplete':
+            restrictionMsg =
+              `📋 *APPLICATION INCOMPLETE*\n\n` +
+              `You started a *${state.teamKey}* application but didn't finish answering.\n\n` +
+              `❌ You cannot use other commands until you complete or cancel your application.\n\n` +
+              `💡 *What to do:*\n` +
+              `\`${prefix}crew apply ${state.teamKey}\` — start a fresh application\n` +
+              `\`${prefix}crew withdraw ${state.appUid}\` — cancel the incomplete one`;
+            break;
+          case 'pending_approved':
+            restrictionMsg =
+              `🤖 *APPLICATION AUTO-APPROVED*\n\n` +
+              `Your *${state.teamKey}* application passed the bot review!\n\n` +
+              `⏳ An admin will add you to the group shortly.\n\n` +
+              `❌ You cannot use other commands while waiting for admin finalization.`;
+            break;
+          default:
+            restrictionMsg =
+              `⏳ *APPLICATION PENDING*\n\n` +
+              `You have a pending application being reviewed by an admin.\n\n` +
+              `❌ You cannot use other commands while your application is being reviewed.\n\n` +
+              `💡 *Crew commands you can use:*\n` +
+              `\`${prefix}crew apply <team>\` — apply to another team\n` +
+              `\`${prefix}crew withdraw <UID>\` — withdraw your application\n` +
+              `\`${prefix}crew applicants <team>\` — check your app status`;
+        }
+        return sock.sendMessage(from, { text: restrictionMsg }, { quoted: msg });
       }
     }
     

@@ -3,6 +3,7 @@
  */
 
 const axios = require('axios');
+const config = require('../config');
 
 const api = axios.create({
   timeout: 30000,
@@ -274,61 +275,6 @@ const APIs = {
   wikiSearch: async (query) => {
     const r = await api.get(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
     return r.data;
-  },
-  
-  // Song Download APIs (all currently unavailable)
-  getIzumiDownloadByUrl: async (youtubeUrl) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  getIzumiDownloadByQuery: async (query) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  getYupraDownloadByUrl: async (youtubeUrl) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  getOkatsuDownloadByUrl: async (youtubeUrl) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  getEliteProTechDownloadByUrl: async (youtubeUrl) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  getAkuariDownloadByUrl: async (youtubeUrl) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  getRyzendesuDownloadByUrl: async (youtubeUrl) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  getEliteProTechVideoByUrl: async (youtubeUrl) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  // Video Download APIs (all currently unavailable)
-  getYupraVideoByUrl: async (youtubeUrl) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  getAkuariVideoByUrl: async (youtubeUrl) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  getRyzendesuVideoByUrl: async (youtubeUrl) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  getOkatsuVideoByUrl: async (youtubeUrl) => {
-    throw new Error('YouTube download is temporarily unavailable');
-  },
-  
-  // TikTok Download API (for commands that call this directly)
-  getTikTokDownload: async (url) => {
-    throw new Error('TikTok download API is currently unavailable. Try again later.');
   },
   
   // Screenshot Website API

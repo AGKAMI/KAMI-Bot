@@ -2,18 +2,16 @@
  * Crew Apply Command — start a crew application.
  * Flow: .crew apply <team> (any SS group or DM)
  * → bot DMs the applicant the application form + assigns a UID.
- * Applicant then posts answers via .crew applied <team> <answers>.
+ * → auto-starts the interactive button wizard.
  * Works from any Slammed Society group or a DM.
  */
 
 const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG, mention } = require('../../utils/format');
-const { TEAMS, buildFormMessage } = require('./crewForms');
+const { TEAMS } = require('./crewForms');
 const { resolveUser } = require('./crewHelpers');
-const { buildComparableIds } = require('../../utils/jidHelper');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
-const { startWizard } = require('./applyInteractive');
 const { createApplication } = require('./applyHelper');
 
 module.exports = {
@@ -100,33 +98,63 @@ module.exports = {
   },
 };
 
-// ── Choice Button Handler ────────────────────────────────────
-// When applicant taps "Use Buttons" or "Type Answers" in the DM
-onButton('cwiz:choice:', async (sock, msg, from, sender, btnId) => {
-  const parts = btnId.replace('cwiz:choice:', '').split(':');
-  const choice = parts[0]; // 'btn' or 'txt'
-  const teamKey = parts[1];
-  const appUid = parts[2];
+// ── Button Handlers ──────────────────────────────────────────
+// Migrated from applied.js — accept/deny/cancel/pending for admin review
 
-  if (choice === 'btn') {
-    // Start the interactive wizard
+onButton('crew:accept', async (sock, msg, from, sender, btnId) => {
+  const uid = btnId.replace('crew:accept:', '');
+  if (!uid) return;
+  const acceptCmd = require('./accept');
+  const senderIsOwner = (config.ownerNumber || []).some(n => sender.includes(n));
+  await acceptCmd.execute(sock, msg, [uid], {
+    from, sender,
+    isGroup: false,
+    isOwner: senderIsOwner,
+    reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+  });
+});
+
+onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
+  const uid = btnId.replace('crew:deny:', '');
+  if (!uid) return;
+  const p = config.prefix || '.';
+  const { getApplicantByUid, getProcessedApp } = require('../../database');
+  const app = getApplicantByUid(uid);
+  const processed = getProcessedApp(uid);
+  if (!app && processed) {
+    const action = processed.action === 'accepted' ? '✅ accepted' : '❌ denied';
     await sock.sendMessage(from, {
-      text: `🔘 *BUTTON MODE*\n\nAnswer each question by tapping a button. Let's go!`,
+      text: `⚠️ Application *${uid}* was already ${action} by an admin.\n\nNothing to do.`,
     });
-    await startWizard(sock, from, teamKey, appUid, from, false, from);
-  } else {
-    // Send the text form + submission instructions in one message
-    const { buildFormMessage } = require('./crewForms');
-    const prefix = config.prefix || '.';
-    const formText = buildFormMessage(teamKey);
-    await sock.sendMessage(from, {
-      text:
-        `━━━━━━━━━━━━━━━━\n` +
-        `*TYPE MODE*\n` +
-        `━━━━━━━━━━━━━━━━\n\n` +
-        formText + `\n\n` +
-        `━━━━━━━━━━━━━━━━\n\n` +
-        `✍️ *HOW TO SUBMIT:*\n\nGo to any SS group and send:\n\`${prefix}crew applied ${teamKey} <your answers>\`\n\nPut each answer on its own line.`,
-    });
+    return;
   }
+  await sock.sendMessage(from, {
+    text: `❌ *Deny Application*\n\nType a reason to deny *${uid}*:\n\`${p}crew deny ${uid} <reason>\``,
+  });
+});
+
+onButton('crew:cancel', async (sock, msg, from, sender, btnId) => {
+  const parts = btnId.replace('crew:cancel:', '').split(':');
+  const teamKey = parts[0];
+  const uid = parts[1];
+  if (!uid) return;
+  const withdrawCmd = require('./withdraw');
+  await withdrawCmd.execute(sock, msg, [uid], {
+    from, sender,
+    isGroup: false,
+    isOwner: false,
+    reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+  });
+});
+
+onButton('crew:pending', async (sock, msg, from, sender, btnId) => {
+  const team = btnId.replace('crew:pending:', '');
+  if (!team) return;
+  const applicantsCmd = require('./applicants');
+  await applicantsCmd.execute(sock, msg, [team], {
+    from, sender,
+    isGroup: from.endsWith('@g.us'),
+    isOwner: false,
+    reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+  });
 });

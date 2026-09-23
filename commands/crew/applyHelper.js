@@ -6,7 +6,6 @@ const database = require('../../database');
 const config = require('../../config');
 const { TEAMS } = require('./crewForms');
 const { buildComparableIds } = require('../../utils/jidHelper');
-const { sendButtons } = require('../../utils/buttonHelper');
 const { pick, SLANG, mention } = require('../../utils/format');
 
 /**
@@ -82,27 +81,31 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
     await sock.updateBlockStatus(applicantJid, 'unblock');
   } catch (e) {}
 
-  // 6. DM applicant with form
+  // 6. DM applicant with form + auto-start wizard
   try {
-    await sendButtons(sock, applicantJid, {
+    await sock.sendMessage(applicantJid, {
       text:
         `━━━━━━━━━━━━━━━━\n` +
         `*${TEAMS[teamKey].label.toUpperCase()} APPLICATION*\n` +
         `${TEAMS[teamKey].emoji} ${TEAMS[teamKey].role.toUpperCase()} ${TEAMS[teamKey].emoji}\n` +
         `━━━━━━━━━━━━━━━━\n\n` +
         `🆔 *YOUR APPLICATION ID:* ${app.appUid}\n\n` +
-        `How would you like to answer the questions?`,
-      footer: `${teamKey} Application`,
-      buttons: [
-        { id: `cwiz:choice:btn:${teamKey}:${app.appUid}`, text: '🔘 Use Buttons' },
-        { id: `cwiz:choice:txt:${teamKey}:${app.appUid}`, text: '✍️ Type Answers' },
-      ],
+        `Starting your application wizard... 🔘`,
     });
+
+    // Auto-start the interactive button wizard
+    const { startWizard } = require('./applyInteractive');
+    await startWizard(sock, applicantJid, teamKey, app.appUid, applicantJid, applyingForSomeone, applicantJid);
   } catch (dmErr) {
     console.error('[CREW APPLY] form DM failed:', dmErr.message);
     database.removeApplicant(teamGroupJid, app.appUid);
     const msg = applyingForSomeone
-      ? `❌ ERROR\n\nCouldn't DM ${mention(applicantJid)} the application form\nCheck if they have DMs open from this bot`
+      ? `❌ ERROR\n\nCouldn't DM ${mention(applicantJid)} the application form\n\n` +
+        `They may have the bot blocked or their privacy settings are blocking DMs.\n\n` +
+        `💡 *What to do:*\n` +
+        `• Ask them to message the bot first (${config.prefix || '.'}start)\n` +
+        `• Or have them unblock the bot and try again\n` +
+        `• Or use ${config.prefix || '.'}crew apply ${teamKey} (let them apply themselves)`
       : `❌ ERROR\n\nCouldn't DM you the application form\nCheck if you have DMs open from this bot`;
     if (replyFn) await replyFn(msg);
     return { ok: false, error: 'dm_failed' };

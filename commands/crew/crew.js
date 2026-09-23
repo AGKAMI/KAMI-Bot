@@ -127,7 +127,7 @@ module.exports = {
               );
             }
             // allowed — route to handler below
-          } else if (sub !== 'apply' && sub !== 'applied' && sub !== 'applicants' && sub !== 'pending') {
+          } else if (sub !== 'apply' && sub !== 'applicants' && sub !== 'pending') {
             // Any other crew command in DM
             if (!isOwner && !isApproved) {
               if (isTeamAdmin) {
@@ -146,7 +146,7 @@ module.exports = {
           }
         } else {
           // Group context
-          if (sub !== 'apply' && sub !== 'applied') {
+          if (sub !== 'apply') {
             if (!inCrewGroup && !isOwner) {
               return extra.reply(
                 `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
@@ -270,7 +270,6 @@ async function showHelp(sock, msg, extra) {
     ``,
     `📋 *RECRUITMENT*`,
     `• ${prefix}crew apply <team> — get the application form in DMs`,
-    `• ${prefix}crew applied <team> <answers> — submit your application`,
     `• ${prefix}crew applicants — view pending apps (with IDs)`,
     `• ${prefix}crew accept <appUid> — accept an applicant`,
     `• ${prefix}crew deny <appUid> <reason> — reject an applicant`,
