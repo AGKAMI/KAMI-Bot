@@ -321,6 +321,19 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
     console.error('[PROMOTE BTN] permission check failed:', e.message);
   }
 
+  // ── Owner-demoted blacklist — only the owner can promote them again ──
+  const btnOwnerNums = (require('../../config').ownerNumber || []);
+  const btnSenderIsOwner = btnOwnerNums.some(n => sender.includes(n));
+  if (!btnSenderIsOwner && database.isOwnerDemoted(from, target)) {
+    return await sock.sendMessage(from, {
+      text:
+        `🚫 *PROMOTE BLOCKED*\n\n` +
+        `${mention(target)} was demoted by the owner\n\n` +
+        `Only the owner can promote them again`,
+      mentions: [target],
+    });
+  }
+
   // ── Check if target is already admin before promoting ──
   try {
     const meta = await sock.groupMetadata(from).catch(() => null);
@@ -339,11 +352,20 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
     }
 
     await sock.groupParticipantsUpdate(from, [target], 'promote');
+
+    // Track owner-promoted admins for protection + clear demoted flag (owner re-promotion = forgiveness)
+    let protectionNote = '';
+    if (btnSenderIsOwner) {
+      database.addOwnerPromotedAdmin(from, target, sender);
+      database.removeOwnerDemoted(from, target);
+      protectionNote = '\n\n🛡️ This admin is now *protected* — only you can demote them';
+    }
+
     await sock.sendMessage(from, {
       text:
         `✅ SUCCESS\n\n` +
         `⬆️ PROMOTED\n\n` +
-        `${mention(target)} is now a group admin\n\n` +
+        `${mention(target)} is now a group admin${protectionNote}\n\n` +
         `_${pick(SLANG.vibe)}_`,
       mentions: [target],
     });

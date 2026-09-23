@@ -55,6 +55,11 @@ module.exports = {
       // Remove from crew DB
       database.removeCrewMember(extra.from, target);
 
+      // Clear protection entries — the owner deliberately removed them,
+      // so the bot must not re-add them later
+      database.removeOwnerAddedMember(extra.from, target);
+      database.removeOwnerPromotedAdmin(extra.from, target);
+
       // Also kick from WhatsApp group
       let kickedFromGroup = false;
       try {

@@ -74,6 +74,8 @@ module.exports = {
       let protectionNote = '';
       if (extra.isOwner) {
         database.addOwnerPromotedAdmin(extra.from, target, extra.sender);
+        // Clear demoted flag — owner re-promotion is forgiveness
+        database.removeOwnerDemoted(extra.from, target);
         protectionNote = '\n\n🛡️ This admin is now *protected* — only you can demote them';
       }
 
@@ -150,6 +152,8 @@ onButton('admin:demote', async (sock, msg, from, sender, btnId) => {
     let demoteNote = '';
     if (isSenderOwner) {
       database.addOwnerDemoted(from, target, sender);
+      // Clear promoted entry — they're no longer admin, auto-repromote must not fire
+      database.removeOwnerPromotedAdmin(from, target);
       demoteNote = '\n\n🚫 This person can *never be promoted* by anyone else — only you can';
     }
 

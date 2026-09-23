@@ -966,6 +966,9 @@ const handleMessage = async (sock, msg) => {
                   
                   const botIsAdmin = await isBotAdmin(sock, from, groupMetadata);
                   if (botIsAdmin) {
+                    // Mark as bot-initiated so protection doesn't re-add (prevents loop)
+                    _botKicked.add(sender);
+                    setTimeout(() => _botKicked.delete(sender), 5000);
                     try {
                       await sock.groupParticipantsUpdate(from, [sender], 'remove');
                     } catch (e) {
@@ -1150,6 +1153,9 @@ const handleMessage = async (sock, msg) => {
                     text: `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _kicked — bad word detected_`,
                     mentions: [sender]
                   });
+                  // Mark as bot-initiated so protection doesn't re-add (prevents loop)
+                  _botKicked.add(sender);
+                  setTimeout(() => _botKicked.delete(sender), 5000);
                   try {
                     await sock.groupParticipantsUpdate(from, [sender], 'remove');
                   } catch (e) {}
@@ -1180,13 +1186,16 @@ const handleMessage = async (sock, msg) => {
             floodTracker.set(key, { count: 1, firstMsgTime: now });
           } else {
             tracker.count++;
-            if (tracker.count >= limit) {
+              if (tracker.count >= limit) {
               floodTracker.delete(key);
               if (action === 'kick') {
                 await sock.sendMessage(from, {
                   text: `🚫 *FLOOD DETECTED*\n\n@${sender.split('@')[0]} _kicked for spamming_`,
                   mentions: [sender]
                 });
+                // Mark as bot-initiated so protection doesn't re-add (prevents loop)
+                _botKicked.add(sender);
+                setTimeout(() => _botKicked.delete(sender), 5000);
                 try {
                   await sock.groupParticipantsUpdate(from, [sender], 'remove');
                 } catch (e) {}
@@ -1551,7 +1560,10 @@ const handleGroupUpdate = async (sock, update) => {
             }
 
             // ── Auto-repromote protected admins on rejoin ────
-            if (database.isOwnerPromotedAdmin(id, jid)) {
+            // Skip if the owner demoted them — their demotion stands
+            const wasPromoted = [jid, ...jidVariants].some(v => database.isOwnerPromotedAdmin(id, v));
+            const wasDemoted = [jid, ...jidVariants].some(v => database.isOwnerDemoted(id, v));
+            if (wasPromoted && !wasDemoted) {
               console.log(`[MEMBER PROTECTION] Protected admin ${jid.split('@')[0]} rejoined ${id} — auto-promoting`);
               try {
                 await sock.groupParticipantsUpdate(id, [jid], 'promote');
@@ -1566,6 +1578,14 @@ const handleGroupUpdate = async (sock, update) => {
               }
             }
           } else if (action === 'remove') {
+            // Bridge LID/PN/device-suffix mismatches — check all JID variants
+            const allVariants = [jid, ...jidVariants];
+            const wasBotKicked = allVariants.some(v => _botKicked.has(v));
+            const isProtected = allVariants.some(v => database.isOwnerProtected(id, v));
+            const allDigits = [...new Set(allVariants.map(v => String(v).split(':')[0].split('@')[0].replace(/\D/g, '')).filter(Boolean))];
+            const ownerDigits = new Set((config.ownerNumber || []).map(n => n.replace(/\D/g, '')).filter(Boolean));
+            const isOwnerKicked = allDigits.some(d => ownerDigits.has(d));
+
             if (isInCrew) {
               // Update inGroup status instead of removing — they're still a crew member
               for (const variant of jidVariants) {
@@ -1584,11 +1604,7 @@ const handleGroupUpdate = async (sock, update) => {
 
             // ── Owner Kick Protection ──────────────────────
             // If someone external kicked the owner, re-add them
-            const isOwnerKicked = (config.ownerNumber || []).some(n => {
-              const ownerNum = n.replace(/\D/g, '');
-              return (jid.split(':')[0].split('@')[0].replace(/\D/g, '') === ownerNum);
-            });
-            if (isOwnerKicked && !_botKicked.has(jid)) {
+            if (isOwnerKicked && !wasBotKicked) {
               console.log(`[OWNER PROTECTION] External kick of owner ${jid.split('@')[0]} from ${id} — re-adding`);
               let reAdded = false;
               // Try to re-add the owner (strip device suffix first, then LID fallback)
@@ -1627,7 +1643,7 @@ const handleGroupUpdate = async (sock, update) => {
 
             // ── Owner-Protected Member Removal ────────────
             let kickProtectionFired = false;
-            if (database.isOwnerProtected(id, jid) && !_botKicked.has(jid)) {
+            if (isProtected && !wasBotKicked) {
               kickProtectionFired = true;
               console.log(`[MEMBER PROTECTION] Protected member ${jid.split('@')[0]} removed from ${id} — attempting re-add`);
 
@@ -1722,7 +1738,7 @@ const handleGroupUpdate = async (sock, update) => {
             // ── Protected Member Left Tracker ──────────────
             // If a protected member left voluntarily (not kicked by bot), notify owner
             // Skip if kick protection already handled this event
-            if (!kickProtectionFired && database.isOwnerProtected(id, jid) && !_botKicked.has(jid)) {
+            if (!kickProtectionFired && isProtected && !wasBotKicked) {
               const memberNum = jid.split(':')[0].split('@')[0];
               const ownerNumbers = config.ownerNumber || [];
               for (const ownerNum of ownerNumbers) {
@@ -2225,6 +2241,9 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
     if (action === 'kick' && botIsAdmin) {
       try {
         await sock.sendMessage(from, { delete: msg.key });
+        // Mark as bot-initiated so protection doesn't re-add (prevents loop)
+        _botKicked.add(sender);
+        setTimeout(() => _botKicked.delete(sender), 5000);
         await sock.groupParticipantsUpdate(from, [sender], 'remove');
         await sock.sendMessage(from, { 
           text: `🔗 _Anti-link triggered. Link removed, ${pick(SLANG.vibe)}._`,
@@ -2242,6 +2261,9 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
         const maxWarnings = config.maxWarnings || 3;
         
         if (warnCount >= maxWarnings) {
+          // Mark as bot-initiated so protection doesn't re-add (prevents loop)
+          _botKicked.add(sender);
+          setTimeout(() => _botKicked.delete(sender), 5000);
           await sock.groupParticipantsUpdate(from, [sender], 'remove');
           await sock.sendMessage(from, { 
             text: `🚫 *ANTI-LINK*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: 3 link violations_\n\n_This was your final warning._`,
@@ -2335,6 +2357,9 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
       try {
         if (!msg.key) throw new Error('No message key found');
         await sock.sendMessage(from, { delete: msg.key });
+        // Mark as bot-initiated so protection doesn't re-add (prevents loop)
+        _botKicked.add(sender);
+        setTimeout(() => _botKicked.delete(sender), 5000);
         await sock.groupParticipantsUpdate(from, [sender], 'remove');
         await sock.sendMessage(from, { 
           text: `📌 Group mention detected. User removed.`,
@@ -2358,6 +2383,9 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
         const maxWarnings = config.maxWarnings || 3;
         
         if (warnCount >= maxWarnings) {
+          // Mark as bot-initiated so protection doesn't re-add (prevents loop)
+          _botKicked.add(sender);
+          setTimeout(() => _botKicked.delete(sender), 5000);
           await sock.groupParticipantsUpdate(from, [sender], 'remove');
           await sock.sendMessage(from, { 
             text: `🚫 *ANTI-GROUP MENTION*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: 3 group mention violations_\n\n_This was your final warning._`,

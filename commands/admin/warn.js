@@ -84,6 +84,11 @@ module.exports = {
 
         if (extra.isBotAdmin) {
           try {
+            // Mark as bot-initiated so handler.js skips member protection (prevents re-add loop)
+            const handler = require('../../handler');
+            handler._botKicked.add(target);
+            setTimeout(() => handler._botKicked.delete(target), 5000);
+
             await sock.groupParticipantsUpdate(extra.from, [target], 'remove');
             await sock.sendMessage(extra.from, {
               text:
