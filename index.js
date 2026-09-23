@@ -718,6 +718,34 @@ console.log(`⚡ Prefix: ${config.prefix}`);
 const ownerNames = Array.isArray(config.ownerName) ? config.ownerName.join(',') : config.ownerName;
 console.log(`👑 Owner: ${ownerNames}\n`);
 
+// Clean bot-specific Puppeteer/Chromium cache to prevent disk bloat
+function cleanupBotCache() {
+  try {
+    const home = os.homedir();
+    const cacheDir = path.join(home, '.cache', 'puppeteer');
+    if (fs.existsSync(cacheDir)) {
+      const sizeBefore = getDirSize(cacheDir);
+      fs.rmSync(cacheDir, { recursive: true, force: true });
+      console.log(`🧹 Cleaned puppeteer cache — freed ${(sizeBefore / 1024 / 1024).toFixed(1)}MB`);
+    }
+  } catch (err) {
+    // Non-fatal
+  }
+}
+function getDirSize(dir) {
+  let size = 0;
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const e of entries) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) size += getDirSize(p);
+      else try { size += fs.statSync(p).size; } catch {}
+    }
+  } catch {}
+  return size;
+}
+cleanupBotCache();
+
 // Keepalive — prevents the event loop from draining between reconnects
 // Without this, the process exits during the setTimeout gap before startBot() runs again
 setInterval(() => {}, 300000); // 5-min no-op keeps Node alive
