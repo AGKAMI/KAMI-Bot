@@ -1505,27 +1505,30 @@ const handleGroupUpdate = async (sock, update) => {
             if (isOwnerKicked && !_botKicked.has(jid)) {
               console.log(`[OWNER PROTECTION] External kick of owner ${jid.split('@')[0]} from ${id} — re-adding`);
               let reAdded = false;
-              try {
-                await sock.groupParticipantsUpdate(id, [jid], 'add');
-                reAdded = true;
-              } catch (e) {
-                // Try alternative JID formats (LID → PN, PN → LID)
+              // Try to re-add the owner (strip device suffix first, then LID fallback)
+              const tryAddOwner = async (jidToAdd) => {
+                const candidateJids = [];
+                const stripped = jidToAdd.replace(/:\d+@/, '@');
+                if (stripped !== jidToAdd) candidateJids.push(stripped);
                 try {
-                  const { buildComparableIds } = require('./utils/jidHelper');
-                  const variants = buildComparableIds(jid);
-                  for (const variant of variants) {
-                    if (variant === jid) continue;
-                    try {
-                      await sock.groupParticipantsUpdate(id, [variant], 'add');
-                      reAdded = true;
-                      break;
-                    } catch (e2) { /* try next */ }
+                  const { normalizeJidWithLid, buildComparableIds } = require('./utils/jidHelper');
+                  const resolved = normalizeJidWithLid(jidToAdd);
+                  if (resolved && resolved !== jidToAdd && resolved !== stripped) candidateJids.push(resolved);
+                  for (const v of buildComparableIds(jidToAdd)) {
+                    if (!candidateJids.includes(v)) candidateJids.push(v);
                   }
-                } catch (e3) {}
-                if (!reAdded) {
-                  console.error(`[OWNER PROTECTION] Failed to re-add owner:`, e.message);
+                } catch {}
+                candidateJids.push(jidToAdd);
+                for (const jid of candidateJids) {
+                  try {
+                    await sock.groupParticipantsUpdate(id, [jid], 'add');
+                    return true;
+                  } catch {}
                 }
-              }
+                return false;
+              };
+
+              reAdded = await tryAddOwner(jid);
               database.logProtection({
                 action: 'kick',
                 target: jid,
@@ -1545,28 +1548,32 @@ const handleGroupUpdate = async (sock, update) => {
               const memberNum = jid.split(':')[0].split('@')[0];
               let reAdded = false;
 
-              // Try to re-add the protected member (with LID/PN fallback)
-              try {
-                await sock.groupParticipantsUpdate(id, [jid], 'add');
-                reAdded = true;
-              } catch (e) {
-                // Try alternative JID formats (LID → PN, PN → LID)
+              // Try to re-add the protected member (strip device suffix first, then LID fallback)
+              const tryAdd = async (jidToAdd) => {
+                const candidateJids = [];
+                // Strip device suffix: 27683993925:0@s.whatsapp.net → 27683993925@s.whatsapp.net
+                const stripped = jidToAdd.replace(/:\d+@/, '@');
+                if (stripped !== jidToAdd) candidateJids.push(stripped);
+                // LID → PN mapping
                 try {
-                  const { buildComparableIds } = require('./utils/jidHelper');
-                  const variants = buildComparableIds(jid);
-                  for (const variant of variants) {
-                    if (variant === jid) continue;
-                    try {
-                      await sock.groupParticipantsUpdate(id, [variant], 'add');
-                      reAdded = true;
-                      break;
-                    } catch (e2) { /* try next */ }
+                  const { normalizeJidWithLid, buildComparableIds } = require('./utils/jidHelper');
+                  const resolved = normalizeJidWithLid(jidToAdd);
+                  if (resolved && resolved !== jidToAdd && resolved !== stripped) candidateJids.push(resolved);
+                  for (const v of buildComparableIds(jidToAdd)) {
+                    if (!candidateJids.includes(v)) candidateJids.push(v);
                   }
-                } catch (e3) {}
-                if (!reAdded) {
-                  console.error(`[MEMBER PROTECTION] Failed to re-add ${memberNum}:`, e.message);
+                } catch {}
+                candidateJids.push(jidToAdd);
+                for (const jid of candidateJids) {
+                  try {
+                    await sock.groupParticipantsUpdate(id, [jid], 'add');
+                    return true;
+                  } catch {}
                 }
-              }
+                return false;
+              };
+
+              reAdded = await tryAdd(jid);
 
               // Log the protection event
               database.logProtection({

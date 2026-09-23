@@ -220,7 +220,7 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
   const target = btnId.replace('admin:readd:', '');
   if (!target) return;
 
-  const { buildComparableIds } = require('../../utils/jidHelper');
+  const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
 
   // Check if already in the group
   try {
@@ -239,27 +239,40 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
       }
     }
 
-    // Try original JID first, then LID/PN variants
+    // Build list of JIDs to try — same approach as !add (prefer @s.whatsapp.net)
+    const candidateJids = [];
+
+    // 1. Strip device suffix: 27683993925:0@s.whatsapp.net → 27683993925@s.whatsapp.net
+    const stripped = target.replace(/:\d+@/, '@');
+    if (stripped !== target) candidateJids.push(stripped);
+
+    // 2. LID → PN mapping via normalizeJidWithLid
+    const resolved = normalizeJidWithLid(target);
+    if (resolved && resolved !== target && resolved !== stripped) candidateJids.push(resolved);
+
+    // 3. All buildComparableIds variants
+    for (const v of buildComparableIds(target)) {
+      if (!candidateJids.includes(v)) candidateJids.push(v);
+    }
+
+    // 4. Original as last resort
+    candidateJids.push(target);
+
     let added = false;
-    try {
-      await sock.groupParticipantsUpdate(from, [target], 'add');
-      added = true;
-    } catch (e) {
-      // Try alternative JID formats (LID → PN, PN → LID)
-      const variants = buildComparableIds(target);
-      for (const variant of variants) {
-        if (variant === target) continue;
-        try {
-          await sock.groupParticipantsUpdate(from, [variant], 'add');
-          added = true;
-          break;
-        } catch (e2) { /* try next */ }
+    let lastErr = '';
+    for (const jid of candidateJids) {
+      try {
+        await sock.groupParticipantsUpdate(from, [jid], 'add');
+        added = true;
+        break;
+      } catch (e) {
+        lastErr = e.message || 'unknown';
       }
     }
 
     if (!added) {
       return await sock.sendMessage(from, {
-        text: `❌ ERROR\n\nCouldn't re-add — WhatsApp rejected all JID formats`,
+        text: `❌ ERROR\n\nCouldn't re-add — ${lastErr}`,
       });
     }
 
