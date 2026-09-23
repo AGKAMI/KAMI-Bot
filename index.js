@@ -317,25 +317,9 @@ async function startBot() {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const errorMessage = lastDisconnect?.error?.message || 'Unknown error';
 
-      // 401 = loggedOut (session killed by WhatsApp) — delete stale creds, show QR
-      if (statusCode === 401) {
-        console.log('⚠️ Session logged out — clearing stale session...');
-        try {
-          const sessionDir = path.join(__dirname, config.sessionName);
-          if (fs.existsSync(sessionDir)) {
-            fs.rmSync(sessionDir, { recursive: true, force: true });
-            console.log('🗑️  Deleted stale session folder');
-          }
-        } catch (e) {
-          console.error('Failed to delete session folder:', e.message);
-        }
-        console.log('   Restart the bot — QR code will appear for fresh pairing.\n');
-        process.exit(0);
-      }
-
-      // 440 / conflict — transient, just retry without deleting session
-      if (statusCode === 440 || errorMessage.includes('conflict')) {
-        console.log('⚠️ Session conflict — retrying in 10s...');
+      // 401 = loggedOut, 440 = conflict — just retry, don't auto-delete session
+      if (statusCode === 401 || statusCode === 440 || errorMessage.includes('conflict')) {
+        console.log(`⚠️ Session issue (${statusCode}) — retrying in 10s...`);
         setTimeout(() => startBot().catch(e => console.error('[CONFLICT] reconnect failed:', e.message)), 10000);
         return;
       }
