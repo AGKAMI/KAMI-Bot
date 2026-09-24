@@ -26,13 +26,6 @@ const getThresholds = (index) => {
   return PROMOTION_THRESHOLDS[index] || PROMOTION_THRESHOLDS[PROMOTION_THRESHOLDS.length - 1];
 };
 
-// WhatsApp admin threshold — rank index must be >= this
-const getAdminThresholdIndex = (teamKey) => {
-  if (teamKey === 'SSGENERAL') return 3;
-  if (teamKey === 'KSSMP') return 3;
-  return 3;
-};
-
 // How often to run (in ms) — default every hour
 const CHECK_INTERVAL = 60 * 60 * 1000;
 
@@ -63,7 +56,6 @@ const checkGroup = async (sock, groupJid, teamKey) => {
   const promotions = [];
   const allActivity = database.getGroupMemberActivity(groupJid);
   const ranks = getTeamRanks(teamKey);
-  const adminThreshold = getAdminThresholdIndex(teamKey);
 
   console.log(`[AUTO-PROGRESSION] Checking ${teamKey} — ${Object.keys(allActivity).length} members, Set size: ${promotedThisSession.size}`);
 
@@ -144,16 +136,6 @@ const checkGroup = async (sock, groupJid, teamKey) => {
           console.error(`[AUTO-PROGRESSION] WARNING: lastPromoted not persisted for ${memberNum}! In-memory cooldown will hold.`);
         } else {
           console.log(`[AUTO-PROGRESSION] DB VERIFIED: ${memberNum} role="${verifyMember.role}" lastPromoted=${verifyMember.lastPromoted} — Set now has ${promotedThisSession.size} entries`);
-        }
-
-        // Promote to WhatsApp admin if reaching threshold
-        const nextRankIndex = currentRankIndex + 1;
-        if (nextRankIndex >= adminThreshold) {
-          try {
-            await sock.groupParticipantsUpdate(groupJid, [memberJid], 'promote');
-          } catch (e) {
-            // WhatsApp promote might fail — role is still updated in DB
-          }
         }
 
         // Notify the group
@@ -286,7 +268,8 @@ const runInactiveCheck = async (sock) => {
     if (!allTeams[key]) allTeams[key] = info;
   }
 
-  const ownerNumbers = config.ownerNumber || [];
+  const ownerDigits = new Set((config.ownerNumber || []).map(n => n.replace(/\D/g, '')).filter(Boolean));
+  const botJid = sock.user?.id || '';
 
   for (const [teamKey, teamInfo] of Object.entries(allTeams)) {
     try {
@@ -295,8 +278,12 @@ const runInactiveCheck = async (sock) => {
 
       if (inactiveList.length === 0) continue;
 
-      // Only alert about members not already alerted in the last 7 days
+      // Only alert about members not already alerted in the last 7 days.
+      // Skip owners and the bot itself — the bot doesn't DM its own boss about their own inactivity
       const dueList = inactiveList.filter(([jid]) => {
+        if (jid === botJid) return false;
+        const num = String(jid).split(':')[0].split('@')[0].replace(/\D/g, '');
+        if (num && ownerDigits.has(num)) return false;
         const last = lastAlerted.get(jid) || 0;
         return Date.now() - last > ALERT_COOLDOWN;
       });
@@ -304,35 +291,25 @@ const runInactiveCheck = async (sock) => {
       if (dueList.length === 0) continue;
       dueList.forEach(([jid]) => lastAlerted.set(jid, Date.now()));
 
-      // Notify owner
-      for (const ownerNum of ownerNumbers) {
+      // DM the inactive members directly — activity nudge, one per member per 7 days
+      for (const [jid, data] of dueList) {
         try {
-          const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
-          const mentions = dueList.map(([jid]) => jid);
-
-          const memberList = dueList.slice(0, 5).map(([jid, data]) => {
-            const num = jid.split(':')[0].split('@')[0].replace(/\D/g, '');
-            const days = data.lastActive
-              ? Math.floor((Date.now() - data.lastActive) / (24 * 60 * 60 * 1000))
-              : '?';
-            return `• @${num} — ${data.role} — ${data.totalMessages} msgs — ${days}d ago`;
-          }).join('\n');
-
-          const more = dueList.length > 5 ? `\n• ...and ${dueList.length - 5} more` : '';
-
-          await sock.sendMessage(ownerJid, {
+          const days = data.lastActive
+            ? Math.floor((Date.now() - data.lastActive) / (24 * 60 * 60 * 1000))
+            : null;
+          await sock.sendMessage(jid, {
             text:
-              `😴 *INACTIVE MEMBERS*\n\n` +
-              `🏢 Team: *${teamKey}*\n` +
-              `👥 *${dueList.length}* members inactive for 30+ days\n\n` +
-              `${memberList}${more}\n\n` +
-              `_Consider reviewing the roster ${pick(SLANG.vibe)}_`,
-            mentions,
+              `😴 *ACTIVITY CHECK*\n\n` +
+              `You haven't been active in *${teamKey}*` +
+              (days !== null ? ` for *${days} days*` : '') + `\n\n` +
+              `💬 Messages: ${data.totalMessages}\n` +
+              `🛡️ Rank: ${data.role}\n\n` +
+              `_The crew misses you — pop in and stay active hey_ ${pick(SLANG.vibe)}`,
           });
         } catch (e) {}
       }
 
-      console.log(`[INACTIVE-CHECK] ${teamKey}: ${dueList.length} inactive members alerted (${inactiveList.length} total)`);
+      console.log(`[INACTIVE-CHECK] ${teamKey}: ${dueList.length} inactive members DM'd (${inactiveList.length} total)`);
     } catch (e) {
       console.error(`[INACTIVE-CHECK] Error checking ${teamKey}:`, e.message);
     }

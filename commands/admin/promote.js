@@ -105,72 +105,20 @@ onButton('admin:demote', async (sock, msg, from, sender, btnId) => {
   const target = btnId.replace('admin:demote:', '');
   if (!target) return;
 
-  // Permission check — only group admins or owner can demote
-  try {
-    const meta = await sock.groupMetadata(from).catch(() => null);
-    if (meta && meta.participants) {
-      const clickerIsAdmin = meta.participants.some(
-        p => (p.id === sender || p.lid === sender) && (p.admin === 'admin' || p.admin === 'superadmin')
-      );
-      const config = require('../../config');
-      const clickerIsOwner = (config.ownerNumber || []).some(n => sender.includes(n));
-      if (!clickerIsAdmin && !clickerIsOwner) {
-        return await sock.sendMessage(from, {
-          text: `❌ *ADMIN ONLY*\n\nOnly group admins can demote members.`,
-          mentions: [sender],
-        });
-      }
-    }
-  } catch (e) {
-    console.error('[DEMOTE BTN] permission check failed:', e.message);
-  }
+  // Delegate to the main demote command — inherits the full protection:
+  // admin-only check, target-admin check, owner-demote protection,
+  // owner-promoted two-strike system (blocked demote → violator demoted)
+  const demoteCmd = require('./demote');
+  const config = require('../../config');
+  const senderNum = sender.split(':')[0].split('@')[0].replace(/\D/g, '');
+  const senderIsOwner = (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === senderNum);
 
-  // ── Check if target is actually an admin before demoting ──
-  try {
-    const meta = await sock.groupMetadata(from).catch(() => null);
-    if (meta && meta.participants) {
-      const isAdmin = meta.participants.some(
-        p => (p.id === target || p.lid === target) && (p.admin === 'admin' || p.admin === 'superadmin')
-      );
-      if (!isAdmin) {
-        return await sock.sendMessage(from, {
-          text:
-            `❌ ERROR\n\n` +
-            `${mention(target)} is not an admin\n\n` +
-            `Can't demote someone who isn't an admin`,
-          mentions: [target],
-        });
-      }
-    }
-
-    await sock.groupParticipantsUpdate(from, [target], 'demote');
-
-    // Track owner demotions — blocks future promotes by anyone else
-    const config = require('../../config');
-    const senderNum = sender.split(':')[0].split('@')[0].replace(/\D/g, '');
-    const isSenderOwner = (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === senderNum);
-    let demoteNote = '';
-    if (isSenderOwner) {
-      database.addOwnerDemoted(from, target, sender);
-      // Clear promoted entry — they're no longer admin, auto-repromote must not fire
-      database.removeOwnerPromotedAdmin(from, target);
-      demoteNote = '\n\n🚫 This person can *never be promoted* by anyone else — only you can';
-    }
-
-    await sock.sendMessage(from, {
-      text:
-        `✅ SUCCESS\n\n` +
-        `⬇️ DEMOTED\n\n` +
-        `${mention(target)} is no longer a group admin${demoteNote}\n\n` +
-        `_${pick(SLANG.vibe)}_`,
-      mentions: [target],
-    });
-  } catch (e) {
-    console.error('[DEMOTE BTN] Error:', e.message);
-    await sock.sendMessage(from, {
-      text:
-        `❌ ERROR\n\n` +
-        `Couldn't demote — ${e.message || 'Unknown error'}`,
-    });
-  }
+  await demoteCmd.execute(sock, msg, [target], {
+    from,
+    sender,
+    isGroup: true,
+    isOwner: senderIsOwner,
+    isOwnerMentioned: false,
+    reply: (text, opts) => sock.sendMessage(from, { text, ...(opts || {}) }, { quoted: msg }),
+  });
 });

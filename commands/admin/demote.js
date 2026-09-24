@@ -41,11 +41,13 @@ module.exports = {
 
       let target = null;
 
-      // Priority: @mention → reply
+      // Priority: @mention → reply → JID via args (button delegation)
       if (mentioned.length > 0) {
         target = mentioned[0];
       } else if (replyJid) {
         target = replyJid;
+      } else if (args.length > 0 && String(args[0]).includes('@')) {
+        target = String(args[0]);
       }
 
       if (!target) {
@@ -56,6 +58,17 @@ module.exports = {
           `• .demote @user\n` +
           `• Reply with .demote`
         );
+      }
+
+      // ── Admin-only check — also guards direct execute() calls from the demote button ──
+      if (!extra.isOwner) {
+        const meta0 = await sock.groupMetadata(extra.from).catch(() => null);
+        const demoterIsAdmin = meta0?.participants?.some(
+          p => (p.id === extra.sender || p.lid === extra.sender) && (p.admin === 'admin' || p.admin === 'superadmin')
+        );
+        if (!demoterIsAdmin) {
+          return extra.reply(`🛡️ *ADMIN ONLY*\n\nOnly group admins can demote members.`);
+        }
       }
 
       const targetNum = target.split(':')[0].split('@')[0];
