@@ -248,9 +248,35 @@ const stopProgressionEngine = () => {
 // ── Inactive Member Alerts ────────────────────────────────
 const INACTIVE_THRESHOLD_DAYS = 30;
 
-// Alert dedup: notify about each member once per 7 days (prevents hourly DM spam)
+// Alert dedup: notify about each member once per 7 days (prevents hourly DM spam).
+// PERSISTED to disk — survives restarts, so a fresh pairing never re-blasts everyone.
 const ALERT_COOLDOWN = 7 * 24 * 60 * 60 * 1000;
+const fs = require('fs');
+const path = require('path');
+const ALERT_DB = path.join(__dirname, '..', 'database', 'inactiveAlerts.json');
 const lastAlerted = new Map(); // jid → last notified timestamp
+
+const loadAlerted = () => {
+  try {
+    const obj = JSON.parse(fs.readFileSync(ALERT_DB, 'utf8'));
+    for (const [jid, ts] of Object.entries(obj)) lastAlerted.set(jid, ts);
+  } catch (e) {}
+};
+const saveAlerted = () => {
+  try {
+    const obj = {};
+    for (const [jid, ts] of lastAlerted) obj[jid] = ts;
+    fs.writeFileSync(ALERT_DB, JSON.stringify(obj, null, 2));
+  } catch (e) {}
+};
+loadAlerted();
+
+// ── Bulk-message safety ───────────────────────────────────
+// WhatsApp restricts accounts that send cold DMs too fast.
+// Max 5 DMs per cycle + 60-90s randomized delay between each.
+const MAX_DMS_PER_CYCLE = 5;
+const DM_DELAY_BASE_MS = 60000;
+const DM_DELAY_JITTER_MS = 30000;
 
 setInterval(() => {
   const now = Date.now();
@@ -271,7 +297,11 @@ const runInactiveCheck = async (sock) => {
   const ownerDigits = new Set((config.ownerNumber || []).map(n => n.replace(/\D/g, '')).filter(Boolean));
   const botJid = sock.user?.id || '';
 
+  let dmsSent = 0;
+
   for (const [teamKey, teamInfo] of Object.entries(allTeams)) {
+    if (dmsSent >= MAX_DMS_PER_CYCLE) break;
+
     try {
       const inactive = database.getInactiveMembers(teamInfo.jid, INACTIVE_THRESHOLD_DAYS);
       const inactiveList = Object.entries(inactive);
@@ -289,14 +319,16 @@ const runInactiveCheck = async (sock) => {
       });
 
       if (dueList.length === 0) continue;
-      dueList.forEach(([jid]) => lastAlerted.set(jid, Date.now()));
 
-      // DM the inactive members directly — activity nudge, one per member per 7 days
-      for (const [jid, data] of dueList) {
+      // Cap per cycle — never blast the whole list at once
+      const batch = dueList.slice(0, MAX_DMS_PER_CYCLE - dmsSent);
+
+      // DM the inactive members directly — activity nudge, max 5 per hour, spaced out
+      for (const [jid, data] of batch) {
+        const days = data.lastActive
+          ? Math.floor((Date.now() - data.lastActive) / (24 * 60 * 60 * 1000))
+          : null;
         try {
-          const days = data.lastActive
-            ? Math.floor((Date.now() - data.lastActive) / (24 * 60 * 60 * 1000))
-            : null;
           await sock.sendMessage(jid, {
             text:
               `😴 *ACTIVITY CHECK*\n\n` +
@@ -306,10 +338,16 @@ const runInactiveCheck = async (sock) => {
               `🛡️ Rank: ${data.role}\n\n` +
               `_The crew misses you — pop in and stay active hey_ ${pick(SLANG.vibe)}`,
           });
+          lastAlerted.set(jid, Date.now());
+          saveAlerted();
+          dmsSent++;
         } catch (e) {}
+        if (dmsSent < MAX_DMS_PER_CYCLE) {
+          await new Promise(r => setTimeout(r, DM_DELAY_BASE_MS + Math.floor(Math.random() * DM_DELAY_JITTER_MS)));
+        }
       }
 
-      console.log(`[INACTIVE-CHECK] ${teamKey}: ${dueList.length} inactive members DM'd (${inactiveList.length} total)`);
+      console.log(`[INACTIVE-CHECK] ${teamKey}: ${batch.length} inactive members DM'd (${dmsSent}/${MAX_DMS_PER_CYCLE} this cycle, ${inactiveList.length} total inactive)`);
     } catch (e) {
       console.error(`[INACTIVE-CHECK] Error checking ${teamKey}:`, e.message);
     }
