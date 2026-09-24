@@ -929,6 +929,50 @@ const isOwnerProtected = (groupJid, memberJid) => {
   return isOwnerPromotedAdmin(groupJid, memberJid) || isOwnerAddedMember(groupJid, memberJid);
 };
 
+// ── Kick attempts tracking (two-strike system) ──────────────
+// Counts failed kick attempts against protected members.
+// Works on both protection DBs (owner-promoted admins + owner-added members).
+
+const _findProtectionEntry = (groupJid, memberJid, dbName) => {
+  const data = readDB(dbName);
+  const group = data[groupJid];
+  if (!group) return null;
+  const num = _normalizeJid(memberJid);
+  for (const [key, val] of Object.entries(group)) {
+    if (_normalizeJid(key) === num) return { data, key, val };
+  }
+  return null;
+};
+
+const getKickAttempts = (groupJid, memberJid) => {
+  const entry = _findProtectionEntry(groupJid, memberJid, OWNER_PROMOTED_DB)
+    || _findProtectionEntry(groupJid, memberJid, OWNER_ADDED_DB);
+  return entry ? (entry.val.kickAttempts || 0) : 0;
+};
+
+const incrementKickAttempts = (groupJid, memberJid) => {
+  let entry = _findProtectionEntry(groupJid, memberJid, OWNER_PROMOTED_DB);
+  let dbName = OWNER_PROMOTED_DB;
+  if (!entry) {
+    entry = _findProtectionEntry(groupJid, memberJid, OWNER_ADDED_DB);
+    dbName = OWNER_ADDED_DB;
+  }
+  if (!entry) return 0;
+  entry.val.kickAttempts = (entry.val.kickAttempts || 0) + 1;
+  writeDB(dbName, entry.data);
+  return entry.val.kickAttempts;
+};
+
+const resetKickAttempts = (groupJid, memberJid) => {
+  for (const dbName of [OWNER_PROMOTED_DB, OWNER_ADDED_DB]) {
+    const entry = _findProtectionEntry(groupJid, memberJid, dbName);
+    if (entry) {
+      entry.val.kickAttempts = 0;
+      writeDB(dbName, entry.data);
+    }
+  }
+};
+
 // ── Audit Log ─────────────────────────────────────────────────
 // Tracks every command execution, protection event, and admin action.
 // Structure: { entries: [...], capped at 500 most recent }
@@ -1275,6 +1319,9 @@ module.exports = {
   addOwnerAddedMember,
   removeOwnerAddedMember,
   isOwnerProtected,
+  getKickAttempts,
+  incrementKickAttempts,
+  resetKickAttempts,
 
   // Audit log
   logCommand,

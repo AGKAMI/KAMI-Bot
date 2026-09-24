@@ -107,12 +107,86 @@ module.exports = {
         }
       }
 
-      // ── Owner protection check ────────────────────────────
+      // ── Owner protection check — two-strike ──────────────
       if (!extra.isOwner) {
+        const { buildComparableIds } = require('../../utils/jidHelper');
         for (const target of usersToKick) {
-          if (database.isOwnerProtected(chatId, target)) {
+          const isProtected = database.isOwnerProtected(chatId, target)
+            || buildComparableIds(target).some(v => database.isOwnerProtected(chatId, v));
+          if (isProtected) {
             const ownerJid = getOwnerJid(sock);
+            const attempts = database.incrementKickAttempts(chatId, target);
 
+            if (attempts >= 2) {
+              // 2nd attempt — demote the violator
+              try { await sock.groupParticipantsUpdate(chatId, [extra.sender], 'demote'); } catch (e) {}
+              database.resetKickAttempts(chatId, target);
+              database.logProtection({
+                action: 'kick',
+                target: target,
+                targetName: null,
+                triggeredBy: extra.sender,
+                group: chatId,
+                result: 'demoted-violator',
+              });
+
+              // Group — show who's boss
+              await sock.sendMessage(chatId, {
+                text:
+                  `🚨 *CAUGHT IN 4K* 📸\n\n` +
+                  `${mention(extra.sender)} got demoted 💀\n` +
+                  `Kept trying to kick ${mention(target)}\n\n` +
+                  `_KAMI-Bot doesn't play_ 👑`,
+                mentions: ownerJid
+                  ? [target, extra.sender, ownerJid]
+                  : [target, extra.sender],
+              });
+
+              // DM victim
+              try {
+                await sock.sendMessage(target, {
+                  text:
+                    `🛡️ *SORTED* 💪\n\n` +
+                    `${mention(extra.sender)} kept trying to kick you hey 💀\n` +
+                    `They got demoted for it\n` +
+                    `You're not going anywhere\n\n` +
+                    `${pick(SLANG.protected)}`,
+                  mentions: [extra.sender],
+                });
+              } catch (e) {}
+
+              // DM violator
+              try {
+                await sock.sendMessage(extra.sender, {
+                  text:
+                    `🚨 *YOU GOT DEMOTED* 💀\n\n` +
+                    `Kept trying to kick KAMI's person\n` +
+                    `Now you're regular\n\n` +
+                    `Yoh you really didn't listen the first time tho 😭\n` +
+                    `_Should've left it alone_`,
+                });
+              } catch (e) {}
+
+              // DM owner
+              const ownerNumbers = config.ownerNumber || [];
+              for (const oNum of ownerNumbers) {
+                try {
+                  const oJid = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
+                  await sock.sendMessage(oJid, {
+                    text:
+                      `🛡️ *KICK PROTECTION* 💀\n\n` +
+                      `${mention(extra.sender)} tried kicking ${mention(target)} twice\n` +
+                      `They got demoted for it\n\n` +
+                      `${pick(SLANG.protected)}`,
+                    mentions: [target, extra.sender],
+                  });
+                } catch (e) {}
+              }
+
+              return;
+            }
+
+            // 1st attempt — warn + block
             // Block — group message
             await sock.sendMessage(chatId, {
               text:
