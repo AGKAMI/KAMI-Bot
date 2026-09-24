@@ -348,17 +348,28 @@ const runInactiveCheck = async (sock) => {
   };
 
   let rosterInactive = 0;
+  const participantDigitsByGroup = new Map(); // groupJid → Set of participant digits
 
   for (const [groupJid, teamInfo] of teamsByJid) {
     try {
       const inactive = database.getInactiveMembers(groupJid, INACTIVE_THRESHOLD_DAYS);
       const teamName = _teamLabel(teamInfo);
 
+      // Only nudge about groups the member is STILL in — stats include people who left
+      const meta = await sock.groupMetadata(groupJid).catch(() => null);
+      if (!meta || !meta.participants) continue;
+      const participantDigits = new Set(meta.participants.map(p => _digits(p.id)).filter(Boolean));
+      participantDigitsByGroup.set(groupJid, participantDigits);
+
       for (const [jid, data] of Object.entries(inactive)) {
         rosterInactive++;
         const num = _digits(jid);
         if (jid === sock.user?.id || (num && num === botDigits)) continue;
         if (num && ownerDigits.has(num)) continue;
+
+        // Member must still be in this group (bridge LID/PN via variants)
+        const memberDigits = [...new Set(buildComparableIds(jid).map(v => _digits(v)).filter(Boolean))];
+        if (!memberDigits.some(d => participantDigits.has(d))) continue;
 
         const days = data.lastActive
           ? Math.floor((Date.now() - data.lastActive) / _dayMs)
@@ -402,7 +413,10 @@ const runInactiveCheck = async (sock) => {
   let dmsSent = 0;
   const dueIds = new Set(due.map(e => e.jid));
   let skippedCooldown = 0;
+  const seenEntries = new Set();
   for (const entry of byMember.values()) {
+    if (seenEntries.has(entry)) continue;
+    seenEntries.add(entry);
     if (entry.inactiveGroups.length && !dueIds.has(entry.jid)) skippedCooldown++;
   }
 
@@ -412,11 +426,15 @@ const runInactiveCheck = async (sock) => {
     const groups = [...entry.inactiveGroups]
       .sort((a, b) => (b.days ?? INACTIVE_THRESHOLD_DAYS) - (a.days ?? INACTIVE_THRESHOLD_DAYS));
 
-    // Where ARE they still active? (other crew groups not on the inactive list)
+    // Where ARE they still active? (other crew groups they're still in and active in)
     const inactiveJids = new Set(groups.map(g => g.groupJid));
+    const memberDigits = [...new Set(buildComparableIds(entry.jid).map(v => _digits(v)).filter(Boolean))];
     const stillActiveIn = [];
     for (const [groupJid, teamInfo] of teamsByJid) {
       if (inactiveJids.has(groupJid)) continue;
+      const pd = participantDigitsByGroup.get(groupJid);
+      if (!pd || pd.size === 0) continue;
+      if (!memberDigits.some(d => pd.has(d))) continue;
       const a = _activityFor(groupJid, entry.jid);
       if (a.lastActive && Date.now() - a.lastActive <= INACTIVE_THRESHOLD_DAYS * _dayMs) {
         stillActiveIn.push(_teamLabel(teamInfo));
