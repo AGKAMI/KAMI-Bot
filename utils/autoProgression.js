@@ -104,7 +104,9 @@ const checkGroup = async (sock, groupJid, teamKey) => {
 
     const { minMessages, minDaysActive } = getThresholds(currentRankIndex);
 
-    console.log(`[AUTO-PROGRESSION] CHECK ${memberNum}: role="${data.role}" msgs=${data.totalMessages}/${minMessages} days=${data.daysActive}/${minDaysActive} lastPromoted=${lastPromoted || 'NONE'}`);
+    if (data.totalMessages > 0 || data.daysActive > 0) {
+      console.log(`[AUTO-PROGRESSION] CHECK ${memberNum}: role="${data.role}" msgs=${data.totalMessages}/${minMessages} days=${data.daysActive}/${minDaysActive} lastPromoted=${lastPromoted || 'NONE'}`);
+    }
 
     // Check thresholds
     if (data.totalMessages >= minMessages && data.daysActive >= minDaysActive) {

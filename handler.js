@@ -710,7 +710,8 @@ const handleMessage = async (sock, msg) => {
               (msg.message?.extendedTextMessage?.text) || '';
             const dmBody2 = (dmText2 || '').trim();
             if (dmBody2 && !dmBody2.startsWith(config.prefix)) {
-              const state = getApplicantState(sender);
+              const progSender = msg.key.participant || from;
+              const state = getApplicantState(progSender);
               if (state.state === 'pending_submitted' || state.state === 'pending_incomplete' || state.state === 'pending_approved') {
                 await sendProgressiveResponse(sock, from, state);
                 return;
