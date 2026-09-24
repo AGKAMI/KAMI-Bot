@@ -41,25 +41,61 @@ async function fetchWithYtDlp(url) {
 }
 
 async function fetchFromApi(url) {
-  const endpoints = [
-    `https://fbdown.vercel.app/api/get?url=${encodeURIComponent(url)}`,
+  const sources = [
+    {
+      name: 'siputzx',
+      get: async () => {
+        const res = await axios.get('https://api.siputzx.my.id/api/d/facebook', {
+          params: { url },
+          timeout: 30000,
+        });
+        const d = res.data;
+        const downloads = d?.data?.downloads;
+        if (d?.status && Array.isArray(downloads) && downloads.length) {
+          const best =
+            downloads.find(x => /1080|hd|720/i.test(x.quality || '')) ||
+            downloads.find(x => x.type === 'video' && x.url) ||
+            downloads[0];
+          if (best?.url) {
+            return {
+              url: best.url,
+              title: d.data.title || 'Facebook Video',
+              thumbnail: d.data.thumbnail,
+            };
+          }
+        }
+        throw new Error('empty result');
+      },
+    },
+    {
+      name: 'fbdown.vercel',
+      get: async () => {
+        const res = await axios.get(
+          `https://fbdown.vercel.app/api/get?url=${encodeURIComponent(url)}`,
+          { timeout: 30000 }
+        );
+        if (res.data?.error) throw new Error(res.data.error);
+        const videoUrl = res.data?.hd || res.data?.sd || res.data?.result;
+        if (!videoUrl) throw new Error('empty result');
+        return {
+          url: typeof videoUrl === 'string' ? videoUrl : videoUrl.url || videoUrl,
+          title: res.data.title || 'Facebook Video',
+        };
+      },
+    },
   ];
-  const schemas = [
-    (d) => d.hd || d.sd,
-    (d) => d.result,
-  ];
-  for (let i = 0; i < endpoints.length; i++) {
-    const res = await axios.get(endpoints[i], { timeout: 30000 });
-    const getter = schemas[i] || (() => null);
-    const videoUrl = getter(res.data);
-    if (videoUrl) {
-      return {
-        url: typeof videoUrl === 'string' ? videoUrl : (videoUrl.url || videoUrl),
-        title: (res.data.title || 'Facebook Video'),
-      };
+
+  const failures = [];
+  for (const src of sources) {
+    try {
+      const out = await src.get();
+      if (out?.url) return out;
+      failures.push(`${src.name}: no url`);
+    } catch (err) {
+      failures.push(`${src.name}: ${err.message}`);
     }
   }
-  throw new Error('All APIs returned empty');
+  throw new Error(failures.join(' | ') || 'All APIs returned empty');
 }
 
 module.exports = {
@@ -127,8 +163,9 @@ module.exports = {
       }
 
       if (!videoData || !videoData.url) {
+        const detail = lastError?.message ? `\n\n_Source detail: _${lastError.message}_` : '';
         return await extra.reply(
-          `❌ _${pick(SLANG.error)} — couldn't get the video link_\n\n_All download sources failed._\n_Try using a direct video link instead._`
+          `❌ _${pick(SLANG.error)} — couldn't get the video link_\n\n_All download sources failed._${detail}\n_Try a public post link (not login-walled)._`
         );
       }
 
