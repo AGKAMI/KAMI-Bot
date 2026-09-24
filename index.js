@@ -22,6 +22,13 @@ const { startCleanup } = require('./utils/cleanup');
 console.log('🔧 Initializing KAMI Bot...\n');
 initializeTempSystem();
 startCleanup();
+
+// Ensure the repo-shipped yt-dlp binary is executable (SFTP uploads lose the exec bit)
+try {
+  const ytDlpBin = path.join(__dirname, 'bin', 'yt-dlp');
+  if (fs.existsSync(ytDlpBin)) fs.chmodSync(ytDlpBin, 0o755);
+} catch (e) {}
+
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;

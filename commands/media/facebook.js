@@ -7,9 +7,15 @@
 const axios = require('axios');
 const { execFile } = require('child_process');
 const util = require('util');
+const fs = require('fs');
+const path = require('path');
 const execFilePromise = util.promisify(execFile);
 const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+
+// Repo-shipped yt-dlp binary (bin/yt-dlp) preferred, then config path, then bare command
+const repoYtDlp = path.join(__dirname, '..', '..', 'bin', 'yt-dlp');
+const ytDlpCmd = fs.existsSync(repoYtDlp) ? repoYtDlp : (config.ytDlpPath || 'yt-dlp');
 
 const processedMessages = new Map(); // id → timestamp
 
@@ -23,7 +29,6 @@ setInterval(() => {
 
 async function fetchWithYtDlp(url) {
   try {
-    const ytDlpCmd = config.ytDlpPath || 'yt-dlp';
     const { stdout } = await execFilePromise(ytDlpCmd, ['-g', '-f', 'best', url], {
       maxBuffer: 5 * 1024 * 1024,
       timeout: 60000,
