@@ -7,6 +7,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { getTeamDisplayName } = require('../../utils/teamName');
 const { TEAMS } = require('./crewForms');
 
 const ACTION_EMOJI = {
@@ -76,7 +77,7 @@ module.exports = {
 
         lines.push(
           `${emoji} *${uid}* — ${app.action.toUpperCase()}\n` +
-          `   👤 ${app.applicantJid ? mention(app.applicantJid) : '—'} | 🏢 ${teamKey} | 👮 ${adminDisplay}\n` +
+          `   👤 ${app.applicantJid ? mention(app.applicantJid) : '—'} | 🏢 ${getTeamDisplayName(teamKey)} | 👮 ${adminDisplay}\n` +
           `   🕐 ${time}` +
           (app.role ? ` | 🏷️ ${app.role}` : '') +
           (app.reason ? `\n   📝 ${app.reason}` : '')

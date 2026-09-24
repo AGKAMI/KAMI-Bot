@@ -6,6 +6,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { TEAMS } = require('./crewForms');
 const { buildComparableIds } = require('../../utils/jidHelper');
+const { getTeamDisplayName } = require('../../utils/teamName');
 const { pick, SLANG, mention } = require('../../utils/format');
 
 /**
@@ -38,9 +39,10 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
         p.id?.split('@')[0] === applicantJid.split('@')[0]
       );
       if (alreadyIn) {
+        const teamName = getTeamDisplayName(teamKey);
         const msg = applyingForSomeone
-          ? `❌ ERROR\n\n${mention(applicantJid)} is already in the ${teamKey} group 🤨`
-          : `❌ ERROR\n\nYou're already in the ${teamKey} group 🤨`;
+          ? `❌ ERROR\n\n${mention(applicantJid)} is already in the ${teamName} group 🤨`
+          : `❌ ERROR\n\nYou're already in the ${teamName} group 🤨`;
         if (replyFn) await replyFn(msg);
         return { ok: false, error: 'already_in_group' };
       }
@@ -58,9 +60,10 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
       // Broken app — allow re-apply
       database.removeApplicant(teamGroupJid, dup.appUid);
     } else {
+      const teamName = getTeamDisplayName(teamKey);
       const msg = applyingForSomeone
-        ? `❌ ERROR\n\n${mention(applicantJid)} already has a pending ${teamKey} application\nApp ID: *${dup.appUid}*`
-        : `❌ ERROR\n\nYou already have a pending ${teamKey} application\nApp ID: *${dup.appUid}*`;
+        ? `❌ ERROR\n\n${mention(applicantJid)} already has a pending ${teamName} application\nApp ID: *${dup.appUid}*`
+        : `❌ ERROR\n\nYou already have a pending ${teamName} application\nApp ID: *${dup.appUid}*`;
       if (replyFn) await replyFn(msg);
       return { ok: false, error: 'duplicate_pending' };
     }

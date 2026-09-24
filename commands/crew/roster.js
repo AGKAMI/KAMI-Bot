@@ -6,6 +6,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
+const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
   name: 'roster',
@@ -43,10 +44,13 @@ module.exports = {
     const allActivity = database.getGroupMemberActivity(from);
     const memberList = Object.entries(allActivity);
 
+    const meta = await sock.groupMetadata(from).catch(() => null);
+    const teamName = getTeamDisplayName(teamKey, meta?.subject);
+
     if (memberList.length === 0) {
       return extra.reply(
         `📋 ROSTER\n\n` +
-        `No members in ${teamKey} yet`
+        `No members in ${teamName} yet`
       );
     }
 
@@ -60,7 +64,7 @@ module.exports = {
     });
 
     let text =
-      `📋 *${teamKey} ROSTER*\n` +
+      `📋 *${teamName} ROSTER*\n` +
       `━━━━━━━━━━━━━━━━\n` +
       `👥 *${memberList.length} members*\n\n`;
 

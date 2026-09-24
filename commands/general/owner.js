@@ -17,9 +17,11 @@ module.exports = {
         try {
             const chatId = extra.from;
 
-            // Owner numbers array -> convert each to a vCard
+            // Owner numbers array -> convert each to a vCard.
+            // Skip LID-form entries (e.g. xxx@lid) — they're internal identities, not dialable numbers
             const ownerNames = Array.isArray(config.ownerName) ? config.ownerName : [config.ownerName];
-            const vCards = config.ownerNumber.map((num, index) => {
+            const dialableNumbers = config.ownerNumber.filter(num => !String(num).includes('@lid'));
+            const vCards = dialableNumbers.map((num, index) => {
                 const name = ownerNames[index] || ownerNames[0] || 'Bot Owner';
                 return {
                     vcard: `

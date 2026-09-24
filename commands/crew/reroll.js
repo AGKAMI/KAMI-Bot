@@ -8,6 +8,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
   subName: 'reroll',
@@ -77,7 +78,7 @@ module.exports = {
       try {
         await sock.sendMessage(applicantJid, {
           text: `🔄 *APPLICATION RESET*\n\n` +
-                `Your *${teamKey}* application (ID: *${uid}*) has been reset by the owner.\n\n` +
+                `Your *${getTeamDisplayName(teamKey)}* application (ID: *${uid}*) has been reset by the owner.\n\n` +
                 `You can reapply fresh: \`${prefix}crew apply ${teamKey}\`\n` +
                 `_Your old answers have been cleared._`
         });
@@ -89,7 +90,7 @@ module.exports = {
         `✅ REROLLED\n\n` +
         `🆔 App ID: *${uid}*\n` +
         `👤 ${mention(applicantJid)}\n` +
-        `🏢 Team: *${teamKey}*\n` +
+        `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
         `📋 Previous action: *${processed.action}*\n\n` +
         `_Processed record cleared. Applicant can reapply._`
       );

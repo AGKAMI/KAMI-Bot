@@ -7,6 +7,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
   subName: 'cancel',
@@ -73,7 +74,7 @@ module.exports = {
       try {
         await sock.sendMessage(applicantJid, {
           text: `🚫 *APPLICATION CANCELLED*\n\n` +
-                `Your *${teamKey}* application (ID: *${uid}*) has been cancelled by the owner.` +
+                `Your *${getTeamDisplayName(teamKey)}* application (ID: *${uid}*) has been cancelled by the owner.` +
                 (reason ? `\n\n💬 *Reason:* ${reason}` : '') +
                 `\n\n🔄 You can reapply anytime: \`${prefix}crew apply ${teamKey}\``
         });
@@ -85,7 +86,7 @@ module.exports = {
         `✅ CANCELLED\n\n` +
         `🆔 App ID: *${uid}*\n` +
         `👤 ${mention(applicantJid)}\n` +
-        `🏢 Team: *${teamKey}*\n` +
+        `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
         (reason ? `📝 Reason: ${reason}\n` : '') +
         `\n_Applicant has been notified._`
       );

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Message Handler - Processes incoming messages and executes commands
  */
 
@@ -569,7 +569,7 @@ const handleMessage = async (sock, msg) => {
 
     if (!msg.message) {
       // Button taps might not have msg.message — check anyway
-          if (await handleButtonResponse(sock, msg, async (sender, from) => (await isAdmin(sock, sender, from)) || isOwner(sender))) return;
+          if (await handleButtonResponse(sock, msg, async (sender, from) => (await isAdmin(sock, sender, from)) || isOwner(sender) || msg.key.fromMe)) return;
       return;
     }
     
@@ -581,7 +581,7 @@ const handleMessage = async (sock, msg) => {
         // Interactive button responses — route to registered button handlers
         // BEFORE the DM blocker / prefix gate so button presses always work.
         try {
-      if (await handleButtonResponse(sock, msg, async (sender, from) => (await isAdmin(sock, sender, from)) || isOwner(sender))) return;
+          if (await handleButtonResponse(sock, msg, async (sender, from) => (await isAdmin(sock, sender, from)) || isOwner(sender) || msg.key.fromMe)) return;
         } catch (btnErr) {
           if (!btnErr.message?.includes('Cannot find module')) {
             console.error('[BUTTON] route error:', btnErr.message);
@@ -819,7 +819,7 @@ const handleMessage = async (sock, msg) => {
             sender,
             isGroup,
             groupMetadata,
-            isOwner: isOwner(sender),
+            isOwner: isOwner(sender) || msg.key.fromMe,
             isAdmin: await isAdmin(sock, sender, from, groupMetadata),
             isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
             isMod: isMod(sender),
@@ -839,7 +839,7 @@ const handleMessage = async (sock, msg) => {
             sender,
             isGroup,
             groupMetadata,
-            isOwner: isOwner(sender),
+            isOwner: isOwner(sender) || msg.key.fromMe,
             isAdmin: await isAdmin(sock, sender, from, groupMetadata),
             isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
             isMod: isMod(sender),
@@ -859,7 +859,7 @@ const handleMessage = async (sock, msg) => {
             sender,
             isGroup,
             groupMetadata,
-            isOwner: isOwner(sender),
+            isOwner: isOwner(sender) || msg.key.fromMe,
             isAdmin: await isAdmin(sock, sender, from, groupMetadata),
             isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
             isMod: isMod(sender),
@@ -1011,7 +1011,7 @@ const handleMessage = async (sock, msg) => {
                   sender,
                   isGroup,
                   groupMetadata,
-                  isOwner: isOwner(sender),
+                  isOwner: isOwner(sender) || msg.key.fromMe,
                   isAdmin: await isAdmin(sock, sender, from, groupMetadata),
                   isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
                   isMod: isMod(sender),
@@ -1043,7 +1043,7 @@ const handleMessage = async (sock, msg) => {
             sender,
             isGroup,
             groupMetadata,
-            isOwner: isOwner(sender),
+            isOwner: isOwner(sender) || msg.key.fromMe,
             isAdmin: await isAdmin(sock, sender, from, groupMetadata),
             isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
             isMod: isMod(sender),
@@ -1077,7 +1077,7 @@ const handleMessage = async (sock, msg) => {
             sender,
             isGroup,
             groupMetadata,
-            isOwner: isOwner(sender),
+            isOwner: isOwner(sender) || msg.key.fromMe,
             isAdmin: await isAdmin(sock, sender, from, groupMetadata),
             isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
             isMod: isMod(sender),
@@ -1215,7 +1215,7 @@ const handleMessage = async (sock, msg) => {
                   if (warnCmd) {
                     await warnCmd.execute(sock, msg, ['Auto-warn: flooding'], {
                       from, sender, groupMetadata,
-                      isOwner: isOwner(sender),
+                      isOwner: isOwner(sender) || msg.key.fromMe,
                       isAdmin: await isAdmin(sock, sender, from, groupMetadata),
                       isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
                       sock,
@@ -1379,7 +1379,7 @@ const handleMessage = async (sock, msg) => {
     }
     
     // Permission checks
-    if (command.ownerOnly && !isOwner(sender)) {
+    if (command.ownerOnly && !isOwner(sender) && !msg.key.fromMe) {
       return sock.sendMessage(from, { text: config.messages.ownerOnly }, { quoted: msg });
     }
     
@@ -1424,7 +1424,7 @@ const handleMessage = async (sock, msg) => {
         sender,
         isGroup,
         groupMetadata,
-        isOwner: isOwner(sender),
+        isOwner: isOwner(sender) || msg.key.fromMe,
         isOwnerMentioned: ownerMentioned,
         ownerMentions: msgMentions.filter(jid => isOwner(jid)),
         isAdmin: await isAdmin(sock, sender, from, groupMetadata),
@@ -1461,7 +1461,7 @@ const handleMessage = async (sock, msg) => {
         args: args.join(' '),
         user: sender,
         group: isGroup ? from : null,
-        isOwner: isOwner(sender),
+        isOwner: isOwner(sender) || msg.key.fromMe,
         isAdmin: await isAdmin(sock, sender, from, groupMetadata),
         success: true,
       });
@@ -1472,7 +1472,7 @@ const handleMessage = async (sock, msg) => {
         args: args.join(' '),
         user: sender,
         group: isGroup ? from : null,
-        isOwner: isOwner(sender),
+        isOwner: isOwner(sender) || msg.key.fromMe,
         isAdmin: await isAdmin(sock, sender, from, groupMetadata),
         success: false,
         error: cmdErr.message,

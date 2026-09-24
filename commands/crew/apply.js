@@ -79,7 +79,7 @@ module.exports = {
       // Confirm where they applied from
       const confirmText =
         `✅ *APPLICATION STARTED*\n\n` +
-        `🏢 Team: *${teamKey}* — ${TEAMS[teamKey].label}\n` +
+        `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
         `🆔 *App ID:* ${result.app.appUid}\n\n` +
         (applyingForSomeone
           ? `📲 I've DM'd ${mention(applicantJid)} the application form.\n\n`

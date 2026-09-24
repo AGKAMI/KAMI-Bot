@@ -6,6 +6,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG, mention } = require('../../utils/format');
+const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
   name: 'stats',
@@ -49,9 +50,12 @@ module.exports = {
 
     const member = database.getCrewMember(from, targetJid);
 
+    const meta = await sock.groupMetadata(from).catch(() => null);
+    const teamName = getTeamDisplayName(teamKey, meta?.subject);
+
     if (!member) {
       return extra.reply(
-        `❌ ERROR\n\n${mention(targetJid)} isn't a member of ${teamKey}`,
+        `❌ ERROR\n\n${mention(targetJid)} isn't a member of ${teamName}`,
         { mentions: [targetJid] }
       );
     }
@@ -97,7 +101,7 @@ module.exports = {
       `📊 *MEMBER STATS*\n` +
       `━━━━━━━━━━━━━━━━\n` +
       `👤 ${mention(targetJid)}\n` +
-      `🏢 Team: *${teamKey}*\n` +
+      `🏢 Team: *${teamName}*\n` +
       `🏷️ Role: *${member.role}*\n` +
       `📅 Joined: *${daysSinceJoined} days ago*\n\n`;
 

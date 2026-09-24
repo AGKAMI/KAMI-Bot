@@ -8,6 +8,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
 const { buildComparableIds } = require('../../utils/jidHelper');
+const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
   subName: 'withdraw',
@@ -76,7 +77,7 @@ module.exports = {
       await extra.reply(
         `✅ APPLICATION WITHDRAWN\n\n` +
         `🆔 App ID: *${uid}*\n` +
-        `🏢 Team: *${teamKey}*\n\n` +
+        `🏢 Team: *${getTeamDisplayName(teamKey)}*\n\n` +
         `_You can reapply anytime with: \`${prefix}crew apply ${teamKey}\`_`
       );
 

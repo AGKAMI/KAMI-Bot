@@ -4,6 +4,7 @@
  */
 
 const config = require('../../config');
+const { getTeamDisplayName } = require('../../utils/teamName');
 
 // Team metadata: display name + emoji theme. Group JID + invite live in config.crewTeams.
 const TEAMS = {
@@ -51,7 +52,7 @@ const buildFormMessage = (teamKey) => {
   return `━━━━━━━━━━━━━━━━\n` +
     `*${team.label.toUpperCase()}*\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
-    `_${teamKey} APPLICATION_\n` +
+    `_${getTeamDisplayName(teamKey).toUpperCase()} APPLICATION_\n` +
     `${team.emoji} ${team.role.toUpperCase()} ${team.emoji}\n\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `${questions}\n\n` +
@@ -65,7 +66,7 @@ const buildHiredMessage = (teamKey, inviteLink) => {
   return `━━━━━━━━━━━━━━━━\n` +
     `*${team.label.toUpperCase()}*\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
-    `_${teamKey} APPLICATION REVIEW_\n` +
+    `_${getTeamDisplayName(teamKey).toUpperCase()} APPLICATION REVIEW_\n` +
     `${team.emoji} ${team.role.toUpperCase()} ${team.emoji}\n\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `✅ *STATUS: HIRED*\n\n` +
@@ -84,7 +85,7 @@ const buildDeniedMessage = (teamKey, reason) => {
   return `━━━━━━━━━━━━━━━━\n` +
     `*${team.label.toUpperCase()}*\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
-    `_${teamKey} APPLICATION REVIEW_\n` +
+    `_${getTeamDisplayName(teamKey).toUpperCase()} APPLICATION REVIEW_\n` +
     `${team.emoji} ${team.role.toUpperCase()} ${team.emoji}\n\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `❌ *STATUS: NOT SELECTED*\n\n` +

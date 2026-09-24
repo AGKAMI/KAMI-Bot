@@ -150,7 +150,7 @@ welcome: false,
         ranks: ['grade e', 'grade d', 'grade c', 'grade b', 'grade a'],
       },
       'SSGENERAL': {
-        name: 'Slammed Society General',
+        name: 'KAMI\'s Slammed Society CPM Crew',
         jid: '120363417242897528@g.us',
         invite: '',
         image: '',

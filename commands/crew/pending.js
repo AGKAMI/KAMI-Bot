@@ -7,6 +7,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { getTeamDisplayName } = require('../../utils/teamName');
 const { TEAMS } = require('./crewForms');
 
 module.exports = {
@@ -85,7 +86,7 @@ module.exports = {
 
       for (const [teamKey, apps] of Object.entries(grouped)) {
         const team = TEAMS[teamKey];
-        lines.push(`${team ? team.emoji : ''} *${teamKey}* — ${team ? team.label : 'Unknown'} (${apps.length})`);
+        lines.push(`${team ? team.emoji : ''} *${getTeamDisplayName(teamKey)}* (${apps.length})`);
 
         for (const { uid, app } of apps) {
           const hasAnswers = app.answers ? '✅' : '⏳';

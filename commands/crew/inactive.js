@@ -6,6 +6,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG } = require('../../utils/format');
+const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
   name: 'inactive',
@@ -44,6 +45,9 @@ module.exports = {
     const inactive = database.getInactiveMembers(from, days);
     const inactiveList = Object.entries(inactive);
 
+    const meta = await sock.groupMetadata(from).catch(() => null);
+    const teamName = getTeamDisplayName(teamKey, meta?.subject);
+
     if (inactiveList.length === 0) {
       return extra.reply(
         `✅ *ALL GOOD*\n\n` +
@@ -62,7 +66,7 @@ module.exports = {
     let text =
       `😴 *INACTIVE MEMBERS*\n` +
       `━━━━━━━━━━━━━━━━\n` +
-      `🏢 Team: *${teamKey}*\n` +
+      `🏢 Team: *${teamName}*\n` +
       `📅 Threshold: *${days} days*\n` +
       `👥 Found: *${inactiveList.length}*\n\n`;
 

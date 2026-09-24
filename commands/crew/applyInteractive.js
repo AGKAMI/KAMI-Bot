@@ -13,6 +13,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { pick, SLANG, mention } = require('../../utils/format');
 const { SSRS, KSSPS, KSSMP, KSSMS, shuffle } = require('./questionPools');
 const { buildComparableIds } = require('../../utils/jidHelper');
+const { getTeamDisplayName } = require('../../utils/teamName');
 
 // ── In-memory session store ──────────────────────────────────
 const sessions = new Map();
@@ -423,7 +424,7 @@ onButton('cwiz:submit:', async (sock, msg, from, sender, btnId) => {
       `*HOW SHOULD WE REVIEW?*\n` +
       `━━━━━━━━━━━━━━━━\n\n` +
       `Choose how your application gets reviewed:`,
-    footer: `${teamKey} Application`,
+    footer: `${getTeamDisplayName(teamKey)} Application`,
     buttons: [
       { id: `cwiz:adminreview:${teamKey}:${appUid}`, text: '📋 Send to Admins' },
       { id: `cwiz:botreview:${teamKey}:${appUid}`, text: '🤖 Bot Review' },
@@ -528,7 +529,7 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
         `Issues:\n` +
         issues.map(i => `• ${i}`).join('\n') +
         `\n\n_Try improving your answers or send to admins for manual review._`,
-      footer: `${teamKey} Application`,
+      footer: `${getTeamDisplayName(teamKey)} Application`,
       buttons: [
         { id: `cwiz:pick:${teamKey}:${appUid}`, text: '✏️ Improve Answers' },
         { id: `cwiz:adminreview:${teamKey}:${appUid}`, text: '📋 Send to Admins' },
@@ -590,7 +591,7 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
       const botNotice =
         `🤖 *BOT AUTO-APPROVED*\n\n` +
         `👤 ${mention(session.applicantJid)}\n` +
-        `🏢 Team: *${teamKey}*\n` +
+        `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
         `🆔 App ID: *${appUid}*\n\n` +
         `_Answers passed quality checks. Use ${config.prefix || '.'}crew accept ${appUid} to finalize._`;
 
@@ -612,7 +613,7 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
     `✅ *APPLICATION APPROVED*\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `🤖 _Bot reviewed your answers and you passed!_\n\n` +
-    `🏢 Team: *${teamKey}* — ${team?.label || teamKey}\n` +
+    `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
     `🆔 App ID: *${appUid}*\n\n` +
     `_An admin will add you to the group shortly ${pick(SLANG.good)}_\n\n` +
     `_${pick(SLANG.greeting)}, welcome to the squad!_`;
@@ -644,13 +645,12 @@ onButton('cwiz:cancel:', async (sock, msg, from, sender, btnId) => {
   // Delete session
   sessions.delete(from);
 
-  const teamLabel = TEAMS[teamKey]?.label || teamKey;
   await sock.sendMessage(from, {
     text:
       `━━━━━━━━━━━━━━━━\n` +
       `🚫 *APPLICATION CANCELLED*\n` +
       `━━━━━━━━━━━━━━━━\n\n` +
-      `Your *${teamKey}* — ${teamLabel} application has been removed.\n\n` +
+      `Your *${getTeamDisplayName(teamKey)}* application has been removed.\n\n` +
       `💡 You can apply again anytime with ${config.prefix || '.'}crew apply ${teamKey}`
   });
 });
@@ -736,7 +736,7 @@ function getApplicantState(jid) {
 // Send a progressive response based on the user's application state
 async function sendProgressiveResponse(sock, jid, state) {
   const prefix = config.prefix || '.';
-  const teamLabel = TEAMS[state.teamKey]?.label || state.teamKey || '';
+  const teamName = getTeamDisplayName(state.teamKey);
 
   switch (state.state) {
     case 'pending_submitted':
@@ -745,7 +745,7 @@ async function sendProgressiveResponse(sock, jid, state) {
           `━━━━━━━━━━━━━━━━\n` +
           `⏳ *APPLICATION STATUS*\n` +
           `━━━━━━━━━━━━━━━━\n\n` +
-          `Your *${state.teamKey}* — ${teamLabel} application is being reviewed by an admin.\n\n` +
+          `Your *${teamName}* application is being reviewed by an admin.\n\n` +
           `🆔 App ID: *${state.appUid}*\n\n` +
           `💡 *What you can do:*\n` +
           `• \`${prefix}crew applicants ${state.teamKey}\` — check status\n` +
@@ -759,7 +759,7 @@ async function sendProgressiveResponse(sock, jid, state) {
           `━━━━━━━━━━━━━━━━\n` +
           `📋 *APPLICATION INCOMPLETE*\n` +
           `━━━━━━━━━━━━━━━━\n\n` +
-          `You started a *${state.teamKey}* — ${teamLabel} application but didn't finish answering.\n\n` +
+          `You started a *${teamName}* application but didn't finish answering.\n\n` +
           `🆔 App ID: *${state.appUid}*\n\n` +
           `💡 *Start fresh:*\n` +
           `\`${prefix}crew apply ${state.teamKey}\``

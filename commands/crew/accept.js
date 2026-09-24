@@ -8,6 +8,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const axios = require('axios');
+const { getTeamDisplayName } = require('../../utils/teamName');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { TEAMS, buildHiredMessage } = require('./crewForms');
 const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
@@ -121,7 +122,7 @@ module.exports = {
       }
       if (!extra.isOwner && !isTeamAdmin && !isGroupAdmin) {
         return extra.reply(
-          '❌ ERROR\n\nOnly ' + teamKey + ' admins can accept applications'
+          '❌ ERROR\n\nOnly ' + getTeamDisplayName(teamKey) + ' admins can accept applications'
         );
       }
 
