@@ -285,73 +285,200 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000);
 
-const runInactiveCheck = async (sock) => {
-  console.log('[INACTIVE-CHECK] Scanning for inactive members...');
+// Identity across LID/PN variants — one person, one alert, one DM.
+const { buildComparableIds } = require('./jidHelper');
+const { getTeamDisplayName } = require('./teamName');
 
-  const teamMap = database.getTeamMap();
-  const allTeams = { ...teamMap };
-  for (const [key, info] of Object.entries(config.crewTeams || {})) {
-    if (!allTeams[key]) allTeams[key] = info;
+const _digits = (jid) => String(jid || '').split(':')[0].split('@')[0].replace(/\D/g, '');
+const _dayMs = 24 * 60 * 60 * 1000;
+const MAX_GROUPS_IN_DM = 8;
+
+const _teamLabel = (info) =>
+  info.name || getTeamDisplayName(info.key || info.jid, null) || info.key || info.jid || 'Unknown';
+
+const _activityFor = (groupJid, jid) => {
+  for (const v of buildComparableIds(jid)) {
+    const a = database.getMemberActivity(groupJid, v);
+    if (a.lastActive || a.totalMessages) return a;
   }
+  return database.getMemberActivity(groupJid, jid);
+};
 
+const _wasAlerted = (jid) =>
+  buildComparableIds(jid).some(v => (lastAlerted.get(v) || 0) > Date.now() - ALERT_COOLDOWN);
+
+const _markAlerted = (jid) => {
+  const now = Date.now();
+  for (const v of buildComparableIds(jid)) lastAlerted.set(v, now);
+  saveAlerted();
+};
+
+const _collectTeams = () => {
+  const merged = { ...(database.getTeamMap() || {}) };
+  for (const [key, info] of Object.entries(config.crewTeams || {})) {
+    if (!merged[key]) merged[key] = info;
+  }
+  // Same JID can appear under teamMap + config keys — dedupe by JID
+  const byJid = new Map();
+  for (const [key, info] of Object.entries(merged)) {
+    if (!info?.jid || byJid.has(info.jid)) continue;
+    byJid.set(info.jid, { key, ...info });
+  }
+  return byJid;
+};
+
+const runInactiveCheck = async (sock) => {
+  console.log('[INACTIVE-CHECK] Scanning all crew groups (cross-group)...');
+
+  const teamsByJid = _collectTeams();
   const ownerDigits = new Set((config.ownerNumber || []).map(n => n.replace(/\D/g, '')).filter(Boolean));
-  const botJid = sock.user?.id || '';
+  const botDigits = _digits(sock.user?.id);
 
-  let dmsSent = 0;
+  // Member-centric: identity → { jid, inactiveGroups[], roles[] }
+  const byMember = new Map(); // anyIdVariant → entry
 
-  for (const [teamKey, teamInfo] of Object.entries(allTeams)) {
-    if (dmsSent >= MAX_DMS_PER_CYCLE) break;
+  const findEntry = (jid) => {
+    for (const v of buildComparableIds(jid)) {
+      if (byMember.has(v)) return byMember.get(v);
+    }
+    return null;
+  };
+  const indexEntry = (entry, jid) => {
+    for (const v of buildComparableIds(jid)) byMember.set(v, entry);
+  };
 
+  let rosterInactive = 0;
+
+  for (const [groupJid, teamInfo] of teamsByJid) {
     try {
-      const inactive = database.getInactiveMembers(teamInfo.jid, INACTIVE_THRESHOLD_DAYS);
-      const inactiveList = Object.entries(inactive);
+      const inactive = database.getInactiveMembers(groupJid, INACTIVE_THRESHOLD_DAYS);
+      const teamName = _teamLabel(teamInfo);
 
-      if (inactiveList.length === 0) continue;
+      for (const [jid, data] of Object.entries(inactive)) {
+        rosterInactive++;
+        const num = _digits(jid);
+        if (jid === sock.user?.id || (num && num === botDigits)) continue;
+        if (num && ownerDigits.has(num)) continue;
 
-      // Only alert about members not already alerted in the last 7 days.
-      // Skip owners and the bot itself — the bot doesn't DM its own boss about their own inactivity
-      const dueList = inactiveList.filter(([jid]) => {
-        if (jid === botJid) return false;
-        const num = String(jid).split(':')[0].split('@')[0].replace(/\D/g, '');
-        if (num && ownerDigits.has(num)) return false;
-        const last = lastAlerted.get(jid) || 0;
-        return Date.now() - last > ALERT_COOLDOWN;
-      });
-
-      if (dueList.length === 0) continue;
-
-      // Cap per cycle — never blast the whole list at once
-      const batch = dueList.slice(0, MAX_DMS_PER_CYCLE - dmsSent);
-
-      // DM the inactive members directly — activity nudge, max 5 per hour, spaced out
-      for (const [jid, data] of batch) {
         const days = data.lastActive
-          ? Math.floor((Date.now() - data.lastActive) / (24 * 60 * 60 * 1000))
+          ? Math.floor((Date.now() - data.lastActive) / _dayMs)
           : null;
-        try {
-          await sock.sendMessage(jid, {
-            text:
-              `😴 *ACTIVITY CHECK*\n\n` +
-              `You haven't been active in *${teamKey}*` +
-              (days !== null ? ` for *${days} days*` : '') + `\n\n` +
-              `💬 Messages: ${data.totalMessages}\n` +
-              `🛡️ Rank: ${data.role}\n\n` +
-              `_The crew misses you — pop in and stay active hey_ ${pick(SLANG.vibe)}`,
+
+        let entry = findEntry(jid);
+        if (!entry) {
+          entry = { jid, inactiveGroups: [] };
+          indexEntry(entry, jid);
+        }
+        // Same group twice under different keys — keep the worse (older) entry
+        if (!entry.inactiveGroups.some(g => g.groupJid === groupJid)) {
+          entry.inactiveGroups.push({
+            groupJid,
+            teamName,
+            days,
+            lastActive: data.lastActive || null,
+            totalMessages: data.totalMessages || 0,
+            role: data.role || 'member',
           });
-          lastAlerted.set(jid, Date.now());
-          saveAlerted();
-          dmsSent++;
-        } catch (e) {}
-        if (dmsSent < MAX_DMS_PER_CYCLE) {
-          await new Promise(r => setTimeout(r, DM_DELAY_BASE_MS + Math.floor(Math.random() * DM_DELAY_JITTER_MS)));
         }
       }
-
-      console.log(`[INACTIVE-CHECK] ${teamKey}: ${batch.length} inactive members DM'd (${dmsSent}/${MAX_DMS_PER_CYCLE} this cycle, ${inactiveList.length} total inactive)`);
     } catch (e) {
-      console.error(`[INACTIVE-CHECK] Error checking ${teamKey}:`, e.message);
+      console.error(`[INACTIVE-CHECK] Error scanning ${teamInfo.key || groupJid}:`, e.message);
     }
   }
+
+  // One DM per person, covering every crew group they're quiet in
+  const due = [...byMember.values()].filter(entry => {
+    if (!entry.inactiveGroups.length) return false;
+    return !_wasAlerted(entry.jid);
+  });
+
+  // Worst silence first — people quiet everywhere get nudged first
+  due.sort((a, b) => {
+    const aMin = Math.min(...a.inactiveGroups.map(g => g.days ?? INACTIVE_THRESHOLD_DAYS));
+    const bMin = Math.min(...b.inactiveGroups.map(g => g.days ?? INACTIVE_THRESHOLD_DAYS));
+    return bMin - aMin;
+  });
+
+  let dmsSent = 0;
+  const dueIds = new Set(due.map(e => e.jid));
+  let skippedCooldown = 0;
+  for (const entry of byMember.values()) {
+    if (entry.inactiveGroups.length && !dueIds.has(entry.jid)) skippedCooldown++;
+  }
+
+  for (const entry of due) {
+    if (dmsSent >= MAX_DMS_PER_CYCLE) break;
+
+    const groups = [...entry.inactiveGroups]
+      .sort((a, b) => (b.days ?? INACTIVE_THRESHOLD_DAYS) - (a.days ?? INACTIVE_THRESHOLD_DAYS));
+
+    // Where ARE they still active? (other crew groups not on the inactive list)
+    const inactiveJids = new Set(groups.map(g => g.groupJid));
+    const stillActiveIn = [];
+    for (const [groupJid, teamInfo] of teamsByJid) {
+      if (inactiveJids.has(groupJid)) continue;
+      const a = _activityFor(groupJid, entry.jid);
+      if (a.lastActive && Date.now() - a.lastActive <= INACTIVE_THRESHOLD_DAYS * _dayMs) {
+        stillActiveIn.push(_teamLabel(teamInfo));
+      }
+    }
+
+    const shown = groups.slice(0, MAX_GROUPS_IN_DM);
+    const hidden = groups.length - shown.length;
+    const totalMsgs = groups.reduce((s, g) => s + (g.totalMessages || 0), 0);
+    const maxDays = Math.max(...groups.map(g => g.days ?? INACTIVE_THRESHOLD_DAYS));
+    const neverPosted = groups.every(g => !g.lastActive);
+
+    let text =
+      `😴 *ACTIVITY CHECK*\n` +
+      `━━━━━━━━━━━━━━━━\n` +
+      `You've gone quiet in *${groups.length} crew group${groups.length === 1 ? '' : 's'}*` +
+      (neverPosted ? ` (never posted)` : ` — up to *${maxDays} days* silent`) + `\n\n`;
+
+    for (const g of shown) {
+      const when = g.days !== null ? `${g.days}d inactive` : `no activity yet`;
+      text += `• *${g.teamName}*\n`;
+      text += `  ⏰ ${when}\n`;
+      text += `  💬 Messages there: ${g.totalMessages || 0}\n`;
+      text += `  🛡️ ${g.role}\n\n`;
+    }
+    if (hidden > 0) text += `_…and ${hidden} more group${hidden === 1 ? '' : 's'}_\n\n`;
+
+    text += `📊 *Total messages across these groups:* ${totalMsgs}\n`;
+
+    if (stillActiveIn.length) {
+      text += `🟢 Still active in: ${stillActiveIn.slice(0, 3).join(', ')}`;
+      if (stillActiveIn.length > 3) text += ` +${stillActiveIn.length - 3}`;
+      text += `\n\n_Pop into the ones above too — the crew misses you_ ${pick(SLANG.vibe)}`;
+    } else {
+      text += `\n\n_You're quiet everywhere hey — pop in and stay active_ ${pick(SLANG.vibe)}`;
+    }
+
+    try {
+      await sock.sendMessage(entry.jid, { text });
+      _markAlerted(entry.jid);
+      dmsSent++;
+    } catch (e) {
+      // LID may not be DM-able — retry PN variant once
+      const alt = buildComparableIds(entry.jid).find(v => v !== entry.jid && !v.endsWith('@lid'));
+      if (alt) {
+        try {
+          await sock.sendMessage(alt, { text });
+          _markAlerted(entry.jid);
+          dmsSent++;
+        } catch (e2) {}
+      }
+    }
+
+    if (dmsSent < MAX_DMS_PER_CYCLE && dmsSent > 0) {
+      await new Promise(r => setTimeout(r, DM_DELAY_BASE_MS + Math.floor(Math.random() * DM_DELAY_JITTER_MS)));
+    }
+  }
+
+  console.log(
+    `[INACTIVE-CHECK] Done: ${dmsSent} DM'd, ${skippedCooldown} in cooldown, ` +
+    `${byMember.size} unique inactive members (from ${rosterInactive} roster hits) across ${teamsByJid.size} groups`
+  );
 };
 
 const { pick, SLANG } = require('../utils/format');
