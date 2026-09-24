@@ -5,7 +5,7 @@ Fix all bugs in KAMI-Bot's button code, protection system, and outputs; build cr
 
 ## Current State
 - ALL prior fixes committed (`9237344` + handoff `11b7d18`) and SFTP-uploaded. Bot offline — user's accounts restricted by WhatsApp (bulk-messaging, ~24h timer from Sep 24 12:00). User will pair main account when timer ends.
-- NEW (local, not committed/deployed): `utils/autoProgression.js` inactive check is now member-centric — one DM lists EVERY crew group the person is quiet in (full names, days inactive, messages per group, total across groups, still-active-elsewhere note, never-posted case). LID/PN identity merged via `buildComparableIds`; cooldown is per-person across all groups; max 5 DMs/cycle + 60-90s spacing kept; max 8 groups per DM; LID DM falls back to PN.
+- COMMITTED + DEPLOYED (`fee70e6` MiMo's consolidation, `0c5e0c0` audit fixes on top): `utils/autoProgression.js` inactive check is now member-centric — one DM lists EVERY crew group the person is quiet in (full names, days inactive, messages per group, total across groups, still-active-elsewhere note, never-posted case). LID/PN identity merged via `buildComparableIds`; cooldown is per-person across all groups; max 5 DMs/cycle + 60-90s spacing kept; max 8 groups per DM; LID DM falls back to PN. Membership check added (leavers not nudged).
 - Working: two-strike demote+kick protection, button delegation, full team names in outputs, fromMe owner detection, rate-limited activity-check DMs, mentions, CREW SYNC, session persistence.
 
 ## What Was Tried That Failed
