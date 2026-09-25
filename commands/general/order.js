@@ -218,16 +218,16 @@ async function sendPremiumMenu(sock, chatId, page, quoted) {
   // Send items + back button together
   await sendButtons(sock, chatId, { text, buttons }, quoted);
 
-  // Nav message with REAL text + Back — always renders and always navigable,
-  // even if WhatsApp drops buttons from the first message
+  // Nav message — Prev/Next only (the page message above already has Back)
   const navButtons = [];
   if (page > 0) navButtons.push({ id: `order:cat:premium:${page - 1}`, text: '\u{1F519} Prev' });
   if (start + PREMIUM_PER_PAGE < PREMIUM_KEYS.length) {
     navButtons.push({ id: `order:cat:premium:${page + 1}`, text: 'Next \u{1F51B}' });
   }
-  navButtons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back' });
-  await delay(1200);
-  await sendButtons(sock, chatId, { text: `📄 Page ${page + 1}/${totalPages} — or navigate:`, buttons: navButtons }, quoted);
+  if (navButtons.length > 0) {
+    await delay(1200);
+    await sendButtons(sock, chatId, { text: `📄 Page ${page + 1}/${totalPages} — or navigate:`, buttons: navButtons }, quoted);
+  }
 }
 
 async function sendItemDetail(sock, chatId, itemId, quoted) {
