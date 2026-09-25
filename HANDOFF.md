@@ -1,47 +1,48 @@
 # HANDOFF
 
 ## Goal
-Fix all bugs in KAMI-Bot's button code, protection system, and outputs; build cross-group add/remove commands; make inactive DMs multi-group; deploy everything.
+Restriction-proof inactivity system: group notices only (no cold DMs), one notice per group every 7 days, ALL inactive members mentioned in one message (no cap), auto-kick members still inactive 14 days after their notice.
 
 ## Current State
-- ALL prior fixes committed (`9237344` + handoff `11b7d18`) and SFTP-uploaded. Bot offline — user's accounts restricted by WhatsApp (bulk-messaging, ~24h timer from Sep 24 12:00). User will pair main account when timer ends.
-- COMMITTED + DEPLOYED (`fee70e6` MiMo's consolidation, `0c5e0c0` audit fixes on top): `utils/autoProgression.js` inactive check is now member-centric — one DM lists EVERY crew group the person is quiet in (full names, days inactive, messages per group, total across groups, still-active-elsewhere note, never-posted case). LID/PN identity merged via `buildComparableIds`; cooldown is per-person across all groups; max 5 DMs/cycle + 60-90s spacing kept; max 8 groups per DM; LID DM falls back to PN. Membership check added (leavers not nudged).
-- Working: two-strike demote+kick protection, button delegation, full team names in outputs, fromMe owner detection, rate-limited activity-check DMs, mentions, CREW SYNC, session persistence.
+- DONE + TESTED (20/20 synthetic): `utils/autoProgression.js` activity check v3:
+  - No mention cap — every inactive member in a group listed + mentioned in ONE message; "...and N more" truncation removed
+  - Per-GROUP 7-day notice cooldown (replaces per-person cooldown), persisted in `database/inactiveAlerts.json` v2 (`{groups, flagged, holdUntil}`)
+  - Auto-kick: member flagged by a notice who stays inactive 14 days → removed from that group. Skips owner, bot, owner-protected, groups where bot isn't admin. Sets `handler._botKicked` (5s, same pattern as kick.js), posts `🗑️ AUTO-KICK` group message with mention. Flag cleared if member left/went active; kept if kick failed (retry next cycle). Earliest flag wins — re-notices can't delay a kick
+  - Unchanged: max 5 group notices/cycle, 3s spacing, 30-day threshold, hourly cycle, owner/bot/leaver exclusion
+  - Effective timeline: inactive 30d → group notice → 14d grace → kicked (~44d)
+- `upload_sftp.py`: `REMOTE_BASE` fixed `"/home/container"` → `"/"` + md5 verify-after-upload
+- NOT committed/deployed yet. Deployed server code is still `599f524` (group notices, 10-mention cap, per-person cooldown, no kicks)
+- Verified server state read-only: SFTP root IS the bot dir (config.js, package.json, node_modules present)
 
 ## What Was Tried That Failed
-- **Activity-check DMs to all inactive members at once** — WhatsApp restricted TWO accounts (44 + 68 cold DMs in a blast). Fixed: max 5 DMs/cycle, 60-90s spacing, dedup persisted to `database/inactiveAlerts.json`.
-- **Cold DMs even at 5/cycle** — main account STILL restricted (3rd restriction, Sep 25 05:48). Cold DMs to non-contacts are WhatsApp's highest-risk pattern. FINAL FIX (`599f524`): activity check posts in crew GROUPS (members mentioned) instead of any DMs. Never DM non-contacts in bulk again.
-- **Per-group inactive loop** — DM only mentioned the first team scanned; person inactive in 3 groups got a message about 1. Fixed: aggregate all teams first, one DM per person.
-- **`sessionRetryCount` used but never declared** — unhandled rejection crash. Fixed: module-level `let sessionRetryCount = 0` (index.js:182).
-- **In-memory `_botKicked`/alert Maps lost on restart** — re-blast/re-add loops. Fixed: persisted inactiveAlerts; _botKicked remains in-memory (5s window, acceptable).
+- **Cold DMs for inactivity at ANY rate** — restricted all three accounts (5/cycle + 60-90s spacing + 7-day cooldown still hit on 3rd restriction). Final: group notices only
+- **Per-person 7-day cooldown** — groups could be re-noticed far too often; replaced with per-group cooldown
+- **SFTP `REMOTE_BASE="/home/container"`** — SFTP chroot already IS the bot dir, so uploads nested into a stale `home/container/` subtree and went nowhere; deploys only worked via GitHub auto-pull. Fixed to `"/"`
+- **10-mention cap** — user wants every inactive member mentioned (removed)
+- Panel API restart — 404/HTML fallback; user restarts from panel manually
+- `node -e` requiring command modules hangs (database.js timers) — test scripts must `process.exit()`
 
 ## Active Files
-- `utils/autoProgression.js` — cross-group inactive DM (`runInactiveCheck`), roles-only progression, capped/spaced/persisted alerts
-- `handler.js` — protection remove-path (~1568+), fromMe owner fix (10 `isOwner: isOwner(sender) || msg.key.fromMe` sites + button checks), moderation kicks set `_botKicked`
-- `commands/admin/kick.js` — two-strike kick protection; `commands/admin/demote.js` — two-strike demote protection + args-JID target
-- `commands/admin/promote.js` — demote button delegates to demoteCmd.execute
-- `commands/owner/addto.js` + `removefrom.js` — cross-group add/remove (owner-only, any phone format, group abbrev/name matching)
-- `utils/teamName.js` — `getTeamDisplayName(teamKeyOrJid, subject)` helper
-- `database.js` — protection DBs + `getKickAttempts`/`incrementKickAttempts`/`resetKickAttempts` + `getInactiveMembers`/`getMemberActivity`
-- `config.js` — SSGENERAL renamed to "KAMI's Slammed Society CPM Crew"
+- `utils/autoProgression.js` — v3 notices + `_runKickPass` (auto-kick); state file `database/inactiveAlerts.json`
+- `upload_sftp.py` — deploy list (currently `["utils/autoProgression.js"]`) + md5 verify
+- `handler.js` — exports `_botKicked`, `isBotAdmin(sock, gid, meta=null)`; autoProgression lazily requires it inside `_runKickPass` (no circular import — handler never requires autoProgression)
+- `database.js` — `getInactiveMembers(groupJid, days)`, `isOwnerProtected(groupJid, variant)`
+- Test: `C:\Users\ojuni\AppData\Local\Temp\opencode\test_inactive_v3.js` (20 asserts, patches database/config, cleans up state file)
 
 ## Known Gotchas
-- Server's untracked `package.json` likely blocks git pull — ALWAYS SFTP upload changed files (edit `upload_sftp.py` FILES list first)
-- Server runs baileys `7.0.0-rc13`; registry has BOTH `7.0.0-rc.9` (dotted) and `rc10`-`rc14` (undotted) formats
-- `wa-sticker-formatter` required at `sticker.js:5`, missing locally — in package.json as ^4.4.4
-- `mention()` must use digits of the JID as passed (no LID→PN mapping) or mentions break
-- LID digits ≠ PN digits — protection checks must bridge via `buildComparableIds` variants; inactive alerts mark cooldown on ALL variants
-- Same crew JID can appear under both `teamMap` and `config.crewTeams` — merge dedupes by JID
-- Panel API restart 404/DNS-fails — user restarts from panel manually
-- `node -e` requiring command modules hangs (database.js timers) — test scripts must `process.exit()`
-- Local `database/crew.json` is empty (0 members) — real roster/stats live on the server; local inactive tests need synthetic data
-- Model looping on long tasks: keep responses short, commit small, handoff often
+- **SFTP chroot = bot dir** — remote paths are relative to ROOT (`/`), NOT `/home/container` (a stale nested copy exists there; ignore it)
+- Old v1 `inactiveAlerts.json` (`{jid: ts}`) auto-migrates to `holdUntil=now` — no group gets a notice within 7 days of deploy; kicks start 14 days after the first v2 notice
+- Local `database/crew.json` is empty — tests must patch `database.getInactiveMembers`/`getTeamMap`/`isOwnerProtected` + `config.crewTeams`/`ownerNumber`
+- LID≠PN — kick resolves the ACTUAL participant id from groupMetadata via digit→id map, never guesses
+- Server's untracked package.json can block git pull — SFTP fallback with md5 verify
+- Kicks silently pause if bot isn't admin in a group — check bot admin status after deploy
+- SFTP password needs `.strip()` (trailing newline fails auth)
 
 ## Next Steps
-1. Commit + push + SFTP `utils/autoProgression.js` (add to `upload_sftp.py` FILES), restart from panel
-2. User pairs main account after restriction timer ends (~24h from Sep 24 12:00)
-3. Test after pairing: `!dmblocker`, `!crew inactive`, demote-button block, `!addto`/`!removefrom`, activity-check DMs (max 5/cycle — should list all quiet groups in ONE message)
-4. Optional: make activity check post in group instead of DMs (user asked to be told the option)
+1. User says "commit" → commit + push `utils/autoProgression.js` + `upload_sftp.py`
+2. Deploy: `python upload_sftp.py` (md5-verifies) and/or GitHub auto-pull at restart → user restarts from panel
+3. After restart: watch first hourly `[INACTIVE-CHECK]` log — expect "N group(s) in 7-day cooldown" from v1 migration
+4. Confirm bot is admin in every crew group (else AUTO-KICK "paused — bot is not admin")
 
 ## Memory Keys
-mcp__claude-flow__memory_search { query: "KAMI-Bot protection buttons deployment inactive multi-group", namespace: "project" }
+mcp__claude-flow__memory_search { query: "KAMI-Bot inactive notice auto-kick SFTP REMOTE_BASE restriction", namespace: "project" }

@@ -247,45 +247,44 @@ const stopProgressionEngine = () => {
   }
 };
 
-// ── Inactive Member Alerts ────────────────────────────────
+// ── Inactive Member Notices ───────────────────────────────
 const INACTIVE_THRESHOLD_DAYS = 30;
 
-// Alert dedup: notify about each member once per 7 days (prevents hourly DM spam).
-// PERSISTED to disk — survives restarts, so a fresh pairing never re-blasts everyone.
-const ALERT_COOLDOWN = 7 * 24 * 60 * 60 * 1000;
+// One notice per GROUP every 7 days (persisted — survives restarts).
+// Members flagged in a notice who stay inactive 14 more days are auto-kicked.
+const GROUP_NOTICE_COOLDOWN = 7 * 24 * 60 * 60 * 1000;
+const KICK_GRACE = 14 * 24 * 60 * 60 * 1000;
 const fs = require('fs');
 const path = require('path');
 const ALERT_DB = path.join(__dirname, '..', 'database', 'inactiveAlerts.json');
-const lastAlerted = new Map(); // jid → last notified timestamp
 
-const loadAlerted = () => {
-  try {
-    const obj = JSON.parse(fs.readFileSync(ALERT_DB, 'utf8'));
-    for (const [jid, ts] of Object.entries(obj)) lastAlerted.set(jid, ts);
-  } catch (e) {}
+// v2 state: groups → last notice ts, flagged → { groupJid → { memberJid → flaggedAt } }
+let _state = { groups: {}, flagged: {}, holdUntil: 0 };
+
+const _saveState = () => {
+  try { fs.writeFileSync(ALERT_DB, JSON.stringify(_state, null, 2)); } catch (e) {}
 };
-const saveAlerted = () => {
+const _loadState = () => {
   try {
-    const obj = {};
-    for (const [jid, ts] of lastAlerted) obj[jid] = ts;
-    fs.writeFileSync(ALERT_DB, JSON.stringify(obj, null, 2));
-  } catch (e) {}
+    const raw = JSON.parse(fs.readFileSync(ALERT_DB, 'utf8'));
+    if (raw && typeof raw === 'object' && (raw.groups || raw.flagged)) {
+      _state = { groups: raw.groups || {}, flagged: raw.flagged || {}, holdUntil: raw.holdUntil || 0 };
+      return;
+    }
+  } catch (e) {} // no file yet
+  // Fresh start — or v1 format ({ jid: ts }): hold every group for one cooldown
+  // period so a deploy never re-notices a group that was just messaged.
+  _state = { groups: {}, flagged: {}, holdUntil: Date.now() };
+  _saveState();
 };
-loadAlerted();
+_loadState();
 
 // ── Bulk-message safety ───────────────────────────────────
-// WhatsApp restricts accounts that send cold DMs too fast.
-// Max 5 DMs per cycle + 60-90s randomized delay between each.
-const MAX_DMS_PER_CYCLE = 5;
+// Group notices only — never DMs (cold DMs to non-contacts got all three
+// accounts restricted even at 5/cycle). Max 5 group notices per hourly cycle.
+const MAX_NOTICES_PER_CYCLE = 5;
 
-setInterval(() => {
-  const now = Date.now();
-  for (const [jid, ts] of lastAlerted) {
-    if (now - ts > 30 * 24 * 60 * 60 * 1000) lastAlerted.delete(jid);
-  }
-}, 60 * 60 * 1000);
-
-// Identity across LID/PN variants — one person, one alert, one DM.
+// Identity across LID/PN variants — one person, one entry.
 const { buildComparableIds } = require('./jidHelper');
 const { getTeamDisplayName } = require('./teamName');
 
@@ -294,23 +293,6 @@ const _dayMs = 24 * 60 * 60 * 1000;
 
 const _teamLabel = (info) =>
   info.name || getTeamDisplayName(info.key || info.jid, null) || info.key || info.jid || 'Unknown';
-
-const _activityFor = (groupJid, jid) => {
-  for (const v of buildComparableIds(jid)) {
-    const a = database.getMemberActivity(groupJid, v);
-    if (a.lastActive || a.totalMessages) return a;
-  }
-  return database.getMemberActivity(groupJid, jid);
-};
-
-const _wasAlerted = (jid) =>
-  buildComparableIds(jid).some(v => (lastAlerted.get(v) || 0) > Date.now() - ALERT_COOLDOWN);
-
-const _markAlerted = (jid) => {
-  const now = Date.now();
-  for (const v of buildComparableIds(jid)) lastAlerted.set(v, now);
-  saveAlerted();
-};
 
 const _collectTeams = () => {
   const merged = { ...(database.getTeamMap() || {}) };
@@ -324,6 +306,115 @@ const _collectTeams = () => {
     byJid.set(info.jid, { key, ...info });
   }
   return byJid;
+};
+
+// ── Auto-kick pass ────────────────────────────────────────
+// Members flagged in a group notice who show NO activity for 14 days
+// (KICK_GRACE) are removed from that group. Skips: owner, bot,
+// owner-protected members, and groups where the bot isn't admin.
+const _runKickPass = async (sock, teamsByJid, participantsByGroup, ownerDigits, botDigits) => {
+  const handler = require('../handler');
+  let kicked = 0;
+  const now = Date.now();
+
+  for (const [groupJid, flags] of Object.entries(_state.flagged)) {
+    const flagList = Object.entries(flags || {});
+    if (!flagList.length) continue;
+
+    const teamInfo = teamsByJid.get(groupJid);
+    if (!teamInfo) {
+      // Group no longer a crew group — drop its flags
+      delete _state.flagged[groupJid];
+      _saveState();
+      continue;
+    }
+
+    const pmap = participantsByGroup.get(groupJid);
+    if (!pmap || !pmap.size) continue;
+
+    const due = flagList.filter(([, ts]) => now - ts >= KICK_GRACE);
+    if (!due.length) continue;
+
+    // Still inactive? (fresh per-group read)
+    const inactive = database.getInactiveMembers(groupJid, INACTIVE_THRESHOLD_DAYS);
+    const inactiveDigits = new Set();
+    for (const jid of Object.keys(inactive)) {
+      for (const v of buildComparableIds(jid)) {
+        const d = _digits(v);
+        if (d) inactiveDigits.add(d);
+      }
+    }
+
+    const botAdmin = await handler.isBotAdmin(sock, groupJid).catch(() => false);
+    if (!botAdmin) {
+      console.log(`[INACTIVE-CHECK] AUTO-KICK paused in ${teamInfo.key || groupJid} — bot is not admin (${due.length} pending)`);
+      continue;
+    }
+
+    const teamName = _teamLabel(teamInfo);
+    for (const [entryJid, flaggedAt] of due) {
+      const variants = buildComparableIds(entryJid);
+      const memberDigits = [...new Set(variants.map(v => _digits(v)).filter(Boolean))];
+
+      // Still in the group? (resolve to the actual participant id)
+      const targetId = memberDigits.map(d => pmap.get(d)).find(Boolean);
+      if (!targetId) {
+        // Left the group on their own — clear flag
+        delete flags[entryJid];
+        _saveState();
+        continue;
+      }
+
+      // Active again after the notice — clear flag (a fresh notice re-flags later)
+      if (!memberDigits.some(d => inactiveDigits.has(d))) {
+        delete flags[entryJid];
+        _saveState();
+        continue;
+      }
+
+      // Never auto-kick the owner or the bot
+      if (memberDigits.some(d => ownerDigits.has(d) || d === botDigits)) {
+        delete flags[entryJid];
+        _saveState();
+        continue;
+      }
+
+      // Never fight the protection system
+      if (variants.some(v => database.isOwnerProtected(groupJid, v))) {
+        console.log(`[INACTIVE-CHECK] AUTO-KICK skipped ${memberDigits[0]} — owner-protected`);
+        delete flags[entryJid];
+        _saveState();
+        continue;
+      }
+
+      // Protection re-add guard — same pattern as commands/admin/kick.js
+      const guardIds = [...new Set([...variants, targetId])];
+      for (const v of guardIds) handler._botKicked.add(v);
+      setTimeout(() => { for (const v of guardIds) handler._botKicked.delete(v); }, 5000);
+
+      try {
+        await sock.groupParticipantsUpdate(groupJid, [targetId], 'remove');
+        for (const d of memberDigits) pmap.delete(d); // don't mention them in today's notice
+        delete flags[entryJid];
+        _saveState();
+        kicked++;
+
+        const when = new Date(flaggedAt).toLocaleDateString();
+        console.log(`[INACTIVE-CHECK] AUTO-KICKED ${_digits(targetId)} from ${teamInfo.key || groupJid} (flagged ${when})`);
+        await sock.sendMessage(groupJid, {
+          text:
+            `🗑️ *AUTO-KICK*\n\n` +
+            `@${_digits(targetId)} — warned ${when}, still inactive after 14 days\n` +
+            `Removed from *${teamName}*`,
+          mentions: [targetId],
+        }).catch(() => {});
+      } catch (e) {
+        console.error(`[INACTIVE-CHECK] Auto-kick failed in ${groupJid} for ${targetId}:`, e.message);
+        // Keep flag — retry next cycle
+      }
+    }
+  }
+  return kicked;
 };
 
 const runInactiveCheck = async (sock) => {
@@ -347,7 +438,7 @@ const runInactiveCheck = async (sock) => {
   };
 
   let rosterInactive = 0;
-  const participantDigitsByGroup = new Map(); // groupJid → Set of participant digits
+  const participantsByGroup = new Map(); // groupJid → Map(digits → participantId)
 
   for (const [groupJid, teamInfo] of teamsByJid) {
     try {
@@ -357,8 +448,12 @@ const runInactiveCheck = async (sock) => {
       // Only nudge about groups the member is STILL in — stats include people who left
       const meta = await sock.groupMetadata(groupJid).catch(() => null);
       if (!meta || !meta.participants) continue;
-      const participantDigits = new Set(meta.participants.map(p => _digits(p.id)).filter(Boolean));
-      participantDigitsByGroup.set(groupJid, participantDigits);
+      const pmap = new Map();
+      for (const p of meta.participants) {
+        const d = _digits(p.id);
+        if (d && !pmap.has(d)) pmap.set(d, p.id);
+      }
+      participantsByGroup.set(groupJid, pmap);
 
       for (const [jid, data] of Object.entries(inactive)) {
         rosterInactive++;
@@ -368,7 +463,7 @@ const runInactiveCheck = async (sock) => {
 
         // Member must still be in this group (bridge LID/PN via variants)
         const memberDigits = [...new Set(buildComparableIds(jid).map(v => _digits(v)).filter(Boolean))];
-        if (!memberDigits.some(d => participantDigits.has(d))) continue;
+        if (!memberDigits.some(d => pmap.has(d))) continue;
 
         const days = data.lastActive
           ? Math.floor((Date.now() - data.lastActive) / _dayMs)
@@ -398,27 +493,31 @@ const runInactiveCheck = async (sock) => {
 
   // GROUP notices instead of cold DMs.
   // Cold DMs to non-contacts are WhatsApp's highest-risk pattern — they got the
-  // owner's accounts restricted twice (even at 5/cycle). Group messages in chats
-  // the bot already talks in are far safer, and members still get told via mention.
+  // owner's accounts restricted three times (even at 5/cycle). Group messages in
+  // chats the bot already talks in are far safer, and members still get told
+  // via mention. One notice per group every 7 days, ALL inactive members in a
+  // single message (no mention cap); flagged members are auto-kicked 14 days later.
   let noticesSent = 0;
   let nudgedMembers = 0;
-  let skippedCooldown = 0;
-  const seenEntries = new Set();
-  for (const entry of byMember.values()) {
-    if (seenEntries.has(entry)) continue;
-    seenEntries.add(entry);
-    if (entry.inactiveGroups.length && _wasAlerted(entry.jid)) skippedCooldown++;
-  }
+  let groupsInCooldown = 0;
+
+  const kicked = await _runKickPass(sock, teamsByJid, participantsByGroup, ownerDigits, botDigits);
 
   for (const [groupJid, teamInfo] of teamsByJid) {
-    if (noticesSent >= MAX_DMS_PER_CYCLE) break;
+    if (noticesSent >= MAX_NOTICES_PER_CYCLE) break;
 
-    const pd = participantDigitsByGroup.get(groupJid);
-    if (!pd || pd.size === 0) continue;
+    const lastNoticeAt = _state.groups[groupJid] ?? _state.holdUntil ?? 0;
+    if (Date.now() - lastNoticeAt < GROUP_NOTICE_COOLDOWN) {
+      groupsInCooldown++;
+      continue;
+    }
+
+    const pmap = participantsByGroup.get(groupJid);
+    if (!pmap || pmap.size === 0) continue;
 
     const teamName = _teamLabel(teamInfo);
 
-    // Due members in THIS team (7-day per-person dedup, still in the group)
+    // Due members in THIS group (still in the group per pmap)
     const teamDue = [];
     const seenTeam = new Set();
     for (const entry of byMember.values()) {
@@ -426,41 +525,50 @@ const runInactiveCheck = async (sock) => {
       seenTeam.add(entry);
       const inThisTeam = entry.inactiveGroups.find(g => g.groupJid === groupJid);
       if (!inThisTeam) continue;
-      if (_wasAlerted(entry.jid)) continue;
       const memberDigits = [...new Set(buildComparableIds(entry.jid).map(v => _digits(v)).filter(Boolean))];
-      if (!memberDigits.some(d => pd.has(d))) continue;
+      if (!memberDigits.some(d => pmap.has(d))) continue;
       teamDue.push({ entry, info: inThisTeam });
     }
 
     if (!teamDue.length) continue;
-    teamDue.forEach(({ entry }) => _markAlerted(entry.jid));
-    nudgedMembers += teamDue.length;
 
-    const lines = teamDue.slice(0, 10).map(({ entry, info }) => {
+    const lines = teamDue.map(({ entry, info }) => {
       const num = _digits(entry.jid);
       const when = info.days !== null ? `${info.days}d` : 'never';
       return `• @${num} — ${when} — ${info.totalMessages || 0} msgs`;
     });
-    const mentions = teamDue.slice(0, 10).map(({ entry }) => entry.jid);
-    const hidden = teamDue.length - Math.min(teamDue.length, 10);
+    const mentions = teamDue.map(({ entry }) => entry.jid);
 
     await sock.sendMessage(groupJid, {
       text:
         `😴 *ACTIVITY CHECK*\n` +
         `━━━━━━━━━━━━━━━━\n` +
-        `*${teamDue.length}* member${teamDue.length === 1 ? '' : 's'} quiet for 30+ days:\n\n` +
+        `*${teamDue.length}* member${teamDue.length === 1 ? '' : 's'} quiet for ${INACTIVE_THRESHOLD_DAYS}+ days:\n\n` +
         `${lines.join('\n')}` +
-        (hidden > 0 ? `\n_...and ${hidden} more_` : '') +
-        `\n\n_Pop in and stay active hey_ ${pick(SLANG.vibe)}`,
+        `\n\n_Pop in and stay active hey — inactive 14 more days after this = removed_ ${pick(SLANG.vibe)}`,
       mentions,
     });
+
+    // Persist: this group's next notice is in 7 days. Members get flagged for
+    // the kick clock — keep the EARLIEST flag if already flagged (grace runs
+    // from the first notice, so re-notices can't delay a kick forever).
+    const now = Date.now();
+    _state.groups[groupJid] = now;
+    if (!_state.flagged[groupJid]) _state.flagged[groupJid] = {};
+    for (const { entry } of teamDue) {
+      if (!_state.flagged[groupJid][entry.jid]) _state.flagged[groupJid][entry.jid] = now;
+    }
+    _saveState();
+
     noticesSent++;
+    nudgedMembers += teamDue.length;
 
     await new Promise(r => setTimeout(r, 3000));
   }
 
   console.log(
-    `[INACTIVE-CHECK] Done: ${noticesSent} group notice(s), ${nudgedMembers} members nudged, ${skippedCooldown} in cooldown, ` +
+    `[INACTIVE-CHECK] Done: ${noticesSent} group notice(s), ${nudgedMembers} members nudged, ` +
+    `${groupsInCooldown} group(s) in 7-day cooldown, ${kicked} auto-kicked, ` +
     `${byMember.size} unique inactive members (from ${rosterInactive} roster hits) across ${teamsByJid.size} groups`
   );
 };
