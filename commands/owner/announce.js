@@ -90,38 +90,53 @@ async function sendToTarget(sock, target, type, quoted, mediaBuffer) {
   const isNewsletter = target.endsWith('@newsletter');
   const nlCtx = isNewsletter ? {} : newsletterContext();
 
+  // Hidden mention: tag every member of the group (notify without visible @tags)
+  let mentions;
+  if (!isNewsletter) {
+    try {
+      const meta = await sock.groupMetadata(target);
+      mentions = (meta.participants || []).map(p => p.id || p.lid).filter(Boolean);
+    } catch (e) {
+      console.error(`[ANNOUNCE] groupMetadata failed for ${target}:`, e.message);
+    }
+  }
+  const withMentions = (content) => {
+    if (mentions && mentions.length) content.mentions = mentions;
+    return content;
+  };
+
   if (type === 'text') {
-    await sock.sendMessage(target, { text: getText(quoted), ...nlCtx });
+    await sock.sendMessage(target, withMentions({ text: getText(quoted), ...nlCtx }));
   } else if (type === 'image' && mediaBuffer) {
-    await sock.sendMessage(target, {
+    await sock.sendMessage(target, withMentions({
       image: mediaBuffer,
       caption: getCaption(quoted),
       ...nlCtx,
-    });
+    }));
   } else if (type === 'video' && mediaBuffer) {
-    await sock.sendMessage(target, {
+    await sock.sendMessage(target, withMentions({
       video: mediaBuffer,
       caption: getCaption(quoted),
       ...nlCtx,
-    });
+    }));
   } else if (type === 'document' && mediaBuffer) {
-    await sock.sendMessage(target, {
+    await sock.sendMessage(target, withMentions({
       document: mediaBuffer,
       fileName: quoted.documentMessage?.fileName || 'document',
       mimetype: quoted.documentMessage?.mimetype || 'application/octet-stream',
       ...nlCtx,
-    });
+    }));
   } else if (type === 'audio' && mediaBuffer) {
-    await sock.sendMessage(target, {
+    await sock.sendMessage(target, withMentions({
       audio: mediaBuffer,
       mimetype: quoted.audioMessage?.mimetype || 'audio/ogg; codecs=opus',
       ...nlCtx,
-    });
+    }));
   } else if (type === 'sticker') {
     const stickerObj = { mimetype: quoted.stickerMessage?.mimetype || 'image/webp' };
     if (mediaBuffer) stickerObj.sticker = mediaBuffer;
     if (!isNewsletter) stickerObj.contextInfo = newsletterContext().contextInfo;
-    await sock.sendMessage(target, stickerObj);
+    await sock.sendMessage(target, withMentions(stickerObj));
   } else {
     throw new Error('Unsupported type or missing media');
   }
