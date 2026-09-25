@@ -60,7 +60,7 @@ const MOD_SUBS = [
 
 // ── Premium cars (paginated, 3 per page) ────────────────────
 const PREMIUM_KEYS = Object.keys(catalog.premium);
-const PREMIUM_PER_PAGE = 3;
+const PREMIUM_PER_PAGE = 9;
 
 // ── Helpers ──────────────────────────────────────────────────
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
@@ -118,13 +118,13 @@ async function sendCategoryMenu(sock, chatId, catId, quoted) {
     }, quoted);
   }
 
-  // Send items in batches of 3, with back button in last batch (iPhone fix)
-  for (let i = 0; i < items.length; i += 3) {
-    const batch = items.slice(i, i + 3);
-    const isLastBatch = i + 3 >= items.length;
+  // Send items in batches of 9, with back button in last batch
+  for (let i = 0; i < items.length; i += 9) {
+    const batch = items.slice(i, i + 9);
+    const isLastBatch = i + 9 >= items.length;
 
     // In last batch, reserve 1 slot for back button
-    const itemSlice = isLastBatch && batch.length === 3 ? batch.slice(0, 2) : batch;
+    const itemSlice = isLastBatch && batch.length === 9 ? batch.slice(0, 8) : batch;
     const buttons = itemSlice.map(([key, item]) => ({
       id: `order:item:${key}`,
       text: `\u{1F697} ${item.name} \u2014 ${item.price}`,
@@ -140,7 +140,7 @@ async function sendCategoryMenu(sock, chatId, catId, quoted) {
       : `More items:`;
 
     await sendButtons(sock, chatId, { text, buttons }, quoted);
-    if (i + 3 < items.length) await delay(600);
+    if (i + 9 < items.length) await delay(1200);
   }
 }
 
@@ -164,12 +164,12 @@ async function sendModColorMenu(sock, chatId, subId, quoted) {
 
   const items = sub.items;
 
-  // Send items in batches of 3, back button in last batch (iPhone fix)
-  for (let i = 0; i < items.length; i += 3) {
-    const batch = items.slice(i, i + 3);
-    const isLastBatch = i + 3 >= items.length;
+  // Send items in batches of 9, back button in last batch
+  for (let i = 0; i < items.length; i += 9) {
+    const batch = items.slice(i, i + 9);
+    const isLastBatch = i + 9 >= items.length;
 
-    const itemSlice = isLastBatch && batch.length === 3 ? batch.slice(0, 2) : batch;
+    const itemSlice = isLastBatch && batch.length === 9 ? batch.slice(0, 8) : batch;
     const buttons = itemSlice.map(item => ({
       id: `order:item:${item.key}`,
       text: item.label,
@@ -184,7 +184,7 @@ async function sendModColorMenu(sock, chatId, subId, quoted) {
       : `More colors:`;
 
     await sendButtons(sock, chatId, { text, buttons }, quoted);
-    if (i + 3 < items.length) await delay(600);
+    if (i + 9 < items.length) await delay(1200);
   }
 }
 
@@ -218,16 +218,16 @@ async function sendPremiumMenu(sock, chatId, page, quoted) {
   // Send items + back button together
   await sendButtons(sock, chatId, { text, buttons }, quoted);
 
-  // Send prev/next as separate message (may not render on iPhone — pagination trade-off)
+  // Nav message with REAL text + Back — always renders and always navigable,
+  // even if WhatsApp drops buttons from the first message
   const navButtons = [];
   if (page > 0) navButtons.push({ id: `order:cat:premium:${page - 1}`, text: '\u{1F519} Prev' });
   if (start + PREMIUM_PER_PAGE < PREMIUM_KEYS.length) {
     navButtons.push({ id: `order:cat:premium:${page + 1}`, text: 'Next \u{1F51B}' });
   }
-  if (navButtons.length > 0) {
-    await delay(600);
-    await sendButtons(sock, chatId, { text: '', buttons: navButtons }, quoted);
-  }
+  navButtons.push({ id: 'order:main', text: '\u2B05\u{FE0F} Back' });
+  await delay(1200);
+  await sendButtons(sock, chatId, { text: `📄 Page ${page + 1}/${totalPages} — or navigate:`, buttons: navButtons }, quoted);
 }
 
 async function sendItemDetail(sock, chatId, itemId, quoted) {

@@ -156,7 +156,9 @@ async function sendButtons(sock, jid, opts, quoted) {
       : sock.sendMessage(jid, { text, mentions });
   }
 
-  const rows = buttons.slice(0, 3).map(normalizeButton);
+  // Native flow supports up to 10 quick_reply buttons (3 was the old TEMPLATE limit —
+  // this path sends interactiveMessage/native_flow, not templates)
+  const rows = buttons.slice(0, 10).map(normalizeButton);
 
   // If image provided, send image first then buttons (iPhone can't do both in one)
   if (image) {
