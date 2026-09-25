@@ -195,9 +195,16 @@ onButton('start:menu', async (sock, msg, from) => {
     footer: config.botName || 'KAMI Bot',
     header: 'KAMI BOT',
     buttons: [
-      { id: 'menu:admin', text: '\u{1F4CB} Admin' },
-      { id: 'menu:crew',  text: '\u{1F6E1}\uFE0F Crew' },
-      { id: 'menu:more1', text: '\u2795 More' },
+      { id: 'menu:admin',   text: '\u{1F4CB} Admin' },
+      { id: 'menu:crew',    text: '\u{1F6E1}\uFE0F Crew' },
+      { id: 'menu:general', text: '\u{1F3E0} General' },
+      { id: 'menu:ai',      text: '\u{1F916} AI' },
+      { id: 'menu:media',   text: '\u{1F3AC} Media' },
+      { id: 'menu:fun',     text: '\u{1F389} Fun' },
+      { id: 'menu:games',   text: '\u{1F3AE} Games' },
+      { id: 'menu:utility', text: '\u{1F527} Utility' },
+      { id: 'menu:owner',   text: '\u{1F451} Owner' },
+      { id: 'menu:more',    text: '\u{1F4C2} More' },
     ],
   });
 });

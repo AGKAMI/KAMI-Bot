@@ -85,21 +85,10 @@ function hasImage(item) {
 // ── Menu builders ────────────────────────────────────────────
 
 async function sendMainMenu(sock, chatId, quoted) {
-  // Msg 1: first 3 categories
+  // All categories in one message (native flow supports up to 10 buttons)
   await sendButtons(sock, chatId, {
     text: '\u{1F6D2} *MAKE ORDER*\n\nPick a category:',
-    buttons: CATEGORIES.slice(0, 3).map(c => ({
-      id: `order:cat:${c.id}`,
-      text: c.label,
-    })),
-  }, quoted);
-
-  await delay(600);
-
-  // Msg 2: remaining 3 categories
-  await sendButtons(sock, chatId, {
-    text: 'More categories:',
-    buttons: CATEGORIES.slice(3, 6).map(c => ({
+    buttons: CATEGORIES.map(c => ({
       id: `order:cat:${c.id}`,
       text: c.label,
     })),

@@ -139,8 +139,8 @@ async function sendCurrentQuestion(sock, session) {
 
   text += `Pick an answer below 👇`;
 
-  // Split options into rows of 3 (Baileys limit)
-  const buttons = q.options.slice(0, 3).map(o => ({
+  // All options in one message (native flow supports up to 10 buttons)
+  const buttons = q.options.map(o => ({
     id: `cwiz:a:${session.teamKey}:${session.appUid}:${q.num}:${o.id}`,
     text: o.label,
   }));
@@ -150,28 +150,6 @@ async function sendCurrentQuestion(sock, session) {
     footer: `${TEAMS[session.teamKey]?.label || session.teamKey} Application`,
     buttons,
   });
-
-  // If more than 3 options, send additional rows
-  if (q.options.length > 3) {
-    await sendButtons(sock, session.jid, {
-      text: `More options:`,
-      footer: `${TEAMS[session.teamKey]?.label || session.teamKey} Application`,
-      buttons: q.options.slice(3, 6).map(o => ({
-        id: `cwiz:a:${session.teamKey}:${session.appUid}:${q.num}:${o.id}`,
-        text: o.label,
-      })),
-    });
-  }
-  if (q.options.length > 6) {
-    await sendButtons(sock, session.jid, {
-      text: `Last option:`,
-      footer: `${TEAMS[session.teamKey]?.label || session.teamKey} Application`,
-      buttons: q.options.slice(6, 9).map(o => ({
-        id: `cwiz:a:${session.teamKey}:${session.appUid}:${q.num}:${o.id}`,
-        text: o.label,
-      })),
-    });
-  }
 }
 
 // ── Send the review screen ───────────────────────────────────
@@ -229,20 +207,12 @@ async function sendQuestionPicker(sock, session) {
     });
   }
 
+  // All questions in one message (native flow supports up to 10 buttons)
   await sendButtons(sock, session.jid, {
     text,
     footer: 'Pick a question',
-    buttons: buttons.slice(0, 3), // Baileys limit
+    buttons,
   });
-
-  // If more than 3 questions, send a second row
-  if (session.totalQ > 3) {
-    await sendButtons(sock, session.jid, {
-      text: `More questions:`,
-      footer: 'Pick a question',
-      buttons: buttons.slice(3, 6),
-    });
-  }
 }
 
 // ── Submit to database + notify admins ───────────────────────

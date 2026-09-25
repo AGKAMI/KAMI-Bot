@@ -127,12 +127,6 @@ module.exports = {
           `📖 Full list: *${prefix}menu all*`,
         ].join('\n');
 
-        const buttons = [
-          { id: 'menu:admin', text: '🛡️ Admin' },
-          { id: 'menu:crew',  text: '🔰 Crew' },
-          { id: 'menu:more1', text: '📂 More' },
-        ];
-
         const btnFooter = config.botName || 'KAMI Bot';
 
         if (fs.existsSync(imagePath)) {
@@ -146,14 +140,14 @@ module.exports = {
           await sendButtons(sock, extra.from, {
             text: '👇 Tap a button below',
             footer: btnFooter,
-            buttons,
+            buttons: mainBtns,
           });
         } else {
           await sendButtons(sock, extra.from, {
             text: summary,
             footer: btnFooter,
             header: 'KAMI BOT',
-            buttons,
+            buttons: mainBtns,
           }, msg);
         }
         return;
@@ -192,31 +186,24 @@ module.exports = {
 const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
 const mainText = `*KAMI BOT* ${pick(SLANG.greeting)}! 👋\n\n🤖 Tap a button to see that section's commands 👇\n\n📖 Full list: *${config.prefix || '.'}menu all*`;
 const mainBtns = [
-  { id: 'menu:admin', text: '🛡️ Admin' },
-  { id: 'menu:crew',  text: '🔰 Crew' },
-  { id: 'menu:more1', text: '📂 More' },
+  { id: 'menu:admin',   text: '🛡️ Admin' },
+  { id: 'menu:crew',    text: '🔰 Crew' },
+  { id: 'menu:general', text: '🏠 General' },
+  { id: 'menu:ai',      text: '🤖 AI' },
+  { id: 'menu:media',   text: '🎬 Media' },
+  { id: 'menu:fun',     text: '🎉 Fun' },
+  { id: 'menu:games',   text: '🎮 Games' },
+  { id: 'menu:utility', text: '🔧 Utility' },
+  { id: 'menu:owner',   text: '👑 Owner' },
+  { id: 'menu:more',    text: '📂 More' },
 ];
 
-// ── Page 1: Main ─────────────────────────────────────
+// ── Category views (plain text) ──────────────────────
 onButton('menu:admin', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('admin') });
 });
 onButton('menu:crew', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('crew') });
-});
-
-// ── Page 2: General, AI, More → then Back ────────────
-onButton('menu:more1', async (sock, msg, from) => {
-  await sendBtns(sock, from, {
-    text: `📂 *GENERAL / AI*\n\nTap to see commands:`,
-    footer: config.botName || 'KAMI Bot',
-    buttons: [
-      { id: 'menu:general', text: '🏠 General' },
-      { id: 'menu:ai',      text: '🤖 AI' },
-      { id: 'menu:more2',   text: '📂 More' },
-    ],
-  });
-  await sendBtns(sock, from, { text: '⬇️', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
 });
 onButton('menu:general', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('general') });
@@ -224,39 +211,11 @@ onButton('menu:general', (sock, msg, from) => {
 onButton('menu:ai', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('ai') });
 });
-
-// ── Page 3: Media, Fun, More → then Back ─────────────
-onButton('menu:more2', async (sock, msg, from) => {
-  await sendBtns(sock, from, {
-    text: `📂 *MEDIA / FUN*\n\nTap to see commands:`,
-    footer: config.botName || 'KAMI Bot',
-    buttons: [
-      { id: 'menu:media',  text: '🎬 Media' },
-      { id: 'menu:fun',    text: '🎉 Fun' },
-      { id: 'menu:more3',  text: '📂 More' },
-    ],
-  });
-  await sendBtns(sock, from, { text: '⬇️', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
-});
 onButton('menu:media', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('media') });
 });
 onButton('menu:fun', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('fun') });
-});
-
-// ── Page 4: Games, Utility, More → then Back ─────────
-onButton('menu:more3', async (sock, msg, from) => {
-  await sendBtns(sock, from, {
-    text: `📂 *GAMES / UTILITY*\n\nTap to see commands:`,
-    footer: config.botName || 'KAMI Bot',
-    buttons: [
-      { id: 'menu:games',    text: '🎮 Games' },
-      { id: 'menu:utility',  text: '🔧 Utility' },
-      { id: 'menu:more4',    text: '📂 More' },
-    ],
-  });
-  await sendBtns(sock, from, { text: '⬇️', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
 });
 onButton('menu:games', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('games') });
@@ -264,40 +223,27 @@ onButton('menu:games', (sock, msg, from) => {
 onButton('menu:utility', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('utility') });
 });
+onButton('menu:owner', (sock, msg, from) => {
+  sock.sendMessage(from, { text: buildCategoryText('owner') });
+});
 
-// ── Page 5: Anime, Textmaker, More → then Back ───────
-onButton('menu:more4', async (sock, msg, from) => {
+// ── More page: Anime, Textmaker, Back ────────────────
+onButton('menu:more', async (sock, msg, from) => {
   await sendBtns(sock, from, {
-    text: `📂 *ANIME / TEXTMAKER*\n\nTap to see commands:`,
+    text: `📂 *MORE*\n\nTap to see commands:`,
     footer: config.botName || 'KAMI Bot',
     buttons: [
       { id: 'menu:anime',     text: '⛩️ Anime' },
       { id: 'menu:textmaker', text: '✨ Textmaker' },
-      { id: 'menu:more5',     text: '📂 More' },
+      { id: 'menu:back:main', text: '⬅️ Back to Menu' },
     ],
   });
-  await sendBtns(sock, from, { text: '⬇️', buttons: [{ id: 'menu:back:main', text: '⬅️ Back' }] });
 });
 onButton('menu:anime', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('anime') });
 });
 onButton('menu:textmaker', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('textmaker') });
-});
-
-// ── Page 6: Owner, Back (last page, one message) ─────
-onButton('menu:more5', async (sock, msg, from) => {
-  await sendBtns(sock, from, {
-    text: `📂 *OWNER*\n\nTap to see commands:`,
-    footer: config.botName || 'KAMI Bot',
-    buttons: [
-      { id: 'menu:owner',      text: '👑 Owner' },
-      { id: 'menu:back:main',  text: '⬅️ Back to Menu' },
-    ],
-  });
-});
-onButton('menu:owner', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('owner') });
 });
 
 // ── Back to Main Menu ────────────────────────────────
