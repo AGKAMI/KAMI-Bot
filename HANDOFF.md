@@ -10,6 +10,7 @@ Fix all bugs in KAMI-Bot's button code, protection system, and outputs; build cr
 
 ## What Was Tried That Failed
 - **Activity-check DMs to all inactive members at once** — WhatsApp restricted TWO accounts (44 + 68 cold DMs in a blast). Fixed: max 5 DMs/cycle, 60-90s spacing, dedup persisted to `database/inactiveAlerts.json`.
+- **Cold DMs even at 5/cycle** — main account STILL restricted (3rd restriction, Sep 25 05:48). Cold DMs to non-contacts are WhatsApp's highest-risk pattern. FINAL FIX (`599f524`): activity check posts in crew GROUPS (members mentioned) instead of any DMs. Never DM non-contacts in bulk again.
 - **Per-group inactive loop** — DM only mentioned the first team scanned; person inactive in 3 groups got a message about 1. Fixed: aggregate all teams first, one DM per person.
 - **`sessionRetryCount` used but never declared** — unhandled rejection crash. Fixed: module-level `let sessionRetryCount = 0` (index.js:182).
 - **In-memory `_botKicked`/alert Maps lost on restart** — re-blast/re-add loops. Fixed: persisted inactiveAlerts; _botKicked remains in-memory (5s window, acceptable).
