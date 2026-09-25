@@ -216,6 +216,7 @@ const runProgressionCheck = async (sock) => {
  * Call this once from index.js after bot connects
  */
 let _progressionInterval = null;
+let _inactiveInterval = null;
 
 const startProgressionEngine = (sock) => {
   // Clear any previous engine (prevents duplicate intervals on reconnect)
@@ -223,28 +224,34 @@ const startProgressionEngine = (sock) => {
     clearInterval(_progressionInterval);
     _progressionInterval = null;
   }
+  if (_inactiveInterval) {
+    clearInterval(_inactiveInterval);
+    _inactiveInterval = null;
+  }
 
   console.log(`[AUTO-PROGRESSION] Engine started (checking every ${CHECK_INTERVAL / 60000} min)`);
 
-  // Run first check after 5 minutes (give bot time to settle)
-  setTimeout(() => {
-    runProgressionCheck(sock);
-    runInactiveCheck(sock);
-  }, 5 * 60 * 1000);
+  // Run progression check after 5 minutes (give bot time to settle), then hourly
+  setTimeout(() => runProgressionCheck(sock), 5 * 60 * 1000);
+  _progressionInterval = setInterval(() => runProgressionCheck(sock), CHECK_INTERVAL);
 
-  // Then run on interval
-  _progressionInterval = setInterval(() => {
-    runProgressionCheck(sock);
-    runInactiveCheck(sock);
-  }, CHECK_INTERVAL);
+  // Inactive notices — WEEKLY: one full-list message per group (7-day per-group
+  // cooldown in _state.groups). First scan 5 min after startup is a no-op while
+  // groups are in cooldown; notices fire on the weekly cadence from then on.
+  setTimeout(() => runInactiveCheck(sock), 5 * 60 * 1000);
+  _inactiveInterval = setInterval(() => runInactiveCheck(sock), 7 * 24 * 60 * 60 * 1000);
 };
 
 const stopProgressionEngine = () => {
   if (_progressionInterval) {
     clearInterval(_progressionInterval);
     _progressionInterval = null;
-    console.log('[AUTO-PROGRESSION] Engine stopped');
   }
+  if (_inactiveInterval) {
+    clearInterval(_inactiveInterval);
+    _inactiveInterval = null;
+  }
+  console.log('[AUTO-PROGRESSION] Engine stopped');
 };
 
 // ── Inactive Member Notices ───────────────────────────────
