@@ -277,8 +277,6 @@ loadAlerted();
 // WhatsApp restricts accounts that send cold DMs too fast.
 // Max 5 DMs per cycle + 60-90s randomized delay between each.
 const MAX_DMS_PER_CYCLE = 5;
-const DM_DELAY_BASE_MS = 60000;
-const DM_DELAY_JITTER_MS = 30000;
 
 setInterval(() => {
   const now = Date.now();
@@ -293,7 +291,6 @@ const { getTeamDisplayName } = require('./teamName');
 
 const _digits = (jid) => String(jid || '').split(':')[0].split('@')[0].replace(/\D/g, '');
 const _dayMs = 24 * 60 * 60 * 1000;
-const MAX_GROUPS_IN_DM = 8;
 
 const _teamLabel = (info) =>
   info.name || getTeamDisplayName(info.key || info.jid, null) || info.key || info.jid || 'Unknown';
@@ -399,104 +396,71 @@ const runInactiveCheck = async (sock) => {
     }
   }
 
-  // One DM per person, covering every crew group they're quiet in
-  const due = [...byMember.values()].filter(entry => {
-    if (!entry.inactiveGroups.length) return false;
-    return !_wasAlerted(entry.jid);
-  });
-
-  // Worst silence first — people quiet everywhere get nudged first
-  due.sort((a, b) => {
-    const aMin = Math.min(...a.inactiveGroups.map(g => g.days ?? INACTIVE_THRESHOLD_DAYS));
-    const bMin = Math.min(...b.inactiveGroups.map(g => g.days ?? INACTIVE_THRESHOLD_DAYS));
-    return bMin - aMin;
-  });
-
-  let dmsSent = 0;
-  const dueIds = new Set(due.map(e => e.jid));
+  // GROUP notices instead of cold DMs.
+  // Cold DMs to non-contacts are WhatsApp's highest-risk pattern — they got the
+  // owner's accounts restricted twice (even at 5/cycle). Group messages in chats
+  // the bot already talks in are far safer, and members still get told via mention.
+  let noticesSent = 0;
+  let nudgedMembers = 0;
   let skippedCooldown = 0;
   const seenEntries = new Set();
   for (const entry of byMember.values()) {
     if (seenEntries.has(entry)) continue;
     seenEntries.add(entry);
-    if (entry.inactiveGroups.length && !dueIds.has(entry.jid)) skippedCooldown++;
+    if (entry.inactiveGroups.length && _wasAlerted(entry.jid)) skippedCooldown++;
   }
 
-  for (const entry of due) {
-    if (dmsSent >= MAX_DMS_PER_CYCLE) break;
+  for (const [groupJid, teamInfo] of teamsByJid) {
+    if (noticesSent >= MAX_DMS_PER_CYCLE) break;
 
-    const groups = [...entry.inactiveGroups]
-      .sort((a, b) => (b.days ?? INACTIVE_THRESHOLD_DAYS) - (a.days ?? INACTIVE_THRESHOLD_DAYS));
+    const pd = participantDigitsByGroup.get(groupJid);
+    if (!pd || pd.size === 0) continue;
 
-    // Where ARE they still active? (other crew groups they're still in and active in)
-    const inactiveJids = new Set(groups.map(g => g.groupJid));
-    const memberDigits = [...new Set(buildComparableIds(entry.jid).map(v => _digits(v)).filter(Boolean))];
-    const stillActiveIn = [];
-    for (const [groupJid, teamInfo] of teamsByJid) {
-      if (inactiveJids.has(groupJid)) continue;
-      const pd = participantDigitsByGroup.get(groupJid);
-      if (!pd || pd.size === 0) continue;
+    const teamName = _teamLabel(teamInfo);
+
+    // Due members in THIS team (7-day per-person dedup, still in the group)
+    const teamDue = [];
+    const seenTeam = new Set();
+    for (const entry of byMember.values()) {
+      if (seenTeam.has(entry)) continue;
+      seenTeam.add(entry);
+      const inThisTeam = entry.inactiveGroups.find(g => g.groupJid === groupJid);
+      if (!inThisTeam) continue;
+      if (_wasAlerted(entry.jid)) continue;
+      const memberDigits = [...new Set(buildComparableIds(entry.jid).map(v => _digits(v)).filter(Boolean))];
       if (!memberDigits.some(d => pd.has(d))) continue;
-      const a = _activityFor(groupJid, entry.jid);
-      if (a.lastActive && Date.now() - a.lastActive <= INACTIVE_THRESHOLD_DAYS * _dayMs) {
-        stillActiveIn.push(_teamLabel(teamInfo));
-      }
+      teamDue.push({ entry, info: inThisTeam });
     }
 
-    const shown = groups.slice(0, MAX_GROUPS_IN_DM);
-    const hidden = groups.length - shown.length;
-    const totalMsgs = groups.reduce((s, g) => s + (g.totalMessages || 0), 0);
-    const maxDays = Math.max(...groups.map(g => g.days ?? INACTIVE_THRESHOLD_DAYS));
-    const neverPosted = groups.every(g => !g.lastActive);
+    if (!teamDue.length) continue;
+    teamDue.forEach(({ entry }) => _markAlerted(entry.jid));
+    nudgedMembers += teamDue.length;
 
-    let text =
-      `😴 *ACTIVITY CHECK*\n` +
-      `━━━━━━━━━━━━━━━━\n` +
-      `You've gone quiet in *${groups.length} crew group${groups.length === 1 ? '' : 's'}*` +
-      (neverPosted ? ` (never posted)` : ` — up to *${maxDays} days* silent`) + `\n\n`;
+    const lines = teamDue.slice(0, 10).map(({ entry, info }) => {
+      const num = _digits(entry.jid);
+      const when = info.days !== null ? `${info.days}d` : 'never';
+      return `• @${num} — ${when} — ${info.totalMessages || 0} msgs`;
+    });
+    const mentions = teamDue.slice(0, 10).map(({ entry }) => entry.jid);
+    const hidden = teamDue.length - Math.min(teamDue.length, 10);
 
-    for (const g of shown) {
-      const when = g.days !== null ? `${g.days}d inactive` : `no activity yet`;
-      text += `• *${g.teamName}*\n`;
-      text += `  ⏰ ${when}\n`;
-      text += `  💬 Messages there: ${g.totalMessages || 0}\n`;
-      text += `  🛡️ ${g.role}\n\n`;
-    }
-    if (hidden > 0) text += `_…and ${hidden} more group${hidden === 1 ? '' : 's'}_\n\n`;
+    await sock.sendMessage(groupJid, {
+      text:
+        `😴 *ACTIVITY CHECK*\n` +
+        `━━━━━━━━━━━━━━━━\n` +
+        `*${teamDue.length}* member${teamDue.length === 1 ? '' : 's'} quiet for 30+ days:\n\n` +
+        `${lines.join('\n')}` +
+        (hidden > 0 ? `\n_...and ${hidden} more_` : '') +
+        `\n\n_Pop in and stay active hey_ ${pick(SLANG.vibe)}`,
+      mentions,
+    });
+    noticesSent++;
 
-    text += `📊 *Total messages across these groups:* ${totalMsgs}\n`;
-
-    if (stillActiveIn.length) {
-      text += `🟢 Still active in: ${stillActiveIn.slice(0, 3).join(', ')}`;
-      if (stillActiveIn.length > 3) text += ` +${stillActiveIn.length - 3}`;
-      text += `\n\n_Pop into the ones above too — the crew misses you_ ${pick(SLANG.vibe)}`;
-    } else {
-      text += `\n\n_You're quiet everywhere hey — pop in and stay active_ ${pick(SLANG.vibe)}`;
-    }
-
-    try {
-      await sock.sendMessage(entry.jid, { text });
-      _markAlerted(entry.jid);
-      dmsSent++;
-    } catch (e) {
-      // LID may not be DM-able — retry PN variant once
-      const alt = buildComparableIds(entry.jid).find(v => v !== entry.jid && !v.endsWith('@lid'));
-      if (alt) {
-        try {
-          await sock.sendMessage(alt, { text });
-          _markAlerted(entry.jid);
-          dmsSent++;
-        } catch (e2) {}
-      }
-    }
-
-    if (dmsSent < MAX_DMS_PER_CYCLE && dmsSent > 0) {
-      await new Promise(r => setTimeout(r, DM_DELAY_BASE_MS + Math.floor(Math.random() * DM_DELAY_JITTER_MS)));
-    }
+    await new Promise(r => setTimeout(r, 3000));
   }
 
   console.log(
-    `[INACTIVE-CHECK] Done: ${dmsSent} DM'd, ${skippedCooldown} in cooldown, ` +
+    `[INACTIVE-CHECK] Done: ${noticesSent} group notice(s), ${nudgedMembers} members nudged, ${skippedCooldown} in cooldown, ` +
     `${byMember.size} unique inactive members (from ${rosterInactive} roster hits) across ${teamsByJid.size} groups`
   );
 };
