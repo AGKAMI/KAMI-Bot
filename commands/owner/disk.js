@@ -5,9 +5,9 @@
  */
 
 const config = require('../../config');
-const { execFile } = require('child_process');
+const { exec } = require('child_process');
 const util = require('util');
-const execFilePromise = util.promisify(execFile);
+const execPromise = util.promisify(exec);
 const { pick, SLANG } = require('../../utils/format');
 
 module.exports = {
@@ -20,10 +20,11 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
     try {
-      const { stdout } = await execFilePromise('du', ['-sh', '/home/container/*', '/home/container/.git', '/home/container/.npm', '/home/container/.cache'], {
-        maxBuffer: 1024 * 1024,
-        timeout: 60000,
-      });
+      // exec (shell) so the glob expands; sort -rh = biggest first; suppress missing paths
+      const { stdout } = await execPromise(
+        'du -sh /home/container/* /home/container/.git 2>/dev/null | sort -rh',
+        { maxBuffer: 1024 * 1024, timeout: 120000, cwd: '/home/container' }
+      );
 
       const lines = stdout
         .trim()
@@ -35,10 +36,10 @@ module.exports = {
         })
         .join('\n');
 
-      const { stdout: totalOut } = await execFilePromise('du', ['-sh', '/home/container'], {
-        maxBuffer: 1024 * 1024,
-        timeout: 60000,
-      });
+      const { stdout: totalOut } = await execPromise(
+        'du -sh /home/container 2>/dev/null',
+        { maxBuffer: 1024 * 1024, timeout: 120000, cwd: '/home/container' }
+      );
       const total = totalOut.trim().split('\t')[0];
 
       await sock.sendMessage(extra.from, {
