@@ -1,5 +1,6 @@
 const config = require('../../config');
 const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 const tttGames = new Map();
 
@@ -62,11 +63,25 @@ module.exports = {
 
     if (winner) {
       tttGames.delete(boardKey);
-      return ctx.reply(`🎉 ${mention(sender)} ${pick(SLANG.good)}! wins with ${token}!\n\n${formatBoard(g.board)}`);
+      return sendButtons(sock, ctx.from, {
+        text: `🎉 ${mention(sender)} ${pick(SLANG.good)}! wins with ${token}!\n\n${formatBoard(g.board)}\n\n_Player X:_ ${g.players.X ? mention(g.players.X) : '—'}\n_Player O:_ ${g.players.O ? mention(g.players.O) : '—'}`,
+        mentions: [g.players.X, g.players.O].filter(Boolean),
+        footer: 'Tic Tac Toe',
+        buttons: [
+          { id: 'ttt:rematch', text: '🔄 Rematch' },
+        ],
+      }, msg);
     }
     if (full) {
       tttGames.delete(boardKey);
-      return ctx.reply(`🤝 ${pick(SLANG.vibe)}, draw!\n\n${formatBoard(g.board)}`);
+      return sendButtons(sock, ctx.from, {
+        text: `🤝 ${pick(SLANG.vibe)}, draw!\n\n${formatBoard(g.board)}\n\n_Player X:_ ${g.players.X ? mention(g.players.X) : '—'}\n_Player O:_ ${g.players.O ? mention(g.players.O) : '—'}`,
+        mentions: [g.players.X, g.players.O].filter(Boolean),
+        footer: 'Tic Tac Toe',
+        buttons: [
+          { id: 'ttt:rematch', text: '🔄 Rematch' },
+        ],
+      }, msg);
     }
 
     g.turn = token === 'X' ? 'O' : 'X';
@@ -75,6 +90,20 @@ module.exports = {
     return ctx.reply(`${nextMention} (${g.turn}) your turn\n\n${formatBoard(g.board)}`);
   }
 };
+
+// ── Rematch button — fresh board for the group ──────────────
+onButton('ttt:rematch', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
+  const prefix = config.prefix || '.';
+  tttGames.set('ttt_' + from, {
+    board: Array(9).fill(' '),
+    turn: 'X',
+    players: { X: null, O: null },
+  });
+  await sock.sendMessage(from, {
+    text: `🔄 *REMATCH!*\n\nFresh board — first person to play is X.\nUse ${prefix}ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`,
+  }, { quoted: msg });
+});
 
 function formatBoard(board) {
   return board[0] + '|' + board[1] + '|' + board[2] + '\n' +

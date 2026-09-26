@@ -9,6 +9,7 @@ const database = require('../../database');
 const config = require('../../config');
 const axios = require('axios');
 const { getTeamDisplayName } = require('../../utils/teamName');
+const { sendButtons } = require('../../utils/buttonHelper');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { TEAMS, buildHiredMessage } = require('./crewForms');
 const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
@@ -218,6 +219,13 @@ module.exports = {
         : null;
       const hiredText = buildHiredMessage(teamKey, inviteLink);
 
+      // Join/copy buttons — they're accepted, so the direct link is correct
+      const hiredButtons = [];
+      if (inviteLink) {
+        hiredButtons.push({ text: '🔗 Join the Group', url: inviteLink });
+        hiredButtons.push({ text: '📋 Copy Invite Link', displayText: inviteLink });
+      }
+
       // DM the applicant the hired message, attaching the team group's profile pic as the caption image
       try {
         let sent = false;
@@ -225,9 +233,12 @@ module.exports = {
           const ppUrl = await sock.profilePictureUrl(teamGroupJid, 'image');
           if (ppUrl) {
             const picRes = await axios.get(ppUrl, { responseType: 'arraybuffer' });
-            await sock.sendMessage(applicantJid, {
+            await sendButtons(sock, applicantJid, {
               image: Buffer.from(picRes.data),
               caption: hiredText,
+              text: hiredText,
+              footer: config.botName || 'KAMI Bot',
+              buttons: hiredButtons,
             });
             sent = true;
           }
@@ -235,7 +246,15 @@ module.exports = {
           console.error('[CREW ACCEPT] pp fetch failed:', ppErr.message);
         }
         if (!sent) {
-          await sock.sendMessage(applicantJid, { text: hiredText });
+          if (hiredButtons.length > 0) {
+            await sendButtons(sock, applicantJid, {
+              text: hiredText,
+              footer: config.botName || 'KAMI Bot',
+              buttons: hiredButtons,
+            });
+          } else {
+            await sock.sendMessage(applicantJid, { text: hiredText });
+          }
         }
       } catch (dmErr) {
         console.error('[CREW ACCEPT] hired DM failed:', dmErr.message);

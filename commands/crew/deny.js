@@ -9,6 +9,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
 const { buildDeniedMessage } = require('./crewForms');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 module.exports = {
   subName: 'deny',
@@ -105,10 +106,14 @@ module.exports = {
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
 
-      // DM the applicant the denial message
+      // DM the applicant the denial message + an Apply-again button
       try {
-        await sock.sendMessage(applicantJid, {
+        await sendButtons(sock, applicantJid, {
           text: buildDeniedMessage(teamKey, reason),
+          footer: config.botName || 'KAMI Bot',
+          buttons: [
+            { id: 'start:apply', text: '🔄 Apply Again' },
+          ],
         });
       } catch (dmErr) {
         console.error('[CREW DENY] denial DM failed:', dmErr.message);

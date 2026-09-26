@@ -4,9 +4,11 @@
 
 const config = require('../../config');
 const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 const activeReminders = new Map();
 const MAX_REMINDERS = 5;
+const firedReminders = new Map(); // reminderId → fired reminder data (1h TTL, for snooze)
 
 module.exports = {
     name: 'remind',
@@ -163,8 +165,19 @@ module.exports = {
                 const idx = groupReminders.findIndex(r => r.id === reminderId);
                 if (idx !== -1) groupReminders.splice(idx, 1);
 
+                // Keep the fired reminder briefly so the snooze button can re-create it
+                firedReminders.set(reminderId, {
+                    message: cleanMessage,
+                    targetJids,
+                    groupId: from,
+                    ms,
+                    amount,
+                    fullUnit,
+                });
+                setTimeout(() => firedReminders.delete(reminderId), 60 * 60 * 1000);
+
                 try {
-                    await sock.sendMessage(from, {
+                    await sendButtons(sock, from, {
                         text: [
                             `⏰ *REMINDER TIME!*`,
                             ``,
@@ -173,7 +186,12 @@ module.exports = {
                             ``,
                             `_Set ${amount} ${fullUnit} ago — ${pick(SLANG.vibe)}_`
                         ].join('\n'),
-                        mentions: targetJids
+                        mentions: targetJids,
+                        footer: 'Reminder',
+                        buttons: [
+                            { id: `remind:again:${reminderId}`, text: '⏰ Remind Again' },
+                            { id: `remind:done:${reminderId}`, text: '✅ Done' },
+                        ],
                     });
                 } catch (e) {
                     console.error('[Remind] Failed to send reminder:', e.message);
@@ -204,3 +222,76 @@ module.exports = {
         }
     }
 };
+
+// ── Snooze / Done buttons — only the reminder's target or the owner ──
+onButton('remind:again:', async (sock, msg, from, sender, btnId) => {
+  const reminderId = btnId.replace('remind:again:', '');
+  const fired = firedReminders.get(reminderId);
+  if (!fired || fired.groupId !== from) return;
+
+  const senderNum = sender.split(':')[0].split('@')[0].replace(/\D/g, '');
+  const isTarget = fired.targetJids.some(j => String(j).split(':')[0].split('@')[0].replace(/\D/g, '') === senderNum);
+  const isOwnerBtn = (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === senderNum);
+  if (!isTarget && !isOwnerBtn) return;
+
+  firedReminders.delete(reminderId);
+  const newId = Date.now().toString(36);
+
+  const timeout = setTimeout(async () => {
+    try {
+      await sendButtons(sock, from, {
+        text: [
+            `⏰ *REMINDER TIME!*`,
+            ``,
+            `👤 *For:* ${fired.targetJids.map(j => mention(j)).join(', ')}`,
+            `📝 *Message:* ${fired.message}`,
+            ``,
+            `_Snoozed ${fired.amount} ${fired.fullUnit} — ${pick(SLANG.vibe)}_`
+        ].join('\n'),
+        mentions: fired.targetJids,
+        footer: 'Reminder',
+        buttons: [
+            { id: `remind:again:${newId}`, text: '⏰ Remind Again' },
+            { id: `remind:done:${newId}`, text: '✅ Done' },
+        ],
+      });
+    } catch (e) {
+      console.error('[Remind] snooze fire failed:', e.message);
+    }
+    firedReminders.delete(newId);
+    setTimeout(() => firedReminders.delete(newId), 60 * 60 * 1000);
+  }, fired.ms);
+
+  firedReminders.set(newId, {
+    message: fired.message,
+    targetJids: fired.targetJids,
+    groupId: from,
+    ms: fired.ms,
+    amount: fired.amount,
+    fullUnit: fired.fullUnit,
+    timeout,
+  });
+  setTimeout(() => firedReminders.delete(newId), Math.max(fired.ms, 60000) + 60 * 60 * 1000);
+
+  await sock.sendMessage(from, {
+    text: `⏰ *SNOOZED*\n\n${mention(sender)} re-set the reminder for ${fired.amount} ${fired.fullUnit} from now`,
+    mentions: [sender],
+  }, { quoted: msg });
+});
+
+onButton('remind:done:', async (sock, msg, from, sender, btnId) => {
+  const reminderId = btnId.replace('remind:done:', '');
+  const fired = firedReminders.get(reminderId);
+  if (!fired || fired.groupId !== from) return;
+
+  const senderNum = sender.split(':')[0].split('@')[0].replace(/\D/g, '');
+  const isTarget = fired.targetJids.some(j => String(j).split(':')[0].split('@')[0].replace(/\D/g, '') === senderNum);
+  const isOwnerBtn = (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === senderNum);
+  if (!isTarget && !isOwnerBtn) return;
+
+  firedReminders.delete(reminderId);
+  await sock.sendMessage(from, {
+    text: `✅ *SORTED*\n\n${mention(sender)} marked it done`,
+    mentions: [sender],
+  }, { quoted: msg });
+});

@@ -4,6 +4,7 @@
 
 const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 module.exports = {
     name: 'owner',
@@ -43,7 +44,29 @@ END:VCARD
                 }
             });
 
-            await extra.reply(`👑 *OWNER CONTACT*\n💡 _here's my owner's contact, ${pick(SLANG.vibe)}_`);
+            // Action buttons: call / copy (cta_call + cta_copy via the button helper)
+            const firstNumber = dialableNumbers[0] ? String(dialableNumbers[0]).replace(/\D/g, '') : null;
+            const actionButtons = [];
+            if (firstNumber) {
+                actionButtons.push({
+                    text: '📞 Call the Owner',
+                    phone: firstNumber,
+                });
+                actionButtons.push({
+                    text: '📋 Copy Number',
+                    displayText: firstNumber,
+                });
+            }
+
+            if (actionButtons.length > 0) {
+                await sendButtons(sock, chatId, {
+                    text: `👑 *OWNER CONTACT*\n💡 _here's my owner's contact, ${pick(SLANG.vibe)}_`,
+                    footer: config.botName || 'KAMI Bot',
+                    buttons: actionButtons,
+                }, msg);
+            } else {
+                await extra.reply(`👑 *OWNER CONTACT*\n💡 _here's my owner's contact, ${pick(SLANG.vibe)}_`);
+            }
 
         } catch (error) {
             console.error('Owner command error:', error);
