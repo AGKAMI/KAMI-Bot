@@ -43,11 +43,31 @@ module.exports = {
       );
       const total = totalOut.trim().split('\t')[0];
 
+      // Prune dead git objects (old session files removed from tracking but
+      // still loose locally) + compress packs — shrinks .git best-effort
+      let gcNote = '';
+      try {
+        await execPromise('git gc --aggressive --prune=now --quiet', {
+          maxBuffer: 1024 * 1024, timeout: 120000, cwd: '/home/container',
+        });
+        const { stdout: gitAfter } = await execPromise(
+          'du -sh /home/container/.git 2>/dev/null',
+          { maxBuffer: 1024 * 1024, timeout: 60000, cwd: '/home/container' }
+        );
+        gcNote = gitAfter.trim().split('\t')[0];
+      } catch (e) {
+        gcNote = null;
+      }
+
+      const gcLine = gcNote
+        ? `\n\n🧹 Git pruned — .git is now *${gcNote}* (was in the list above)`
+        : gcNote === null ? `\n\n⚠️ Git prune failed — check the logs` : '';
+
       await sock.sendMessage(extra.from, {
         text:
           `💾 *DISK USAGE*\n` +
           `━━━━━━━━━━━━━━━━\n` +
-          `📦 Total: *${total}*\n\n${lines}\n\n` +
+          `📦 Total: *${total}*\n\n${lines}${gcLine}\n\n` +
           `_${pick(SLANG.vibe)}_`,
       }, { quoted: msg });
 
