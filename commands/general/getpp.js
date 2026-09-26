@@ -38,6 +38,7 @@ module.exports = {
         const ppUrl = await sock.profilePictureUrl(targetUser, 'image');
         
         if (!ppUrl) {
+          extra.fail();
           return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
         }
         
@@ -58,17 +59,21 @@ module.exports = {
             profileError.output?.statusCode === 404 || 
             profileError.output?.statusCode === 500 ||
             profileError.message?.includes('not found')) {
+          extra.fail();
           return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
         } else if (profileError.output?.statusCode === 401 || 
                    profileError.message?.includes('forbidden') || 
                    profileError.message?.includes('unauthorized')) {
+          extra.fail();
           return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — profile pic is private or not available`);
         } else {
+          extra.fail();
           return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
         }
       }
       
     } catch (error) {
+      extra.fail();
       extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
     }
   }

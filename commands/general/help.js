@@ -34,6 +34,7 @@ module.exports = {
       const cmd = commands.get(cmdName);
 
       if (!cmd) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n command "${cmdName}" not found.\n💡 Type ${prefix}menu to see all commands.`);
       }
 
@@ -68,6 +69,7 @@ module.exports = {
       await extra.reply(text);
     } catch (error) {
       console.error('[HELP] Error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
     }
   }

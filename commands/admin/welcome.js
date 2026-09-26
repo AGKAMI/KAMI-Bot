@@ -16,7 +16,7 @@ module.exports = {
   groupOnly: true,
   ownerOnly: false, adminOnly: true,
   botAdminNeeded: true,
-  execute: async (sock, msg, args) => {
+  execute: async (sock, msg, args, extra) => {
     try {
       const groupId = msg.key.remoteJid;
       const action = args[0]?.toLowerCase();
@@ -44,6 +44,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Welcome Error:', error);
+      extra.fail();
       await sock.sendMessage(msg.key.remoteJid, {
         text: `❌ ERROR\n\n${error.message}`
       }, { quoted: msg });

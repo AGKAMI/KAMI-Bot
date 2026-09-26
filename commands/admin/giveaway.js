@@ -74,9 +74,11 @@ module.exports = {
       if (args.length >= 1 && args[0].toLowerCase() === 'reroll') {
         const last = lastGiveaway.get(from);
         if (!last || last.winners.length === 0) {
+          extra.fail();
           return extra.reply(`❌ *ERROR*\n\nNo previous giveaway to reroll, ${pick(SLANG.vibe)}`);
         }
         if (last.entries.length === 0) {
+          extra.fail();
           return extra.reply(`❌ *ERROR*\n\nPrevious giveaway had no entries, ${pick(SLANG.vibe)}`);
         }
 
@@ -123,10 +125,12 @@ module.exports = {
 
       // ── Check for active giveaway ───────────────────────
       if (activeGiveaways.has(from)) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n\nA giveaway is already running`);
       }
 
       if (!fullArgs.trim()) {
+        extra.fail();
         return extra.reply(
           `❌ *ERROR*\n\n` +
           `💡 *Usage:*\n` +
@@ -211,9 +215,11 @@ module.exports = {
 
       // ── Validate ────────────────────────────────────────
       if (durationMs < 1000 || durationMs > 3 * 60 * 60 * 1000) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n\nDuration must be 1 second to 3 hours, ${pick(SLANG.vibe)}`);
       }
       if (numWinners < 1 || numWinners > 20) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n\nWinners must be 1-20, ${pick(SLANG.vibe)}`);
       }
 
@@ -375,6 +381,7 @@ module.exports = {
 
     } catch (error) {
       activeGiveaways.delete(extra.from);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
     }
   },

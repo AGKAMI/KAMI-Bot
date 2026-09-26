@@ -16,6 +16,7 @@ module.exports = {
 
     // Only owner can view activity
     if (!isOwner) {
+      extra.fail();
       return extra.reply(
         '❌ ACCESS DENIED\n\n' +
         'Only the owner can view activity logs'

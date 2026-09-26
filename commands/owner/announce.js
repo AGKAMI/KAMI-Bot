@@ -157,6 +157,7 @@ module.exports = {
     try {
       // ── Permission: owner or team admin ────────────────────
       if (!extra.isOwner && !database.isTeamAdmin(extra.sender)) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nOnly the owner or team admins can use this command`
         );
@@ -166,6 +167,7 @@ module.exports = {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const quoted = ctx?.quotedMessage;
       if (!quoted) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nReply to a message to announce it\n\n` +
           `Usage:\n` +
@@ -178,6 +180,7 @@ module.exports = {
       // ── Parse mode ────────────────────────────────────────
       const mode = (args?.[0] || '').toLowerCase();
       if (mode && !['all', 'ss'].includes(mode)) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nUnknown mode: ${mode}\n\n` +
           `Use: \`${prefix}announce\`, \`${prefix}announce ss\`, or \`${prefix}announce all\``
@@ -192,6 +195,7 @@ module.exports = {
       // ── Detect content type ───────────────────────────────
       const type = detectType(quoted);
       if (!type) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nUnsupported message type ${pick(SLANG.error)}\n` +
           `I can announce: text, photo, video, document, audio, sticker`
@@ -210,6 +214,7 @@ module.exports = {
         } catch (dlErr) {
           console.error('[ANNOUNCE] Media download failed:', dlErr.message);
           if (type !== 'sticker') {
+            extra.fail();
             return extra.reply(
               `❌ ERROR\n\nCouldn't download the media ${pick(SLANG.error)}\nTry a different message`
             );
@@ -252,6 +257,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Announce error:', error);
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);
     }
   },

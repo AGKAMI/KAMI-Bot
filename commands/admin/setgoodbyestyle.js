@@ -61,12 +61,14 @@ module.exports = {
 
       const validPositions = ['top', 'center', 'bottom'];
       if (option === 'position' && !validPositions.includes(value)) {
+        extra.fail();
         return extra.reply(`❌ _position must be: top, center, or bottom_`);
       }
 
       if (option === 'fontsize' || option === 'subfontsize') {
         const num = parseInt(value);
         if (isNaN(num) || num < 16 || num > 80) {
+          extra.fail();
           return extra.reply(`❌ _font size must be between 16 and 80_`);
         }
       }
@@ -84,6 +86,7 @@ module.exports = {
       await extra.reply(`✅ _${pick(SLANG.good)}, goodbye style updated_\n\n_${option} → ${value}_`);
     } catch (error) {
       console.error('SetGoodbyeStyle error:', error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }

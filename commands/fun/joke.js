@@ -22,6 +22,7 @@ module.exports = {
       await extra.reply(text);
       
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }

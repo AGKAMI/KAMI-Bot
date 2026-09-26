@@ -63,6 +63,7 @@ module.exports = {
       }
       
       if (!urlMatch) {
+        extra.fail();
         return await extra.reply(`❌ _${pick(SLANG.error)}, need a valid pinterest pin URL_\n\n_Examples:_\n• _https://in.pinterest.com/pin/1109363320773690068/_\n• _https://pin.it/dddddd_\n• _pin.it/dddddd_`);
       }
       
@@ -84,17 +85,22 @@ module.exports = {
         if (error.response) {
           const status = error.response.status;
           if (status === 400) {
+            extra.fail();
             return await extra.reply(`❌ _${pick(SLANG.error)}, invalid pinterest link — check it hey_`);
           } else if (status === 429) {
+            extra.fail();
             return await extra.reply(`❌ _${pick(SLANG.error)}, rate limit — try again later_`);
           } else if (status === 500) {
+            extra.fail();
             return await extra.reply(`❌ _${pick(SLANG.error)}, server error — try again later_`);
           }
         }
+        extra.fail();
         return await extra.reply(`❌ _${pick(SLANG.error)}, couldn't fetch pinterest content — try again_`);
       }
       
       if (!response.data || !response.data.status || !response.data.result) {
+        extra.fail();
         return await extra.reply(`❌ _${pick(SLANG.error)}, invalid response — pin might not exist or be private_`);
       }
       
@@ -122,6 +128,7 @@ module.exports = {
       // Debug: log the response structure if no media URL found
       if (!imageUrl) {
         console.error('Pinterest API response structure:', JSON.stringify(pinData, null, 2));
+        extra.fail();
         return await extra.reply(`❌ _${pick(SLANG.error)}, no media URL found — might be a video or different format_`);
       }
       
@@ -167,6 +174,7 @@ module.exports = {
           }, { quoted: msg });
         } catch (videoError) {
           console.error('Video download/send error:', videoError.message);
+          extra.fail();
           return await extra.reply(`❌ _${pick(SLANG.error)}, couldn't download video — might be expired or need auth_`);
         }
       } else {
@@ -179,6 +187,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Error in pinterest command:', error);
+      extra.fail();
       return await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message || 'Unknown error occurred'}_`);
     }
   },

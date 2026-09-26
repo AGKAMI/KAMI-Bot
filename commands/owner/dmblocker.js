@@ -15,7 +15,7 @@ module.exports = {
   usage: '.dmblocker on/off/status/approve <number>/disapprove <number>/list',
   ownerOnly: true,
 
-  async execute(sock, msg, args) {
+  async execute(sock, msg, args, extra) {
 
   const prefix = config.prefix || '.';
     try {
@@ -78,6 +78,7 @@ module.exports = {
 
         let digits = number.replace(/\D/g, '');
         if (!digits || digits.length < 8) {
+          extra.fail();
           return await sock.sendMessage(chatId, {
             text: `❌ ERROR\n\n_Invalid number_`
           }, { quoted: msg });
@@ -152,6 +153,7 @@ module.exports = {
         }, { quoted: msg });
       }
 
+      extra.fail();
       return await sock.sendMessage(chatId, {
         text: `❌ ERROR\n\n_Invalid option_\n\n` +
              `*Usage:*\n` +

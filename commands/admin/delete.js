@@ -34,6 +34,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Delete command error:', error);
+      extra.fail();
       await extra.reply(`❌ ERROR\n\nCouldn't delete that message ${pick(SLANG.vibe)}`);
     }
   }

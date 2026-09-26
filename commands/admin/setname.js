@@ -25,6 +25,7 @@ module.exports = {
       const newName = args.join(' ').trim();
 
       if (!newName) {
+        extra.fail();
         return extra.reply(
           `❌ *ERROR*\n\n` +
           `💡 *Usage:* ${prefix}setname <new group name>\n\n` +
@@ -38,6 +39,7 @@ module.exports = {
       }
 
       if (newName.length > 100) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n\nName too long — max 100 characters`);
       }
 
@@ -62,6 +64,7 @@ module.exports = {
         .replace(/\{time\}/g, currentTime);
 
       if (resolved.length > 100) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n\nResolved name too long after variables — max 100 characters`);
       }
 
@@ -78,6 +81,7 @@ module.exports = {
 
     } catch (error) {
       console.error('SetName Error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
     }
   }

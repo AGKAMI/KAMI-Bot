@@ -58,9 +58,11 @@ module.exports = {
         return extra.reply(`✅ SUCCESS\n\nAutosticker turned OFF`);
       }
       
+      extra.fail();
       return extra.reply(`❌ ERROR\n\nInvalid option\nUsage: ${prefix}autosticker <on/off>`);
     } catch (error) {
       console.error('[AutoSticker Command Error]:', error);
+      extra.fail();
       return extra.reply(`❌ ERROR\n\nCouldn't update autosticker setting`);
     }
   }

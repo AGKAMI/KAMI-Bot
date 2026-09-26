@@ -21,6 +21,7 @@ module.exports = {
     const prefix = config.prefix;
 
     if (!isGroup) {
+      extra.fail();
       return extra.reply(`❌ ERROR\n\nThis command works in groups only`);
     }
 
@@ -31,6 +32,7 @@ module.exports = {
     );
 
     if (!teamKey) {
+      extra.fail();
       return extra.reply(`❌ ERROR\n\nThis group isn't a crew team`);
     }
 
@@ -40,6 +42,7 @@ module.exports = {
       : 30;
 
     if (days < 1 || days > 365) {
+      extra.fail();
       return extra.reply(`❌ ERROR\n\nDays must be between 1 and 365`);
     }
 

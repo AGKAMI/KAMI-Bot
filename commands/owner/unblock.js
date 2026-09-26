@@ -35,6 +35,7 @@ module.exports = {
         if (rawArg && /\d/.test(rawArg)) {
           target = parsePhoneNumber(rawArg);
           if (!target) {
+            extra.fail();
             return extra.reply(`❌ ERROR\n\n_Invalid number_`);
           }
         } else {
@@ -47,6 +48,7 @@ module.exports = {
           } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
             target = ctx.participant;
           } else {
+            extra.fail();
             return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Examples:_\n.unblock 27833882383\n.unblock 083 388 2383\n.unblock me`);
           }
         }

@@ -44,6 +44,7 @@ module.exports = {
         }, { quoted: msg });
         
       } catch (error) {
+        extra.fail();
         await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
       }
     }

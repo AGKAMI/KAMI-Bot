@@ -33,10 +33,12 @@ module.exports = {
         await sock.sendMessage(extra.from, { sticker: webpBuffer }, { quoted: msg });
       } catch (error) {
         console.error('Error generating attp sticker:', error);
+        extra.fail();
         await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't make the sticker`);
       }
     } catch (error) {
       console.error('ATTP command error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — animated sticker failed`);
     }
   }

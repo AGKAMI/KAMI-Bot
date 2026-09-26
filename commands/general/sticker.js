@@ -69,12 +69,14 @@ module.exports = {
       );
       
       if (!mediaBuffer) {
+        extra.fail();
         await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't download that, try again`);
         return;
       }
       
       // Check file size
       if (mediaBuffer.length > MAX_FILE_SIZE) {
+        extra.fail();
         await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
         return;
       }
@@ -142,6 +144,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Sticker command error:', error);
+      extra.fail();
       await extra.reply(`\u274C *ERROR*\n\u{1F4A1} ${pick(SLANG.error)} - couldn't make the sticker, check if the media is valid`);
     } finally {
       // Always cleanup temp files

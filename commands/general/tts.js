@@ -44,6 +44,7 @@ const config = require('../../config');
 
     } catch (error) {
       console.error('TTS command error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't generate speech: ${error.message}`);
     }
   }

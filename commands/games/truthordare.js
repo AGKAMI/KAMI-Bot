@@ -32,6 +32,7 @@ module.exports = {
   execute: async (sock, msg, args, ctx) => {
     const choice = (args[0] || '').toLowerCase();
     if (!['truth', 'dare'].includes(choice)) {
+      ctx.fail();
       return ctx.reply(`❌ _${pick(SLANG.error)} — usage: .tod <truth|dare>_`);
     }
     const pool = choice === 'truth' ? truths : dares;

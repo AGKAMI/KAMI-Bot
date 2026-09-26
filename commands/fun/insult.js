@@ -31,6 +31,7 @@ module.exports = {
       await sock.sendMessage(extra.from, { text: `${line}`, mentions: [targetId] }, { quoted: msg });
     } catch (error) {
       console.error('[insult] ERROR:', error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — something went stukkend hey_`);
     }
   }

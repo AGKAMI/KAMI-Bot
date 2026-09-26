@@ -41,9 +41,11 @@ module.exports = {
             a = shuffled[0];
             b = shuffled[1];
           } else {
+            extra.fail();
             return extra.reply(`❌ _${pick(SLANG.error)} — not enough people to ship hey_`);
           }
         } else {
+          extra.fail();
           return extra.reply(`❌ _ag, this only works in groups, ${pick(SLANG.vibe)}_`);
         }
       }
@@ -69,6 +71,7 @@ module.exports = {
       await sock.sendMessage(extra.from, { text: out, mentions: [a, b] }, { quoted: msg });
     } catch (error) {
       console.error('[ship] ERROR:', error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — something went stukkend with the ship_`);
     }
   }

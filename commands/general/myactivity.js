@@ -50,6 +50,7 @@ module.exports = {
 
         } catch (err) {
             console.error('[myactivity cmd] error:', err);
+            extra.fail();
             extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)}, couldn't load your activity`);
         }
     }

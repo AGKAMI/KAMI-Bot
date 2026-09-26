@@ -49,11 +49,13 @@ module.exports = {
       
       if (opt === 'set') {
         if (args.length < 2) {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nSpecify an action: .antilink set delete | kick | warn`);
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick', 'warn'].includes(setAction)) {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nInvalid action — choose delete, kick, or warn`);
         }
         
@@ -71,9 +73,11 @@ module.exports = {
         return extra.reply(`🔗 ANTILINK CONFIG\n\n*Status*: ${status}\n*Action*: ${action}`);
       }
       
+      extra.fail();
       return extra.reply(`❌ ERROR\n\nUse .antilink for usage`);
       
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n${error.message}`);
     }
   }

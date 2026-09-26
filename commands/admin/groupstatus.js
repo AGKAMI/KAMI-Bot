@@ -30,6 +30,7 @@ module.exports = {
 
       // Only inside groups
       if (!extra.isGroup) {
+        extra.fail();
         return extra.reply(`❌ ERROR\n\nThis only works in groups ${pick(SLANG.vibe)}`);
       }
 
@@ -61,6 +62,7 @@ module.exports = {
           return extra.reply(`✅ SUCCESS\n\nStatus posted ${pick(SLANG.vibe)}`);
         } catch (e) {
           console.error('groupstatus text error:', e);
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nCouldn't post status: ${e.message || e}`);
         }
       }
@@ -93,9 +95,10 @@ module.exports = {
         try {
           buf = await downloadBuf();
         } catch {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nCouldn't download image`);
         }
-        if (!buf) return extra.reply(`❌ ERROR\n\nCouldn't download image`);
+        if (!buf) { extra.fail(); return extra.reply(`❌ ERROR\n\nCouldn't download image`); }
 
         try {
           await groupStatus(sock, from, {
@@ -105,6 +108,7 @@ module.exports = {
           return extra.reply(`✅ SUCCESS\n\nImage status posted ${pick(SLANG.vibe)}`);
         } catch (e) {
           console.error('groupstatus image error:', e);
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nCouldn't post image status: ${e.message || e}`);
         }
       }
@@ -116,9 +120,10 @@ module.exports = {
         try {
           buf = await downloadBuf();
         } catch {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nCouldn't download video`);
         }
-        if (!buf) return extra.reply(`❌ ERROR\n\nCouldn't download video`);
+        if (!buf) { extra.fail(); return extra.reply(`❌ ERROR\n\nCouldn't download video`); }
 
         try {
           await groupStatus(sock, from, {
@@ -128,6 +133,7 @@ module.exports = {
           return extra.reply(`✅ SUCCESS\n\nVideo status posted ${pick(SLANG.vibe)}`);
         } catch (e) {
           console.error('groupstatus video error:', e);
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nCouldn't post video status: ${e.message || e}`);
         }
       }
@@ -139,9 +145,10 @@ module.exports = {
         try {
           buf = await downloadBuf();
         } catch {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nCouldn't download audio`);
         }
-        if (!buf) return extra.reply(`❌ ERROR\n\nCouldn't download audio`);
+        if (!buf) { extra.fail(); return extra.reply(`❌ ERROR\n\nCouldn't download audio`); }
 
         let vn;
         try {
@@ -167,11 +174,13 @@ module.exports = {
           return extra.reply(`✅ SUCCESS\n\nAudio status posted ${pick(SLANG.vibe)}`);
         } catch (e) {
           console.error('groupstatus audio error:', e);
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nCouldn't post audio status: ${e.message || e}`);
         }
       }
     } catch (e) {
       console.error('groupstatus error:', e);
+      extra.fail();
       return extra.reply(`❌ ERROR\n\n${e.message || e}`);
     }
   }

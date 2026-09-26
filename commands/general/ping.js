@@ -42,6 +42,7 @@ module.exports = {
         });
         
       } catch (error) {
+        extra.fail();
         await extra.reply(`❌ *ERROR*\n💡 Something went stukkend — ${error.message}`);
       }
     }

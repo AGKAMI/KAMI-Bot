@@ -45,6 +45,7 @@ module.exports = {
         games.delete(ctx.from);
         return ctx.reply(`💀 ${pick(SLANG.error)}, game over! word was: ${g.word}`);
       }
+      ctx.fail();
       return ctx.reply(`❌ Wrong!\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6`);
     }
     if (sub.length > 1) {

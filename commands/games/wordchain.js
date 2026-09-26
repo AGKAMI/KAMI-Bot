@@ -19,14 +19,15 @@ module.exports = {
     }
     if (sub === 'score') {
       const g = chains.get(ctx.from);
-      if (!g) return ctx.reply(`❌ _no active game_`);
+      if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game_`); }
       return ctx.reply(`Words in chain: ${g.count}`);
     }
     const word = args.join(' ');
-    if (!word) return ctx.reply(`❌ _${pick(SLANG.error)} — use: .chain start | .chain <word> | .chain stop | .chain score_`);
+    if (!word) { ctx.fail(); return ctx.reply(`❌ _${pick(SLANG.error)} — use: .chain start | .chain <word> | .chain stop | .chain score_`); }
     const g = chains.get(ctx.from);
-    if (!g) return ctx.reply(`❌ _no active game — use .chain start_`);
+    if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game — use .chain start_`); }
     if (g.last && !word.toLowerCase().startsWith(g.last)) {
+      ctx.fail();
       return ctx.reply(`❌ _word must start with "${g.last}"!_`);
     }
     g.last = word.toLowerCase().slice(-1);

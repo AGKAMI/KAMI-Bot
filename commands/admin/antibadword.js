@@ -70,6 +70,7 @@ module.exports = {
       if (sub === 'set') {
         const action = (args[1] || '').toLowerCase();
         if (!['warn', 'delete', 'kick'].includes(action)) {
+          extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `${bold('Usage:')} ${prefix}antibadword set <warn|delete|kick>${pick(SLANG.vibe)}\n\n` +
@@ -89,6 +90,7 @@ module.exports = {
       if (sub === 'exempt') {
         const exemptJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
         if (!exemptJid) {
+          extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to exempt, ${pick(SLANG.vibe)}_\n\n` +
@@ -137,12 +139,14 @@ module.exports = {
         );
       }
 
+      extra.fail();
       return extra.reply(
         `❌ *ERROR*\n\n` +
         `_Use ${prefix}antibadword for usage, ${pick(SLANG.vibe)}_`
       );
 
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n_${error.message}_`);
     }
   }

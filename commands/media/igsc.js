@@ -447,6 +447,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
 
     const downloadData = await igdl(urlMatch[0]).catch(() => null);
     if (!downloadData || !downloadData.data) {
+      extra.fail();
       return extra.reply(`❌ _${pick(SLANG.error)}, couldn't fetch from that instagram link_`);
     }
 
@@ -461,6 +462,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
     const mediaToDownload = rawItems.slice(0, 10);
 
     if (mediaToDownload.length === 0) {
+      extra.fail();
       return extra.reply(`❌ _${pick(SLANG.error)}, no media found — might be private_`);
     }
 
@@ -581,6 +583,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
 
   } catch (err) {
     console.error('Error in igsc command:', err);
+    extra.fail();
     await extra.reply(`❌ _${pick(SLANG.error)}, couldn't make a sticker from that link_`);
   }
 }

@@ -34,6 +34,7 @@ module.exports = {
       
     } catch (error) {
       console.error('SSWeb command error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't screenshot that site: ${error.message}`);
     }
   }

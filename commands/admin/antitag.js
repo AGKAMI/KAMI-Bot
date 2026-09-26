@@ -52,11 +52,13 @@ module.exports = {
       
       if (opt === 'set') {
         if (args.length < 2) {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nSpecify an action: ${prefix}antitag set delete | kick`);
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick'].includes(setAction)) {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nInvalid action — choose delete or kick`);
         }
         
@@ -74,9 +76,11 @@ module.exports = {
         return extra.reply(`📛 ANTITAG CONFIG\n\n*Status*: ${status}\n*Action*: ${action}`);
       }
       
+      extra.fail();
       return extra.reply(`❌ ERROR\n\nUse ${prefix}antitag for usage`);
       
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n${error.message}`);
     }
   }

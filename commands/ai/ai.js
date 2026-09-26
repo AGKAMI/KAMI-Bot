@@ -18,6 +18,7 @@ module.exports = {
     const prefix = config.prefix || '.';
     try {
       if (args.length === 0) {
+        extra.fail();
         return extra.reply(`\u274C _${pick(SLANG.error)} - usage: ${prefix}ai <question>_\n\n_example: ${prefix}ai what is the capital of france?_`);
       }
       
@@ -32,6 +33,7 @@ module.exports = {
       await extra.edit(sent.key, answer);
       
     } catch (error) {
+      extra.fail();
       await extra.reply(`\u274C _${pick(SLANG.error)} - ai error: ${error.message}_`);
     }
   }

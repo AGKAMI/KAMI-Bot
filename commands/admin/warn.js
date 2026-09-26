@@ -29,6 +29,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +
           `Tag, reply, or add a number\n\n` +
@@ -45,6 +46,7 @@ module.exports = {
           p => p.id === target || p.lid === target
         );
         if (!isInGroup) {
+          extra.fail();
           return extra.reply(
             `❌ ERROR\n\n` +
             `${mention(target)} is not in this group`
@@ -100,6 +102,7 @@ module.exports = {
               mentions: [target]
             });
           } catch (e) {
+            extra.fail();
             await extra.reply(
               `❌ ERROR\n\n` +
               `Couldn't remove the user — check if I'm admin`
@@ -123,6 +126,7 @@ module.exports = {
 
     } catch (error) {
       console.error('[WARN] Error:', error);
+      extra.fail();
       await extra.reply(
         `❌ ERROR\n\n` +
         `Couldn't warn — ${error.message || 'Unknown error'}`

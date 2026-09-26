@@ -84,6 +84,7 @@ module.exports = {
       const raw = args.join(' ');
       const parts = raw.split('|').map(s => s.trim()).filter(Boolean);
       if (parts.length < 3) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nNeed a question and at least 2 options\n\n` +
           `Usage:\n\`${prefix}poll Pizza night? | Yes | No | Maybe\``
@@ -93,6 +94,7 @@ module.exports = {
       const question = parts[0];
       const options = parts.slice(1, MAX_OPTIONS + 1);
       if (parts.length - 1 > MAX_OPTIONS) {
+        extra.fail();
         return extra.reply(`❌ ERROR\n\nMax ${MAX_OPTIONS} options`);
       }
 
@@ -134,6 +136,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Poll error:', error);
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);
     }
   },

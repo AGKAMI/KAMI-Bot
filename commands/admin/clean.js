@@ -19,6 +19,7 @@ module.exports = {
     try {
       const count = parseInt(args[0]);
       if (!count || count < 1 || count > 100) {
+        extra.fail();
         return extra.reply(`❌ ERROR\n\nEnter a number between 1 and 100`);
       }
 
@@ -31,6 +32,7 @@ module.exports = {
 
       const msgs = store.messages.get(jid);
       if (!msgs || msgs.size === 0) {
+        extra.fail();
         return extra.reply(`❌ ERROR\n\nNo stored messages found ${pick(SLANG.vibe)}`);
       }
 
@@ -66,6 +68,7 @@ module.exports = {
       
     } catch (e) {
       console.error('[clean cmd] error:', e);
+      extra.fail();
       extra.reply(`❌ ERROR\n\nCouldn't clean the messages ${pick(SLANG.vibe)}`);
     }
   }

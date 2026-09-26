@@ -23,6 +23,7 @@ module.exports = {
   const prefix = config.prefix || '.';
     try {
       if (args.length < 2) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nProvide at least 2 roles\n\n` +
           `Usage: ${prefix}crew setroles soldier officer general\n\n` +
@@ -34,6 +35,7 @@ module.exports = {
       const unique = [...new Set(roles)];
 
       if (unique.length !== roles.length) {
+        extra.fail();
         return extra.reply(`❌ ERROR\n\nNo duplicate roles allowed`);
       }
 
@@ -55,6 +57,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew setroles error:', error);
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't set roles`);
     }
   },

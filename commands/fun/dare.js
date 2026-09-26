@@ -11,7 +11,7 @@ module.exports = {
     category: 'fun',
     description: 'Get a random dare challenge',
     usage: 'dare',
-    execute: async (sock, msg, args) => {
+    execute: async (sock, msg, args, extra) => {
       try {
         const dares = [
           "Send a screenshot of your gallery!",
@@ -44,6 +44,7 @@ module.exports = {
         
       } catch (error) {
         console.error('Dare Error:', error);
+        extra.fail();
         await sock.sendMessage(msg.key.remoteJid, {
           text: `❌ _${pick(SLANG.error)} — ${error.message}_`
         }, { quoted: msg });

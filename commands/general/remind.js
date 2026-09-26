@@ -68,6 +68,7 @@ module.exports = {
             if (args.length >= 2 && args[0].toLowerCase() === 'cancel') {
                 const index = parseInt(args[1]) - 1;
                 if (isNaN(index) || index < 0 || index >= groupReminders.length) {
+                    extra.fail();
                     return extra.reply(
                         `❌ *ERROR*\n\n` +
                         `💡 Invalid reminder number. Use *${prefix}remind list* to see active reminders, ${pick(SLANG.vibe)}`
@@ -87,6 +88,7 @@ module.exports = {
             }
 
             if (args.length < 2) {
+                extra.fail();
                 return extra.reply(
                     `❌ *ERROR*\n\n` +
                     `💡 *Usage:*\n` +
@@ -101,6 +103,7 @@ module.exports = {
             }
 
             if (groupReminders.length >= MAX_REMINDERS) {
+                extra.fail();
                 return extra.reply(
                     `❌ *ERROR*\n\n` +
                     `📋 Max ${MAX_REMINDERS} active reminders per group.\n` +
@@ -112,6 +115,7 @@ module.exports = {
             const match = timeStr.match(/^(\d+)([smhd])$/i);
 
             if (!match) {
+                extra.fail();
                 return extra.reply(
                     `❌ *ERROR*\n\n` +
                     `💡 Invalid time format. Use:\n` +
@@ -143,6 +147,7 @@ module.exports = {
             const fullUnit = unitNames[unit] + (amount > 1 ? 's' : '');
 
             if (ms > 7 * 24 * 60 * 60 * 1000) {
+                extra.fail();
                 return extra.reply(`❌ *ERROR*\n\n💡 Max reminder is 7 days, ${pick(SLANG.vibe)}`);
             }
 
@@ -219,6 +224,7 @@ module.exports = {
               }, { quoted: msg });
 
         } catch (error) {
+            extra.fail();
             await extra.reply(`❌ *ERROR*\n\n💡 ${pick(SLANG.error)} — ${error.message}`);
         }
     }

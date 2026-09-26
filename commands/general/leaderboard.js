@@ -86,6 +86,7 @@ module.exports = {
 
             const stats = aggregateStats(from, period);
             if (!stats || Object.keys(stats.users).length === 0) {
+                extra.fail();
                 return extra.reply(`❌ *ERROR*\n\n💡 No message data yet for this period, ${pick(SLANG.vibe)}`);
             }
 
@@ -125,6 +126,7 @@ module.exports = {
             }, { quoted: msg });
 
         } catch (error) {
+            extra.fail();
             await extra.reply(`❌ *ERROR*\n\n💡 ${pick(SLANG.error)} — ${error.message}`);
         }
     }

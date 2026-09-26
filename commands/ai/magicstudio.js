@@ -22,6 +22,7 @@ module.exports = {
       const prompt = args.join(' ').trim();
       
       if (!prompt) {
+        extra.fail();
         return await extra.reply(
           `❌ _${pick(SLANG.error)} — usage: ${prefix}magicstudio <prompt>_\n\n_Example: ${prefix}magicstudio a cyberpunk city_`
         );
@@ -61,14 +62,19 @@ module.exports = {
       
       // Handle specific error cases
       if (error.response?.status === 429) {
+        extra.fail();
         await extra.reply(`❌ _${pick(SLANG.error)} — rate limit — try again later_`);
       } else if (error.response?.status === 400) {
+        extra.fail();
         await extra.reply(`❌ _${pick(SLANG.error)} — invalid prompt — try something else_`);
       } else if (error.response?.status === 500) {
+        extra.fail();
         await extra.reply(`❌ _${pick(SLANG.error)} — server error — try again later_`);
       } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        extra.fail();
         await extra.reply(`❌ _${pick(SLANG.error)} — timed out — try again_`);
       } else {
+        extra.fail();
         await extra.reply(`❌ _${pick(SLANG.error)} — couldn't generate image: ${error.message}_`);
       }
     }

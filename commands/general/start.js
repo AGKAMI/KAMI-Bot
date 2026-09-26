@@ -172,6 +172,7 @@ module.exports = {
 
     } catch (error) {
       console.error('[START] Error:', error);
+      extra.fail();
       await extra.reply(`\u274C _${pick(SLANG.error)} - ${error.message}_`);
     }
   },

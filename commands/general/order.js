@@ -366,6 +366,7 @@ module.exports = {
       }
     } catch (error) {
       console.error('[ORDER] command error:', error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — couldn't load the catalog_`);
     }
   },

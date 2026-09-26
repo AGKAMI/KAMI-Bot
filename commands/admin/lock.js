@@ -115,6 +115,7 @@ module.exports = {
         );
       }
 
+      extra.fail();
       return extra.reply(
         `❌ *ERROR*\n\n` +
         `💡 *Usage:*\n` +
@@ -129,6 +130,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Lock Error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
     }
   }

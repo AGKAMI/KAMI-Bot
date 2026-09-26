@@ -16,7 +16,7 @@ module.exports = {
   description: 'Get lyrics of a song',
   usage: '.lyrics <song name>',
 
-  async execute(sock, msg, args) {
+  async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
         return await sock.sendMessage(msg.key.remoteJid, {
@@ -139,6 +139,7 @@ module.exports = {
       }
 
       if (!lyricsData) {
+        extra.fail();
         return await sock.sendMessage(msg.key.remoteJid, {
           text: `❌ _${pick(SLANG.error)}, could not find lyrics for "${query}"_\n\n_Just type:_ ${config.prefix}lyrics songname artist`
         });
@@ -160,6 +161,7 @@ module.exports = {
 
     } catch (error) {
       console.error('[lyrics] Error:', error.message);
+      extra.fail();
       await sock.sendMessage(msg.key.remoteJid, {
         text: `❌ _${pick(SLANG.error)} — error fetching lyrics hey_`
       });

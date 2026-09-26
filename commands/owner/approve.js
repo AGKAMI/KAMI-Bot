@@ -32,7 +32,7 @@ module.exports = {
     }
 
     const digits = parseNumber(number);
-    if (!digits) return extra.reply(`❌ ERROR\n\n_Invalid number_`);
+    if (!digits) { extra.fail(); return extra.reply(`❌ ERROR\n\n_Invalid number_`); }
     const targetJid = digits + '@s.whatsapp.net';
 
     // Add to approved list

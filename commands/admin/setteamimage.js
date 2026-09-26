@@ -37,6 +37,7 @@ module.exports = {
     try {
       const teamKey = (args[0] || '').toUpperCase();
       if (!teamKey || !config.crewTeams[teamKey]) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nProvide a valid team\n\n` +
           `Teams: ${Object.keys(config.crewTeams).filter(k => k !== 'SSGENERAL').join(', ')}`
@@ -57,6 +58,7 @@ module.exports = {
 
     } catch (error) {
       console.error('[SETTEAMIMAGE] Error:', error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   },

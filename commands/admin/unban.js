@@ -35,7 +35,7 @@ module.exports = {
         const rawArg = args.join(' ');
         if (rawArg && /\d/.test(rawArg)) {
           target = parseNumber(rawArg);
-          if (!target) return extra.reply(`❌ ERROR\n\n_Invalid number_`);
+          if (!target) { extra.fail(); return extra.reply(`❌ ERROR\n\n_Invalid number_`); }
         } else {
           const ctx = msg.message?.extendedTextMessage?.contextInfo;
           const mentioned = ctx?.mentionedJid || [];
@@ -44,6 +44,7 @@ module.exports = {
           } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
             target = ctx.participant;
           } else {
+            extra.fail();
             return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Examples:_\n${prefix}unban 27833882383\n${prefix}unban me`);
           }
         }
@@ -62,6 +63,7 @@ module.exports = {
       }, { quoted: msg });
 
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n_${error.message}_`);
     }
   }

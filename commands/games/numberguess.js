@@ -18,9 +18,9 @@ module.exports = {
       return ctx.reply(`${pick(SLANG.vibe)}, game ended!`);
     }
     const n = parseInt(args[0]);
-    if (isNaN(n)) return ctx.reply(`❌ _${pick(SLANG.error)} — usage: .nguess start | .nguess <1-100> | .nguess stop_`);
+    if (isNaN(n)) { ctx.fail(); return ctx.reply(`❌ _${pick(SLANG.error)} — usage: .nguess start | .nguess <1-100> | .nguess stop_`); }
     const g = games.get(ctx.from);
-    if (!g) return ctx.reply(`❌ _no game running — .nguess start_`);
+    if (!g) { ctx.fail(); return ctx.reply(`❌ _no game running — .nguess start_`); }
     g.attempts++;
     if (n === g.target) {
       games.delete(ctx.from);

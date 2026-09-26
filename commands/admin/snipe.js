@@ -40,12 +40,14 @@ module.exports = {
       if (!entry) {
         const total = snipeStore.list(extra.from).length;
         if (total === 0) {
+          extra.fail();
           return extra.reply(
             `❌ *NO DELETED MESSAGES*\n\n` +
             `_No deleted messages stored for this group ${pick(SLANG.vibe)}_\n\n` +
             `_Make sure antidelete is active_`
           );
         }
+        extra.fail();
         return extra.reply(
           `❌ *OUT OF RANGE*\n\n` +
           `_Only ${total} deleted message${total === 1 ? '' : 's'} stored ${pick(SLANG.vibe)}_`
@@ -55,6 +57,7 @@ module.exports = {
       return this.showEntry(sock, msg, entry, extra.from, targetIndex + 1, extra);
 
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n_${error.message}_`);
     }
   },
@@ -63,6 +66,7 @@ module.exports = {
     const entries = snipeStore.list(extra.from);
 
     if (entries.length === 0) {
+      extra.fail();
       return extra.reply(
         `❌ *NO DELETED MESSAGES*\n\n` +
         `_No deleted messages stored for this group ${pick(SLANG.vibe)}_`

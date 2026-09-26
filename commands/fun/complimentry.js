@@ -11,7 +11,7 @@ module.exports = {
     category: 'fun',
     description: 'Get a random compliment',
     usage: 'compliment [@user]',
-    execute: async (sock, msg, args) => {
+    execute: async (sock, msg, args, extra) => {
       try {
         const compliments = [
           "You're an awesome friend! 💙",
@@ -52,6 +52,7 @@ module.exports = {
         
       } catch (error) {
         console.error('Compliment Error:', error);
+        extra.fail();
         await sock.sendMessage(msg.key.remoteJid, {
           text: `❌ _${pick(SLANG.error)} — ${error.message}_`
         }, { quoted: msg });

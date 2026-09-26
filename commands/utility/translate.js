@@ -14,7 +14,7 @@ module.exports = {
   description: 'Translate text to different languages',
   usage: '.translate <text> <lang> or .translate <lang> (reply to message)',
   
-  async execute(sock, msg, args) {
+  async execute(sock, msg, args, extra) {
     const prefix = config.prefix || '.';
     try {
       const chatId = msg.key.remoteJid;
@@ -61,12 +61,14 @@ module.exports = {
       }
       
       if (!textToTranslate) {
+        extra.fail();
         return await sock.sendMessage(chatId, { 
           text: `❌ _${pick(SLANG.error)}, no text to translate — reply to a message or add text_`
         }, { quoted: msg });
       }
       
       if (!lang) {
+        extra.fail();
         return await sock.sendMessage(chatId, { 
           text: `❌ _${pick(SLANG.error)}, specify a language code_\n\n_Example:_ ${prefix}translate hello fr`
         }, { quoted: msg });
@@ -119,6 +121,7 @@ module.exports = {
       }
       
       if (!translatedText) {
+        extra.fail();
         return await sock.sendMessage(chatId, { 
           text: `❌ _${pick(SLANG.error)}, translation failed — try again later_`
         }, { quoted: msg });
@@ -131,6 +134,7 @@ module.exports = {
       
     } catch (error) {
       console.error('❌ Error in translate command:', error);
+      extra.fail();
       await sock.sendMessage(msg.key.remoteJid, { 
         text: `❌ _${pick(SLANG.error)}, translation failed — try again later_`
       }, { quoted: msg });

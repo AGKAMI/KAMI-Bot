@@ -13,7 +13,7 @@ module.exports = {
   description: 'Reveal view-once messages (images/videos/audio)',
   usage: '.viewonce (reply to view-once message)',
   
-  async execute(sock, msg, args) {
+  async execute(sock, msg, args, extra) {
     try {
       const chatId = msg.key.remoteJid;
 
@@ -45,6 +45,7 @@ module.exports = {
         !!quotedMsg?.audioMessage?.viewOnce;
 
       if (!hasViewOnce) {
+        extra.fail();
         return await sock.sendMessage(
           chatId,
           { text: `❌ *ERROR*\n💡 ${pick(SLANG.error)}, this isn't a view-once message` },
@@ -83,6 +84,7 @@ module.exports = {
       }
 
       if (!actualMsg || !mtype) {
+        extra.fail();
         return await sock.sendMessage(
           chatId,
           { text: `❌ *ERROR*\n💡 ${pick(SLANG.error)}, unsupported view-once type` },
@@ -142,6 +144,7 @@ module.exports = {
       }
     } catch (error) {
       console.error('Error in viewonce command:', error);
+      extra.fail();
       await sock.sendMessage(
         msg.key.remoteJid,
         {

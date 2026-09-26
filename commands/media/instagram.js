@@ -85,12 +85,14 @@ module.exports = {
       const isValidUrl = instagramPatterns.some(pattern => pattern.test(text));
       
       if (!isValidUrl) {
+        extra.fail();
         return extra.reply(`❌ _${pick(SLANG.error)}, that's not a valid instagram link — need a post, reel, or video link_`);
       }
       
       const downloadData = await igdl(text);
       
       if (!downloadData || !downloadData.data || downloadData.data.length === 0) {
+        extra.fail();
         return extra.reply(`❌ _${pick(SLANG.error)}, no media found — might be private_`);
       }
       
@@ -103,6 +105,7 @@ module.exports = {
       const mediaToDownload = uniqueMedia.slice(0, 20);
       
       if (mediaToDownload.length === 0) {
+        extra.fail();
         return extra.reply(`❌ _${pick(SLANG.error)}, no media to download — might be private_`);
       }
       
@@ -143,6 +146,7 @@ module.exports = {
       }
     } catch (error) {
       console.error('Error in Instagram command:', error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)}, instagram error — try again_`);
     }
   }

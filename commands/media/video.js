@@ -45,6 +45,7 @@ module.exports = {
 
     if (activeDownloads >= MAX_CONCURRENT) {
       const pos = downloadQueue.length + 1;
+      extra.fail();
       return extra.reply(`❌ _video queue full (${activeDownloads} active) — try again in ~30s_`);
     }
 
@@ -59,9 +60,10 @@ module.exports = {
         if (!text.startsWith('http://') && !text.startsWith('https://')) {
           try {
             const { videos } = await yts(text);
-            if (!videos || videos.length === 0) return extra.reply(`❌ _${pick(SLANG.error)}, no videos found_`);
+            if (!videos || videos.length === 0) { extra.fail(); return extra.reply(`❌ _${pick(SLANG.error)}, no videos found_`); }
             videoUrl = videos[0].url;
           } catch (e) {
+            extra.fail();
             return extra.reply(`❌ _search failed hey — ${e.message}_`);
           }
         }
@@ -72,6 +74,7 @@ module.exports = {
           /https?:\/\/(?:www\.)?youtube\.com\/shorts\//,
         ];
         if (!patterns.some(p => p.test(videoUrl))) {
+          extra.fail();
           return extra.reply(`❌ _${pick(SLANG.error)}, invalid YouTube link_\n_Use:_ ${prefix}video <url or search>`);
         }
 
@@ -81,10 +84,11 @@ module.exports = {
         try {
           videoData = await APIs.ytDownload(videoUrl, 'video');
         } catch (err) {
+          extra.fail();
           return await extra.edit(sent.key, `❌ _download failed hey — ${err.message}_`);
         }
 
-        if (!videoData.download) return await extra.edit(sent.key, `❌ _${pick(SLANG.error)}, no download URL received_`);
+        if (!videoData.download) { extra.fail(); return await extra.edit(sent.key, `❌ _${pick(SLANG.error)}, no download URL received_`); }
 
         await extra.edit(sent.key, `⬇️ *Downloading:* ${videoData.title || 'video'}...`);
 
@@ -104,13 +108,16 @@ module.exports = {
           if (!videoBuffer || videoBuffer.length === 0) throw new Error('Empty buffer');
         } catch (dlErr) {
           if (dlErr.message?.includes('maxContentLength') || dlErr.message?.includes('exceeded')) {
+            extra.fail();
             return await extra.edit(sent.key, `❌ _this video is too large — try a shorter video or one under 20MB_`);
           }
+          extra.fail();
           return await extra.edit(sent.key, `❌ _download failed hey — ${dlErr.message}_`);
         }
 
         const sizeMB = videoBuffer.length / (1024 * 1024);
         if (sizeMB > MAX_SIZE_MB) {
+          extra.fail();
           return await extra.edit(sent.key, `❌ _video too large (${sizeMB.toFixed(1)}MB) — WhatsApp limit is 16MB_`);
         }
 
@@ -134,9 +141,9 @@ module.exports = {
       } catch (error) {
         console.error('[VIDEO] Error:', error?.message || error);
         if (sent) {
-          try { await extra.edit(sent.key, `❌ _${pick(SLANG.error)} — ${(error?.message || 'try again')}_`); } catch (_) {}
+          try { { extra.fail(); await extra.edit(sent.key, `❌ _${pick(SLANG.error)} — ${(error?.message || 'try again')}_`); } } catch (_) {}
         } else {
-          try { await extra.reply(`❌ _${pick(SLANG.error)} — ${(error?.message || 'try again')}_`); } catch (_) {}
+          try { { extra.fail(); await extra.reply(`❌ _${pick(SLANG.error)} — ${(error?.message || 'try again')}_`); } } catch (_) {}
         }
       }
     };

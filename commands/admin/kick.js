@@ -46,6 +46,7 @@ module.exports = {
       }
 
       if (usersToKick.length === 0) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +
           `Tag or reply to the person you wanna kick`
@@ -60,6 +61,7 @@ module.exports = {
             p => p.id === target || p.lid === target
           );
           if (!isInGroup) {
+            extra.fail();
             return extra.reply(
               `❌ ERROR\n\n` +
               `${mention(target)} is not in this group\n\n` +
@@ -82,6 +84,7 @@ module.exports = {
       );
 
       if (isTryingToKickBot) {
+        extra.fail();
         return extra.reply(`❌ ERROR\n\nCan't kick myself`);
       }
 
@@ -285,6 +288,7 @@ module.exports = {
     } catch (error) {
       console.error('Kick command error:', error);
       const reason = error?.message || error?.output?.payload?.message || 'Unknown error';
+      extra.fail();
       await extra.reply(`❌ ERROR\n\nCouldn't kick — ${reason}`);
     }
   },

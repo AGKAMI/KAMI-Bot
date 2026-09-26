@@ -18,9 +18,9 @@ module.exports = {
       return ctx.reply(`${pick(SLANG.vibe)}, group guess ended!`);
     }
     const n = parseInt(args[0]);
-    if (isNaN(n)) return ctx.reply(`❌ _${pick(SLANG.error)} — usage: .gguess start | .gguess <number> | .gguess stop_`);
+    if (isNaN(n)) { ctx.fail(); return ctx.reply(`❌ _${pick(SLANG.error)} — usage: .gguess start | .gguess <number> | .gguess stop_`); }
     const g = games.get(ctx.from);
-    if (!g) return ctx.reply(`❌ _no active game — .gguess start_`);
+    if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game — .gguess start_`); }
     if (n === g.target) {
       const winner = mention(ctx.sender);
       games.delete(ctx.from);

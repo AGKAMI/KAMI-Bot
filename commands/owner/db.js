@@ -76,12 +76,14 @@ module.exports = {
         return deleteEntry(sock, msg, subArgs, extra);
       }
 
+      extra.fail();
       return extra.reply(
         `❌ ERROR\n\nUnknown command: ${sub}\n\nUse ${prefix}db help for available commands`
       );
 
     } catch (error) {
       console.error('DB command error:', error);
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n${error.message}`);
     }
   }
@@ -118,6 +120,7 @@ async function viewTable(sock, msg, args, extra) {
   const tableName = (args[0] || '').toLowerCase();
 
   if (!tableName || !TABLES[tableName]) {
+    extra.fail();
     return extra.reply(
       `❌ ERROR\n\nSpecify a table: ${Object.keys(TABLES).join(', ')}`
     );
@@ -125,6 +128,7 @@ async function viewTable(sock, msg, args, extra) {
 
   const filePath = path.join(DB_PATH, TABLES[tableName].file);
   if (!fs.existsSync(filePath)) {
+    extra.fail();
     return extra.reply(`❌ ERROR\n\nTable "${tableName}" doesn't exist yet`);
   }
 
@@ -258,6 +262,7 @@ async function resetTable(sock, msg, args, extra) {
   const tableName = (args[0] || '').toLowerCase();
 
   if (!tableName || !TABLES[tableName]) {
+    extra.fail();
     return extra.reply(
       `❌ ERROR\n\nSpecify a table: ${Object.keys(TABLES).join(', ')}`
     );
@@ -294,15 +299,18 @@ async function searchDb(sock, msg, args, extra) {
   const query = args.slice(1).join(' ').toLowerCase();
 
   if (!tableName || !TABLES[tableName]) {
+    extra.fail();
     return extra.reply(`❌ ERROR\n\nSpecify a table: ${Object.keys(TABLES).join(', ')}`);
   }
 
   if (!query) {
+    extra.fail();
     return extra.reply(`❌ ERROR\n\nUsage: ${prefix}db search <table> <query>`);
   }
 
   const filePath = path.join(DB_PATH, TABLES[tableName].file);
   if (!fs.existsSync(filePath)) {
+    extra.fail();
     return extra.reply(`❌ ERROR\n\nTable "${tableName}" doesn't exist`);
   }
 
@@ -338,6 +346,7 @@ async function editEntry(sock, msg, args, extra) {
   const value = valueParts.join(' ');
 
   if (!tableName || !key || !field || !value) {
+    extra.fail();
     return extra.reply(
       `❌ ERROR\n\nUsage: ${prefix}db edit <table> <key> <field> <value>\n\n` +
       `Example: ${prefix}db edit crew 27833882383@s.whatsapp.net role leader`
@@ -345,17 +354,20 @@ async function editEntry(sock, msg, args, extra) {
   }
 
   if (!TABLES[tableName]) {
+    extra.fail();
     return extra.reply(`❌ ERROR\n\nInvalid table: ${Object.keys(TABLES).join(', ')}`);
   }
 
   const filePath = path.join(DB_PATH, TABLES[tableName].file);
   if (!fs.existsSync(filePath)) {
+    extra.fail();
     return extra.reply(`❌ ERROR\n\nTable "${tableName}" doesn't exist`);
   }
 
   const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
   if (!data[key]) {
+    extra.fail();
     return extra.reply(`❌ ERROR\n\nKey "${key}" not found in ${tableName}`);
   }
 
@@ -379,23 +391,27 @@ async function deleteEntry(sock, msg, args, extra) {
   const key = args[1];
 
   if (!tableName || !key) {
+    extra.fail();
     return extra.reply(
       `❌ ERROR\n\nUsage: ${prefix}db delete <table> <key>`
     );
   }
 
   if (!TABLES[tableName]) {
+    extra.fail();
     return extra.reply(`❌ ERROR\n\nInvalid table: ${Object.keys(TABLES).join(', ')}`);
   }
 
   const filePath = path.join(DB_PATH, TABLES[tableName].file);
   if (!fs.existsSync(filePath)) {
+    extra.fail();
     return extra.reply(`❌ ERROR\n\nTable "${tableName}" doesn't exist`);
   }
 
   const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
   if (!data[key]) {
+    extra.fail();
     return extra.reply(`❌ ERROR\n\nKey "${key}" not found in ${tableName}`);
   }
 

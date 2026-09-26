@@ -16,7 +16,7 @@ module.exports = {
   groupOnly: true,
   ownerOnly: false, adminOnly: true,
   botAdminNeeded: true,
-  execute: async (sock, msg, args) => {
+  execute: async (sock, msg, args, extra) => {
 
   const prefix = config.prefix || '.';
     try {
@@ -32,6 +32,7 @@ module.exports = {
       const goodbyeMessage = args.join(' ');
       
       if (goodbyeMessage.length > 500) {
+        extra.fail();
         return await sock.sendMessage(groupId, {
           text: `❌ _${pick(SLANG.error)}, goodbye message is too long, max 500 characters_`
         }, { quoted: msg });
@@ -47,6 +48,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Set Goodbye Error:', error);
+      extra.fail();
       await sock.sendMessage(msg.key.remoteJid, {
         text: `❌ _${pick(SLANG.error)} — ${error.message}_`
       }, { quoted: msg });

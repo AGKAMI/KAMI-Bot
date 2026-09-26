@@ -166,6 +166,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Error in bomb command:', error);
+      extra.fail();
       return extra.reply(`❌ _${pick(SLANG.error)} — ${error.message || 'something went stukkend'}_`);
     }
   },

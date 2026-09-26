@@ -40,6 +40,7 @@ module.exports = {
       await extra.edit(sent.key, text);
       
     } catch (error) {
+      extra.fail();
       await extra.reply(`\u274C _${pick(SLANG.error)}, couldn't get the weather right now_`);
     }
   }

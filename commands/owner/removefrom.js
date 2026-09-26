@@ -100,12 +100,14 @@ module.exports = {
         const fullPhone = phoneParts.join(' ');
         target = phoneToJid(fullPhone);
         if (!target) {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nInvalid phone number: ${fullPhone}`);
         }
         args = args.slice(specIdx);
       }
 
       if (!target) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nProvide a number, mention, or reply to a message\n\n` +
           `Usage:\n` +
@@ -122,6 +124,7 @@ module.exports = {
         const list = resolved.ambiguous
           .map(g => `• ${g.abbrev} — ${g.name}`)
           .join('\n');
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nMultiple groups match "${groupSpec}":\n\n${list}\n\n` +
           `Be more specific`
@@ -129,6 +132,7 @@ module.exports = {
       }
 
       if (!resolved || !resolved.jid) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nUnknown group: ${groupSpec || '(none given)'}\n\n` +
           `Groups:\n${groupList()}`
@@ -150,6 +154,7 @@ module.exports = {
       } catch (e) {}
 
       if (!inGroup) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\n${mention(target)} is not in ${groupName}`
         );
@@ -189,6 +194,7 @@ module.exports = {
       if (removeFailed) {
         const reason = lastError?.message || 'all JID variants rejected';
         console.error('[REMOVEFROM] WhatsApp remove failed:', reason);
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nCouldn't remove from ${groupName}\n\n` +
           `Make sure the bot is admin there\n\n` +
@@ -211,6 +217,7 @@ module.exports = {
 
     } catch (error) {
       console.error('RemoveFrom error:', error);
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't remove them`);
     }
   },

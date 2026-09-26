@@ -37,6 +37,7 @@ module.exports = {
 
       const quotedMsg = ctxInfo.quotedMessage;
       if (!quotedMsg.imageMessage) {
+        extra.fail();
         return await extra.reply(`❌ *ERROR*\n\nYou need to reply to a *photo* — not that type of message`);
       }
 
@@ -70,6 +71,7 @@ module.exports = {
       );
 
       if (!mediaBuffer) {
+        extra.fail();
         return await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — couldn't download the image, try again`);
       }
 
@@ -88,6 +90,7 @@ module.exports = {
 
     } catch (error) {
       console.error('SetGroupPP Error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
     }
   }

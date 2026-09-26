@@ -78,6 +78,7 @@ module.exports = {
                 );
 
                 if (!isGroupAdmin) {
+                    extra.fail();
                     return extra.reply(`❌ ERROR\n\nOnly admins can dismiss reports`);
                 }
 
@@ -85,12 +86,14 @@ module.exports = {
                 const report = groupReports.find(r => r.number === number);
 
                 if (!report) {
+                    extra.fail();
                     return extra.reply(
                         `❌ ERROR\n\nReport #${number} not found\nUse ${prefix}report queue to see pending reports`
                     );
                 }
 
                 if (report.status === 'dismissed') {
+                    extra.fail();
                     return extra.reply(`❌ ERROR\n\nReport #${number} is already dismissed`);
                 }
 
@@ -105,6 +108,7 @@ module.exports = {
             const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
             if (!quotedMsg) {
+                extra.fail();
                 return extra.reply(
                     `❌ ERROR\n\nReply to a message to report it\n\n` +
                     `📝 Usage:\n` +
@@ -144,11 +148,13 @@ module.exports = {
                     const ownerJid = ownerJids.find(jid => 
                         metadata.participants.some(p => p.id === jid)
                     );
+                    extra.fail();
                     return sock.sendMessage(from, {
                         text: `❌ ERROR\n\nYou can't report admins\n\nIf you have an issue with an admin's conduct, DM the owner`,
                         mentions: [ownerJid]
                     }, { quoted: msg });
                 } else {
+                    extra.fail();
                     return extra.reply(
                         `❌ ERROR\n\nYou can't report admins\n\nIf you have an issue with an admin's conduct, DM the owner at *084 082 0712*`
                     );
@@ -168,6 +174,7 @@ module.exports = {
                 .map(p => p.id);
 
             if (admins.length === 0) {
+                extra.fail();
                 return extra.reply(`❌ ERROR\n\nNo admins found in this group`);
             }
 
@@ -243,6 +250,7 @@ module.exports = {
             await extra.reply(reporterMsg);
 
         } catch (error) {
+            extra.fail();
             await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);
         }
     }

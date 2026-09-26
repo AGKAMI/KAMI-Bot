@@ -111,6 +111,7 @@ onButton('crew:accept', async (sock, msg, from, sender, btnId) => {
     isGroup: false,
     isOwner: senderIsOwner,
     reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+    fail: () => {}
   });
 });
 
@@ -144,6 +145,7 @@ onButton('crew:cancel', async (sock, msg, from, sender, btnId) => {
     isGroup: false,
     isOwner: false,
     reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+    fail: () => {}
   });
 });
 
@@ -156,5 +158,6 @@ onButton('crew:pending', async (sock, msg, from, sender, btnId) => {
     isGroup: from.endsWith('@g.us'),
     isOwner: false,
     reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+    fail: () => {}
   });
 });

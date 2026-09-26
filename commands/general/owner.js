@@ -67,6 +67,7 @@ END:VCARD
 
         } catch (error) {
             console.error('Owner command error:', error);
+            extra.fail();
             await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
         }
     }

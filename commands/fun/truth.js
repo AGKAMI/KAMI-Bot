@@ -24,6 +24,7 @@ module.exports = {
         
       } catch (error) {
         console.error('Truth Error:', error);
+        extra.fail();
         await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
       }
     }

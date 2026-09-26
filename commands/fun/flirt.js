@@ -35,6 +35,7 @@ module.exports = {
         
       } catch (error) {
         console.error('Flirt Error:', error);
+        extra.fail();
         await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
       }
     }

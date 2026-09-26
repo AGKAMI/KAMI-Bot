@@ -41,6 +41,7 @@ module.exports = {
       }
 
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n_${error.message}_`);
     }
   },
@@ -106,6 +107,7 @@ module.exports = {
 
     const text = args.slice(1).join(' ').trim();
     if (!text) {
+      extra.fail();
       return extra.reply(
         `❌ *ERROR*\n\n` +
         `_Provide the rules text ${pick(SLANG.vibe)}_\n\n` +

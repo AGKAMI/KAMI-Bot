@@ -48,6 +48,7 @@ module.exports = {
       );
       
       if (!stickerBuffer) {
+        extra.fail();
         return await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't download the sticker, try again`);
       }
       
@@ -87,6 +88,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Error in simage command:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't convert sticker to image`);
     }
   }

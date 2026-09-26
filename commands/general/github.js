@@ -84,6 +84,7 @@ module.exports = {
             
         } catch (error) {
             console.error('GitHub command error:', error);
+            extra.fail();
             await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
         }
     }

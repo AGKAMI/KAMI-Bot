@@ -14,7 +14,7 @@ module.exports = {
   description: 'Create 1917 style text effect',
   usage: '.1917 <text>',
   
-  async execute(sock, msg, args) {
+  async execute(sock, msg, args, extra) {
     try {
       const text = args.join(' ');
       const chatId = msg.key.remoteJid;
@@ -38,6 +38,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Error in 1917 command:', error);
+      extra.fail();
       await sock.sendMessage(msg.key.remoteJid, { 
         text: `❌ _${pick(SLANG.error)} — ${error.message}_` 
       }, { quoted: msg });

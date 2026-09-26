@@ -35,6 +35,7 @@ module.exports = {
     try {
       if (activeAudioDownloads > 2) {
         activeAudioDownloads--;
+        extra.fail();
         return await extra.reply(`❌ _too many downloads — try again in a few seconds_`);
       }
       const text = args.join(' ');
@@ -46,7 +47,7 @@ module.exports = {
       
       // Send loading message
       const sent = await extra.reply(`🔍 _searching for that one..._`);
-      if (!sent?.key) return extra.reply(`❌ _${pick(SLANG.error)} — failed to send loading message_`);
+      if (!sent?.key) { extra.fail(); return extra.reply(`❌ _${pick(SLANG.error)} — failed to send loading message_`); }
       
       let video;
       
@@ -55,6 +56,7 @@ module.exports = {
       } else {
         const search = await yts(text);
         if (!search || !search.videos.length) {
+          extra.fail();
           return await extra.edit(sent.key, `❌ _${pick(SLANG.error)}, no results found for that one_`);
         }
         video = search.videos[0];
@@ -69,11 +71,13 @@ module.exports = {
         audioData = await APIs.ytDownload(video.url, 'audio');
       } catch (err) {
         console.log('YouTube download failed:', err.message);
+        extra.fail();
         return await extra.edit(sent.key, `❌ _${pick(SLANG.error)} — failed to download: ${err.message}_`);
       }
       
       const audioUrl = audioData.download;
       if (!audioUrl) {
+        extra.fail();
         return await extra.edit(sent.key, `❌ _${pick(SLANG.error)}, no download URL received_`);
       }
       
@@ -96,6 +100,7 @@ module.exports = {
           throw new Error('Empty audio buffer');
         }
       } catch (dlErr) {
+        extra.fail();
         return await extra.edit(sent.key, `❌ _download failed hey — ${dlErr.message}_`);
       }
 
@@ -112,6 +117,7 @@ module.exports = {
       
     } catch (err) {
       console.error('Song command error:', err);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — something went stukkend — ${err.message}_`);
     } finally {
       activeAudioDownloads--;

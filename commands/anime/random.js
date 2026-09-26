@@ -119,12 +119,16 @@ module.exports = {
       console.error('Error in random command:', error);
       
       if (error.response?.status === 404) {
+        extra.fail();
         await extra.reply('❌ anime data not found — try again');
       } else if (error.response?.status === 429) {
+        extra.fail();
         await extra.reply('❌ rate limit — try again later');
       } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        extra.fail();
         await extra.reply('❌ timed out — try again');
       } else {
+        extra.fail();
         await extra.reply(`❌ Failed to fetch anime data: ${error.message}`);
       }
     }

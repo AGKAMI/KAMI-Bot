@@ -64,6 +64,7 @@ module.exports = {
       // .crew setteam — only works in crew groups
       if (sub === 'setteam') {
         if (!inCrewGroup) {
+          extra.fail();
           return extra.reply(
             `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
             `Your group: ${extra.from.split(':')[0].split('@')[0]}`
@@ -85,6 +86,7 @@ module.exports = {
           actualSub = (subArgs[0] || '').toLowerCase();
           actualArgs = subArgs.slice(1);
         } else {
+          extra.fail();
           return extra.reply(
             `❌ ERROR\n\nUnknown team or command: ${sub}\n\n` +
             `Use ${prefix}crew teams to see available abbreviations\n` +
@@ -115,6 +117,7 @@ module.exports = {
           // Owner-only commands: block everyone except owner
           const handler = subHandlers[actualSub] || subHandlers[aliasMap[actualSub]];
           if (handler && handler.ownerOnly && !isOwner) {
+            extra.fail();
             return extra.reply(
               `❌ ERROR\n\nThis command is owner-only`
             );
@@ -123,6 +126,7 @@ module.exports = {
           if (sub === 'accept' || sub === 'deny') {
             // accept/deny from DM: owner, approved, or team admin only
             if (!isOwner && !isApproved && !isTeamAdmin) {
+              extra.fail();
               return extra.reply(
                 `❌ ERROR\n\nOnly SS team admins or the owner can accept/deny applications from DMs`
               );
@@ -132,10 +136,12 @@ module.exports = {
             // Any other crew command in DM
             if (!isOwner && !isApproved) {
               if (isTeamAdmin) {
+                extra.fail();
                 return extra.reply(
                   `❌ ERROR\n\nAs a team admin you're only allowed to accept or deny pending applications from DMs`
                 );
               }
+              extra.fail();
               return extra.reply(
                 `❌ ERROR\n\nFrom DMs, you must specify a team\n\n` +
                 `Usage: ${prefix}crew <team> ${sub} [args]\n` +
@@ -149,6 +155,7 @@ module.exports = {
           // Group context
           if (sub !== 'apply') {
             if (!inCrewGroup && !isOwner) {
+              extra.fail();
               return extra.reply(
                 `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
             `Your group: ${extra.from.split(':')[0].split('@')[0]}`
@@ -160,6 +167,7 @@ module.exports = {
 
       // No subcommand after team
       if (!actualSub) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nSpecify a command after the team abbreviation\n\n` +
           `Example: ${prefix}crew ${sub} roster`
@@ -171,9 +179,11 @@ module.exports = {
       if (handler) {
         // Check sub-handler permission flags
         if (handler.adminOnly && !extra.isAdmin && !isOwner) {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nThis command requires admin privileges`);
         }
         if (handler.groupOnly && isDM) {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nThis command can only be used in groups`);
         }
         // Inject resolved group JID into extra
@@ -186,15 +196,18 @@ module.exports = {
       if (aliased && subHandlers[aliased]) {
         const aliasedHandler = subHandlers[aliased];
         if (aliasedHandler.adminOnly && !extra.isAdmin && !isOwner) {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nThis command requires admin privileges`);
         }
         if (aliasedHandler.groupOnly && isDM) {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\nThis command can only be used in groups`);
         }
         const patchedExtra = { ...extra, from: targetJid };
         return aliasedHandler.execute(sock, msg, actualArgs, patchedExtra);
       }
 
+      extra.fail();
       return extra.reply(
         `❌ ERROR\n\nUnknown command: ${actualSub}\n\n` +
         `Use ${prefix}crew help for available commands`
@@ -202,6 +215,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew command error:', error);
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n${error.message}`);
     }
   }
@@ -212,6 +226,7 @@ async function setTeam(sock, msg, args, extra) {
   const teamName = args.slice(1).join(' ') || abbrev;
 
   if (!abbrev) {
+    extra.fail();
     return extra.reply(
       `❌ ERROR\n\nUsage: ${prefix}crew setteam <abbrev> [team name]\n\n` +
       `Example: ${prefix}crew setteam SSRS Royal Security\n\n` +

@@ -52,6 +52,7 @@ module.exports = {
       }
 
       if (!target) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +
           `Tag or reply to someone\n\n` +
@@ -82,6 +83,7 @@ module.exports = {
           p => (p.id === target || p.lid === target) && (p.admin === 'admin' || p.admin === 'superadmin')
         );
         if (!isAdmin) {
+          extra.fail();
           return extra.reply(
             `❌ ERROR\n\n` +
             `${mention(target)} is not an admin\n\n` +
@@ -305,6 +307,7 @@ module.exports = {
     } catch (error) {
       console.error('Demote error:', error);
       const reason = error?.message || error?.output?.payload?.message || 'Unknown error';
+      extra.fail();
       await extra.reply(`❌ ERROR\n\nCouldn't demote — ${reason}`);
     }
   },

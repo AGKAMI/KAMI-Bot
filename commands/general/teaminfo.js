@@ -109,6 +109,7 @@ module.exports = {
 
       // Specific team
       if (!config.crewTeams[teamKey] || !TEAMS[teamKey]) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nInvalid team\n\n` +
           `Teams: ${TEAM_ORDER.join(', ')}`
@@ -165,6 +166,7 @@ module.exports = {
 
     } catch (error) {
       console.error('[TEAMINFO] Error:', error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   },

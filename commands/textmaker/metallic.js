@@ -14,7 +14,7 @@ module.exports = {
   description: 'Create metallic text effect',
   usage: '.metallic <text>',
   
-  async execute(sock, msg, args) {
+  async execute(sock, msg, args, extra) {
     const prefix = config.prefix || '.';
     try {
       const text = args.join(' ');  
@@ -39,6 +39,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Error in metallic command:', error);
+      extra.fail();
       await sock.sendMessage(msg.key.remoteJid, { 
         text: `❌ _${pick(SLANG.error)} — ${error.message}_` 
       }, { quoted: msg });

@@ -21,6 +21,7 @@ module.exports = {
     const prefix = config.prefix;
 
     if (!isGroup) {
+      extra.fail();
       return extra.reply(`❌ ERROR\n\nThis command works in groups only`);
     }
 
@@ -39,6 +40,7 @@ module.exports = {
       if (dbKey) {
         return extra.reply(`📋 ROSTER\n\nTeam: ${dbKey}\n\n_No members yet_`);
       }
+      extra.fail();
       return extra.reply(`❌ ERROR\n\nThis group isn't a crew team`);
     }
 

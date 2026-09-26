@@ -39,6 +39,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew viewroles error:', error);
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't fetch roles`);
     }
   },

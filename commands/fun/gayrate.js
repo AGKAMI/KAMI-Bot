@@ -33,6 +33,7 @@ module.exports = {
       await sock.sendMessage(extra.from, { text: out, mentions: [targetId] }, { quoted: msg });
     } catch (error) {
       console.error('[gayrate] ERROR:', error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — something went stukkend hey_`);
     }
   }

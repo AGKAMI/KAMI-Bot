@@ -136,6 +136,7 @@ module.exports = {
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\/share\//,
       ];
       if (!patterns.some((p) => p.test(url))) {
+        extra.fail();
         return await extra.reply(`❌ _${pick(SLANG.error)}, invalid Facebook link_\n_use:_ .fb <facebook video link>`);
       }
 
@@ -166,6 +167,7 @@ module.exports = {
 
       if (!videoData || !videoData.url) {
         const detail = lastError?.message ? `\n\n_Source detail: _${lastError.message}_` : '';
+        extra.fail();
         return await extra.reply(
           `❌ _${pick(SLANG.error)} — couldn't get the video link_\n\n_All download sources failed._${detail}\n_Try a public post link (not login-walled)._`
         );
@@ -206,12 +208,14 @@ module.exports = {
       }
 
       if (!sendSuccess) {
+        extra.fail();
         return await extra.reply(
           `❌ _${pick(SLANG.error)} — could not download the video_\n\n_The file might be too large for WhatsApp (>100MB)._\n_Try:_\n• _A shorter video_\n• _Using browser to download manually_`
         );
       }
     } catch (error) {
       console.error('.fb Error:', error.message || error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — ${(error.message || 'try again later')}_`);
     }
   },

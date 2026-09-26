@@ -43,8 +43,9 @@ module.exports = {
         const rawArg = args.join(' ');
         if (rawArg && /\d/.test(rawArg)) {
           target = parseNumber(rawArg);
-          if (!target) return extra.reply(`❌ ERROR\n\n_Invalid number_`);
+          if (!target) { extra.fail(); return extra.reply(`❌ ERROR\n\n_Invalid number_`); }
         } else {
+          extra.fail();
           return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Example: ${prefix}ban 27833882383_`);
         }
       }
@@ -52,9 +53,11 @@ module.exports = {
       const targetNum = target.split('@')[0].replace(/:/g, '');
       const ownerNums = (config.ownerNumber || []).map(n => n.replace(/\D/g, ''));
       if (ownerNums.includes(targetNum)) {
+        extra.fail();
         return extra.reply(`❌ ERROR\n\n_Can't ban the owner_`);
       }
       if (target === sender) {
+        extra.fail();
         return extra.reply(`❌ ERROR\n\n_Can't ban yourself_`);
       }
 
@@ -89,6 +92,7 @@ module.exports = {
       }, { quoted: msg });
 
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n_${error.message}_`);
     }
   }

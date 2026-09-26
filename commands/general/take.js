@@ -47,7 +47,7 @@ module.exports = {
         { logger: undefined, reuploadRequest: sock.updateMediaMessage },
       );
       
-      if (!mediaBuffer) return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't download the sticker, try again`);
+      if (!mediaBuffer) { extra.fail(); return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't download the sticker, try again`); }
       
       const userName = msg.pushName || extra.sender.split('@')[0];
       const packname = args.length ? args.join(' ') : userName;
@@ -78,6 +78,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Take command error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't steal the sticker, try again`);
     }
   },

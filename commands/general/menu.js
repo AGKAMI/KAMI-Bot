@@ -174,6 +174,7 @@ module.exports = {
 
     } catch (error) {
       console.error('[MENU] Error:', error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
     }
   }

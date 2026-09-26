@@ -61,6 +61,7 @@ module.exports = {
 
       if (sub === 'set') {
         if (args.length < 4) {
+          extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Usage: ${prefix}antiflood set <limit> <window>s <action>_\n\n` +
@@ -78,6 +79,7 @@ module.exports = {
         const action = args[3].toLowerCase();
 
         if (isNaN(limit) || limit < 1) {
+          extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Invalid limit — must be a number > 0_`
@@ -85,6 +87,7 @@ module.exports = {
         }
 
         if (isNaN(windowSec) || windowSec < 1) {
+          extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Invalid window — must be seconds > 0_`
@@ -92,6 +95,7 @@ module.exports = {
         }
 
         if (!['warn', 'delete', 'kick'].includes(action)) {
+          extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Invalid action — choose warn, delete, or kick_`
@@ -117,6 +121,7 @@ module.exports = {
       if (sub === 'exempt') {
         const exemptJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
         if (!exemptJid) {
+          extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to exempt, ${pick(SLANG.vibe)}_\n\n` +
@@ -147,6 +152,7 @@ module.exports = {
       if (sub === 'unexempt') {
         const exemptJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
         if (!exemptJid) {
+          extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to unexempt, ${pick(SLANG.vibe)}_\n\n` +
@@ -156,6 +162,7 @@ module.exports = {
 
         const exempt = settings.antifloodExempt || [];
         if (!exempt.includes(exemptJid)) {
+          extra.fail();
           return extra.reply(
             `❌ *NOT EXEMPT*\n\n` +
             `${mention(exemptJid)} _is not in the exemption list_`
@@ -191,12 +198,14 @@ module.exports = {
         );
       }
 
+      extra.fail();
       return extra.reply(
         `❌ *ERROR*\n\n` +
         `_Use ${prefix}antiflood for usage, ${pick(SLANG.vibe)}_`
       );
 
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n_${error.message}_`);
     }
   }

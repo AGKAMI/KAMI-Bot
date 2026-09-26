@@ -24,6 +24,7 @@ module.exports = {
       const raw = args.join(' ').trim();
 
       if (!raw) {
+        extra.fail();
         return extra.reply(
           `❌ *ERROR*\n\n` +
           `_Provide the pattern to remove, ${pick(SLANG.vibe)}_\n\n` +
@@ -36,6 +37,7 @@ module.exports = {
       const normalized = raw.toLowerCase();
 
       if (!badwords.includes(normalized)) {
+        extra.fail();
         return extra.reply(
           `❌ *NOT FOUND*\n\n` +
           `_${normalized} isn't in the blacklist, ${pick(SLANG.vibe)}_\n\n` +
@@ -58,6 +60,7 @@ module.exports = {
       );
 
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n_${error.message}_`);
     }
   }

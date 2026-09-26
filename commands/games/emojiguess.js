@@ -35,7 +35,7 @@ module.exports = {
     const sub = (args[0] || '').toLowerCase();
     if (sub === 'answer' || sub === 'skip') {
       const g = active.get(ctx.from);
-      if (!g) return ctx.reply(`❌ _no active game, ${pick(SLANG.vibe)}_`);
+      if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game, ${pick(SLANG.vibe)}_`); }
       active.delete(ctx.from);
       return startRound(sock, ctx.from, msg);
     }
@@ -59,6 +59,7 @@ module.exports = {
         }, msg);
       }
       const hint = g.answer.split(' ').map(w => w[0] + '_'.repeat(w.length - 1)).join(' / ');
+      ctx.fail();
       return ctx.reply(`❌ ${pick(SLANG.error)}, wrong! hint: ${hint}`);
     }
     return startRound(sock, ctx.from, msg);

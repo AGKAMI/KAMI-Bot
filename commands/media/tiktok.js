@@ -224,10 +224,12 @@ module.exports = {
       }
 
       if (!success) {
+        extra.fail();
         return extra.reply(`❌ _${pick(SLANG.error)} — could not download the video, try a different link_`);
       }
     } catch (error) {
       console.error('[TT] command error:', error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — error processing request, try again_`);
     }
   }

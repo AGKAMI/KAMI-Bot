@@ -15,6 +15,7 @@ module.exports = {
         quiz.delete(ctx.from);
         return ctx.reply(`✅ ${pick(SLANG.good)}, correct! ${g.expr} = ${g.ans}`);
       }
+      ctx.fail();
       return ctx.reply(`❌ ${pick(SLANG.error)}, wrong — try again!`);
     }
     if (arg0 === 'stop') {

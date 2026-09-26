@@ -66,6 +66,7 @@ module.exports = {
       await sendDashboard(sock, extra.from, msg);
     } catch (error) {
       console.error('Settings error:', error);
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);
     }
   },

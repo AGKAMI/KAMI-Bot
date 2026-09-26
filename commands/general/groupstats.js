@@ -51,6 +51,7 @@ ${topText}
 
         } catch (err) {
             console.error('[groupstats cmd] error:', err);
+            extra.fail();
             extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)}, couldn't load stats`);
         }
     }

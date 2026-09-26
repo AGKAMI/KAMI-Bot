@@ -25,6 +25,7 @@ module.exports = {
       const newDesc = args.join(' ').trim();
 
       if (!newDesc) {
+        extra.fail();
         return extra.reply(
           `❌ *ERROR*\n\n` +
           `💡 *Usage:* ${prefix}setdesc <new description>\n\n` +
@@ -38,6 +39,7 @@ module.exports = {
       }
 
       if (newDesc.length > 250) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n\nDescription too long — max 250 characters`);
       }
 
@@ -62,6 +64,7 @@ module.exports = {
         .replace(/\{time\}/g, currentTime);
 
       if (resolved.length > 250) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n\nResolved description too long after variables — max 250 characters`);
       }
 
@@ -77,6 +80,7 @@ module.exports = {
 
     } catch (error) {
       console.error('SetDesc Error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
     }
   }

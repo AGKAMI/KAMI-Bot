@@ -28,7 +28,7 @@ module.exports = {
   usage: '.teamadmin approve|remove|list <number|@mention>',
   ownerOnly: true,
 
-  async execute(sock, msg, args) {
+  async execute(sock, msg, args, extra) {
 
   const prefix = config.prefix || '.';
     try {
@@ -54,6 +54,7 @@ module.exports = {
         }
 
         if (!target) {
+          extra.fail();
           return sock.sendMessage(msg.key.remoteJid, {
             text: `❌ ERROR\n\n_Usage: ${prefix}teamadmin ${sub} <number|@mention>_`
           }, { quoted: msg });
@@ -79,12 +80,14 @@ module.exports = {
         return;
       }
 
+      extra.fail();
       return sock.sendMessage(msg.key.remoteJid, {
         text: `❌ *ERROR*\n\n_Invalid option_\n\n*Usage:*\n  ${prefix}teamadmin approve <number>\n  ${prefix}teamadmin remove <number>\n  ${prefix}teamadmin list`
       }, { quoted: msg });
 
     } catch (error) {
       console.error('Team Admin Error:', error);
+      extra.fail();
       await sock.sendMessage(msg.key.remoteJid, {
         text: `❌ *ERROR*\n\n_${pick(SLANG.error)} — ${error.message}_`
       }, { quoted: msg });

@@ -44,6 +44,7 @@ module.exports = {
       await extra.reply(text);
     } catch (error) {
       console.error('[STATUS] Error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
     }
   }

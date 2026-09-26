@@ -94,11 +94,13 @@ module.exports = {
       );
 
       if (!mediaBuffer) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't download that, try again`);
       }
 
       // Check file size
       if (mediaBuffer.length > MAX_FILE_SIZE) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
       }
 
@@ -198,6 +200,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crop command error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't crop the sticker, try with an image or video`);
     } finally {
       // Always cleanup temp files

@@ -14,7 +14,7 @@ module.exports = {
   aliases: ['magic8ball', 'eightball'],
   execute: async (sock, msg, args, ctx) => {
     const q = args.join(' ');
-    if (!q) return ctx.reply(`❌ _${pick(SLANG.error)} — usage: .8ball <yes/no question>_`);
+    if (!q) { ctx.fail(); return ctx.reply(`❌ _${pick(SLANG.error)} — usage: .8ball <yes/no question>_`); }
     const ans = answers[Math.floor(Math.random() * answers.length)];
     await ctx.reply('🎱 ' + ans);
   }

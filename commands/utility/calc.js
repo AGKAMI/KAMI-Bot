@@ -24,6 +24,7 @@ module.exports = {
         
         // Basic safety check
         if (!/^[0-9+\-*/(). ]+$/.test(expression)) {
+          extra.fail();
           return extra.reply(`❌ _${pick(SLANG.error)}, invalid expression — only numbers and operators_`);
         }
         
@@ -36,10 +37,12 @@ module.exports = {
           
           await extra.reply(text);
         } catch (evalError) {
+          extra.fail();
           await extra.reply(`❌ _${pick(SLANG.error)}, invalid math expression_`);
         }
         
       } catch (error) {
+        extra.fail();
         await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
       }
     }

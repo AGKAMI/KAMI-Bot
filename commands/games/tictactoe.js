@@ -6,7 +6,7 @@ const tttGames = new Map();
 
 module.exports = {
   name: 'tictactoe',
-  reactions: { received: '⭕', done: '❌' },
+  reactions: { received: '⭕', done: '🏁' },
   description: 'Play tic tac toe in a group',
   aliases: ['ttt', 'xo'],
   category: 'games',
@@ -23,6 +23,7 @@ module.exports = {
         turn: 'X',
         players: { X: null, O: null },
       });
+      ctx.fail();
       return ctx.reply(`❌ ${pick(SLANG.error)} — tic tac toe!\nFirst person to play is X.\nUse ${prefix}ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`);
     }
 
@@ -32,15 +33,16 @@ module.exports = {
     }
 
     if (!/^\d$/.test(sub)) {
+      ctx.fail();
       return ctx.reply(`❌ _${pick(SLANG.error)} — use: ${prefix}ttt start | ${prefix}ttt <1-9> | ${prefix}ttt stop_`);
     }
 
     const g = tttGames.get(boardKey);
-    if (!g) return ctx.reply(`❌ _no active game — use ${prefix}ttt start_`);
+    if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game — use ${prefix}ttt start_`); }
 
     const pos = parseInt(sub) - 1;
-    if (pos < 0 || pos > 8) return ctx.reply(`❌ _${pick(SLANG.error)} — use a number from 1-9_`);
-    if (g.board[pos] !== ' ') return ctx.reply(`❌ _spot taken — pick another, ${pick(SLANG.vibe)}_`);
+    if (pos < 0 || pos > 8) { ctx.fail(); return ctx.reply(`❌ _${pick(SLANG.error)} — use a number from 1-9_`); }
+    if (g.board[pos] !== ' ') { ctx.fail(); return ctx.reply(`❌ _spot taken — pick another, ${pick(SLANG.vibe)}_`); }
 
     const sender = ctx.sender;
     const token = g.turn;

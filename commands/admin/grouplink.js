@@ -28,6 +28,7 @@ module.exports = {
         await extra.reply(text);
         
       } catch (error) {
+        extra.fail();
         await extra.reply(`❌ ERROR\n\n${error.message}`);
       }
     }

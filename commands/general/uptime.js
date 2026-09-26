@@ -66,6 +66,7 @@ const botVersion = 'V1.0.2';
       
     } catch (error) {
       console.error('Error in uptime command:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)}, couldn't get uptime info — try again later`);
     }
   }

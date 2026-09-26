@@ -26,6 +26,7 @@ module.exports = {
       const query = args.join(' ').trim();
       
       if (!query) {
+        extra.fail();
         return await extra.reply(
           `❌ _${pick(SLANG.error)} — usage: ${prefix}memesearch <query>_\n\n_Example: ${prefix}memesearch hello_`
         );
@@ -159,6 +160,7 @@ module.exports = {
       }
       
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — failed to fetch meme: ${error.message}_`);
     }
   }

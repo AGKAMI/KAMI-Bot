@@ -835,7 +835,8 @@ const handleMessage = async (sock, msg) => {
             sock,
             reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
             edit: (key, text) => sock.sendMessage(from, { text, edit: key }),
-            react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
+            react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } }),
+            fail: () => {}
           });
         }
         return;
@@ -855,7 +856,8 @@ const handleMessage = async (sock, msg) => {
             sock,
             reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
             edit: (key, text) => sock.sendMessage(from, { text, edit: key }),
-            react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
+            react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } }),
+            fail: () => {}
           });
         }
         return;
@@ -875,7 +877,8 @@ const handleMessage = async (sock, msg) => {
             sock,
             reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
             edit: (key, text) => sock.sendMessage(from, { text, edit: key }),
-            react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
+            react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } }),
+            fail: () => {}
           });
         }
         return;
@@ -1027,7 +1030,8 @@ const handleMessage = async (sock, msg) => {
                   sock,
                   reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
                   edit: (key, text) => sock.sendMessage(from, { text, edit: key }),
-                  react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
+                  react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } }),
+            fail: () => {}
                 });
                 return; // Don't process as command after auto-converting
               }
@@ -1059,7 +1063,8 @@ const handleMessage = async (sock, msg) => {
             sock,
             reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
             edit: (key, text) => sock.sendMessage(from, { text, edit: key }),
-            react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
+            react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } }),
+            fail: () => {}
           });
           return; // Don't process as command
         }
@@ -1091,7 +1096,8 @@ const handleMessage = async (sock, msg) => {
             isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
             isMod: isMod(sender),
             reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
-            react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } })
+            react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } }),
+            fail: () => {}
           });
           if (handled) return; // Don't process as command if move was handled
         }
@@ -1229,7 +1235,8 @@ const handleMessage = async (sock, msg) => {
                       isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
                       sock,
                       reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
-                      edit: (key, text) => sock.sendMessage(from, { text, edit: key })
+                      edit: (key, text) => sock.sendMessage(from, { text, edit: key }),
+                      fail: () => {}
                     });
                   }
                 } catch (e) {}
@@ -1428,6 +1435,9 @@ const handleMessage = async (sock, msg) => {
     console.log(`Executing command: ${commandName} from ${sender}`);
     
     try {
+      // Set by extra.fail() when a command reports its own failure instead
+      // of rethrowing — progressReaction reads it to pick ✅ vs ❌.
+      const outcome = { failed: false };
       const commandExtra = {
         from,
         sender,
@@ -1463,8 +1473,9 @@ const handleMessage = async (sock, msg) => {
             console.error(`[REACT ERROR] Failed to react in ${from}:`, err.message);
           }
         },
-        // Fire a reaction stage by name ('received' | 'generating' | 'done' |
-        // 'error') or pass a literal emoji to override this command's set.
+        // Fire a reaction stage by name ('received' | 'generating' | 'done'
+        // | 'confirm' | 'error') or pass a literal emoji to override this
+        // command's set. `confirm` is the final ✅/❌ verdict.
         stage: async (nameOrEmoji) => {
           try {
             const emoji = stageEmoji(command, nameOrEmoji);
@@ -1472,10 +1483,17 @@ const handleMessage = async (sock, msg) => {
           } catch (err) {
             console.error(`[STAGE ERROR] Failed to react in ${from}:`, err.message);
           }
+        },
+        // Report failure from inside the command (for paths that reply an
+        // error instead of throwing) — flips the final verdict to ❌.
+        // Idempotent; optional reason is only logged.
+        fail: (reason) => {
+          outcome.failed = true;
+          if (reason) console.log(`[CMD-FAIL] ${commandName}:`, reason);
         }
       };
 
-      await runWithReactions(command, { sock, from, msg }, () =>
+      await runWithReactions(command, { sock, from, msg, outcome }, () =>
         command.execute(sock, msg, args, commandExtra)
       );
       // Log successful command

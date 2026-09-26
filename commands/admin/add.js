@@ -32,6 +32,7 @@ module.exports = {
   const prefix = config.prefix || '.';
     try {
       if (!args || args.length === 0) {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\nProvide a number\n\nUsage: ${prefix}add <number>\n\n` +
           `Examples:\n` +
@@ -54,6 +55,7 @@ module.exports = {
       const target = phoneToJid(fullPhone);
 
       if (!target) {
+        extra.fail();
         return extra.reply(`❌ ERROR\n\nInvalid phone number: ${fullPhone}`);
       }
 
@@ -66,6 +68,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Add error:', error);
+      extra.fail();
       await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't add them`);
     }
   },

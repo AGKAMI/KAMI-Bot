@@ -24,6 +24,7 @@ module.exports = {
       const raw = args.join(' ').trim();
 
       if (!raw) {
+        extra.fail();
         return extra.reply(
           `❌ *ERROR*\n\n` +
           `_Provide a pattern to blacklist, ${pick(SLANG.vibe)}_\n\n` +
@@ -67,6 +68,7 @@ module.exports = {
       );
 
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n_${error.message}_`);
     }
   }

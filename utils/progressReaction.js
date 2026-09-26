@@ -4,8 +4,14 @@
  * Every registered command gets staged reactions on the user's message:
  *   received  -> command accepted, handler is working on it
  *   generating -> (heavy commands only) still producing output
- *   done      -> output delivered
- *   error     -> command threw
+ *   done      -> output delivered (the command's own unique emoji)
+ *   confirm   -> final verdict: ✅ success, ❌ failure (fires after a
+ *                short beat so the unique `done` emoji is readable)
+ *   error     -> command threw — this IS the ❌ verdict, `done` is skipped
+ *
+ * Commands that swallow their own errors (they `extra.reply('❌ …')`
+ * instead of rethrowing) must call `extra.fail()`; the verdict then ends
+ * on ❌ instead of ✅. Nothing is inferred from message text.
  *
  * Each command declares its own unique trio in its module.exports:
  *   reactions: { received: '🎨', generating: '🪄', done: '🩵' }
@@ -14,22 +20,27 @@
  *
  * Implementation notes:
  *   - Reactions are ENQUEUED on a per-invocation promise chain, never
- *     awaited inline, so they never delay command execution.
- *   - The chain preserves order (received -> generating -> done) even
- *     though the command itself runs concurrently.
+ *     awaited inline, so they never delay command execution. The 500ms
+ *     confirm beat lives on that chain only — `runWithReactions` returns
+ *     as soon as execute() settles.
+ *   - The chain preserves order (received -> generating -> done -> ✅)
+ *     even though the command itself runs concurrently.
  *   - `generating` is armed on a short timer and cancelled the moment
  *     execute() settles, so fast commands never flash a stage they
  *     didn't really have.
+ *   - When a command's `done` is already ✅ the confirm stage is skipped
+ *     (nothing left to show) — no redundant network call.
  */
 
 const config = require('../config');
 
-const STAGE_KEYS = new Set(['received', 'generating', 'done', 'error']);
+const STAGE_KEYS = new Set(['received', 'generating', 'done', 'confirm', 'error']);
 
 const DEFAULTS = {
   received: '📥',
   generating: '⚙️',
   done: '✅',
+  confirm: '✅',
   error: '❌',
 };
 
@@ -52,6 +63,10 @@ const CATEGORY_DEFAULTS = {
 // declared one. Kept deliberately low so the progression feels instant;
 // anything that finishes faster than this never shows the stage at all.
 const GENERATING_DELAY = 150;
+
+// Beat between the command's unique `done` emoji and the final ✅ verdict,
+// so the tick reads as a confirmation instead of the same frame.
+const CONFIRM_DELAY = 500;
 
 /**
  * Merge a command's declared reactions over its category defaults over
@@ -109,6 +124,14 @@ const runWithReactions = async (command, ctx, executeFn) => {
     if (!emoji) return;
     chain = chain.then(() => react(ctx, emoji)).catch(() => {});
   };
+  // Same, but waits `ms` first — used for the final ✅ verdict.
+  const enqueueAfter = (emoji, ms) => {
+    if (!emoji) return;
+    chain = chain
+      .then(() => new Promise((resolve) => setTimeout(resolve, ms)))
+      .then(() => react(ctx, emoji))
+      .catch(() => {});
+  };
 
   let finished = false;
   let generatingTimer = null;
@@ -125,11 +148,23 @@ const runWithReactions = async (command, ctx, executeFn) => {
     const result = await executeFn();
     finished = true;
     if (generatingTimer) clearTimeout(generatingTimer);
-    enqueue(spec.done);
+    // Commands that handle their own errors call `extra.fail()` instead of
+    // rethrowing — honour that flag so ✅ never lies about the output.
+    if (ctx.outcome?.failed) {
+      enqueue(spec.error);
+    } else {
+      enqueue(spec.done);
+      // Failure path never gets here, so ✅ is unambiguous. Skipped when the
+      // command already finished on ✅ itself.
+      if (spec.confirm && spec.confirm !== spec.done) {
+        enqueueAfter(spec.confirm, CONFIRM_DELAY);
+      }
+    }
     return result;
   } catch (err) {
     finished = true;
     if (generatingTimer) clearTimeout(generatingTimer);
+    // No `done` on failure — ❌ is the verdict.
     enqueue(spec.error);
     throw err;
   }
@@ -143,4 +178,5 @@ module.exports = {
   DEFAULTS,
   STAGE_KEYS,
   GENERATING_DELAY,
+  CONFIRM_DELAY,
 };

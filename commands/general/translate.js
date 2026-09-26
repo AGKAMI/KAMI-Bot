@@ -19,6 +19,7 @@ module.exports = {
   const prefix = config.prefix || '.';
     try {
       if (args.length < 2) {
+        extra.fail();
         return extra.reply(`\u274C *ERROR*\n\u{1F4A1} Usage: ${prefix}translate <lang> <text>\n\n\u{1F4DD} *Example:* ${prefix}translate es Hello world`);
       }
       
@@ -37,6 +38,7 @@ module.exports = {
       await extra.edit(sent.key, replyText);
       
     } catch (error) {
+      extra.fail();
       await extra.reply(`\u274C *ERROR*\n\u{1F4A1} ${pick(SLANG.error)}, translation failed - ${error.message}\n\n\u{1F4A1} Supported codes: en, es, fr, de, it, pt, ru, ja, ko, zh`);
     }
   }

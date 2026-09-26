@@ -39,12 +39,14 @@ module.exports = {
       }
       
       if (!country) {
+        extra.fail();
         return await extra.reply(
           `❌ _${pick(SLANG.error)} — usage: .pies <country>_\n\n_Countries: ${VALID_COUNTRIES.join(', ')}_`
         );
       }
       
       if (!VALID_COUNTRIES.includes(country)) {
+        extra.fail();
         return await extra.reply(
           `❌ _${pick(SLANG.error)} — unsupported country: ${country}_\n\n_Try one of: ${VALID_COUNTRIES.join(', ')}_`
         );
@@ -74,6 +76,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Error in pies command:', error);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)} — failed to fetch image: ${error.message}_`);
     }
   }

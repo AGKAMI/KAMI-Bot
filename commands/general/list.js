@@ -69,6 +69,7 @@ module.exports = {
       
     } catch (err) {
       console.error('list.js error:', err);
+      extra.fail();
       await extra.reply(`❌ _${pick(SLANG.error)}, couldn't load the commands list_`);
     }
   }

@@ -45,6 +45,7 @@ module.exports = {
       if (sub === 'on') {
         const current = settings.slowmode || 0;
         if (current === 0) {
+          extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Set a time first, e.g. ${prefix}slowmode 10s_`
@@ -72,6 +73,7 @@ module.exports = {
       if (sub === 'bypass') {
         const bypassJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
         if (!bypassJid) {
+          extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to bypass, ${pick(SLANG.vibe)}_\n\n` +
@@ -102,6 +104,7 @@ module.exports = {
       if (sub === 'unbypass') {
         const bypassJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
         if (!bypassJid) {
+          extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Tag a user to remove bypass, ${pick(SLANG.vibe)}_\n\n` +
@@ -111,6 +114,7 @@ module.exports = {
 
         const bypass = settings.slowmodeBypass || [];
         if (!bypass.includes(bypassJid)) {
+          extra.fail();
           return extra.reply(
             `❌ *NOT BYPASSED*\n\n` +
             `${mention(bypassJid)} _is not in the bypass list_`
@@ -132,6 +136,7 @@ module.exports = {
       const match = sub.match(/^(\d+)(s|m|h)$/);
 
       if (!match) {
+        extra.fail();
         return extra.reply(
           `❌ *ERROR*\n\n` +
           `💡 *Usage:*\n` +
@@ -153,10 +158,12 @@ module.exports = {
       else if (unit === 'h') seconds = value * 3600;
 
       if (seconds < 5) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n\nMinimum slowmode is 5 seconds`);
       }
 
       if (seconds > 3600) {
+        extra.fail();
         return extra.reply(`❌ *ERROR*\n\nMaximum slowmode is 1 hour`);
       }
 
@@ -183,6 +190,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Slowmode Error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
     }
   }

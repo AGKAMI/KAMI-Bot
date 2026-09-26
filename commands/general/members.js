@@ -18,6 +18,7 @@ module.exports = {
       const { from, groupMetadata } = extra;
 
       if (!groupMetadata || !groupMetadata.participants) {
+        extra.fail();
         return await extra.reply(`❌ *ERROR*\n\nCouldn't fetch group info, ${pick(SLANG.error)}`);
       }
 
@@ -48,6 +49,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Members Error:', error);
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
     }
   }

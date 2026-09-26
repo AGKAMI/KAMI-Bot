@@ -32,6 +32,7 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
+        extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +
           `Tag or reply to someone\n\n` +
@@ -109,6 +110,7 @@ module.exports = {
       }, { quoted: msg });
 
     } catch (error) {
+      extra.fail();
       await extra.reply(`❌ *ERROR*\n\n_${error.message}_`);
     }
   }

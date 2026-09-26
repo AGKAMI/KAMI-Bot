@@ -45,6 +45,7 @@ module.exports = {
         games.delete(ctx.from);
         return ctx.reply(`💀 ${pick(SLANG.error)}, game over! word: ${g.word}`);
       }
+      ctx.fail();
       return ctx.reply(`❌ ${sub} not in word!\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6`);
     }
     return ctx.reply(`Use ${config.prefix}ghang <letter> or ${config.prefix}ghang stop`);
