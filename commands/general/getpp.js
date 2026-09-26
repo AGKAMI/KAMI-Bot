@@ -3,6 +3,7 @@ const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
   name: 'getpp',
+  reactions: { received: '📸', generating: '⬇️', done: '🖼️' },
   aliases: ['gp', 'getpic'],
   category: 'general',
   description: 'Get profile picture of a user',

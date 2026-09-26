@@ -9,6 +9,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'antibadword',
+  reactions: { received: '🛡️', done: '⛔' },
   aliases: ['badword', 'wordfilter', 'autocensor'],
   category: 'admin',
   description: 'Toggle bad word filter',

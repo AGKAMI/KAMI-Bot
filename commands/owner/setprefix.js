@@ -9,6 +9,7 @@ const { pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setprefix',
+  reactions: { received: '🔣', done: '💠' },
   aliases: ['prefix'],
   category: 'owner',
   description: 'Change bot command prefix',

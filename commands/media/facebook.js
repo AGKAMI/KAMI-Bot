@@ -105,6 +105,7 @@ async function fetchFromApi(url) {
 
 module.exports = {
   name: 'facebook',
+  reactions: { received: '📘', generating: '⬇️', done: '📹' },
   aliases: ['fb', 'fbdl', 'facebookdl'],
   category: 'media',
   description: 'Download Facebook videos',
@@ -137,10 +138,6 @@ module.exports = {
       if (!patterns.some((p) => p.test(url))) {
         return await extra.reply(`❌ _${pick(SLANG.error)}, invalid Facebook link_\n_use:_ .fb <facebook video link>`);
       }
-
-      const reactOk = await sock.sendMessage(extra.from, {
-        react: { text: '🔄', key: msg.key },
-      }).catch(() => null);
 
       let videoData = null;
       let lastError = null;

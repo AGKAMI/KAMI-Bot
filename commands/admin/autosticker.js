@@ -9,6 +9,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'autosticker',
+  reactions: { received: '⚡', done: '✅' },
   aliases: ['autos', 'asticker'],
   category: 'admin',
   description: 'Enable or disable auto-sticker conversion (images/videos automatically become stickers)',

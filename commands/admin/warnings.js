@@ -10,6 +10,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'warnings',
+  reactions: { received: '📋', done: '⚠️' },
   aliases: ['warns', 'checkwarn'],
   category: 'admin',
   description: 'Check a user\'s warning count with progress bar',

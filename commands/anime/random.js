@@ -12,6 +12,7 @@ const API_KEY = 'prince';
 
 module.exports = {
   name: 'random',
+  reactions: { received: '🎲', generating: '⬇️', done: '🖼️' },
   aliases: ['animerandom', 'randomanime'],
   category: 'anime',
   description: 'Get random anime data',

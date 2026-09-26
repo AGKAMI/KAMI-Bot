@@ -11,6 +11,7 @@ const prefix = config.prefix || '.';
 
 module.exports = {
   name: 'rules',
+  reactions: { received: '📜', done: '📖' },
   aliases: ['grouprules', 'grouprule'],
   category: 'admin',
   description: 'View, set, or clear group rules',

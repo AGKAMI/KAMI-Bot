@@ -10,6 +10,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setmenuimage',
+  reactions: { received: '🖼️', generating: '🎨', done: '📸' },
   aliases: ['setmenuimg', 'changemenuimage'],
   category: 'owner',
   description: 'Set or change the menu image (owner only)',

@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setgoodbye',
+  reactions: { received: '👋', done: '✏️' },
   aliases: ['goodbyetext'],
   category: 'admin',
   description: 'Set custom goodbye message',

@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'thunder',
+  reactions: { received: '⚡', generating: '🖌️', done: '🌩️' },
   aliases: [],
   category: 'textmaker',
   description: 'Create thunder text effect',

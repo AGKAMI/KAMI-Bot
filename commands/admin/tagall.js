@@ -6,6 +6,7 @@ const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
     name: 'tagall',
+    reactions: { received: '👥', done: '📣' },
     aliases: ['mentionall', 'everyone'],
     category: 'admin',
     description: 'Tag all group members',

@@ -9,6 +9,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const config = require('../../config');
 module.exports = {
   name: 'lock',
+  reactions: { received: '🔒', done: '✅' },
   aliases: ['unlock', 'lockstatus'],
   category: 'admin',
   description: 'Lock/unlock group settings (name, desc, profile pic)',

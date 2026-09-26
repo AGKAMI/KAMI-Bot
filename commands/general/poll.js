@@ -44,6 +44,7 @@ function formatResults(poll) {
 
 module.exports = {
   name: 'poll',
+  reactions: { received: '✏️', done: '🗳️' },
   aliases: ['vote', 'survey'],
   category: 'general',
   description: 'Create a button-based poll with live results',

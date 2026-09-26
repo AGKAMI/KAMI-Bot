@@ -9,6 +9,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'hidetag',
+  reactions: { received: '🔖', generating: '📨', done: '✅' },
   aliases: ['tag'],
   description: 'Silently tag all members in the group',
   usage: '.tag <message> (or reply to media)',

@@ -2,6 +2,7 @@
 const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 module.exports = {
   name: 'gayrate',
+  reactions: { received: '🌈', done: '💯' },
   aliases: ['gay'],
   category: 'fun',
   description: 'Playful gay percentage. Reply or mention a user.',

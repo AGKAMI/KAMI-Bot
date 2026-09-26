@@ -19,6 +19,7 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 module.exports = {
   name: 'sticker',
+  reactions: { received: '🎨', generating: '🪄', done: '🩵' },
   aliases: ['s', 'stiker', 'stc'],
   description: 'Convert image or video to sticker (auto compression)',
   usage: '.sticker (reply to media)',

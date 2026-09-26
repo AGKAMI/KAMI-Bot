@@ -8,6 +8,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'antilink',
+  reactions: { received: '🚧', done: '🚫' },
   aliases: [],
   category: 'admin',
   description: 'Configure antilink protection (delete/kick/warn)',

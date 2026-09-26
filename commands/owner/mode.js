@@ -10,6 +10,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'mode',
+  reactions: { received: '🔘', done: '🎛️' },
   aliases: ['botmode', 'privatemode', 'publicmode'],
   description: 'Toggle bot between private and public mode',
   usage: '.mode <private/public>',

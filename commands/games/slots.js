@@ -13,6 +13,7 @@ const TWO_MATCH = 2;
 
 module.exports = {
   name: 'slots',
+  reactions: { received: '🎰', done: '💰' },
   description: 'Spin the slot machine',
   aliases: ['slot', 'spin'],
   category: 'games',

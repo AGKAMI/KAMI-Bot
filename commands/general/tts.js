@@ -7,6 +7,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'tts',
+  reactions: { received: '🗣️', generating: '🔊', done: '🎧' },
   aliases: ['speak', 'say'],
   category: 'general',
   description: 'Convert text to speech using TTS-Nova',

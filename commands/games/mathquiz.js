@@ -2,6 +2,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 const quiz = new Map();
 module.exports = {
   name: 'mathquiz',
+  reactions: { received: '➕', done: '🎓' },
   description: 'Solve random math problems',
   category: 'games',
   aliases: ['math', 'mq'],

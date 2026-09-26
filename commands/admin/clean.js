@@ -6,6 +6,7 @@ const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'clean',
+  reactions: { received: '🧹', done: '✨' },
   aliases: ['purge', 'clear'],
   category: 'admin',
   description: 'Clean messages (all or from specific user if replied)',

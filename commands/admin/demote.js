@@ -26,6 +26,7 @@ function getOwnerJid(sock) {
 
 module.exports = {
   name: 'demote',
+  reactions: { received: '📉', done: '⬇️' },
   category: 'admin',
   description: 'Demote admin to regular member',
   usage: '.demote @user',

@@ -8,6 +8,7 @@ const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'dmblocker',
+  reactions: { received: '📭', done: '🚫' },
   aliases: ['dmblock', 'private', 'selfmode'],
   category: 'owner',
   description: 'Toggle DM blocker and manage approved numbers',

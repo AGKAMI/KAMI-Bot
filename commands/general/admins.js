@@ -6,6 +6,7 @@ const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
   name: 'admins',
+  reactions: { received: '🛡️', done: '👥' },
   aliases: ['adminlist', 'listadmin'],
   category: 'general',
   description: 'List all group admins',

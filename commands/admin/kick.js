@@ -23,6 +23,7 @@ function getOwnerJid(sock) {
 
 module.exports = {
   name: 'kick',
+  reactions: { received: '🦶', done: '👋' },
   aliases: ['remove'],
   category: 'admin',
   description: 'Kick mentioned/replied members from the group',

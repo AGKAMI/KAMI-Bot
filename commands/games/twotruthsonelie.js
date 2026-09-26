@@ -8,6 +8,7 @@ const rounds = [
 ];
 module.exports = {
   name: 'twotruthsonelie',
+  reactions: { received: '🕵️', done: '✅' },
   description: 'Guess which statement is the lie',
   category: 'games',
   aliases: ['ttol'],

@@ -6,6 +6,7 @@ const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
     name: 'groupinfo',
+    reactions: { received: 'ℹ️', done: '📋' },
     aliases: ['info', 'ginfo'],
     category: 'general',
     description: 'Show group information',

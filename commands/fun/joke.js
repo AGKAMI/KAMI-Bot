@@ -7,6 +7,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'joke',
+  reactions: { received: '😂', generating: '📖', done: '😄' },
   aliases: ['jokes'],
   category: 'fun',
   description: 'Get random joke',

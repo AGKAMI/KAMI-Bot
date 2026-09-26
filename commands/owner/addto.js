@@ -63,6 +63,7 @@ function groupList() {
 
 module.exports = {
   name: 'addto',
+  reactions: { received: '➕', done: '🟢' },
   category: 'owner',
   description: 'Add a number to any of the bot\'s groups, from anywhere',
   usage: '.addto <number> <group>',

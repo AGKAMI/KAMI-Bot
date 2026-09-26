@@ -3,6 +3,7 @@ const config = require('../../config');
 
 module.exports = {
   name: 'activity',
+  reactions: { received: '📊', done: '📈' },
   aliases: ['audit', 'log'],
   description: 'View admin activity or command audit log',
   usage: 'activity [admin @mention] [days]',

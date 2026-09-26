@@ -12,6 +12,7 @@ const API_KEY = 'prince';
 
 module.exports = {
   name: 'megumin',
+  reactions: { received: '🔮', generating: '⬇️', done: '💥' },
   aliases: ['meguminnsfw'],
   category: 'anime',
   description: 'Get random megumin NSFW anime images',

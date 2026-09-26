@@ -8,6 +8,7 @@ const database = require('../../database');
 
 module.exports = {
     name: 'mute',
+    reactions: { received: '🔇', done: '✅' },
     aliases: ['close', 'closegroup'],
     category: 'admin',
     description: 'Close group (only admins can send messages)',

@@ -19,6 +19,7 @@ function phoneToJid(phone) {
 
 module.exports = {
   name: 'add',
+  reactions: { received: '🆕', done: '🟢' },
   category: 'admin',
   description: 'Add a number to this group',
   usage: '.add <number>',

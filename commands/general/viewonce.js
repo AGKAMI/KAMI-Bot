@@ -7,6 +7,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'viewonce',
+  reactions: { received: '👁️', done: '💥' },
   aliases: ['readvo', 'read', 'vv', 'readviewonce'],
   category: 'general',
   description: 'Reveal view-once messages (images/videos/audio)',

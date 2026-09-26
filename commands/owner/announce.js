@@ -144,6 +144,7 @@ async function sendToTarget(sock, target, type, quoted, mediaBuffer) {
 
 module.exports = {
   name: 'announce',
+  reactions: { received: '📢', generating: '📣', done: '✅' },
   aliases: ['blast', 'shout'],
   category: 'owner',
   description: 'Forward a replied message to CPM groups with newsletter branding',
@@ -215,9 +216,6 @@ module.exports = {
           }
         }
       }
-
-      // ── React ⏳ ──────────────────────────────────────────
-      await extra.react('⏳');
 
       // ── Send ALL targets in parallel — no delays ──────────
       const results = await Promise.allSettled(

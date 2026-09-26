@@ -10,6 +10,7 @@ const reportCounters = new Map();
 
 module.exports = {
     name: 'report',
+    reactions: { received: '🚨', done: '📢' },
     aliases: ['flag', 'complain'],
     category: 'admin',
     description: 'Report a message to admins via DM',
@@ -240,10 +241,6 @@ module.exports = {
                 : `✅ SUCCESS\n\n🚨 Report #${reportNum} sent to ${dmed} admin(s)`;
 
             await extra.reply(reporterMsg);
-
-            await sock.sendMessage(from, {
-                react: { text: '🚨', key: msg.key }
-            });
 
         } catch (error) {
             await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);

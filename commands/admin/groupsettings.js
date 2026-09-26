@@ -53,6 +53,7 @@ async function sendDashboard(sock, chatId, quoted) {
 
 module.exports = {
   name: 'settings',
+  reactions: { received: '⚙️', done: '🧰' },
   aliases: ['groupsettings', 'toggles'],
   category: 'admin',
   description: 'One-message dashboard: toggle every group setting',

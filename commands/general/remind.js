@@ -12,6 +12,7 @@ const firedReminders = new Map(); // reminderId → fired reminder data (1h TTL,
 
 module.exports = {
     name: 'remind',
+    reactions: { received: '⏰', done: '🔔' },
     aliases: ['reminder', 'remindme'],
     category: 'general',
     description: 'Set a reminder, list active ones, or cancel a reminder',

@@ -14,6 +14,7 @@ const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG } = requ
 const { buildImage } = require('./utils/imageText');
 const { handleButtonResponse, requireAdmin } = require('./utils/buttonHelper');
 const { hasActiveSession, getApplicantState, sendProgressiveResponse } = require('./commands/crew/applyInteractive');
+const { runWithReactions, stageEmoji } = require('./utils/progressReaction');
 
 // All admin command buttons are admin-only
 requireAdmin('admin');
@@ -738,10 +739,17 @@ const handleMessage = async (sock, msg) => {
 
         if (mode === 'bot') {
           const prefixList = ['.', '/', '#'];
-          if (prefixList.includes(text?.trim()[0])) {
-            sock.sendMessage(jid, {
-              react: { text: '⏳', key: msg.key }
-            }).catch(() => {});
+          const trimmed = (text || '').trim();
+          if (prefixList.includes(trimmed[0])) {
+            // Progressive reactions already stage known commands — don't
+            // double-react with a generic ⏳ on top of them.
+            const candidate = trimmed.slice(1).trim().split(/\s+/)[0]?.toLowerCase();
+            const staged = config.progressReactions && candidate && commands.has(candidate);
+            if (!staged) {
+              sock.sendMessage(jid, {
+                react: { text: '⏳', key: msg.key }
+              }).catch(() => {});
+            }
           }
         }
 
@@ -1420,7 +1428,7 @@ const handleMessage = async (sock, msg) => {
     console.log(`Executing command: ${commandName} from ${sender}`);
     
     try {
-      await command.execute(sock, msg, args, {
+      const commandExtra = {
         from,
         sender,
         isGroup,
@@ -1454,8 +1462,22 @@ const handleMessage = async (sock, msg) => {
           } catch (err) {
             console.error(`[REACT ERROR] Failed to react in ${from}:`, err.message);
           }
+        },
+        // Fire a reaction stage by name ('received' | 'generating' | 'done' |
+        // 'error') or pass a literal emoji to override this command's set.
+        stage: async (nameOrEmoji) => {
+          try {
+            const emoji = stageEmoji(command, nameOrEmoji);
+            return await sock.sendMessage(from, { react: { text: emoji, key: msg.key } });
+          } catch (err) {
+            console.error(`[STAGE ERROR] Failed to react in ${from}:`, err.message);
+          }
         }
-      });
+      };
+
+      await runWithReactions(command, { sock, from, msg }, () =>
+        command.execute(sock, msg, args, commandExtra)
+      );
       // Log successful command
       database.logCommand({
         command: commandName,

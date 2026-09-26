@@ -10,6 +10,7 @@ const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
   name: 'stats',
+  reactions: { received: '📊', done: '⭐' },
   aliases: ['memberstats', 'mystats'],
   description: 'View member activity stats and role progression',
   usage: '.crew stats [@user]',

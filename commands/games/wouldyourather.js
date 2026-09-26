@@ -13,6 +13,7 @@ const questions = [
 ];
 module.exports = {
   name: 'wouldyourather',
+  reactions: { received: '❓', done: '🅰️' },
   description: 'Would you rather — pick between two options',
   category: 'games',
   aliases: ['wyr'],

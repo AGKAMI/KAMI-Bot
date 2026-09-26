@@ -15,6 +15,7 @@ const parsePhoneNumber = (input) => {
 
 module.exports = {
   name: 'unblock',
+  reactions: { received: '⭕', done: '🔓' },
   aliases: [],
   category: 'owner',
   description: 'Unblock a user',

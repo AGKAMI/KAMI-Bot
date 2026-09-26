@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'meme',
+  reactions: { received: '🤣', generating: '🖼️', done: '😜' },
   aliases: ['memes'],
   category: 'fun',
   description: 'Get random memes',

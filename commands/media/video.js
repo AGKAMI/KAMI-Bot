@@ -31,6 +31,7 @@ function processQueue() {
 
 module.exports = {
   name: 'ytvideo',
+  reactions: { received: '🎬', generating: '⬇️', done: '📺' },
   aliases: ['ytv', 'ytmp4', 'ytvid', 'video'],
   category: 'media',
   description: 'Download video from YouTube',
@@ -75,7 +76,6 @@ module.exports = {
         }
 
         sent = await extra.reply(`🔄 _searching..._`);
-        await extra.react('🔄');
 
         let videoData;
         try {
@@ -131,10 +131,8 @@ module.exports = {
         }, { quoted: msg });
 
         await extra.edit(sent.key, `✅ *Sent!* _${videoData.title || 'video'}_`);
-        await extra.react('✅');
       } catch (error) {
         console.error('[VIDEO] Error:', error?.message || error);
-        try { await extra.react('❌'); } catch (_) {}
         if (sent) {
           try { await extra.edit(sent.key, `❌ _${pick(SLANG.error)} — ${(error?.message || 'try again')}_`); } catch (_) {}
         } else {

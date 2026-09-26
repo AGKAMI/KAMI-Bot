@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setgoodbyestyle',
+  reactions: { received: '🎨', done: '✏️' },
   aliases: ['goodbyestyle'],
   category: 'admin',
   description: 'Customize text overlay on goodbye image',

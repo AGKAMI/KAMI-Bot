@@ -7,6 +7,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'calc',
+    reactions: { received: '🧮', done: '✅' },
     aliases: ['calculate', 'math'],
     category: 'utility',
     description: 'Calculate math expressions',

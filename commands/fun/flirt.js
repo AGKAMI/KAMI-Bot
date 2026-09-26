@@ -6,6 +6,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'flirt',
+    reactions: { received: '💘', done: '💓' },
     aliases: ['pickup', 'pickupline'],
     category: 'fun',
     description: 'Get a random flirty pickup line',

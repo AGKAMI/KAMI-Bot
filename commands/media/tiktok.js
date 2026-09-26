@@ -168,6 +168,7 @@ async function methodTikcdn(url) {
 
 module.exports = {
   name: 'tiktok',
+  reactions: { received: '📱', generating: '⬇️', done: '🎞️' },
   aliases: ['tt', 'ttdl', 'tiktokdl'],
   category: 'media',
   description: 'Download TikTok videos (no watermark)',
@@ -189,8 +190,6 @@ module.exports = {
       if (!url || !TIKTOK_REGEX.test(url)) {
         return extra.reply(`📝 _${pick(SLANG.vibe)}, send a TikTok link after the command_\n\n*.tt <tiktok url>*`);
       }
-
-      await extra.react('🔄');
 
       const methods = [
         { name: 'tikwm', fn: () => methodTikwm(url) },
@@ -225,14 +224,10 @@ module.exports = {
       }
 
       if (!success) {
-        await extra.react('❌');
         return extra.reply(`❌ _${pick(SLANG.error)} — could not download the video, try a different link_`);
       }
-
-      await extra.react('✅');
     } catch (error) {
       console.error('[TT] command error:', error);
-      await extra.react('❌');
       await extra.reply(`❌ _${pick(SLANG.error)} — error processing request, try again_`);
     }
   }

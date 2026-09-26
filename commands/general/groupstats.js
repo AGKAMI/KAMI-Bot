@@ -6,6 +6,7 @@ const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
     name: 'groupstats',
+    reactions: { received: '📊', done: '🥧' },
     aliases: ['stats', 'leaderboard', 'gstats', 'topmembers', 'msgs', 'messagestats'],
     category: 'general',
     description: 'Show today\'s group chat statistics',

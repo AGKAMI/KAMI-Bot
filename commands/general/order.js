@@ -342,6 +342,7 @@ onButton('order:item:', async (sock, msg, from, sender, btnId) => {
 // ── Command definition ───────────────────────────────────────
 module.exports = {
   name: 'order',
+  reactions: { received: '🛒', done: '🧾' },
   aliases: ['makeorder', 'shop', 'buy'],
   category: 'general',
   description: 'Browse and order CPM products',

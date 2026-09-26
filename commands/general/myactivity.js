@@ -5,6 +5,7 @@ const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
     name: 'myactivity',
+    reactions: { received: '🏃', done: '📈' },
     aliases: ['mystats', 'mymsgs', 'rank'],
     category: 'general',
     description: 'Check your activity stats for today',

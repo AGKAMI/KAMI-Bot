@@ -7,6 +7,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'broadcast',
+    reactions: { received: '📻', done: '📡' },
     aliases: ['bc'],
     category: 'owner',
     description: 'Broadcast message to all chats',

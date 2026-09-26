@@ -6,6 +6,7 @@ const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'grouplink',
+    reactions: { received: '🔗', done: '🔓' },
     aliases: ['link', 'invite'],
     category: 'admin',
     description: 'Get group invite link',

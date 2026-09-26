@@ -10,6 +10,7 @@ const VALID_COUNTRIES = ['india','malaysia', 'thailand', 'china', 'indonesia', '
 
 module.exports = {
   name: 'pies',
+  reactions: { received: '🥧', generating: '🍳', done: '😋' },
   aliases: ['pie', 'india', 'malaysia', 'thailand', 'china', 'indonesia', 'japan', 'korea', 'vietnam'],
   category: 'fun',
   description: 'Get random pies images by country',

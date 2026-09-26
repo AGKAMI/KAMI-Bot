@@ -2,6 +2,7 @@ const config = require('../../config');
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 module.exports = {
   name: 'rps',
+  reactions: { received: '✊', done: '🤝' },
   description: 'Play rock paper scissors',
   category: 'games',
   aliases: ['rockpaperscissors'],

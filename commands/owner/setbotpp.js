@@ -10,6 +10,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 module.exports = {
   name: 'setbotpp',
+  reactions: { received: '🖼️', generating: '🔄', done: '📸' },
   aliases: ['setppbot', 'setpp'],
   category: 'owner',
   description: 'Set bot profile picture from image or sticker',

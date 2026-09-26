@@ -16,6 +16,7 @@ const parseNumber = (input) => {
 
 module.exports = {
   name: 'unban',
+  reactions: { received: '⛓️', done: '🔓' },
   aliases: [],
   category: 'admin',
   description: 'Unban a user from the bot',

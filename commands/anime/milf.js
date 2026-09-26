@@ -12,6 +12,7 @@ const API_KEY = 'prince';
 
 module.exports = {
   name: 'milf',
+  reactions: { received: '🔥', generating: '⬇️', done: '💋' },
   aliases: ['milfnsfw'],
   category: 'anime',
   description: 'Get random milf NSFW anime images',

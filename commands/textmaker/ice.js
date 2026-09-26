@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'ice',
+  reactions: { received: '❄️', generating: '🖌️', done: '🧊' },
   aliases: [],
   category: 'textmaker',
   description: 'Create ice text effect',

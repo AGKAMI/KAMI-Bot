@@ -26,6 +26,7 @@ function getPending(ownerJid) {
 
 module.exports = {
   name: 'setteamimage',
+  reactions: { received: '🖼️', generating: '🎨', done: '⭐' },
   aliases: ['setteamimg'],
   category: 'owner',
   description: 'Set a team card image (reply to an image)',

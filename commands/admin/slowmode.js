@@ -11,6 +11,7 @@ const lastMessageTime = new Map();
 
 module.exports = {
   name: 'slowmode',
+  reactions: { received: '🐢', done: '⏱️' },
   aliases: ['sm', 'cooldown'],
   category: 'admin',
   description: 'Set message cooldown per user',

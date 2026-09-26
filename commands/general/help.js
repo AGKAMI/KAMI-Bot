@@ -10,6 +10,7 @@ function getCommands() {
 
 module.exports = {
   name: 'help',
+  reactions: { received: '❓', done: '📖' },
   aliases: ['cmd', 'command'],
   category: 'general',
   description: 'Get detailed info about a command',

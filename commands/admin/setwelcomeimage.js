@@ -9,6 +9,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setwelcomeimage',
+  reactions: { received: '📸', generating: '🖼️', done: '🎊' },
   aliases: ['setwelcomeimg'],
   category: 'admin',
   description: 'Set custom welcome image (reply to image/sticker)',

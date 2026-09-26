@@ -8,6 +8,7 @@ const database = require('../../database');
 const config = require('../../config');
 module.exports = {
   name: 'setname',
+  reactions: { received: '📛', done: '✏️' },
   aliases: ['rename', 'groupname'],
   category: 'admin',
   description: 'Change group name/subject',

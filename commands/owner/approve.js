@@ -16,6 +16,7 @@ const parseNumber = (input) => {
 
 module.exports = {
   name: 'approve',
+  reactions: { received: '👍', done: '✅' },
   aliases: [],
   category: 'owner',
   description: 'Approve a number to bypass DM blocker',

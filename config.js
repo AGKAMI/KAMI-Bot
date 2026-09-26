@@ -28,6 +28,7 @@ module.exports = {
     autoSticker: false,
     autoReact: false,
     autoReactMode: 'bot', // set bot or all via cmd
+    progressReactions: true, // staged command reactions: received -> generating -> done
     autoDownload: false,
     
     // Group Settings Defaults

@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'simage',
+  reactions: { received: '🩹', generating: '🔄', done: '📷' },
   aliases: ['toimg', 'stickertoimg', 'sticker2img', 'svideo'],
   category: 'general',
   description: 'Convert sticker to image (PNG)',

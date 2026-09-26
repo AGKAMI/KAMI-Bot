@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'truth',
+    reactions: { received: '🤥', done: '🤞' },
     aliases: [],
     category: 'fun',
     description: 'Get a random truth question',

@@ -2,6 +2,7 @@ const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 const games = new Map();
 module.exports = {
   name: 'groupguess',
+  reactions: { received: '👥', done: '🎯' },
   description: 'Group number guessing game — closest wins',
   category: 'games',
   aliases: ['gguess'],

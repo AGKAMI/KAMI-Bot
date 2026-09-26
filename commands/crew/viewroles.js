@@ -9,6 +9,7 @@ const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'viewroles',
+  reactions: { received: '📜', done: '👑' },
   aliases: ['rolemenu', 'rolelist'],
   category: 'crew',
   description: 'Show role hierarchy',

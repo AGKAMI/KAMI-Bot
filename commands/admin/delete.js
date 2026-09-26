@@ -7,6 +7,7 @@ const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'delete',
+  reactions: { received: '✖️', done: '🗑️' },
   aliases: ['del'],
   description: 'Delete a replied message',
   usage: '.delete (reply to a message)',

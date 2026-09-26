@@ -23,6 +23,7 @@ let activeAudioDownloads = 0;
 
 module.exports = {
   name: 'song',
+  reactions: { received: '🎵', generating: '⬇️', done: '🎶' },
   aliases: ['play', 'music', 'yta'],
   category: 'media',
   description: 'Download audio from YouTube',

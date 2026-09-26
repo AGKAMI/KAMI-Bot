@@ -55,6 +55,7 @@ function formatDuration(ms) {
 
 module.exports = {
   name: 'giveaway',
+  reactions: { received: '🎁', generating: '🎟️', done: '🎉' },
   aliases: ['gw', 'give'],
   category: 'admin',
   description: 'Run a giveaway — react with 🎁 to enter. Reply to media to use as visual.',

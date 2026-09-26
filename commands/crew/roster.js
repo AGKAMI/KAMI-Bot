@@ -10,6 +10,7 @@ const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
   name: 'roster',
+  reactions: { received: '📋', done: '👥' },
   aliases: ['members'],
   description: 'Show all crew members with activity stats',
   usage: '.crew roster',

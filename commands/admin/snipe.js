@@ -11,6 +11,7 @@ const typeEmoji = SnipeStoreClass.typeEmoji;
 
 module.exports = {
   name: 'snipe',
+  reactions: { received: '🎯', done: '💬' },
   aliases: ['deleted', 'lastdel'],
   category: 'admin',
   description: 'See deleted messages history',

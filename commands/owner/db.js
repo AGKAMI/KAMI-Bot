@@ -23,6 +23,7 @@ const TABLES = {
 
 module.exports = {
   name: 'db',
+  reactions: { received: '🗃️', done: '📋' },
   aliases: ['database', 'dbmanager'],
   category: 'owner',
   description: 'Database management (owner only)',

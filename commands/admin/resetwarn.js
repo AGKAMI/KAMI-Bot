@@ -8,6 +8,7 @@ const { bold, pick, SLANG, mention } = require('../../utils/format');
 
 module.exports = {
   name: 'resetwarn',
+  reactions: { received: '🧽', done: '⭕' },
   aliases: ['resetwarning', 'clearwarn', 'unwarn', 'delwarn'],
   category: 'admin',
   description: 'Reset all warnings for a user',

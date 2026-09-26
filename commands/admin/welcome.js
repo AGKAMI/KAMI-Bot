@@ -8,6 +8,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'welcome',
+  reactions: { received: '👋', done: '🎉' },
   aliases: ['welcomeon', 'welcomeoff'],
   category: 'admin',
   description: 'Enable/disable welcome messages',

@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'hacker',
+  reactions: { received: '💻', generating: '🖌️', done: '🟢' },
   aliases: [],
   category: 'textmaker',
   description: 'Create hacker text effect',

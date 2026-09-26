@@ -12,6 +12,7 @@ const API_KEY = 'prince';
 
 module.exports = {
   name: 'waifu',
+  reactions: { received: '👘', generating: '⬇️', done: '🌸' },
   aliases: ['waifusfw'],
   category: 'anime',
   description: 'Get random waifu SFW anime images',

@@ -10,6 +10,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'antitag',
+  reactions: { received: '🏷️', done: '⛔' },
   aliases: ['antimention', 'at'],
   description: 'Configure anti-tag protection (tagall/hidetag)',
   usage: '.antitag <on/off/set/get>',

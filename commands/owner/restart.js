@@ -8,6 +8,7 @@ const database = require('../../database');
 
 module.exports = {
   name: 'restart',
+  reactions: { received: '🔄', generating: '⚙️', done: '🔁' },
   aliases: ['reboot', 'reload'],
   category: 'owner',
   description: 'Restart the bot (Owner Only)',

@@ -10,6 +10,7 @@ const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
   name: 'inactive',
+  reactions: { received: '😴', done: '🚪' },
   aliases: [],
   description: 'Show inactive members (no messages in X days)',
   usage: '.crew inactive [days]',

@@ -58,6 +58,7 @@ function aggregateStats(groupId, period) {
 
 module.exports = {
     name: 'leaderboard',
+    reactions: { received: '🏆', done: '🥇' },
     aliases: ['lb', 'top', 'ranking'],
     category: 'general',
     description: 'Show the most active members in the group',

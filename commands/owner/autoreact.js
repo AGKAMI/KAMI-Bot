@@ -7,6 +7,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'autoreact',
+  reactions: { received: '❤️', done: '😀' },
   aliases: ['ar'],
   category: 'owner',
   description: 'Configure automatic reactions to messages',

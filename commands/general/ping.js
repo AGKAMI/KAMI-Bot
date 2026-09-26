@@ -6,6 +6,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'ping',
+    reactions: { received: '🏓', done: '🟢' },
     aliases: ['p'],
     category: 'general',
     description: 'Check bot response time',

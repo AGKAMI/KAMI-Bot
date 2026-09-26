@@ -14,6 +14,7 @@ function isOwner(sender) {
 
 module.exports = {
     name: 'unmute',
+    reactions: { received: '🔊', done: '🔇' },
     aliases: ['open', 'opengroup'],
     category: 'admin',
     description: 'Open group (all members can send messages)',

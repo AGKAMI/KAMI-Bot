@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'github',
+    reactions: { received: '🐙', generating: '⬇️', done: '📦' },
     aliases: ['repo', 'git', 'source', 'sc', 'script'],
     category: 'general',
     description: 'Show bot GitHub repository and statistics',

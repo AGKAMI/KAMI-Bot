@@ -9,6 +9,7 @@ const database = require('../../database');
 const config = require('../../config');
 module.exports = {
   name: 'setgrouppp',
+  reactions: { received: '📸', generating: '📐', done: '🖼️' },
   aliases: ['setgrouppic', 'grouppp', 'setpp'],
   category: 'admin',
   description: 'Set group profile picture (reply to an image)',

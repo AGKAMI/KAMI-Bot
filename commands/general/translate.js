@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'translate',
+  reactions: { received: '🌍', generating: '🔤', done: '💬' },
   aliases: ['tr', 'trans'],
   category: 'general',
   description: 'Translate text to another language',

@@ -33,6 +33,7 @@ const SUBCOMMANDS = Object.keys(subHandlers);
 
 module.exports = {
   name: 'crew',
+  reactions: { received: '👥', done: '🎖️' },
   aliases: ['ss', 'slammed'],
   category: 'crew',
   description: 'Slammed Society crew management',

@@ -8,6 +8,7 @@ const { sendButtons } = require('../../utils/buttonHelper');
 
 module.exports = {
     name: 'owner',
+    reactions: { received: '👑', done: '🏠' },
     aliases: ['creator', 'dev', 'botowner'],
     category: 'general',
     description: 'Show bot owner contact information',

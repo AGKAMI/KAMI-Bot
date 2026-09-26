@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setwelcomestyle',
+  reactions: { received: '🎨', done: '🎀' },
   aliases: ['welcomestyle'],
   category: 'admin',
   description: 'Customize text overlay on welcome image',

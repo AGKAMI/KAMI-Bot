@@ -10,6 +10,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'promote',
+  reactions: { received: '📈', done: '⬆️' },
   category: 'admin',
   description: 'Promote member to group admin',
   usage: '.promote @user',

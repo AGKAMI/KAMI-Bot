@@ -12,6 +12,7 @@ const API_KEY = 'prince';
 
 module.exports = {
   name: 'hneko',
+  reactions: { received: '🐱', generating: '⬇️', done: '🖼️' },
   aliases: ['hnekonsfw'],
   category: 'anime',
   description: 'Get random hneko NSFW anime images',

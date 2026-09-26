@@ -143,6 +143,7 @@ async function sendConfirmation(sock, from, teamKey) {
 
 module.exports = {
   name: 'start',
+  reactions: { received: '🚀', done: '🎬' },
   aliases: [],
   category: 'general',
   description: 'Start menu - apply for security teams, view commands',

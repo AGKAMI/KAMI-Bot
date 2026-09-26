@@ -9,6 +9,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'warn',
+  reactions: { received: '⚠️', done: '🛑' },
   aliases: ['warning'],
   category: 'admin',
   description: 'Warn a user',

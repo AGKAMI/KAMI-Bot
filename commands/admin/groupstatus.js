@@ -14,6 +14,7 @@ const PURPLE_COLOR = '#9C27B0';
 
 module.exports = {
   name: 'groupstatus',
+  reactions: { received: '📤', generating: '🖼️', done: '📲' },
   aliases: ['togstatus', 'swgc', 'gs', 'gstatus'],
   description: 'Post replied media or text as a WhatsApp group status (new Group Status feature).',
   usage: '.groupstatus [caption]  (reply to image/video/audio) OR .groupstatus your text',

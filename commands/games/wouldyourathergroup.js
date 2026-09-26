@@ -13,6 +13,7 @@ const questions = [
 ];
 module.exports = {
   name: 'wouldyourathergroup',
+  reactions: { received: '❓', done: '🅱️' },
   description: 'Group would you rather game',
   category: 'games',
   aliases: ['wyrg'],

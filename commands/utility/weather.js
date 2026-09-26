@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'weather',
+  reactions: { received: '🌤️', generating: '🌦️', done: '🌡️' },
   aliases: ['w', 'clima'],
   category: 'utility',
   description: 'Get weather for a city',

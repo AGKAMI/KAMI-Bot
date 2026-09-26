@@ -9,6 +9,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setbotname',
+  reactions: { received: '📝', done: '🏷️' },
   aliases: ['setname', 'botname'],
   category: 'owner',
   description: 'Change bot name',

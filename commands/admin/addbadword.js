@@ -8,6 +8,7 @@ const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'addbadword',
+  reactions: { received: '🤬', done: '🚫' },
   aliases: ['addword', 'banword'],
   category: 'admin',
   description: 'Add pattern to bad word blacklist',

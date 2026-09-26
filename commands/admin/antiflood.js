@@ -9,6 +9,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'antiflood',
+  reactions: { received: '🌊', done: '🐢' },
   aliases: ['flood', 'spamprotect'],
   category: 'admin',
   description: 'Configure anti-flood protection',

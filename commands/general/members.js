@@ -6,6 +6,7 @@ const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'members',
+  reactions: { received: '👥', done: '📇' },
   aliases: ['membercount', 'count'],
   category: 'general',
   description: 'Show group member count',

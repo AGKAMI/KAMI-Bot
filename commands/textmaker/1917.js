@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: '1917',
+  reactions: { received: '🎖️', generating: '🖌️', done: '⭐' },
   aliases: [],
   category: 'textmaker',
   description: 'Create 1917 style text effect',

@@ -10,6 +10,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'lyrics',
+  reactions: { received: '🎤', generating: '📜', done: '🎼' },
   aliases: ['lyric', 'lirik'],
   category: 'media',
   description: 'Get lyrics of a song',

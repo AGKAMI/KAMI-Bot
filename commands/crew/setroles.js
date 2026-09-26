@@ -10,6 +10,7 @@ const { bold, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'setroles',
+  reactions: { received: '🎖️', done: '✏️' },
   aliases: ['roleset'],
   category: 'crew',
   description: 'Set custom role hierarchy',

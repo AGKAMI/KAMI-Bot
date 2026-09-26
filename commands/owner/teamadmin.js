@@ -21,6 +21,7 @@ function phoneToJid(phone) {
 
 module.exports = {
   name: 'teamadmin',
+  reactions: { received: '🦸', done: '🛡️' },
   aliases: ['ta', 'teamadminapprove'],
   category: 'owner',
   description: 'Manage SS team admins (approve/remove/list)',

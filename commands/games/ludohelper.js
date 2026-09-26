@@ -2,6 +2,7 @@ const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 const state = new Map();
 module.exports = {
   name: 'ludo',
+  reactions: { received: '🎯', done: '🏆' },
   description: 'Ludo dice roller and score tracker',
   category: 'games',
   aliases: ['ludodice'],

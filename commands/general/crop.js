@@ -38,6 +38,7 @@ const resolveMedia = (message) => {
 
 module.exports = {
   name: 'crop',
+  reactions: { received: '✂️', generating: '🔲', done: '🖼️' },
   aliases: ['square', 'cropper'],
   description: 'Crop sticker/image/video to a perfect square sticker (animated for videos)',
   usage: '.crop (reply to sticker/image/video)',

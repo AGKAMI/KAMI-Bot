@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'blackpink',
+  reactions: { received: '🖤', generating: '🖌️', done: '💖' },
   aliases: [],
   category: 'textmaker',
   description: 'Create blackpink text effect',

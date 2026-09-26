@@ -73,6 +73,7 @@ function buildTeamText(teamKey, opts = {}) {
 
 module.exports = {
   name: 'teaminfo',
+  reactions: { received: '🏟️', done: '📊' },
   aliases: ['team', 'teams'],
   category: 'general',
   description: 'View team details and apply',

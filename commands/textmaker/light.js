@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'light',
+  reactions: { received: '💡', generating: '🖌️', done: '✨' },
   aliases: [],
   category: 'textmaker',
   description: 'Create light text effect',

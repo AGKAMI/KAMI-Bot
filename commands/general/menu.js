@@ -88,6 +88,7 @@ function buildFullMenu(pushName) {
 
 module.exports = {
   name: 'menu',
+  reactions: { received: '📖', done: '📋' },
   aliases: ['commands'],
   category: 'general',
   description: 'Show all available commands',

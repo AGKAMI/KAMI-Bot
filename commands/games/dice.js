@@ -1,6 +1,7 @@
 const { bold, italic, pick, SLANG } = require('../../utils/format');
 module.exports = {
   name: 'dice',
+  reactions: { received: '🎲', done: '🔢' },
   description: 'Roll a dice (default d6)',
   category: 'games',
   aliases: ['roll'],

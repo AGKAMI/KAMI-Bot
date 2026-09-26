@@ -7,6 +7,7 @@ function mask(word, guessed) {
 const games = new Map();
 module.exports = {
   name: 'hangman',
+  reactions: { received: '🔤', done: '🪢' },
   description: 'Play hangman — guess the word letter by letter',
   category: 'games',
   aliases: ['hang'],

@@ -445,8 +445,6 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
       return extra.reply(`📝 _${pick(SLANG.vibe)}, send me an instagram post or reel link_\n\n_Usage:_\n.igs <url>\n.igsc <url>`);
     }
 
-    await sock.sendMessage(extra.from, { react: { text: '📥', key: msg.key } });
-
     const downloadData = await igdl(urlMatch[0]).catch(() => null);
     if (!downloadData || !downloadData.data) {
       return extra.reply(`❌ _${pick(SLANG.error)}, couldn't fetch from that instagram link_`);
@@ -581,6 +579,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
 
 module.exports = {
   name: 'igs',
+  reactions: { received: '📷', generating: '⬇️', done: '🖼️' },
   aliases: ['igsticker'],
   description: 'Convert Instagram post/reel to sticker (maintains aspect ratio with padding)',
   usage: '.igs <Instagram URL>',

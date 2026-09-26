@@ -34,6 +34,7 @@ function isAfkUser(jid) {
 
 module.exports = {
     name: 'afk',
+    reactions: { received: '💤', done: '🔙' },
     aliases: ['away', 'brb'],
     category: 'general',
     description: 'Set your AFK status — auto-replies when someone mentions you',

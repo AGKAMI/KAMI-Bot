@@ -9,6 +9,7 @@ const os = require('os');
 
 module.exports = {
   name: 'status',
+  reactions: { received: '💚', done: '📈' },
   aliases: ['botstats', 'stats'],
   category: 'general',
   description: 'Show bot status and statistics',

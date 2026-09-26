@@ -8,6 +8,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'goodbye',
+  reactions: { received: '👋', done: '✅' },
   aliases: ['goodbyeon', 'goodbyeoff'],
   category: 'admin',
   description: 'Enable/disable goodbye messages',

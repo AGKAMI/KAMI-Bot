@@ -2,6 +2,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 const chains = new Map();
 module.exports = {
   name: 'wordchain',
+  reactions: { received: '🧵', done: '📝' },
   description: 'Word chain — each word starts with the last letter',
   category: 'games',
   aliases: ['chain', 'word'],

@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'metallic',
+  reactions: { received: '🪙', generating: '🖌️', done: '🛡️' },
   aliases: [],
   category: 'textmaker',
   description: 'Create metallic text effect',

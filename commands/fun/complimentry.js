@@ -6,6 +6,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'compliment',
+    reactions: { received: '💐', done: '😊' },
     aliases: ['praise', 'compliment'],
     category: 'fun',
     description: 'Get a random compliment',

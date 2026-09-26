@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'purple',
+  reactions: { received: '💜', generating: '🖌️', done: '🌃' },
   aliases: [],
   category: 'textmaker',
   description: 'Create purple text effect',

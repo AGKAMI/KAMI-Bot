@@ -6,6 +6,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
     name: 'dare',
+    reactions: { received: '😈', done: '💥' },
     aliases: [],
     category: 'fun',
     description: 'Get a random dare challenge',

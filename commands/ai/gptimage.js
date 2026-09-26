@@ -12,6 +12,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'gptimage',
+  reactions: { received: '🖌️', generating: '🎨', done: '🖼️' },
   aliases: ['gptimg', 'editimage', 'aiimage', 'vision','gi'],
   category: 'ai',
   description: 'Edit image using GPT Vision with prompt',

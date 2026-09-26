@@ -63,6 +63,7 @@ function groupList() {
 
 module.exports = {
   name: 'removefrom',
+  reactions: { received: '➖', done: '🔴' },
   category: 'owner',
   description: 'Remove a number from any of the bot\'s groups, from anywhere',
   usage: '.removefrom <number> <group>',

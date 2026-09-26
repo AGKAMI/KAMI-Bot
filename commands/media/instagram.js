@@ -47,6 +47,7 @@ function isValidMediaUrl(url) {
 
 module.exports = {
   name: 'instagram',
+  reactions: { received: '📸', generating: '⬇️', done: '🌆' },
   aliases: ['ig', 'insta', 'igdl', 'reels'],
   category: 'media',
   description: 'Download Instagram photos/videos/reels',
@@ -86,10 +87,6 @@ module.exports = {
       if (!isValidUrl) {
         return extra.reply(`❌ _${pick(SLANG.error)}, that's not a valid instagram link — need a post, reel, or video link_`);
       }
-      
-      await sock.sendMessage(chatId, {
-        react: { text: '📥', key: msg.key }
-      });
       
       const downloadData = await igdl(text);
       

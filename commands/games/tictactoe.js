@@ -6,6 +6,7 @@ const tttGames = new Map();
 
 module.exports = {
   name: 'tictactoe',
+  reactions: { received: '⭕', done: '❌' },
   description: 'Play tic tac toe in a group',
   aliases: ['ttt', 'xo'],
   category: 'games',

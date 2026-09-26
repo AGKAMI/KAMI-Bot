@@ -19,6 +19,7 @@ setInterval(() => {
 
 module.exports = {
   name: 'pinterest',
+  reactions: { received: '📌', generating: '⬇️', done: '🖼️' },
   aliases: ['pin', 'pindl', 'pinterestdl'],
   category: 'media',
   description: 'Download images/videos from Pinterest',
@@ -66,10 +67,6 @@ module.exports = {
       }
       
       const pinterestUrl = urlMatch[0];
-      
-      await sock.sendMessage(extra.from, {
-        react: { text: '📥', key: msg.key }
-      });
       
       // Call Pinterest API
       const apiUrl = `https://api.nexray.web.id/downloader/pinterest?url=${encodeURIComponent(pinterestUrl)}`;

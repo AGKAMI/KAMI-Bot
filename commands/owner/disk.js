@@ -12,6 +12,7 @@ const { pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'disk',
+  reactions: { received: '💽', done: '📏' },
   aliases: ['diskusage', 'storage'],
   category: 'owner',
   description: 'Show server disk usage breakdown',

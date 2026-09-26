@@ -8,6 +8,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'ai',
+  reactions: { received: '🧠', generating: '💭', done: '✨' },
   aliases: ['gpt', 'chatgpt', 'ask'],
   category: 'ai',
   description: 'Chat with AI (ChatGPT-style)',

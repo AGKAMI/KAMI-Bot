@@ -11,6 +11,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'take',
+  reactions: { received: '🎒', generating: '⬇️', done: '✅' },
   aliases: ['steal'],
   description: 'Steal a sticker and change its packname',
   usage: '.take [packname] (reply to sticker)',

@@ -15,6 +15,7 @@ const BASE = 'https://meme-api.com/gimme';
 
 module.exports = {
   name: 'memesearch',
+  reactions: { received: '🔍', generating: '⬇️', done: '🖼️' },
   aliases: ['memes', 'sm', 'smeme', 'gifsearch', 'gif'],
   category: 'fun',
   description: 'Search and get memes',

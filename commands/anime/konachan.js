@@ -12,6 +12,7 @@ const API_KEY = 'prince';
 
 module.exports = {
   name: 'konachan',
+  reactions: { received: '🎀', generating: '⬇️', done: '🖼️' },
   aliases: ['konachansfw'],
   category: 'anime',
   description: 'Get random konachan SFW anime images',

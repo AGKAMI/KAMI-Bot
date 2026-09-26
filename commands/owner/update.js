@@ -142,6 +142,7 @@ async function updateViaZip(zipUrl) {
 
 module.exports = {
   name: 'update',
+  reactions: { received: '⬇️', generating: '📦', done: '🆙' },
   aliases: ['upgrade'],
   category: 'owner',
   description: 'Update bot from configured ZIP URL (Owner Only)',

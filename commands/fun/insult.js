@@ -2,6 +2,7 @@
 const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 module.exports = {
   name: 'insult',
+  reactions: { received: '🤬', done: '💢' },
   aliases: ['insultme','burn'],
   category: 'fun',
   description: 'Give a silly insult to a user. Reply or mention to target someone.',

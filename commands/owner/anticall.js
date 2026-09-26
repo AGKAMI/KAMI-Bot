@@ -7,6 +7,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'anticall',
+  reactions: { received: '📵', done: '🛡️' },
   category: 'owner',
   ownerOnly: true,
   description: 'Enable or disable anti-call system',

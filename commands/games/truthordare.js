@@ -25,6 +25,7 @@ const dares = [
 ];
 module.exports = {
   name: 'truthordare',
+  reactions: { received: '🎲', done: '🎭' },
   description: 'Play truth or dare',
   aliases: ['tod'],
   category: 'games',

@@ -7,6 +7,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'ssweb',
+  reactions: { received: '🌐', generating: '📷', done: '🖥️' },
   aliases: ['screenshot', 'ss', 'webss'],
   category: 'general',
   description: 'Take a screenshot of a website',
@@ -24,10 +25,6 @@ module.exports = {
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://' + url;
       }
-      
-      await sock.sendMessage(extra.from, {
-        react: { text: '📥', key: msg.key }
-      });
       
       const screenshotBuffer = await APIs.screenshotWebsite(url);
       

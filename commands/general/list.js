@@ -12,6 +12,7 @@ const { bold, italic, pick, SLANG } = require('../../utils/format');
 
 module.exports = {
   name: 'list',
+  reactions: { received: '📃', done: '📚' },
   aliases: [],
   description: 'List all commands with descriptions',
   usage: '.list',

@@ -2,6 +2,7 @@
 const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
 module.exports = {
   name: 'ship',
+  reactions: { received: '💑', done: '💞' },
   aliases: ['shipit','match'],
   category: 'fun',
   description: 'Ship two users randomly or mention/reply to specific users.',

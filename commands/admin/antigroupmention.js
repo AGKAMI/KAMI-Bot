@@ -9,6 +9,7 @@ const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'antigroupmention',
+  reactions: { received: '📣', done: '🤐' },
   aliases: ['agm'],
   category: 'admin',
   description: 'Configure antigroupmention protection (delete/kick/warn)',
