@@ -235,11 +235,14 @@ const startProgressionEngine = (sock) => {
   setTimeout(() => runProgressionCheck(sock), 5 * 60 * 1000);
   _progressionInterval = setInterval(() => runProgressionCheck(sock), CHECK_INTERVAL);
 
-  // Inactive notices — WEEKLY: one full-list message per group (7-day per-group
-  // cooldown in _state.groups). First scan 5 min after startup is a no-op while
-  // groups are in cooldown; notices fire on the weekly cadence from then on.
+  // Inactive notices — scan hourly + 5 min after startup, but each group's
+  // NOTICE fires at most every 7 days (persisted per-group cooldown in
+  // _state.groups). The short scan cadence is restart-proof: frequent
+  // restarts reset intervals, but the persisted cooldown + the next hourly
+  // scan still catch expiry within an hour. A weekly-only interval would
+  // starve under frequent restarts.
   setTimeout(() => runInactiveCheck(sock), 5 * 60 * 1000);
-  _inactiveInterval = setInterval(() => runInactiveCheck(sock), 7 * 24 * 60 * 60 * 1000);
+  _inactiveInterval = setInterval(() => runInactiveCheck(sock), CHECK_INTERVAL);
 };
 
 const stopProgressionEngine = () => {
