@@ -44,14 +44,10 @@ END:VCARD
                 }
             });
 
-            // Action buttons: call / copy (cta_call + cta_copy via the button helper)
+            // Copy button only — nobody calls the owner, they text
             const firstNumber = dialableNumbers[0] ? String(dialableNumbers[0]).replace(/\D/g, '') : null;
             const actionButtons = [];
             if (firstNumber) {
-                actionButtons.push({
-                    text: '📞 Call the Owner',
-                    phone: firstNumber,
-                });
                 actionButtons.push({
                     text: '📋 Copy Number',
                     displayText: firstNumber,
