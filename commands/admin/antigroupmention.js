@@ -38,10 +38,10 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antigroupmention) {
-          return extra.reply(`✅ SUCCESS\n\nAntigroupmention was already on, ${voice.tag('neutral')}`);
+          return extra.reply(`✅ SUCCESS\n\nAntigroupmention was already on`);
         }
         database.updateGroupSettings(extra.from, { antigroupmention: true });
-        return extra.reply(`✅ SUCCESS\n\nAntigroupmention turned ON, ${voice.tag('affirm')}`);
+        return extra.reply(`✅ SUCCESS\n\nAntigroupmention turned ON`);
       }
       
       if (opt === 'off') {
@@ -65,7 +65,7 @@ module.exports = {
           antigroupmentionAction: setAction,
           antigroupmention: true // Auto-enable when setting action
         });
-        return extra.reply(`✅ SUCCESS\n\nAntigroupmention action set to ${setAction}, ${voice.tag('affirm')}`);
+        return extra.reply(`✅ SUCCESS\n\nAntigroupmention action set to ${setAction}`);
       }
       
       if (opt === 'get') {

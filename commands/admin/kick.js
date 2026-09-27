@@ -225,7 +225,7 @@ module.exports = {
                   `🚫 *OOF* 💀\n\n` +
                   `You really tried kicking someone KAMI added?? cheeky\n\n` +
                   `Yoh the audacity bru 😭\n` +
-                  `Don't try that again hey, ${voice.tag('neutral')}`,
+                  `Don't try that again hey`,
               });
             } catch (e) {}
 

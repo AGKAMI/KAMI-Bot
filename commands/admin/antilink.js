@@ -36,10 +36,10 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antilink) {
-          return extra.reply(`✅ SUCCESS\n\nAntilink was already on, ${voice.tag('neutral')}`);
+          return extra.reply(`✅ SUCCESS\n\nAntilink was already on`);
         }
         database.updateGroupSettings(extra.from, { antilink: true });
-        return extra.reply(`✅ SUCCESS\n\nAntilink turned ON, ${voice.tag('affirm')}`);
+        return extra.reply(`✅ SUCCESS\n\nAntilink turned ON`);
       }
       
       if (opt === 'off') {
@@ -63,7 +63,7 @@ module.exports = {
           antilinkAction: setAction,
           antilink: true // Auto-enable when setting action
         });
-        return extra.reply(`✅ SUCCESS\n\nAntilink action set to ${setAction}, ${voice.tag('affirm')}`);
+        return extra.reply(`✅ SUCCESS\n\nAntilink action set to ${setAction}`);
       }
       
       if (opt === 'get') {

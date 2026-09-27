@@ -14,7 +14,7 @@
 
 {body with bold labels}
 
-_{tsotsitaal closer}_
+_{tsotsitaal closer — only if it earns its place}_
 ```
 
 **Examples:**
@@ -48,7 +48,7 @@ No need to apply again
 
 {details with emoji labels}
 
-_{italicized tsotsitaal closer}_
+_{italicized tsotsitaal closer — only if it earns its place}_
 ```
 
 **Action emojis:**
@@ -104,7 +104,7 @@ _{subtitle}_
 
 {instructions}
 
-_{tsotsitaal closer}_
+_{tsotsitaal closer — only if it earns its place}_
 ```
 
 ---
@@ -254,8 +254,32 @@ _Antitag turned ON moegoe_      ← slang dropped where it doesn't fit
 ❌ ERROR
 
 Eish — couldn't add them, hey
-_Let you through to apply, my bru — sharp sharp_
+_Let you through to apply, my bru — lekke_
 ```
+
+### WHEN A CLOSER EARNS ITS PLACE (non-negotiable)
+
+A closer is a piece of speech, not a stamp. Use it only when the line
+carries something the words alone don't. **Never end every message with
+one** — a closer bolted onto every reply stops reading as speech and
+starts reading as a template.
+
+**Use a closer when:**
+- The line is an emotional beat — failure, sympathy, hype, a taunt
+  (`_Couldn't delete that message, shame_`, `_You passed, lekke!_`)
+- The line is a complete human sentence and the tag adds the feeling
+  (`_Ag no man, the deploy took forever, but it's sorted now, shame_`)
+
+**Skip the closer when:**
+- The line already speaks SA — another `voice.*` call or slang word in
+  the same message (`_${voice.lead('affirm')} — group looking fresh_`)
+- The line already ends on a tag — no double closers
+  (`No admins in this group, shame` is enough, don't add another)
+- The line is an instruction, usage or hint
+  (`_Tag a user to exempt_`, `_Use .snipe <number> for details_`)
+- The line is a factual status one-liner where the words say it all
+  (`✅ SUCCESS\n\nAntilink turned ON`)
+
 
 ### Core arrays
 
@@ -427,5 +451,5 @@ await sock.sendMessage(extra.from, {
 3. **No double underscores for italic** — `__text__` doesn't render
 4. **No all-lowercase headers** — always ALL CAPS: `✅ SUCCESS` not `✅ success`
 5. **No bare numbers in messages** — always format: `*27833882383*` or `@27833882383`
-6. **No missing closers** — every message ends with `_{tsotsitaal closer}_`
+6. **No bolted-on closers** — a tsotsitaal closer only when it earns its place (see *WHEN A CLOSER EARNS ITS PLACE*); never one on every message, never on instructions, hints or factual status lines, never stacked on a line that already ends on a tag
 7. **No inconsistent separators** — use `----------` for groups, `━━━━━━━━━━━━━━━━` for DM documents only

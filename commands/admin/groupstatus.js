@@ -52,14 +52,14 @@ module.exports = {
           );
         }
 
-        await extra.reply(`⏳ POSTING\n\nPosting status, ${voice.tag('neutral')}...`);
+        await extra.reply(`⏳ POSTING\n\nPosting status...`);
 
         try {
           await groupStatus(sock, from, {
             text: caption,
             backgroundColor: PURPLE_COLOR,
           });
-          return extra.reply(`✅ SUCCESS\n\nStatus posted, ${voice.tag('affirm')}`);
+          return extra.reply(`✅ SUCCESS\n\nStatus posted`);
         } catch (e) {
           console.error('groupstatus text error:', e);
           extra.fail();
@@ -90,7 +90,7 @@ module.exports = {
 
       // IMAGE (also handles stickers)
       if (/image|sticker/i.test(mtype)) {
-        await extra.reply(`⏳ POSTING\n\nPosting the image status, ${voice.tag('neutral')}...`);
+        await extra.reply(`⏳ POSTING\n\nPosting the image status...`);
         let buf;
         try {
           buf = await downloadBuf();
@@ -105,7 +105,7 @@ module.exports = {
             image: buf,
             caption: caption || '',
           });
-          return extra.reply(`✅ SUCCESS\n\nImage status is up, ${voice.tag('affirm')}`);
+          return extra.reply(`✅ SUCCESS\n\nImage status is up`);
         } catch (e) {
           console.error('groupstatus image error:', e);
           extra.fail();
@@ -115,7 +115,7 @@ module.exports = {
 
       // VIDEO
       if (/video/i.test(mtype)) {
-        await extra.reply(`⏳ POSTING\n\nPosting the video status, ${voice.tag('neutral')}...`);
+        await extra.reply(`⏳ POSTING\n\nPosting the video status...`);
         let buf;
         try {
           buf = await downloadBuf();
@@ -130,7 +130,7 @@ module.exports = {
             video: buf,
             caption: caption || '',
           });
-          return extra.reply(`✅ SUCCESS\n\nVideo status is up, ${voice.tag('affirm')}`);
+          return extra.reply(`✅ SUCCESS\n\nVideo status is up`);
         } catch (e) {
           console.error('groupstatus video error:', e);
           extra.fail();
@@ -140,7 +140,7 @@ module.exports = {
 
       // AUDIO (voice-style group status)
       if (/audio/i.test(mtype)) {
-        await extra.reply(`⏳ POSTING\n\nPosting the audio status, ${voice.tag('neutral')}...`);
+        await extra.reply(`⏳ POSTING\n\nPosting the audio status...`);
         let buf;
         try {
           buf = await downloadBuf();
@@ -171,7 +171,7 @@ module.exports = {
             ptt: true,
             waveform,
           });
-          return extra.reply(`✅ SUCCESS\n\nAudio status is up, ${voice.tag('affirm')}`);
+          return extra.reply(`✅ SUCCESS\n\nAudio status is up`);
         } catch (e) {
           console.error('groupstatus audio error:', e);
           extra.fail();

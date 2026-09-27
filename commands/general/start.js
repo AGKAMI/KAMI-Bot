@@ -237,7 +237,7 @@ onButton('start:apply', async (sock, msg, from, sender) => {
       `⚠️ *Until your application is done, your number can only:*\n` +
       `• Apply for security\n` +
       `• Make orders\n\n` +
-      `DM me for anything else and you're blocked again — sharp sharp`,
+      `DM me for anything else and you're blocked again`,
     footer: config.botName || 'KAMI Bot',
   });
 
@@ -268,7 +268,7 @@ onButton('start:order', async (sock, msg, from, sender) => {
       `⚠️ *Until your order is done, your number can only:*\n` +
       `• Make orders\n` +
       `• Apply for security\n\n` +
-      `DM me for anything else and you're blocked again — sharp sharp`,
+      `DM me for anything else and you're blocked again`,
     footer: config.botName || 'KAMI Bot',
   });
 

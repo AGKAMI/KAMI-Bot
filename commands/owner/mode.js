@@ -41,7 +41,7 @@ module.exports = {
       
       if (mode === 'private' || mode === 'priv') {
         if (config.selfMode) {
-          return extra.reply(`*🔒 PRIVATE MODE*\n\n⚠️ Bot is already private, ${voice.tag('neutral')}`);
+          return extra.reply(`*🔒 PRIVATE MODE*\n\n⚠️ Bot is already private`);
         }
         
         updateConfig('selfMode', true);
@@ -51,7 +51,7 @@ module.exports = {
       
       if (mode === 'public' || mode === 'pub') {
         if (!config.selfMode) {
-          return extra.reply(`*🌐 PUBLIC MODE*\n\n⚠️ Bot is already public, ${voice.tag('neutral')}`);
+          return extra.reply(`*🌐 PUBLIC MODE*\n\n⚠️ Bot is already public`);
         }
         
         updateConfig('selfMode', false);

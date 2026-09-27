@@ -42,7 +42,7 @@ module.exports = {
       if (action === 'on') {
         if (globalSettings.selfMode) {
           return await sock.sendMessage(chatId, {
-            text: `*⚠️ ALREADY ON*\n\n_DM Blocker is already *ON*, ${voice.tag('neutral')}_`
+            text: `*⚠️ ALREADY ON*\n\n_DM Blocker is already *ON*_`
           }, { quoted: msg });
         }
         database.updateGlobalSettings({ selfMode: true });
@@ -57,7 +57,7 @@ module.exports = {
       if (action === 'off') {
         if (!globalSettings.selfMode) {
           return await sock.sendMessage(chatId, {
-            text: `*⚠️ ALREADY OFF*\n\n_DM Blocker is already *OFF*, ${voice.tag('neutral')}_`
+            text: `*⚠️ ALREADY OFF*\n\n_DM Blocker is already *OFF*_`
           }, { quoted: msg });
         }
         database.updateGlobalSettings({ selfMode: false });

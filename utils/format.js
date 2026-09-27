@@ -154,7 +154,7 @@ const templates = {
    * Error message in a natural SA voice
    */
   errorMsg: (detail = null) => {
-    const base = `${voice.openErr()} — something went stukkend, ${voice.tag('err')}`;
+    const base = `${voice.openErr()} — something went stukkend`;
     return detail ? `${base}\n${italic(detail)}` : base;
   },
 

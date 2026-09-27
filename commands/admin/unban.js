@@ -58,7 +58,7 @@ module.exports = {
       }
 
       await sock.sendMessage(from, {
-        text: `✅ *UNBANNED*\n\n${mention(target)} _has been unbanned, ${voice.tag('affirm')}!_`,
+        text: `✅ *UNBANNED*\n\n${mention(target)} _has been unbanned!_`,
         mentions: [target]
       }, { quoted: msg });
 

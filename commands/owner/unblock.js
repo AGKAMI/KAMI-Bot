@@ -71,7 +71,7 @@ module.exports = {
             `*KAMI UNLOCKED YOU* 🔓\n` +
             `━━━━━━━━━━━━━━━━\n\n` +
             `${voice.greetOpen()}, ${voice.mate()}\n\n` +
-            `_You were blocked but you're free now, ${voice.tag('neutral')}_`
+            `_You were blocked but you're free now_`
         });
       } catch (dmErr) {
         console.error('[UNBLOCK] DM to unblocked user failed:', dmErr.message);

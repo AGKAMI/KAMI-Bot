@@ -110,7 +110,7 @@ module.exports = {
       extra.fail();
       return extra.reply(
         `❌ *ERROR*\n\n` +
-        `_Provide the rules text, ${voice.tag('neutral')}_\n\n` +
+        `_Provide the rules text_\n\n` +
         `*Example:*\n` +
         `${prefix}setrules No spam; Be respectful; Have fun\n\n` +
         `_Use ; or new lines between rules_`
@@ -124,7 +124,7 @@ module.exports = {
     return extra.reply(
       `✅ *RULES SET*\n\n` +
       `📜 ${bold(groupName)} rules updated!\n\n` +
-      `_Admin, ${voice.tag('affirm')}, rules saved!_`
+      `_Admin, rules saved!_`
     );
   },
 

@@ -145,7 +145,7 @@ module.exports = {
         if (error.message.includes('Invalid channel link')) {
           await extra.reply(`*❌ ERROR* — invalid channel link format\n\n💡 Please provide a valid WhatsApp channel link:\n   https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
         } else if (error.message.includes('Newsletter not found')) {
-          await extra.reply(`*❌ ERROR* — no newsletter there, ${voice.tag('err')}\n\n💡 The channel link might be wrong, or the newsletter is not there.`);
+          await extra.reply(`*❌ ERROR* — no newsletter there\n\n💡 The channel link might be wrong, or the newsletter is not there.`);
         } else if (error.message.includes('newsletterMetadata')) {
           await extra.reply(`*❌ ERROR* — the newsletter feature is not available\n\n💡 You need Baileys v7.0.0-rc or higher.`);
         } else {

@@ -73,7 +73,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `${bold('Usage:')} ${prefix}antibadword set <warn|delete|kick>, ${voice.tag('neutral')}\n\n` +
+            `${bold('Usage:')} ${prefix}antibadword set <warn|delete|kick>\n\n` +
             `• _warn_ — warn them but don't delete\n` +
             `• _delete_ — delete the bad message\n` +
             `• _kick_ — delete + kick the user`
@@ -93,7 +93,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Tag a user to exempt, ${voice.tag('neutral')}_\n\n` +
+            `_Tag a user to exempt_\n\n` +
             `_Example: ${prefix}antibadword exempt @user_`
           );
         }
@@ -142,7 +142,7 @@ module.exports = {
       extra.fail();
       return extra.reply(
         `❌ *ERROR*\n\n` +
-        `_Use ${prefix}antibadword for usage, ${voice.tag('neutral')}_`
+        `_Use ${prefix}antibadword for usage_`
       );
 
     } catch (error) {

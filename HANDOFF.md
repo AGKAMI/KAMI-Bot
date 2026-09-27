@@ -4,11 +4,12 @@
 "Full SA voice everywhere" for KAMI Bot — pan-SA mix (Joburg kasi + Cape Town kaaps + Durban) across **every** user-visible string, not just the slang slots. Three phases: (1) reaction system ✅, (2) position-aware `voice.*` library + migrate all `pick(SLANG.*)` ✅, (3) rewrite every hardcoded English literal — including crew/game question content — in full-strength kasi/kaaps register (in progress, this session).
 
 ## Current State
-- **Pushed**: `cea1d92` (progressive ✅/❌ reactions, 159 files) → `cc823af` (voice library + 535 SLANG call sites, 180 files). `git ls-remote origin main` == `cc823af`, no concurrent push since.
-- **NOT committed**: phase-2 hard-coded-prose rewrite — **194 modified files** in the working tree.
-- **Phase-2 ledger**: `%TEMP%\opencode\patched-ids.txt` = **1806 string ids rewritten** (dump `all-strings.ndjson` currently holds 1743 strings; 176 remaining = 145 non-pool metadata/facts/logs + 31 deliberately-blunt wrong answers in `questionPools.js`).
-- **`questionPools.js`**: 929 dumped strings → all rewritten except 30 blunt "bad answer" options (intentional). Reads as kasi speech: `How you handle conflict in a team?`, `You ever been a convoy leader?`, `What you do, hey?`, contractions, `— ` → `, `, `hey/shame/lekke/boet` sprinkled. 680 questions load; **0 option `id`s contain `:`** (callback token safety).
-- **Verification green**: `checkall.js` → 230 files, 0 failed; `runtime-smoke.js` → **4/4 ×8 runs**, 0 errors; `render-voice.js` OK.
+- **Pushed**: `cea1d92` (reactions) → `cc823af` (voice library) → **`36e48e0`** (other session: phase-2 prose rewrite + unblock flow + mojibake repair + **`STYLE.md`**). `git ls-remote origin main` == `36e48e0`. Phase-2 (1806 string ids) is committed — nothing outstanding there.
+- **Closer policy (KAMI's instruction, this session)**: a tsotsitaal closer only where it *earns its place* — emotional beats yes, instructions/usage/hints/factual status lines/no, never stacked on a line that already ends on a tag, never bolted onto every message. **`STYLE.md` was amended to say exactly this** (replacing the other session's *"every message ends with a closer"* rule).
+- **Closer cleanup (this session, was uncommitted at handoff)**: **69 `voice.tag(...)` closers removed across 34 files** — 30 in pass 1 (instructions, usage/hints, double closers, same-message-already-has-voice) + 39 in pass 2 (factual `✅ SUCCESS` / `⏳ POSTING` / status one-liners) + 2 `— sharp sharp` closers in `commands/general/start.js` (banned word + double closer). ❌ errors, celebrations and taunts keep their closers. Tools: `%TEMP%\opencode\classify-tags.js` → `strip-entries.json`, `classify-deep.js` → `strip-deep.json`, `apply-strip.js <entries.json> [--dry]`.
+- **Verification green**: `checkall.js` → 230 files, 0 failed; `runtime-smoke.js` → **4/4**, 0 errors; `node --check` clean on all touched files; `voice.tag()` still returns values (`lekke`).
+- **Phase-2 ledger**: `%TEMP%\opencode\patched-ids.txt` = **1806 string ids rewritten** (dump `all-strings.ndjson` 1743 strings; 176 remaining = 145 non-pool metadata/facts/logs + 31 deliberately-blunt wrong answers in `questionPools.js`).
+- **`questionPools.js`**: 680 questions rewritten (30 blunt bad-answer options intentional); **0 option `id`s contain `:`** (callback token safety).
 
 ### Phase-2 tooling (all in `%TEMP%\opencode\`)
 - `dump-strings.js` — NDJSON `{id,file,line,raw,q}`; `--min/--grep/--file/--out`. Delimiter-gated quote scan, whole-file template scan, `CODE`/`NOISE`/`SKIP_FILES` filters.
@@ -28,11 +29,16 @@
 - **Option `id` is embedded in `cwiz:a:${team}:${uid}:${q.num}:${o.id}` and split on `:`** — never introduce a colon into an option id (verified 0 today). `q.label` = category (`SCENARIO`), option display text = `o.label`.
 - **Smoke test looked "flaky" (3/4)** — the `SA` regex was missing valid picks (`Aweh`, `Ai`, `Jissie`, `Howzit`). Regex extended; now stable 4/4.
 - Inline `node -e "..."` breaks under PowerShell quoting → write scripts to `%TEMP%\opencode\`. `loadCommands()` hangs → always `process.exit()`.
+- **PowerShell `>` writes UTF-16LE** — never redirect node output to a file with `>` and then read it back as text (broke patch-file parsing this session); write from node (`fs.writeFileSync`) or use `Out-File -Encoding utf8`.
+- **PowerShell `@"..."@` here-strings mangle JS** (backticks/`${}`) — write scripts with the file-writer tool, not shell heredocs.
+- **`STYLE.md` is the style authority** — check it before touching message copy; KAMI's closer rule lives in *WHEN A CLOSER EARNS ITS PLACE*.
 
 ## Active Files
 - `%TEMP%\opencode\dump-strings.js`, `apply-phase2.js`, `apply-rules.js` — the phase-2 pipeline.
 - `%TEMP%\opencode\phase2-rules*.js`, `phase2-pool-rules*.js`, `pool-fix.js` — literal find/replace rules (extensible; longest-first, specific-before-catch-all).
 - `%TEMP%\opencode\all-strings.ndjson`, `patched-ids.txt` — inventory + ledger (always re-dump first).
+- `%TEMP%\opencode\classify-tags.js` / `classify-deep.js` / `apply-strip.js` — closer-cleanup pipeline (classify → JSON entries → apply `--dry` first).
+- `STYLE.md` — style authority incl. the closer rule.
 - `commands/crew/questionPools.js` — 680 questions rewritten; 30 blunt bad-answers intentionally untouched.
 - `HANDOFF.md` — this file.
 
@@ -46,10 +52,10 @@
 - Deploy: push to `main` → restart from bot-hosting panel (GitHub auto-pull). SFTP fallback `fi9.bot-hosting.cloud:2022`.
 
 ## Next Steps
-1. Optionally close the last **31 pool** strings (blunt wrong answers) and the **145 non-pool** leftovers (`description:` metadata, twotruthsonelie/8ball facts, console/system strings) — decide deliberately, most are intentionally literal.
-2. Spot-check real output on WhatsApp: crew application questions, `.menu`, a ✅ confirmation, a ❌ failure.
-3. Commit on request: `feat: south african voice everywhere — 1806 hardcoded strings rewritten incl. crew question pools` (stage the 194 modified files only; never the junk untracked set).
-4. Deploy: `git push origin main` → restart from panel.
+1. Commit the closer cleanup: `fix: closers only where they earn their place — strip 69 bolted-on voice tags, drop banned sharp sharp, amend style guide` (stage the 34 modified files only; never the junk untracked set).
+2. `git push origin main` → restart from the bot-hosting panel.
+3. Spot-check real WhatsApp output: a ✅ confirmation (no closer), a ❌ failure (closer kept), a crew application question, `.menu`.
+4. Optional, low value: the last **31 pool** strings (blunt wrong answers) and **145 non-pool** leftovers (`description:` metadata, 8ball/twotruthsonelie facts, console logs) — most are intentionally literal.
 
 ## Memory Keys
 mcp__claude-flow__memory_search { query: "KAMI-Bot phase 2 prose rewrite dump rules apply sharp ban option id colon", namespace: "project" }

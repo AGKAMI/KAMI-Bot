@@ -1216,7 +1216,7 @@ const handleMessage = async (sock, msg) => {
                 if (action === 'warn' || action === 'delete') {
                   await sock.sendMessage(from, {
                     text: action === 'warn'
-                      ? `⚠️ *BAD WORD*\n\n@${sender.split('@')[0]} _that word's not allowed here, ${voice.tag('err')}_`
+                      ? `⚠️ *BAD WORD*\n\n@${sender.split('@')[0]} _that word's not allowed here_`
                       : `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _message deleted — that word's not allowed here_\n\n_Mxm, watch your mouth shame_`,
                     mentions: [sender]
                   });
@@ -1303,7 +1303,7 @@ const handleMessage = async (sock, msg) => {
                     ? sender.split('@')[0] + '@s.whatsapp.net'
                     : sender;
                   await sock.sendMessage(targetJid, {
-                    text: `⚠️ *FLOOD WARNING*\n\nSho — slow down, you\'re spamming this group like there\'s no tomorrow.\n\n_One more burst and I\'m kicking you out, ${voice.tag('neutral')}_`
+                    text: `⚠️ *FLOOD WARNING*\n\nSho — slow down, you\'re spamming this group like there\'s no tomorrow.\n\n_One more burst and I\'m kicking you out_`
                   });
                 } catch (e) {}
               }

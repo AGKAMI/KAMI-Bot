@@ -265,7 +265,7 @@ module.exports = {
         caption.push(`📋 *Min Entries:* ${minEntries}`);
       }
 
-      caption.push(``, `✋ *React with 🎁 to enter!*`, `_Hurry, this one's closing soon — ${voice.tag('neutral')}_`);
+      caption.push(``, `✋ *React with 🎁 to enter!*`, `_Hurry, this one's closing soon_`);
 
       let sent;
       if (mediaBuffer) {
@@ -331,7 +331,7 @@ module.exports = {
               `❌ *No entries!*`,
               `🏆 *Prize:* ${prize}`,
               ``,
-              `Nobody entered hey — better luck next time, ${voice.tag('neutral')} 💀`
+              `Nobody entered hey — better luck next time 💀`
             ].join('\n')
           });
           return;
@@ -366,7 +366,7 @@ module.exports = {
               `👥 *Current:* ${entryList.length}`,
               `⏰ *Extended:* 2 more minutes`,
               ``,
-              `React with 🎁 to join — ${voice.tag('neutral')}!`
+              `React with 🎁 to join!`
             ].join('\n')
           });
           return;

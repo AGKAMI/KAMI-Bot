@@ -39,10 +39,10 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antitag) {
-          return extra.reply(`✅ SUCCESS\n\nAntitag was already on, ${voice.tag('neutral')}`);
+          return extra.reply(`✅ SUCCESS\n\nAntitag was already on`);
         }
         database.updateGroupSettings(extra.from, { antitag: true });
-        return extra.reply(`✅ SUCCESS\n\nAntitag turned ON, ${voice.tag('affirm')}`);
+        return extra.reply(`✅ SUCCESS\n\nAntitag turned ON`);
       }
       
       if (opt === 'off') {
@@ -66,7 +66,7 @@ module.exports = {
           antitagAction: setAction,
           antitag: true // Auto-enable when setting action
         });
-        return extra.reply(`✅ SUCCESS\n\nAntitag action set to ${setAction}, ${voice.tag('affirm')}`);
+        return extra.reply(`✅ SUCCESS\n\nAntitag action set to ${setAction}`);
       }
       
       if (opt === 'get') {

@@ -37,7 +37,7 @@ module.exports = {
         await sock.groupSettingUpdate(extra.from, 'not_announcement');
         database.clearOwnerMuted(extra.from);
         await sendButtons(sock, extra.from, {
-          text: `🔓 UNMUTED\n\nGroup is open, ${voice.tag('neutral')}\nEveryone can talk now, lekke`,
+          text: `🔓 UNMUTED\n\nGroup is open\nEveryone can talk now, lekke`,
           footer: 'Unmute Management',
           buttons: [
             { id: 'admin:mute', text: '🔒 Mute' },

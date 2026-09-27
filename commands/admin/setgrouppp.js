@@ -30,7 +30,7 @@ module.exports = {
           `❌ *ERROR*`,
           '',
           `💡 Reply to an image with ${prefix}setgrouppp, hey`,
-          `_Make sure the reply is a photo, ${voice.tag('neutral')}_`
+          `_Make sure the reply is a photo_`
         ].join('\n');
         return await extra.reply(text);
       }
@@ -46,7 +46,7 @@ module.exports = {
         const text = [
           `🔒 *GROUP LOCKED*`,
           '',
-          `- This group is locked, ${voice.tag('err')}`,
+          `- This group is locked`,
           `- Only admins can open it with .unlock`
         ].join('\n');
         return await extra.reply(text);
@@ -83,7 +83,7 @@ module.exports = {
         `- 🖼️ ${bold('New profile picture set')}`,
         `- 👤 ${bold('Changed by')} ${mention(extra.sender)}`,
         "",
-        `_${voice.lead('affirm')} — group looking fresh, ${voice.tag('affirm')}_`
+        `_${voice.lead('affirm')} — group looking fresh_`
       ].join('\n');
 
       await sock.sendMessage(from, { text, mentions: [extra.sender] }, { quoted: msg });

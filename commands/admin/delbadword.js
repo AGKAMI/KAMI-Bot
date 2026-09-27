@@ -27,7 +27,7 @@ module.exports = {
         extra.fail();
         return extra.reply(
           `❌ *ERROR*\n\n` +
-          `_Provide the pattern to remove, ${voice.tag('neutral')}_\n\n` +
+          `_Provide the pattern to remove_\n\n` +
           `_Example: ${prefix}delbadword bad*_`
         );
       }

@@ -44,15 +44,15 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).autosticker) {
-          return extra.reply(`✅ SUCCESS\n\nAutosticker was already on, ${voice.tag('neutral')}`);
+          return extra.reply(`✅ SUCCESS\n\nAutosticker was already on`);
         }
         database.updateGroupSettings(extra.from, { autosticker: true });
-        return extra.reply(`✅ SUCCESS\n\nAutosticker turned ON, ${voice.tag('affirm')}\n\nNow every image and video goes straight to sticker`);
+        return extra.reply(`✅ SUCCESS\n\nAutosticker turned ON\n\nNow every image and video goes straight to sticker`);
       }
       
       if (opt === 'off') {
         if (!database.getGroupSettings(extra.from).autosticker) {
-          return extra.reply(`⚠️ WARNING\n\nAutosticker is off already, ${voice.tag('neutral')}`);
+          return extra.reply(`⚠️ WARNING\n\nAutosticker is off already`);
         }
         database.updateGroupSettings(extra.from, { autosticker: false });
         return extra.reply(`✅ SUCCESS\n\nAutosticker turned OFF`);

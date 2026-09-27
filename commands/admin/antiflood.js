@@ -124,7 +124,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Tag a user to exempt, ${voice.tag('neutral')}_\n\n` +
+            `_Tag a user to exempt_\n\n` +
             `_Example: ${prefix}antiflood exempt @user_`
           );
         }
@@ -155,7 +155,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Tag a user to unexempt, ${voice.tag('neutral')}_\n\n` +
+            `_Tag a user to unexempt_\n\n` +
             `_Example: ${prefix}antiflood unexempt @user_`
           );
         }
@@ -201,7 +201,7 @@ module.exports = {
       extra.fail();
       return extra.reply(
         `❌ *ERROR*\n\n` +
-        `_Use ${prefix}antiflood for usage, ${voice.tag('neutral')}_`
+        `_Use ${prefix}antiflood for usage_`
       );
 
     } catch (error) {

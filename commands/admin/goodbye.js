@@ -39,7 +39,7 @@ module.exports = {
       db.updateGroupSettings(groupId, { goodbye: enable });
       
       await sock.sendMessage(groupId, {
-        text: `✅ SUCCESS\n\nGoodbye messages ${enable ? 'enabled' : 'disabled'}, ${voice.tag('affirm')}${enable ? '\n\nMembers who leave get a goodbye now' : ''}`
+        text: `✅ SUCCESS\n\nGoodbye messages ${enable ? 'enabled' : 'disabled'}${enable ? '\n\nMembers who leave get a goodbye now' : ''}`
       }, { quoted: msg });
       
     } catch (error) {

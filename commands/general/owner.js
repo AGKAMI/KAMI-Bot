@@ -57,12 +57,12 @@ END:VCARD
 
             if (actionButtons.length > 0) {
                 await sendButtons(sock, chatId, {
-                    text: `👑 *OWNER CONTACT*\n💡 _here's my owner's contact, ${voice.tag('neutral')}_`,
+                    text: `👑 *OWNER CONTACT*\n💡 _here's my owner's contact_`,
                     footer: config.botName || 'KAMI Bot',
                     buttons: actionButtons,
                 }, msg);
             } else {
-                await extra.reply(`👑 *OWNER CONTACT*\n💡 _here's my owner's contact, ${voice.tag('neutral')}_`);
+                await extra.reply(`👑 *OWNER CONTACT*\n💡 _here's my owner's contact_`);
             }
 
         } catch (error) {

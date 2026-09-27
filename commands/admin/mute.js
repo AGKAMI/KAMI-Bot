@@ -29,7 +29,7 @@ module.exports = {
         }
 
         await sendButtons(sock, extra.from, {
-          text: `🔒 MUTED\n\nGroup closed, ${voice.tag('neutral')}\nOnly admins can talk now${muteNote}`,
+          text: `🔒 MUTED\n\nGroup closed\nOnly admins can talk now${muteNote}`,
           footer: 'Mute Management',
           buttons: [
             { id: 'admin:unmute', text: '🔓 Unmute' },

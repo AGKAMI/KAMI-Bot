@@ -313,7 +313,7 @@ async function submitApplication(sock, session) {
     `🆔 App ID: *${session.appUid}*\n\n` +
     (adminMsg === false
       ? `⚠️ _Couldn't ping the team admins automatically — but your application is safe._\n\n`
-      : `📲 _Your application went out to all ${session.teamKey} admins, ${voice.tag('affirm')}_\n\n`) +
+      : `📲 _Your application went out to all ${session.teamKey} admins_\n\n`) +
     `⏳ Keep this App ID — an admin will accept or reject you, hey.\n\n` +
     `_${voice.greetOpen()}, good luck!_`;
 
@@ -585,7 +585,7 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
     `🤖 _I read your answers and you passed!_\n\n` +
     `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
     `🆔 App ID: *${appUid}*\n\n` +
-    `_An admin will pull you into the group now-now, ${voice.tag('affirm')}_\n\n` +
+    `_An admin will pull you into the group now-now_\n\n` +
     `_${voice.greetOpen()}, welcome to the squad!_`;
 
   await sock.sendMessage(from, { text: confirm });

@@ -27,7 +27,7 @@ module.exports = {
         extra.fail();
         return extra.reply(
           `❌ *ERROR*\n\n` +
-          `_Provide a pattern to blacklist, ${voice.tag('neutral')}_\n\n` +
+          `_Provide a pattern to blacklist_\n\n` +
           `💡 *Pattern types:*\n` +
           `• _.addbadword bad* _ — wildcard (matches "badass", "badword")\n` +
           `• _.addbadword "bad word"_ — phrase (exact phrase match)\n` +
@@ -44,7 +44,7 @@ module.exports = {
       if (badwords.includes(normalized)) {
         return extra.reply(
           `⚠️ *ALREADY EXISTS*\n\n` +
-          `_${normalized} is already blacklisted, ${voice.tag('neutral')}_`
+          `_${normalized} is already blacklisted_`
         );
       }
 

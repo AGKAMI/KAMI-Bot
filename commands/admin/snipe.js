@@ -43,14 +43,14 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *NO DELETED MESSAGES*\n\n` +
-            `_Nothing deleted stored for this group, ${voice.tag('err')}_\n\n` +
+            `_Nothing deleted stored for this group_\n\n` +
             `_Make sure antidelete is active_`
           );
         }
         extra.fail();
         return extra.reply(
           `❌ *OUT OF RANGE*\n\n` +
-          `_Only ${total} deleted message${total === 1 ? '' : 's'} stored, ${voice.tag('neutral')}_`
+          `_Only ${total} deleted message${total === 1 ? '' : 's'} stored_`
         );
       }
 
@@ -69,7 +69,7 @@ module.exports = {
       extra.fail();
       return extra.reply(
         `❌ *NO DELETED MESSAGES*\n\n` +
-        `_Nothing deleted stored for this group, ${voice.tag('err')}_`
+        `_Nothing deleted stored for this group_`
       );
     }
 
@@ -88,7 +88,7 @@ module.exports = {
     });
 
     text += `----------\n`;
-    text += `_Use ${prefix}snipe <number> for details, ${voice.tag('neutral')}_`;
+    text += `_Use ${prefix}snipe <number> for details_`;
 
     const mentions = entries.map(e => e.sender);
 

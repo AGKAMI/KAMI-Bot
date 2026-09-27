@@ -53,7 +53,7 @@ module.exports = {
         }
         return extra.reply(
           `✅ *SLOWMODE*\n\n` +
-          `_Already on at ${current}s, ${voice.tag('neutral')}_`
+          `_Already on at ${current}s_`
         );
       }
 
@@ -76,7 +76,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Tag a user to bypass, ${voice.tag('neutral')}_\n\n` +
+            `_Tag a user to bypass_\n\n` +
             `_Example: ${prefix}slowmode bypass @user_`
           );
         }
@@ -107,7 +107,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Tag a user to remove bypass, ${voice.tag('neutral')}_\n\n` +
+            `_Tag a user to remove bypass_\n\n` +
             `_Example: ${prefix}slowmode unbypass @user_`
           );
         }
