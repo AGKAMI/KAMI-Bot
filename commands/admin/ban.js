@@ -6,6 +6,7 @@
 const config = require('../../config');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { updateBlockStatusSafe } = require('../../utils/jidHelper');
 
 const parseNumber = (input) => {
   if (!input) return null;
@@ -72,7 +73,7 @@ module.exports = {
 
       // WhatsApp-block them
       try {
-        await sock.updateBlockStatus(target, 'block');
+        await updateBlockStatusSafe(sock, target, 'block');
       } catch (e) {
         console.error('[BAN] block failed:', e.message);
       }
@@ -124,7 +125,7 @@ onButton('admin:unban', async (sock, msg, from, sender, btnId) => {
   }
 
   try {
-    await sock.updateBlockStatus(target, 'unblock');
+    await updateBlockStatusSafe(sock, target, 'unblock');
     await sock.sendMessage(from, {
       text:
         `✅ SUCCESS\n\n` +

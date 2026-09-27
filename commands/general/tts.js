@@ -3,6 +3,8 @@
  */
 
 const APIs = require('../../utils/api');
+const config = require('../../config');
+const axios = require('axios');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
@@ -24,17 +26,21 @@ module.exports = {
         return extra.reply(`⚠️ *WARNING*\n💡 Give me text to turn into speech\n📝 *Example:* *${prefix}tts hi how are you*`);
       }
 
-      const audioUrl = await APIs.textToSpeech(text);
+      const result = await APIs.textToSpeech(text);
 
-      // Download audio as buffer
-      const axios = require('axios');
-const config = require('../../config');
-      const audioResponse = await axios.get(audioUrl, {
-        responseType: 'arraybuffer',
-        timeout: 30000
-      });
-      
-      const audioBuffer = Buffer.from(audioResponse.data);
+      // APIs.textToSpeech resolves to a Buffer OR a URL — handle both
+      let audioBuffer;
+      if (Buffer.isBuffer(result)) {
+        audioBuffer = result;
+      } else {
+        const audioResponse = await axios.get(result, {
+          responseType: 'arraybuffer',
+          timeout: 30000
+        });
+        audioBuffer = Buffer.from(audioResponse.data);
+      }
+
+      if (!audioBuffer || audioBuffer.length < 300) throw new Error('empty audio returned');
 
       await sock.sendMessage(chatId, {
         audio: audioBuffer,

@@ -15,6 +15,7 @@ const { buildImage } = require('./utils/imageText');
 const { handleButtonResponse, requireAdmin } = require('./utils/buttonHelper');
 const { hasActiveSession, getApplicantState, sendProgressiveResponse } = require('./commands/crew/applyInteractive');
 const { runWithReactions, stageEmoji } = require('./utils/progressReaction');
+const { updateBlockStatusSafe } = require('./utils/jidHelper');
 
 // All admin command buttons are admin-only
 requireAdmin('admin');
@@ -667,7 +668,7 @@ const handleMessage = async (sock, msg) => {
                     console.error('[DMBLOCKER] admin warning send failed:', warnErr.message);
                   }
                   try {
-                    await sock.updateBlockStatus(dmSender, 'block');
+                    await updateBlockStatusSafe(sock, dmSender, 'block');
                   } catch (blockErr) {
                     console.error('[DMBLOCKER] admin block failed:', blockErr.message);
                   }
@@ -727,7 +728,7 @@ const handleMessage = async (sock, msg) => {
                     console.error('[DMBLOCKER] temp block warning failed:', warnErr.message);
                   }
                   try {
-                    await sock.updateBlockStatus(dmSender, 'block');
+                    await updateBlockStatusSafe(sock, dmSender, 'block');
                   } catch (blockErr) {
                     console.error('[DMBLOCKER] temp block failed:', blockErr.message);
                   }
@@ -747,7 +748,7 @@ const handleMessage = async (sock, msg) => {
                   console.error('[DMBLOCKER] warning send failed:', warnErr.message);
                 }
                 try {
-                  await sock.updateBlockStatus(dmSender, 'block');
+                  await updateBlockStatusSafe(sock, dmSender, 'block');
                 } catch (blockErr) {
                   console.error('[DMBLOCKER] block failed:', blockErr.message);
                 }
@@ -1371,7 +1372,7 @@ const handleMessage = async (sock, msg) => {
                 `📲 *Message me on:* 084 082 0712\n` +
                 `⚠️ *One more message and your number is BLOCKED* ⛔🔒`
         });
-        await sock.updateBlockStatus(sender, 'block');
+        await updateBlockStatusSafe(sock, sender, 'block');
       } catch (e) {
         console.error('[DMBLOCKER] block failed:', e.message);
       }
@@ -2550,7 +2551,7 @@ const initializeAntiCall = (sock, isOwner) => {
 
         // Block non-owners
         if (!isOwner(caller)) {
-          try { await sock.updateBlockStatus(caller, 'block'); } catch (e) {
+          try { await updateBlockStatusSafe(sock, caller, 'block'); } catch (e) {
             console.error('[ANTICALL] block failed:', e.message);
           }
         }

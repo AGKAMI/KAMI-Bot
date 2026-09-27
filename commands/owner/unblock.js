@@ -4,6 +4,7 @@
 
 const config = require('../../config');
 const { bold, pick, SLANG, voice } = require('../../utils/format');
+const { updateBlockStatusSafe, mentionJid } = require('../../utils/jidHelper');
 
 const parsePhoneNumber = (input) => {
   if (!input) return null;
@@ -54,18 +55,22 @@ module.exports = {
         }
       }
 
-      // Unblock directly — fetchBlocklist is unreliable
-      await sock.updateBlockStatus(target, 'unblock');
-      
+      // Unblock directly — fetchBlocklist is unreliable.
+      // Mentions can arrive as LID digits on the wrong server; try each variant.
+      await updateBlockStatusSafe(sock, target, 'unblock');
+
+      // Real number when the target arrived as LID digits (used for the DM too)
+      const shown = mentionJid(target);
+
       // Confirmation to owner
       await sock.sendMessage(extra.from, {
-        text: `*✅ UNBLOCKED*\n\n@${target.split('@')[0]} _has been unblocked, ${voice.tag('affirm')}!_`,
-        mentions: [target]
+        text: `*✅ UNBLOCKED*\n\n@${shown.split('@')[0]} _has been unblocked, ${voice.tag('affirm')}!_`,
+        mentions: [shown]
       }, { quoted: msg });
 
       // DM the unblocked user
       try {
-        await sock.sendMessage(target, {
+        await sock.sendMessage(shown, {
           text:
             `━━━━━━━━━━━━━━━━\n` +
             `*KAMI UNLOCKED YOU* 🔓\n` +
@@ -78,7 +83,8 @@ module.exports = {
       }
       
     } catch (error) {
-      await extra.reply(`_${voice.openErr()} — ${error.message}_`);
+      extra.fail();
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't unblock them: ${error.message}`);
     }
   }
 };

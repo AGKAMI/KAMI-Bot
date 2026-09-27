@@ -140,11 +140,71 @@ const findParticipant = (participants = [], userIds) => {
 
 const clearLidCache = () => lidMappingCache.clear();
 
+// All jids worth trying for a given id — mentions sometimes arrive as LID
+// digits on the @s.whatsapp.net server, which updateBlockStatus can't resolve
+const candidateJids = (jid) => {
+  if (!jid || typeof jid !== 'string') return [];
+  const out = [];
+  const push = (v) => { if (v && typeof v === 'string' && !out.includes(v)) out.push(v); };
+
+  let user;
+  try { user = jidDecode(jid)?.user; } catch (e) { user = null; }
+  if (!user) user = jid.split('@')[0].split(':')[0];
+  if (!user) return [jid];
+
+  const pnOfLid = getLidMappingValue(user, 'lidToPn'); // user is a LID
+  const lidOfPn = getLidMappingValue(user, 'pnToLid'); // user is a phone number
+
+  push(normalizeJidWithLid(jid)); // best guess: the real PN jid
+  push(jid);                      // as given
+
+  if (pnOfLid) {
+    push(jidEncode(user, 'lid'));
+    push(jidEncode(pnOfLid, 's.whatsapp.net'));
+  } else if (lidOfPn) {
+    push(jidEncode(user, 's.whatsapp.net'));
+    push(jidEncode(lidOfPn, 'lid'));
+  } else {
+    // identity unknown — same digits on both servers
+    push(jidEncode(user, 's.whatsapp.net'));
+    push(jidEncode(user, 'lid'));
+  }
+  return out;
+};
+
+// PN jid for display/mentions (falls back to the jid as given)
+const mentionJid = (jid) => {
+  try {
+    const user = jidDecode(jid)?.user;
+    if (!user) return jid;
+    const pn = getLidMappingValue(user, 'lidToPn') || (getLidMappingValue(user, 'pnToLid') ? user : null);
+    if (pn) return jidEncode(pn, 's.whatsapp.net');
+  } catch (e) { /* fall through */ }
+  return jid;
+};
+
+// updateBlockStatus across PN/LID variants — returns the jid that worked
+const updateBlockStatusSafe = async (sock, jid, action) => {
+  let lastError = null;
+  for (const candidate of candidateJids(jid)) {
+    try {
+      await sock.updateBlockStatus(candidate, action);
+      return candidate;
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError || new Error('could not resolve a usable jid');
+};
+
 module.exports = {
   findParticipant,
   buildComparableIds,
   normalizeJidWithLid,
   getLidMappingValue,
-  clearLidCache
+  clearLidCache,
+  candidateJids,
+  mentionJid,
+  updateBlockStatusSafe
 };
 

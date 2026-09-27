@@ -5,6 +5,7 @@
 
 const config = require('../../config');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
+const { updateBlockStatusSafe } = require('../../utils/jidHelper');
 
 const parseNumber = (input) => {
   if (!input) return null;
@@ -52,7 +53,7 @@ module.exports = {
 
       // WhatsApp-unblock them
       try {
-        await sock.updateBlockStatus(target, 'unblock');
+        await updateBlockStatusSafe(sock, target, 'unblock');
       } catch (e) {
         console.error('[UNBAN] unblock failed:', e.message);
       }
