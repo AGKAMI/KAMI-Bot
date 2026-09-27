@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'anticall',
@@ -52,8 +52,8 @@ module.exports = {
       
       await extra.reply(
         enabled
-          ? `*✅ ANTICALL ON*\n\n✅ ${pick(SLANG.good)}, calls will be auto-rejected & blocked`
-          : `*❌ ANTICALL OFF*\n\n❌ ${pick(SLANG.vibe)}, anti-call is now disabled`
+          ? `*✅ ANTICALL ON*\n\n✅ ${voice.lead('affirm')}, calls will be auto-rejected & blocked`
+          : `*❌ ANTICALL OFF*\n\n❌ ${voice.openErr()}, anti-call is now disabled`
       );
     } catch (err) {
       console.error('[anticall cmd] error:', err);

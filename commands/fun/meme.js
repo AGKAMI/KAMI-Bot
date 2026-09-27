@@ -4,7 +4,7 @@
 
 const APIs = require('../../utils/api');
 const axios = require('axios');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'meme',
@@ -27,7 +27,7 @@ module.exports = {
       
     } catch (error) {
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
     }
   }
 };

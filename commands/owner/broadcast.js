@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
     name: 'broadcast',
@@ -33,7 +33,7 @@ module.exports = {
         for (const group of groups) {
           try {
             await sock.sendMessage(group.id, {
-              text: `*📢 BROADCAST*\n\n${message}\n\n📢 ${pick(SLANG.vibe)}, this is a broadcast from bot owner`
+              text: `*📢 BROADCAST*\n\n${message}\n\n📢 ${voice.lead('neutral')}, this is a broadcast from bot owner`
             });
             success++;
           } catch (e) {
@@ -41,7 +41,7 @@ module.exports = {
           }
         }
         
-        await extra.reply(`*✅ BROADCAST DONE*\n\n✅ ${pick(SLANG.good)}, sent to all groups\n\n📊 *Success:* ${success}\n❌ *Failed:* ${failed}`);
+        await extra.reply(`*✅ BROADCAST DONE*\n\n✅ ${voice.openErr()}, sent to all groups\n\n📊 *Success:* ${success}\n❌ *Failed:* ${failed}`);
         
       } catch (error) {
         await extra.reply(`*❌ ERROR* — ${error.message}`);

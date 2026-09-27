@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
     name: 'calc',
@@ -17,7 +17,7 @@ module.exports = {
       const prefix = config.prefix || '.';
       try {
         if (args.length === 0) {
-          return extra.reply(`📝 _${pick(SLANG.vibe)}, give me something to calculate_\n\n_Example:_ ${prefix}calc 5 + 3 * 2`);
+          return extra.reply(`📝 _${voice.lead('neutral')}, give me something to calculate_\n\n_Example:_ ${prefix}calc 5 + 3 * 2`);
         }
         
         const expression = args.join(' ');
@@ -25,7 +25,7 @@ module.exports = {
         // Basic safety check
         if (!/^[0-9+\-*/(). ]+$/.test(expression)) {
           extra.fail();
-          return extra.reply(`❌ _${pick(SLANG.error)}, invalid expression — only numbers and operators_`);
+          return extra.reply(`❌ _${voice.openErr()}, invalid expression — only numbers and operators_`);
         }
         
         try {
@@ -38,12 +38,12 @@ module.exports = {
           await extra.reply(text);
         } catch (evalError) {
           extra.fail();
-          await extra.reply(`❌ _${pick(SLANG.error)}, invalid math expression_`);
+          await extra.reply(`❌ _${voice.openErr()}, invalid math expression_`);
         }
         
       } catch (error) {
         extra.fail();
-        await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+        await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
       }
     }
   };

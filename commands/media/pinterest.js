@@ -4,7 +4,7 @@
 
 const axios = require('axios');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 // Store processed message IDs to prevent duplicates
 const processedMessages = new Map(); // id → timestamp
@@ -64,7 +64,7 @@ module.exports = {
       
       if (!urlMatch) {
         extra.fail();
-        return await extra.reply(`❌ _${pick(SLANG.error)}, need a valid pinterest pin URL_\n\n_Examples:_\n• _https://in.pinterest.com/pin/1109363320773690068/_\n• _https://pin.it/dddddd_\n• _pin.it/dddddd_`);
+        return await extra.reply(`❌ _${voice.openErr()}, need a valid pinterest pin URL_\n\n_Examples:_\n• _https://in.pinterest.com/pin/1109363320773690068/_\n• _https://pin.it/dddddd_\n• _pin.it/dddddd_`);
       }
       
       const pinterestUrl = urlMatch[0];
@@ -86,22 +86,22 @@ module.exports = {
           const status = error.response.status;
           if (status === 400) {
             extra.fail();
-            return await extra.reply(`❌ _${pick(SLANG.error)}, invalid pinterest link — check it hey_`);
+            return await extra.reply(`❌ _${voice.openErr()}, invalid pinterest link — check it hey_`);
           } else if (status === 429) {
             extra.fail();
-            return await extra.reply(`❌ _${pick(SLANG.error)}, rate limit — try again later_`);
+            return await extra.reply(`❌ _${voice.openErr()}, rate limit — try again later_`);
           } else if (status === 500) {
             extra.fail();
-            return await extra.reply(`❌ _${pick(SLANG.error)}, server error — try again later_`);
+            return await extra.reply(`❌ _${voice.openErr()}, server error — try again later_`);
           }
         }
         extra.fail();
-        return await extra.reply(`❌ _${pick(SLANG.error)}, couldn't fetch pinterest content — try again_`);
+        return await extra.reply(`❌ _${voice.openErr()}, couldn't fetch pinterest content — try again_`);
       }
       
       if (!response.data || !response.data.status || !response.data.result) {
         extra.fail();
-        return await extra.reply(`❌ _${pick(SLANG.error)}, invalid response — pin might not exist or be private_`);
+        return await extra.reply(`❌ _${voice.openErr()}, invalid response — pin might not exist or be private_`);
       }
       
       const pinData = response.data.result;
@@ -129,7 +129,7 @@ module.exports = {
       if (!imageUrl) {
         console.error('Pinterest API response structure:', JSON.stringify(pinData, null, 2));
         extra.fail();
-        return await extra.reply(`❌ _${pick(SLANG.error)}, no media URL found — might be a video or different format_`);
+        return await extra.reply(`❌ _${voice.openErr()}, no media URL found — might be a video or different format_`);
       }
       
       // Build caption
@@ -137,7 +137,7 @@ module.exports = {
       if (author && author !== 'Unknown') {
         caption += `👤 Author: ${author}\n`;
       }
-      caption += `\n${bold('Downloaded by ' + config.botName)}\n_${pick(SLANG.vibe)}, enjoy_`;
+      caption += `\n${bold('Downloaded by ' + config.botName)}\n_${voice.lead('affirm')}, enjoy_`;
       
       // Send only the main media (not thumbnail separately to avoid duplicates)
       if (isVideo) {
@@ -175,7 +175,7 @@ module.exports = {
         } catch (videoError) {
           console.error('Video download/send error:', videoError.message);
           extra.fail();
-          return await extra.reply(`❌ _${pick(SLANG.error)}, couldn't download video — might be expired or need auth_`);
+          return await extra.reply(`❌ _${voice.openErr()}, couldn't download video — might be expired or need auth_`);
         }
       } else {
         // For images, use the main image URL (not thumbnail)
@@ -188,7 +188,7 @@ module.exports = {
     } catch (error) {
       console.error('Error in pinterest command:', error);
       extra.fail();
-      return await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message || 'Unknown error occurred'}_`);
+      return await extra.reply(`❌ _${voice.openErr()} — ${error.message || 'Unknown error occurred'}_`);
     }
   },
 };

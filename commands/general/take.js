@@ -7,7 +7,7 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const webp = require('node-webpmux');
 const crypto = require('crypto');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'take',
@@ -47,7 +47,7 @@ module.exports = {
         { logger: undefined, reuploadRequest: sock.updateMediaMessage },
       );
       
-      if (!mediaBuffer) { extra.fail(); return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't download the sticker, try again`); }
+      if (!mediaBuffer) { extra.fail(); return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't download the sticker, try again`); }
       
       const userName = msg.pushName || extra.sender.split('@')[0];
       const packname = args.length ? args.join(' ') : userName;
@@ -79,7 +79,7 @@ module.exports = {
     } catch (error) {
       console.error('Take command error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't steal the sticker, try again`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't steal the sticker, try again`);
     }
   },
 };

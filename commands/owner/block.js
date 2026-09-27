@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 
 const parsePhoneNumber = (input) => {
   if (!input) return null;
@@ -56,12 +56,12 @@ module.exports = {
       await sock.updateBlockStatus(target, 'block');
       
       await sock.sendMessage(extra.from, {
-        text: `*✅ BLOCKED*\n\n@${target.split('@')[0]} _has been blocked, ${pick(SLANG.good)}!_`,
+        text: `*✅ BLOCKED*\n\n@${target.split('@')[0]} _has been blocked, ${voice.tag('affirm')}!_`,
         mentions: [target]
       }, { quoted: msg });
       
     } catch (error) {
-      await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`_${voice.openErr()} — ${error.message}_`);
     }
   }
 };

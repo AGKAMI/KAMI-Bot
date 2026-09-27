@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 const prefix = config.prefix || '.';
 
 module.exports = {
@@ -53,7 +53,7 @@ module.exports = {
     if (!rules) {
       return extra.reply(
         `📜 *GROUP RULES*\n\n` +
-        `_No rules set yet ${pick(SLANG.vibe)}_\n\n` +
+        `_No rules set yet, ${voice.tag('err')}_\n\n` +
         `*How to set rules:*\n` +
         `Admins use: ${prefix}setrules No spam; Be respectful; Have fun\n` +
         `_Use semicolons or new lines to separate rules_`
@@ -87,7 +87,7 @@ module.exports = {
       `----------\n` +
       `${numbered}\n` +
       `----------\n\n` +
-      `_${pick(SLANG.good)}, follow these hey!_`
+      `_${voice.lead('affirm')}, follow these hey!_`
     );
   },
 
@@ -110,7 +110,7 @@ module.exports = {
       extra.fail();
       return extra.reply(
         `❌ *ERROR*\n\n` +
-        `_Provide the rules text ${pick(SLANG.vibe)}_\n\n` +
+        `_Provide the rules text, ${voice.tag('neutral')}_\n\n` +
         `*Example:*\n` +
         `${prefix}setrules No spam; Be respectful; Have fun\n\n` +
         `_Use ; or new lines to separate rules_`
@@ -124,7 +124,7 @@ module.exports = {
     return extra.reply(
       `✅ *RULES SET*\n\n` +
       `📜 ${bold(groupName)} rules updated!\n\n` +
-      `_Admin, ${pick(SLANG.good)}, rules saved!_`
+      `_Admin, ${voice.tag('affirm')}, rules saved!_`
     );
   },
 
@@ -146,7 +146,7 @@ module.exports = {
 
     return extra.reply(
       `✅ *RULES CLEARED*\n\n` +
-      `_Rules wiped ${pick(SLANG.vibe)}, group has no rules now_`
+      `_Rules wiped, ${voice.tag('neutral')}, group has no rules now_`
     );
   }
 };

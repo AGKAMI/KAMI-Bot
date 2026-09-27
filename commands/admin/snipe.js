@@ -5,7 +5,7 @@
 
 const snipeStore = require('../../utils/snipeStore');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const SnipeStoreClass = snipeStore.constructor;
 const typeEmoji = SnipeStoreClass.typeEmoji;
 
@@ -43,14 +43,14 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *NO DELETED MESSAGES*\n\n` +
-            `_No deleted messages stored for this group ${pick(SLANG.vibe)}_\n\n` +
+            `_No deleted messages stored for this group, ${voice.tag('err')}_\n\n` +
             `_Make sure antidelete is active_`
           );
         }
         extra.fail();
         return extra.reply(
           `❌ *OUT OF RANGE*\n\n` +
-          `_Only ${total} deleted message${total === 1 ? '' : 's'} stored ${pick(SLANG.vibe)}_`
+          `_Only ${total} deleted message${total === 1 ? '' : 's'} stored, ${voice.tag('neutral')}_`
         );
       }
 
@@ -69,7 +69,7 @@ module.exports = {
       extra.fail();
       return extra.reply(
         `❌ *NO DELETED MESSAGES*\n\n` +
-        `_No deleted messages stored for this group ${pick(SLANG.vibe)}_`
+        `_No deleted messages stored for this group, ${voice.tag('err')}_`
       );
     }
 
@@ -88,7 +88,7 @@ module.exports = {
     });
 
     text += `----------\n`;
-    text += `_Use ${prefix}snipe <number> for details ${pick(SLANG.vibe)}_`;
+    text += `_Use ${prefix}snipe <number> for details, ${voice.tag('neutral')}_`;
 
     const mentions = entries.map(e => e.sender);
 

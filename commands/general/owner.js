@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons } = require('../../utils/buttonHelper');
 
 module.exports = {
@@ -57,18 +57,18 @@ END:VCARD
 
             if (actionButtons.length > 0) {
                 await sendButtons(sock, chatId, {
-                    text: `👑 *OWNER CONTACT*\n💡 _here's my owner's contact, ${pick(SLANG.vibe)}_`,
+                    text: `👑 *OWNER CONTACT*\n💡 _here's my owner's contact, ${voice.tag('neutral')}_`,
                     footer: config.botName || 'KAMI Bot',
                     buttons: actionButtons,
                 }, msg);
             } else {
-                await extra.reply(`👑 *OWNER CONTACT*\n💡 _here's my owner's contact, ${pick(SLANG.vibe)}_`);
+                await extra.reply(`👑 *OWNER CONTACT*\n💡 _here's my owner's contact, ${voice.tag('neutral')}_`);
             }
 
         } catch (error) {
             console.error('Owner command error:', error);
             extra.fail();
-            await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
+            await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — ${error.message}`);
         }
     }
 };

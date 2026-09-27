@@ -6,7 +6,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'lyrics',
@@ -20,7 +20,7 @@ module.exports = {
     try {
       if (args.length === 0) {
         return await sock.sendMessage(msg.key.remoteJid, {
-          text: `📝 _${pick(SLANG.vibe)}, give me a song name_\n\n_Example:_ ${config.prefix}lyrics Despacito`
+          text: `📝 _${voice.lead('neutral')}, give me a song name_\n\n_Example:_ ${config.prefix}lyrics Despacito`
         });
       }
 
@@ -141,7 +141,7 @@ module.exports = {
       if (!lyricsData) {
         extra.fail();
         return await sock.sendMessage(msg.key.remoteJid, {
-          text: `❌ _${pick(SLANG.error)}, could not find lyrics for "${query}"_\n\n_Just type:_ ${config.prefix}lyrics songname artist`
+          text: `❌ _${voice.openErr()}, could not find lyrics for "${query}"_\n\n_Just type:_ ${config.prefix}lyrics songname artist`
         });
       }
 
@@ -163,7 +163,7 @@ module.exports = {
       console.error('[lyrics] Error:', error.message);
       extra.fail();
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ _${pick(SLANG.error)} — error fetching lyrics hey_`
+        text: `❌ _${voice.openErr()} — error fetching lyrics hey_`
       });
     }
   }

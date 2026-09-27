@@ -2,7 +2,7 @@
  * Unmute Command - Open group (all members can send)
  */
 
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const database = require('../../database');
 const config = require('../../config');
@@ -37,7 +37,7 @@ module.exports = {
         await sock.groupSettingUpdate(extra.from, 'not_announcement');
         database.clearOwnerMuted(extra.from);
         await sendButtons(sock, extra.from, {
-          text: `🔓 UNMUTED\n\nGroup opened ${pick(SLANG.vibe)}\nEveryone can talk now`,
+          text: `🔓 UNMUTED\n\nGroup opened, ${voice.tag('neutral')}\nEveryone can talk now`,
           footer: 'Unmute Management',
           buttons: [
             { id: 'admin:mute', text: '🔒 Mute' },

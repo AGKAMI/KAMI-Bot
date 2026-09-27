@@ -4,7 +4,7 @@
 
 const APIs = require('../../utils/api');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'ai',
@@ -19,7 +19,7 @@ module.exports = {
     try {
       if (args.length === 0) {
         extra.fail();
-        return extra.reply(`\u274C _${pick(SLANG.error)} - usage: ${prefix}ai <question>_\n\n_example: ${prefix}ai what is the capital of france?_`);
+        return extra.reply(`\u274C _${voice.openErr()} - usage: ${prefix}ai <question>_\n\n_example: ${prefix}ai what is the capital of france?_`);
       }
       
       const question = args.join(' ');
@@ -34,7 +34,7 @@ module.exports = {
       
     } catch (error) {
       extra.fail();
-      await extra.reply(`\u274C _${pick(SLANG.error)} - ai error: ${error.message}_`);
+      await extra.reply(`\u274C _${voice.openErr()} - ai error: ${error.message}_`);
     }
   }
 };

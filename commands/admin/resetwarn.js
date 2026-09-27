@@ -4,7 +4,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'resetwarn',
@@ -45,7 +45,7 @@ module.exports = {
         text: `*✅ WARNINGS RESET*\n\n` +
               `👤 ${mention(target)}\n` +
               `📝 *Cleared:* ${currentWarnings.count} warnings\n\n` +
-              `_Clean slate, ${pick(SLANG.good)}!_`,
+              `_Clean slate, ${voice.tag('affirm')}!_`,
         mentions: [target]
       }, { quoted: msg });
 

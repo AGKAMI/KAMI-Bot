@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 module.exports = {
@@ -62,7 +62,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew role error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't update role`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't update role`);
     }
   },
 };

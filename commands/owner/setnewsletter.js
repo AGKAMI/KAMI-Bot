@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'setnewsletter',
@@ -108,7 +108,7 @@ module.exports = {
       
       await extra.reply(
         `*✅ NEWSLETTER UPDATED*\n\n` +
-        `✅ ${pick(SLANG.good)}, jid has been updated!\n\n` +
+        `✅ ${voice.lead('affirm')}, jid has been updated!\n\n` +
         `📋 *JID:* \`${newsletterJid}\`\n` +
         `📝 *Name:* ${config.botName}\n\n` +
         `🔄 The menu will now forward from this newsletter.`

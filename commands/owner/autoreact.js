@@ -3,7 +3,7 @@
  */
 
 const { load, save } = require('../../utils/autoReact');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'autoreact',
@@ -26,13 +26,13 @@ module.exports = {
       if (opt === 'on') {
         db.enabled = true;
         save(db);
-        return extra.reply(`*✅ AUTO-REACT ON*\n\n✅ ${pick(SLANG.good)}, auto-react is now enabled`);
+        return extra.reply(`*✅ AUTO-REACT ON*\n\n✅ ${voice.lead('affirm')}, auto-react is now enabled`);
       }
 
       if (opt === 'off') {
         db.enabled = false;
         save(db);
-        return extra.reply(`*❌ AUTO-REACT OFF*\n\n❌ ${pick(SLANG.vibe)}, auto-react is now disabled`);
+        return extra.reply(`*❌ AUTO-REACT OFF*\n\n❌ ${voice.openErr()}, auto-react is now disabled`);
       }
 
       if (opt === 'set bot') {

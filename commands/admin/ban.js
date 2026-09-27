@@ -4,7 +4,7 @@
  */
 
 const config = require('../../config');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 const parseNumber = (input) => {
@@ -83,7 +83,7 @@ module.exports = {
           `✅ SUCCESS\n\n` +
           `🔨 BANNED\n\n` +
           `${mention(target)} has been banned\n\n` +
-          `_${pick(SLANG.vibe)}_`,
+          `_${voice.react('ok')}_`,
         mentions: [target],
         footer: 'Ban Management',
         buttons: [
@@ -130,7 +130,7 @@ onButton('admin:unban', async (sock, msg, from, sender, btnId) => {
         `✅ SUCCESS\n\n` +
         `♻️ UNBANNED\n\n` +
         `${mention(target)} has been unbanned\n\n` +
-        `_${pick(SLANG.vibe)}_`,
+        `_${voice.react('ok')}_`,
       mentions: [target],
     });
   } catch (e) {

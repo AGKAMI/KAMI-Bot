@@ -2,7 +2,7 @@
  * Lock Command - Granular lock/unlock for group name, desc, pp
  */
 
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const database = require('../../database');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
@@ -64,7 +64,7 @@ module.exports = {
           `🔒 Description\n` +
           `🔒 Profile pic\n\n` +
           `👤 *By:* ${mention(extra.sender)}\n\n` +
-          `_${pick(SLANG.good)}, group secured!_`,
+          `_${voice.lead('affirm')}, group secured!_`,
           [extra.sender]
         );
       }
@@ -85,7 +85,7 @@ module.exports = {
           `🔓 *GROUP UNLOCKED*\n\n` +
           `🔓 *All settings unlocked*\n\n` +
           `👤 *By:* ${mention(extra.sender)}\n\n` +
-          `_${pick(SLANG.vibe)}, group opened up_`,
+          `_${voice.lead('neutral')}, group opened up_`,
           [extra.sender]
         );
       }
@@ -131,7 +131,7 @@ module.exports = {
     } catch (error) {
       console.error('Lock Error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n\n${voice.openErr()} — ${error.message}`);
     }
   }
 };

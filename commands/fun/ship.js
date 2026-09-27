@@ -1,5 +1,5 @@
 // commands/fun/ship.js
-const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
 module.exports = {
   name: 'ship',
   reactions: { received: '💑', done: '💞' },
@@ -42,11 +42,11 @@ module.exports = {
             b = shuffled[1];
           } else {
             extra.fail();
-            return extra.reply(`❌ _${pick(SLANG.error)} — not enough people to ship hey_`);
+            return extra.reply(`❌ _${voice.openErr()} — not enough people to ship hey_`);
           }
         } else {
           extra.fail();
-          return extra.reply(`❌ _ag, this only works in groups, ${pick(SLANG.vibe)}_`);
+          return extra.reply(`❌ _ag, this only works in groups, ${voice.tag('err')}_`);
         }
       }
 
@@ -72,7 +72,7 @@ module.exports = {
     } catch (error) {
       console.error('[ship] ERROR:', error);
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)} — something went stukkend with the ship_`);
+      await extra.reply(`❌ _${voice.openErr()} — something went stukkend with the ship_`);
     }
   }
 };

@@ -4,7 +4,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
@@ -38,10 +38,10 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antigroupmention) {
-          return extra.reply(`✅ SUCCESS\n\nAntigroupmention is already on ${pick(SLANG.vibe)}`);
+          return extra.reply(`✅ SUCCESS\n\nAntigroupmention is already on, ${voice.tag('neutral')}`);
         }
         database.updateGroupSettings(extra.from, { antigroupmention: true });
-        return extra.reply(`✅ SUCCESS\n\nAntigroupmention turned ON ${pick(SLANG.good)}`);
+        return extra.reply(`✅ SUCCESS\n\nAntigroupmention turned ON, ${voice.tag('affirm')}`);
       }
       
       if (opt === 'off') {
@@ -65,7 +65,7 @@ module.exports = {
           antigroupmentionAction: setAction,
           antigroupmention: true // Auto-enable when setting action
         });
-        return extra.reply(`✅ SUCCESS\n\nAntigroupmention action set to ${setAction} ${pick(SLANG.good)}`);
+        return extra.reply(`✅ SUCCESS\n\nAntigroupmention action set to ${setAction}, ${voice.tag('affirm')}`);
       }
       
       if (opt === 'get') {

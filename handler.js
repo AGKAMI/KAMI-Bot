@@ -10,7 +10,7 @@ const { jidDecode, jidEncode } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
-const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG } = require('./utils/format');
+const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG, voice } = require('./utils/format');
 const { buildImage } = require('./utils/imageText');
 const { handleButtonResponse, requireAdmin } = require('./utils/buttonHelper');
 const { hasActiveSession, getApplicantState, sendProgressiveResponse } = require('./commands/crew/applyInteractive');
@@ -1159,7 +1159,7 @@ const handleMessage = async (sock, msg) => {
                 if (action === 'warn' || action === 'delete') {
                   await sock.sendMessage(from, {
                     text: action === 'warn'
-                      ? `⚠️ *BAD WORD*\n\n@${sender.split('@')[0]} _that word's not allowed here, ${pick(SLANG.vibe)}_`
+                      ? `⚠️ *BAD WORD*\n\n@${sender.split('@')[0]} _that word's not allowed here, ${voice.tag('err')}_`
                       : `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _your message was deleted — bad word detected_`,
                     mentions: [sender]
                   });
@@ -1246,7 +1246,7 @@ const handleMessage = async (sock, msg) => {
                     ? sender.split('@')[0] + '@s.whatsapp.net'
                     : sender;
                   await sock.sendMessage(targetJid, {
-                    text: `⚠️ *FLOOD WARNING*\n\nHey — slow down. You\'re spamming too fast in the group.\n\n_One more burst and you\'re getting kicked, ${pick(SLANG.vibe)}_`
+                    text: `⚠️ *FLOOD WARNING*\n\nHey — slow down. You\'re spamming too fast in the group.\n\n_One more burst and you\'re getting kicked, ${voice.tag('neutral')}_`
                   });
                 } catch (e) {}
               }
@@ -1532,7 +1532,7 @@ const handleMessage = async (sock, msg) => {
     
     try {
       await sock.sendMessage(msg.key.remoteJid, { 
-        text: `${config.messages.error}\n_${pick(SLANG.error)} — ${error.message}_`
+        text: `${config.messages.error}\n_${voice.openErr()} — ${error.message}_`
       }, { quoted: msg });
     } catch (e) {
       // Don't log rate limit errors when sending error messages
@@ -1735,7 +1735,7 @@ const handleGroupUpdate = async (sock, update) => {
                       `🛡️ *YOU GOOD* 💪\n\n` +
                       `Someone kicked you from a crew group 💀\n` +
                       `KAMI-Bot brought you back\n\n` +
-                      `${pick(SLANG.protected)}`,
+                      `${voice.say('protected')}`,
                   });
                 } else {
                   // Re-add failed — send invite link
@@ -1767,9 +1767,9 @@ const handleGroupUpdate = async (sock, update) => {
                       `🛡️ *PROTECTION* 💀\n\n` +
                       `@${memberNum} got kicked from a crew group\n\n` +
                       (reAdded
-                        ? `KAMI-Bot brought them back ${pick(SLANG.protected)}`
+                        ? `KAMI-Bot brought them back, ${voice.tag('neutral')}`
                         : `Couldn't re-add — sent them the invite link\nThey'll be admin again when they join`) +
-                      `\nCheck who did it ${pick(SLANG.roast)}`,
+                      `\nCheck who did it, ${voice.tag('neutral')}`,
                     mentions: [jid],
                   });
                 } catch (e) {}
@@ -1886,7 +1886,7 @@ const handleGroupUpdate = async (sock, update) => {
                               `They were promoted by you and are *protected*\n\n` +
                               `✅ They have been automatically re-promoted\n` +
                               `⚠️ If this keeps happening, check who is demoting admins\n\n` +
-                              `${pick(SLANG.roast)}`,
+                              `${voice.say('tease')}`,
                             mentions: [jid],
                           });
                         } catch (e) {}
@@ -2022,7 +2022,7 @@ const handleGroupUpdate = async (sock, update) => {
             `Welcome ${mention(participantJid)} to *${groupName}*`,
             `Member #${groupMetadata.participants.length + 1} | ${joinedDate}`,
             '',
-            `_${pick(SLANG.vibe)}, enjoy your stay chommie_ 💀`,
+            `_${voice.lead('affirm')}, enjoy your stay chommie_ 💀`,
           ].join('\n');
           
           // Fetch user profile pic (buffer)
@@ -2151,7 +2151,7 @@ const handleGroupUpdate = async (sock, update) => {
             `Farewell ${mention(participantJid)} from *${groupName}*`,
             `Member #${Math.max(1, groupMetadata.participants.length - 1)} | ${leftDate}`,
             '',
-            `_${pick(SLANG.vibe)}, we'll miss you hey._ 💀`,
+            `_${voice.lead('neutral')}, we'll miss you hey._ 💀`,
           ].join('\n');
           
           // Fetch background image: custom > group pic > fallback
@@ -2216,7 +2216,7 @@ const handleGroupUpdate = async (sock, update) => {
         } catch (goodbyeError) {
           // Fallback to simple goodbye message
           console.error('Goodbye error:', goodbyeError);
-          const goodbyeMsg = `_${pick(SLANG.vibe)}_ @${displayName} 👋\n_Go well, chommie._ 💀`;
+          const goodbyeMsg = `_${voice.lead('neutral')}_ @${displayName} 👋\n_Go well, chommie._ 💀`;
           
           await sock.sendMessage(id, { 
             text: goodbyeMsg, 
@@ -2287,7 +2287,7 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
         setTimeout(() => _botKicked.delete(sender), 5000);
         await sock.groupParticipantsUpdate(from, [sender], 'remove');
         await sock.sendMessage(from, { 
-          text: `🔗 _Anti-link triggered. Link removed, ${pick(SLANG.vibe)}._`,
+          text: `🔗 _Anti-link triggered. Link removed, ${voice.tag('neutral')}._`,
           mentions: [sender]
         });
       } catch (e) {
@@ -2325,7 +2325,7 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
       try {
         await sock.sendMessage(from, { delete: msg.key });
         await sock.sendMessage(from, { 
-          text: `🔗 _Anti-link triggered. Link removed, ${pick(SLANG.vibe)}._`,
+          text: `🔗 _Anti-link triggered. Link removed, ${voice.tag('neutral')}._`,
           mentions: [sender]
         });
       } catch (e) {

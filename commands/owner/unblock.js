@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 
 const parsePhoneNumber = (input) => {
   if (!input) return null;
@@ -59,7 +59,7 @@ module.exports = {
       
       // Confirmation to owner
       await sock.sendMessage(extra.from, {
-        text: `*✅ UNBLOCKED*\n\n@${target.split('@')[0]} _has been unblocked, ${pick(SLANG.good)}!_`,
+        text: `*✅ UNBLOCKED*\n\n@${target.split('@')[0]} _has been unblocked, ${voice.tag('affirm')}!_`,
         mentions: [target]
       }, { quoted: msg });
 
@@ -70,15 +70,15 @@ module.exports = {
             `━━━━━━━━━━━━━━━━\n` +
             `*KAMI UNLOCKED YOU* 🔓\n` +
             `━━━━━━━━━━━━━━━━\n\n` +
-            `${pick(SLANG.greeting)} ${pick(SLANG.friend)}\n\n` +
-            `_You were blocked but you're free now.${pick(SLANG.closer)}_`
+            `${voice.greetOpen()}, ${voice.mate()}\n\n` +
+            `_You were blocked but you're free now, ${voice.tag('neutral')}_`
         });
       } catch (dmErr) {
         console.error('[UNBLOCK] DM to unblocked user failed:', dmErr.message);
       }
       
     } catch (error) {
-      await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`_${voice.openErr()} — ${error.message}_`);
     }
   }
 };

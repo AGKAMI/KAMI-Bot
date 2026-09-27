@@ -5,7 +5,7 @@
 
 const axios = require('axios');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 const BASE = 'https://api.siputzx.my.id/api/ai/magicstudio';
 
@@ -24,7 +24,7 @@ module.exports = {
       if (!prompt) {
         extra.fail();
         return await extra.reply(
-          `❌ _${pick(SLANG.error)} — usage: ${prefix}magicstudio <prompt>_\n\n_Example: ${prefix}magicstudio a cyberpunk city_`
+          `❌ _${voice.openErr()} — usage: ${prefix}magicstudio <prompt>_\n\n_Example: ${prefix}magicstudio a cyberpunk city_`
         );
       }
       
@@ -63,19 +63,19 @@ module.exports = {
       // Handle specific error cases
       if (error.response?.status === 429) {
         extra.fail();
-        await extra.reply(`❌ _${pick(SLANG.error)} — rate limit — try again later_`);
+        await extra.reply(`❌ _${voice.openErr()} — rate limit — try again later_`);
       } else if (error.response?.status === 400) {
         extra.fail();
-        await extra.reply(`❌ _${pick(SLANG.error)} — invalid prompt — try something else_`);
+        await extra.reply(`❌ _${voice.openErr()} — invalid prompt — try something else_`);
       } else if (error.response?.status === 500) {
         extra.fail();
-        await extra.reply(`❌ _${pick(SLANG.error)} — server error — try again later_`);
+        await extra.reply(`❌ _${voice.openErr()} — server error — try again later_`);
       } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         extra.fail();
-        await extra.reply(`❌ _${pick(SLANG.error)} — timed out — try again_`);
+        await extra.reply(`❌ _${voice.openErr()} — timed out — try again_`);
       } else {
         extra.fail();
-        await extra.reply(`❌ _${pick(SLANG.error)} — couldn't generate image: ${error.message}_`);
+        await extra.reply(`❌ _${voice.openErr()} — couldn't generate image: ${error.message}_`);
       }
     }
   }

@@ -1,47 +1,56 @@
 # HANDOFF
 
 ## Goal
-Progressive "unique per-command reaction" system for KAMI Bot: the user's command message gets staged reactions — `received` → `generating` (heavy commands only) → `done`, with a unique emoji trio per command, plus `❌` on failure. Never allowed to slow command execution.
+"Full SA voice everywhere" for KAMI Bot — research South African slang/tsotsitaal, build a position-aware phrase library, and migrate every `pick(SLANG.*)` call site so bot output reads like natural South African speech (pan-SA mix: Joburg kasi + Cape Town kaaps + Durban), while links, numbers and @mentions stay byte-exact.
 
 ## Current State
-- DONE + COMMITTED (`bf63bc7`, 179 files) and locally verified. Not pushed, not deployed.
-- `utils/progressReaction.js` — `resolve`, `stageEmoji`, `react`, `runWithReactions`, `DEFAULTS` (`📥/⚙️/✅/❌`), `CATEGORY_DEFAULTS`, `STAGE_KEYS`, `GENERATING_DELAY = 150`. Reactions are **enqueued on a per-invocation promise chain, never awaited inline** — order is serialised but the command never waits on the network. `generating` is armed on a 150ms timer and cleared the instant `execute()` settles (no flicker for fast commands).
-- `config.js` → `progressReactions: true`.
-- `handler.js:1431-1480` — `commandExtra` (incl. `extra.stage(nameOrEmoji)` → `stageEmoji`) built inside the existing `try`, then `await runWithReactions(command, {sock, from, msg}, () => command.execute(...))`. Errors rethrow into the pre-existing catch, so logging/reply behaviour is unchanged.
-- `handler.js:744-752` — autoReact `bot` mode now skips its generic ⏳ when the typed command is known to `commands` (avoids double-reacting). `all` mode untouched.
-- All **176** registered command files carry `reactions: { received, generating?, done }` right after `name:` — **67 heavy (3-stage)**, **109 light (2-stage)**, zero with `received === done`.
-- 11 redundant in-command reactions removed: `tiktok.js` (🔄/✅/❌×2), `video.js` (🔄/✅/❌), `announce.js` (⏳), `facebook.js` (raw 🔄 + unused `reactOk`), `igs.js`, `igsc.js`, `instagram.js`, `pinterest.js`, `ssweb.js` (raw 📥), `report.js` (raw 🚨).
-- Verification: `node --check` clean on every modified file; `loadCommands()` loads all 176 with 0 missing `reactions`; behaviour test confirmed 📱→⬇️→🎞️, 2-stage flow, and `["A","❌"]` on throw with the error still propagating.
+- **Applied and locally verified. NOT committed, NOT pushed.** Remote is still `cea1d92`; working tree has 181 modified files + 2 new files (`utils/slang.js`, `utils/slang-lex.js`).
+- **Migration result: 535 `pick(SLANG.*)` sites → 533 edited lines → 180 files. 0 sites left.** Classification: `raw` 468 (no punctuation injected), `tag` 67 (comma inserted).
+- Emitted call mix: `voice.openErr` 221 · `voice.tag` 149 · `voice.lead` 128 · `voice.react` 13 · `voice.say` 10 · `voice.greetOpen` 7 · `voice.open` 5 · `voice.mate` 2.
+- **`utils/slang-lex.js`** (new, untracked) — researched lexicon: `LEX` (~70 entries with `{w, pos, reg, mean, ex}`), `AVOID` (17 banned items with reasons), `byPos()`, `byReg()`.
+- **`utils/slang.js`** (new, untracked) — banks `OPEN_ERR/OPEN_INFO/OPEN_WARN/OPEN_GREET`, `TAG_AFFIRM/NEUTRAL/ERR/HYPE/SOFTEN`, `LEAD_AFFIRM/NEUTRAL/HYPE`, `REACT_OK/FAIL/DUNNO`, `ADDR`/`ADDR_SAFE`, `SAY` (17 speech acts), plus `voice.{openErr,open,openWarn,greetOpen,tag,lead,react,addr,mate,say,line,hi,bye,ok,bad,wait,hype,act}` and the legacy `SLANG` dict (kept for compat — now zero consumers).
+- **`utils/format.js`** — inline SLANG dict removed; now `const { voice, SLANG, pick } = require('./slang')`; `status` defaults SA-ised; `templates.welcome/goodbye/errorMsg/permDenied/groupOnly/adminOnly` rewritten; exports `voice`.
+- **`commands/games/tictactoe.js:70`** hand-fixed: tag moved out of the middle of the clause (`🎉 @user wins with ⭕! ${voice.tag('affirm')}`).
+
+### Verification (all green)
+- `node --check` on every `.js` in the repo → `ALL SYNTAX OK`.
+- `%TEMP%\opencode\check-voice-import.js` → 181 files declare `voice`, 0 missing.
+- `%TEMP%\opencode\eval-voice.js` → 15 unique `voice.*` call shapes × 200 iterations → `ALL EVAL OK`.
+- `%TEMP%\opencode\runtime-smoke.js` → actually **executes** `ping`, `antiflood` (usage), `calc` (usage), `dice` (bad input) with stub sock/extra → no `ReferenceError`, SA text in the output.
+- `%TEMP%\opencode\render-voice.js` → welcome/goodbye/errorMsg/permDenied/groupOnly/adminOnly/status + all 17 legacy `SLANG` keys render.
+- Repo-wide artifact scan (`double-comma`, `comma-dot`, `comma-bang`) → 22 hits, all false positives (spread operators `...x`).
+- `grep SLANG\.` across the repo → **0 hits**; the 194 remaining bare `SLANG` references are all import/export statements.
 
 ## What Was Tried That Failed
-- **First `reactions:` insertion pass put a stray blank line in 88/176 files.** Cause: with the `m` flag, JS `^` also matches *after* `\r`, so on CRLF files `^(\s+)name:` captured `"\n  "` as "indent" — the inserted line then began with an extra `\n`. Fix: `.replace(/[\r\n]/g, '')` on the captured indent, then `git checkout -- commands` and re-run. Verify with the blank-line scan (now `blank-before=0 clean=176`).
-- **Error-stage reaction looked missing in a unit test** — test artifact: the chain is intentionally floating, and `process.exit(0)` immediately after the catch killed it. Re-tested with a 250ms wait → `["A","❌"]`. No code change needed.
-- **Inline `node -e "..."` one-liners kept breaking** under PowerShell (quote/`$` mangling). Wrote scripts to `%TEMP%\opencode\*.js` and ran those instead.
-- `node -e "loadCommands()..."` **hangs past 120s** — some command module keeps the event loop alive. Always `console.log` results then `process.exit(0)` (already noted last session).
+- **Comma insertion produced `joined! , tag` / `on , tag`.** Cause: the edit started at `${` without swallowing the whitespace (or a stray `.!?`) already before it. Fix: walk `start` back over `\s` and one `.!?`, then prepend `', '`.
+- **`actOf` classified `✅ SUCCESS\n\nAntilink is already on` as `err`** because soft word `already`/`No ` was tested before the ✅ marker. Fix: tiered `actOf` — hard err (`❌|ERROR|couldn't|failed`) → state (`already` → neutral) → hard ok (`✅|SUCCESS|turned ON|activated`) → soft err → soft ok. Also added `\b` boundaries so `undone` no longer matched `done`, `unlocked` no longer matched `locked`.
+- **Footer/sign-off sites (`_${pick(SLANG.vibe)}_` alone on their own line) got `voice.react('dunno')`** ("Bathong, where did that come from") under `✅ SUCCESS` banners — the banner lives 3 lines above. Fix: step 1 now reads `lines[i-4..i]` as context; `mixed` (both ❌ and ✅ in context) forces neutral, ok → `voice.react('ok')`, err → `voice.react('fail')`, else → `voice.lead('neutral')` (preserves the original `_Sho_` shape).
+- **String-concat operands had no separator**: `'_Hired..._' + pick(SLANG.vibe)` → `'_Hired..._Sho'`. Fix: when `sp` ends with `+` but `st` does *not* start with `+`, emit `' ' + voice.tag(...)` (valid both inside and outside a template literal). Two sites: `crew/accept.js:283`, `crew/deny.js:135`.
+- **CRITICAL near-miss: the codemod inserted `voice.*()` into 180 files that only imported `{ bold, pick, SLANG }` from `utils/format`.** `node --check` cannot catch it — it would have been `ReferenceError: voice is not defined` on every single command. Fixed with `%TEMP%\opencode\patch-voice-import.js` (adds `voice` to each file's existing `utils/format` destructure). **Never add a `voice.*` call without confirming the import.**
+- **Inline `node -e "..."` one-liners keep breaking** under PowerShell (quote/`$`/regex mangling). Every check now lives in `%TEMP%\opencode\*.js`.
+- `loadCommands()` still hangs past 120s → always `process.exit()`.
 
 ## Active Files
-- `utils/progressReaction.js` — the stage engine (new, committed).
-- `handler.js` — wrap at `:1478`, `extra.stage` at `:1468`, autoReact skip at `:744`.
-- `config.js` — `progressReactions` flag.
-- `commands/**` (176 files) — `reactions:` metadata only.
-- `%TEMP%\opencode\apply-reactions.js` — byte-level (latin1) inserter with the full emoji table `T`; idempotent (`already` counter). Reuse it for any new command file.
-- `%TEMP%\opencode\check-dup.js`, `check-registry.js` — coverage/uniqueness audits.
-- Left over from the previous session: `upload_sftp.py` (still untracked).
+- `utils/slang.js`, `utils/slang-lex.js` — the new library (untracked, must be added to any commit).
+- `utils/format.js` — re-exports `voice`, owns the SA-ised `status` + `templates`.
+- `commands/**` (180 files) + `handler.js` + `utils/autoProgression.js` — migrated call sites + `voice` import.
+- `%TEMP%\opencode\migrate-slang.js` — the codemod (`[repo] [--apply] [--report <file>]`); classification steps 1-9; re-runnable but now idempotent-zero (0 remaining sites).
+- `%TEMP%\opencode\patch-voice-import.js`, `check-voice-import.js`, `check-report.js`, `show.js`, `show2.js`, `eval-voice.js`, `runtime-smoke.js`, `render-voice.js`, `load-test.js`, `migrate-report.txt` — the verification suite. Re-run them after any further string edits.
 
 ## Known Gotchas
-- **CRLF + regex `^`** — never trust `(\s+)` after a `^...` anchor in this repo; files are CRLF in the working tree with autocrlf normalising to LF in git (`LF will be replaced by CRLF` warnings are expected).
-- **Reactions are fire-and-forget** — `done` may land *after* the command's reply. That is intentional (never delay the user).
-- **Pre-existing duplicate command names**: `poll` (`games/polls.js` + `general/poll.js`) and `translate` (`general/translate.js` + `utility/translate.js`) → 176 files, 174 unique names. Loader keeps both objects via aliases. Not touched.
-- **Stages bypassed on non-handler paths**: button routes (`handler.js` ~`:818/:838/:858`), sticker/bomb/warn auto flows (~`:1010/:1042/:1217`), and internal dispatchers (`commands/crew/crew.js:180`, `commands/admin/promote.js:116`, apply flow) call `.execute()` directly.
-- `commands/games/giveaway.js:279` reaction is **intentional** — it reacts to the giveaway post with `sent.key`, not the command message.
-- Commands that catch their own errors and `return extra.reply(...)` count as **success** (`done` fires, not `❌`) — documented v1 limitation.
-- Unknown commands + `progressReactions` on still get the generic autoReact ⏳ (only *known* commands are exempt).
+- **`voice` must be destructured** from `../../utils/format` (or `./utils/format` / `../utils/format`) in any file that calls it — 180 files were patched by hand script, not by the codemod.
+- **Position rules are corpus-derived, not decoration**: `eish/yho/tjo/sho/hayi/hau` are clause-initial only; `mxm` never sentence-initial; `shame` = warmth/solidarity (never sarcasm); `hey` = the SAE softener/agreement tag; `ek sê` start-or-end; `mos` after adjectives = really / after verbs = only.
+- **Banned**: `mampara`, `naai`, `sharp` (as closer), `gashu`, plus `voetsek`, `sybau`, `moer/bliksem/donner`, `doos`, `poes`, slurs, `goffel`, `moffie`, `bergie` — see `AVOID` in `slang-lex.js`.
+- **CRLF + regex `^`** — never trust `(\s+)` after a `^` anchor here; `LF will be replaced by CRLF` warnings are expected and harmless.
+- **Concurrent committer**: another session (author `Kermes <kermes@oracle.local>`) pushes the same repo — always `git ls-remote origin main` before pushing.
+- **Never commit**: `__pycache__/`, `app.json`, `check.js`, `check_disk.py`, `kami_session/`, `upload_code.py`, `upload_images.py`, `upload_sftp.py`.
+- The codemod only touched **slang dictionary slots**. Menus, help text, button labels and most confirmation strings are still plain English.
 
 ## Next Steps
-1. Smoke-test on WhatsApp (no test suite): heavy → `.tt <tiktok url>` expect 📱 → ⬇️ → 🎞️; light → a 2-stage command expect its two emojis; force a failure (bad permission/owner command) → expect ❌ after the received emoji.
-2. Deploy when ready: `git push origin main` → restart from the bot-hosting panel (GitHub auto-pull). Nothing is pushed yet.
-3. Optional follow-up: wire stages into the button routes + internal dispatchers listed under Gotchas so those paths also progress.
-4. Decide whether to commit the stale `upload_sftp.py` (previous session's deploy script, still untracked).
+1. Review `%TEMP%\opencode\migrate-report.txt` one last time if desired (533 OLD/NEW triples), then commit on request: `feat: south african voice — position-aware slang library + migrate 535 SLANG call sites` (stage `utils/slang.js`, `utils/slang-lex.js` explicitly).
+2. Smoke-test on WhatsApp (no test suite): `.ping`, `.dice 1` (failure), `.antiflood set` (usage), `.calc` (usage), a media download, and a `✅ SUCCESS` confirmation — confirm each reads naturally and nothing throws.
+3. **Phase 2 decision**: "full SA voice" also means the hardcoded English in `menu.js` / `help.js` / button labels / generic confirmations. That is a separate, larger pass — ask before starting.
+4. Deploy when ready: `git push origin main` → restart from the bot-hosting panel (GitHub auto-pull).
 
 ## Memory Keys
-mcp__claude-flow__memory_search { query: "KAMI-Bot progressive reactions progressReaction handler stage CRLF indent", namespace: "project" }
+mcp__claude-flow__memory_search { query: "KAMI-Bot slang voice SA migrate codemod voice import position tag lead openErr", namespace: "project" }

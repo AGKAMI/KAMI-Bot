@@ -3,7 +3,7 @@
  */
 
 const { exec } = require('child_process');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const database = require('../../database');
 
 module.exports = {
@@ -17,7 +17,7 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
     try {
-      await extra.reply(`*🔁 RESTARTING*\n\n🔄 ${pick(SLANG.vibe)}, bot is restarting...`);
+      await extra.reply(`*🔁 RESTARTING*\n\n🔄 ${voice.lead('neutral')}, bot is restarting...`);
 
       // Flush pending DB writes before restart
       try { database.flushAll(); } catch (e) {}

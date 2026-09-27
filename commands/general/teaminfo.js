@@ -6,7 +6,7 @@
 const path = require('path');
 const fs = require('fs');
 const config = require('../../config');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { TEAMS } = require('../crew/crewForms');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { getUserTeam, getUserPendingTeam } = require('../crew/applyHelper');
@@ -167,7 +167,7 @@ module.exports = {
     } catch (error) {
       console.error('[TEAMINFO] Error:', error);
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
     }
   },
 };

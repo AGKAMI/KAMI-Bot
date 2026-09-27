@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 // Lazy require to avoid circular dependency
@@ -93,7 +93,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew remove error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't remove member`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't remove member`);
     }
   },
 };

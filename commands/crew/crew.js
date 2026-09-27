@@ -9,7 +9,7 @@
  */
 
 const database = require('../../database');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 const fs = require('fs');
 const path = require('path');
 
@@ -297,7 +297,7 @@ async function showHelp(sock, msg, extra) {
     ``,
     `💡 _Example: ${prefix}crew ssrs add @user_`,
     ``,
-    `_${pick(SLANG.vibe)} — Slammed Society CPM_`
+    `_${voice.open()} — Slammed Society CPM_`
   ].join('\n');
 
   await sock.sendMessage(extra.from, { text }, { quoted: msg });

@@ -3,7 +3,7 @@
  */
 
 const database = require('../../database');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
@@ -36,10 +36,10 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antilink) {
-          return extra.reply(`✅ SUCCESS\n\nAntilink is already on ${pick(SLANG.vibe)}`);
+          return extra.reply(`✅ SUCCESS\n\nAntilink is already on, ${voice.tag('neutral')}`);
         }
         database.updateGroupSettings(extra.from, { antilink: true });
-        return extra.reply(`✅ SUCCESS\n\nAntilink turned ON ${pick(SLANG.good)}`);
+        return extra.reply(`✅ SUCCESS\n\nAntilink turned ON, ${voice.tag('affirm')}`);
       }
       
       if (opt === 'off') {
@@ -63,7 +63,7 @@ module.exports = {
           antilinkAction: setAction,
           antilink: true // Auto-enable when setting action
         });
-        return extra.reply(`✅ SUCCESS\n\nAntilink action set to ${setAction} ${pick(SLANG.good)}`);
+        return extra.reply(`✅ SUCCESS\n\nAntilink action set to ${setAction}, ${voice.tag('affirm')}`);
       }
       
       if (opt === 'get') {

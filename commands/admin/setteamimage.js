@@ -6,7 +6,7 @@
 const path = require('path');
 const fs = require('fs');
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, voice } = require('../../utils/format');
 
 const TEAM_IMAGES_DIR = path.join(__dirname, '../../utils/team_images');
 
@@ -59,7 +59,7 @@ module.exports = {
     } catch (error) {
       console.error('[SETTEAMIMAGE] Error:', error);
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
     }
   },
 

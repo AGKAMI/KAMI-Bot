@@ -4,7 +4,7 @@
 
 const db = require('../../database');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'setwelcomestyle',
@@ -56,7 +56,7 @@ module.exports = {
 
       if (option === 'reset') {
         db.updateGroupSettings(groupId, { welcomeStyle: {} });
-        return extra.reply(`✅ _${pick(SLANG.good)}, welcome style reset to defaults_`);
+        return extra.reply(`✅ _${voice.lead('affirm')}, welcome style reset to defaults_`);
       }
 
       const validPositions = ['top', 'center', 'bottom'];
@@ -95,11 +95,11 @@ module.exports = {
 
       db.updateGroupSettings(groupId, { welcomeStyle: newStyle });
 
-      await extra.reply(`✅ _${pick(SLANG.good)}, welcome style updated_\n\n_${option} → ${value}_`);
+      await extra.reply(`✅ _${voice.lead('affirm')}, welcome style updated_\n\n_${option} → ${value}_`);
     } catch (error) {
       console.error('SetWelcomeStyle error:', error);
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
     }
   }
 };

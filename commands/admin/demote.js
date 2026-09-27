@@ -8,7 +8,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 // Lazy require to avoid circular dependency (demote.js ↔ handler.js)
@@ -100,7 +100,7 @@ module.exports = {
             `🚫 *YOH THE AUDACITY* 💀\n\n` +
             `@${demoterNum} — you really just tried to demote KAMI??\n\n` +
             `No way you tryna demote the owner bru 😭\n` +
-            `Don't act like a laaitie man, ${pick(SLANG.dismiss)}`,
+            `Don't act like a laaitie man, ${voice.tag('neutral')}`,
           mentions: [extra.sender],
         });
         return;
@@ -116,7 +116,7 @@ module.exports = {
             `🚫 *YOH THE AUDACITY* 💀\n\n` +
             `@${demoterNum} — you really just tried to demote KAMI??\n\n` +
             `No way you tryna demote the owner bru 😭\n` +
-            `Don't act like a laaitie man, ${pick(SLANG.dismiss)}`,
+            `Don't act like a laaitie man, ${voice.tag('neutral')}`,
           mentions: [extra.sender],
         });
         return;
@@ -148,7 +148,7 @@ module.exports = {
                   ? `That's @${ownerNum}'s admin wena 💀\n`
                   : `That's KAMI's admin wena 💀\n`) +
                 `You can't touch them\n\n` +
-                `_Try that again and see what happens ${pick(SLANG.dismiss)}_`,
+                `_Try that again and see what happens, ${voice.tag('neutral')}_`,
               mentions: ownerNum
                 ? [target, extra.sender, ownerJid]
                 : [target, extra.sender],
@@ -187,7 +187,7 @@ module.exports = {
                     `🛡️ *PROTECTION* 💀\n\n` +
                     `@${demoterNum} tried demoting @${targetNum}\n` +
                     `Blocked — they really thought they could tho 😭\n\n` +
-                    `${pick(SLANG.roast)}`,
+                    `${voice.say('tease')}`,
                   mentions: [target, extra.sender],
                 });
               } catch (e) {}
@@ -239,7 +239,7 @@ module.exports = {
                   `@${demoterNum} tried demoting you twice hey 💀\n` +
                   `They got demoted for it\n` +
                   `You're back as admin\n\n` +
-                `${pick(SLANG.protected)}`,
+                `${voice.say('protected')}`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
@@ -267,7 +267,7 @@ module.exports = {
                     `@${demoterNum} tried demoting @${targetNum} twice\n` +
                     `They got demoted for it\n` +
                     `@${targetNum} back where they belong\n\n` +
-                    `${pick(SLANG.protected)}`,
+                    `${voice.say('protected')}`,
                   mentions: [target, extra.sender],
                 });
               } catch (e) {}
@@ -296,7 +296,7 @@ module.exports = {
           `✅ SUCCESS\n\n` +
           `⬇️ DEMOTED\n\n` +
           `${mention(target)} is no longer a group admin${demoteNote}\n\n` +
-          `_${pick(SLANG.vibe)}_`,
+          `_${voice.react('ok')}_`,
         mentions: [target],
         footer: 'Admin Actions',
         buttons: [
@@ -383,7 +383,7 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
         `✅ SUCCESS\n\n` +
         `⬆️ PROMOTED\n\n` +
         `${mention(target)} is now a group admin${protectionNote}\n\n` +
-        `_${pick(SLANG.vibe)}_`,
+        `_${voice.react('ok')}_`,
       mentions: [target],
     });
   } catch (e) {

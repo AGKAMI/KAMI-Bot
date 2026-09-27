@@ -11,7 +11,7 @@
 
 const config = require('../../config');
 const database = require('../../database');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, voice } = require('../../utils/format');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
 // ── Group lists with human-readable names ────────────────────
@@ -197,7 +197,7 @@ module.exports = {
       if (!type) {
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nUnsupported message type ${pick(SLANG.error)}\n` +
+          `❌ ERROR\n\nUnsupported message type, ${voice.tag('err')}\n` +
           `I can announce: text, photo, video, document, audio, sticker`
         );
       }
@@ -216,7 +216,7 @@ module.exports = {
           if (type !== 'sticker') {
             extra.fail();
             return extra.reply(
-              `❌ ERROR\n\nCouldn't download the media ${pick(SLANG.error)}\nTry a different message`
+              `❌ ERROR\n\nCouldn't download the media, ${voice.tag('err')}\nTry a different message`
             );
           }
         }
@@ -251,14 +251,14 @@ module.exports = {
         (failed > 0
           ? `❌ Failed: *${failed}*\n${failedGroups.map(g => `  • ${g}`).join('\n')}\n`
           : '') +
-        `\n_Slammed Society CPM_ ${pick(SLANG.vibe)}`;
+        `\n_Slammed Society CPM_ ${voice.lead('neutral')}`;
 
       await extra.reply(summary);
 
     } catch (error) {
       console.error('Announce error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — ${error.message}`);
     }
   },
 };

@@ -9,7 +9,7 @@ const axios = require('axios');
 const APIs = require('../../utils/api');
 const config = require('../../config');
 const { toAudio } = require('../../utils/converter');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 const AXIOS_DEFAULTS = {
   timeout: 60000,
@@ -42,12 +42,12 @@ module.exports = {
       const chatId = msg.key.remoteJid;
       
       if (!text) {
-        return await extra.reply(`📝 _${pick(SLANG.vibe)}, give me a song name or YouTube link_\n\n_Example:_ ${prefix}song Shape of You`);
+        return await extra.reply(`📝 _${voice.lead('neutral')}, give me a song name or YouTube link_\n\n_Example:_ ${prefix}song Shape of You`);
       }
       
       // Send loading message
       const sent = await extra.reply(`🔍 _searching for that one..._`);
-      if (!sent?.key) { extra.fail(); return extra.reply(`❌ _${pick(SLANG.error)} — failed to send loading message_`); }
+      if (!sent?.key) { extra.fail(); return extra.reply(`❌ _${voice.openErr()} — failed to send loading message_`); }
       
       let video;
       
@@ -57,7 +57,7 @@ module.exports = {
         const search = await yts(text);
         if (!search || !search.videos.length) {
           extra.fail();
-          return await extra.edit(sent.key, `❌ _${pick(SLANG.error)}, no results found for that one_`);
+          return await extra.edit(sent.key, `❌ _${voice.openErr()}, no results found for that one_`);
         }
         video = search.videos[0];
       }
@@ -72,13 +72,13 @@ module.exports = {
       } catch (err) {
         console.log('YouTube download failed:', err.message);
         extra.fail();
-        return await extra.edit(sent.key, `❌ _${pick(SLANG.error)} — failed to download: ${err.message}_`);
+        return await extra.edit(sent.key, `❌ _${voice.openErr()} — failed to download: ${err.message}_`);
       }
       
       const audioUrl = audioData.download;
       if (!audioUrl) {
         extra.fail();
-        return await extra.edit(sent.key, `❌ _${pick(SLANG.error)}, no download URL received_`);
+        return await extra.edit(sent.key, `❌ _${voice.openErr()}, no download URL received_`);
       }
       
       // Download the audio file
@@ -118,7 +118,7 @@ module.exports = {
     } catch (err) {
       console.error('Song command error:', err);
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)} — something went stukkend — ${err.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — something went stukkend — ${err.message}_`);
     } finally {
       activeAudioDownloads--;
     }

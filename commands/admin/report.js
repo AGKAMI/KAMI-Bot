@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 
 const reportStore = new Map();
 const reportCounters = new Map();
@@ -43,7 +43,7 @@ module.exports = {
                     return extra.reply(
                         `✅ SUCCESS\n\n` +
                         `📋 Pending Reports: None\n\n` +
-                        `_All clear ${pick(SLANG.vibe)}_`
+                        `_All clear, ${voice.tag('neutral')}_`
                     );
                 }
 
@@ -251,7 +251,7 @@ module.exports = {
 
         } catch (error) {
             extra.fail();
-            await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);
+            await extra.reply(`❌ ERROR\n\n${voice.openErr()} — ${error.message}`);
         }
     }
 };

@@ -4,7 +4,7 @@
 
 const db = require('../../database');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'setwelcome',
@@ -34,7 +34,7 @@ module.exports = {
       if (welcomeMessage.length > 500) {
         extra.fail();
         return await sock.sendMessage(groupId, {
-          text: `❌ _${pick(SLANG.error)}, welcome message is too long, max 500 characters_`
+          text: `❌ _${voice.openErr()}, welcome message is too long, max 500 characters_`
         }, { quoted: msg });
       }
       
@@ -42,7 +42,7 @@ module.exports = {
       
       const senderJid = msg.key.participant || msg.key.remoteJid || 'unknown';
       await sock.sendMessage(groupId, {
-        text: `✅ _${pick(SLANG.vibe)}, welcome message updated!_\n\n*preview:*\n${welcomeMessage.replace('@user', '@' + senderJid.split('@')[0])}`,
+        text: `✅ _${voice.lead('affirm')}, welcome message updated!_\n\n*preview:*\n${welcomeMessage.replace('@user', '@' + senderJid.split('@')[0])}`,
         mentions: [senderJid]
       }, { quoted: msg });
       
@@ -50,7 +50,7 @@ module.exports = {
       console.error('Set Welcome Error:', error);
       extra.fail();
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ _${pick(SLANG.error)} — ${error.message}_`
+        text: `❌ _${voice.openErr()} — ${error.message}_`
       }, { quoted: msg });
     }
   }

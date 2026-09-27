@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'setwelcomeimage',
@@ -26,7 +26,7 @@ module.exports = {
 
       const quotedMsg = ctx.quotedMessage;
       if (!quotedMsg.imageMessage && !quotedMsg.stickerMessage) {
-        return extra.reply(`_${pick(SLANG.error)} — need an image or sticker in the reply_`);
+        return extra.reply(`_${voice.openErr()} — need an image or sticker in the reply_`);
       }
 
       const targetMessage = {
@@ -44,7 +44,7 @@ module.exports = {
       );
 
       if (!mediaBuffer) {
-        return extra.reply(`_${pick(SLANG.error)} — couldn't download the image_`);
+        return extra.reply(`_${voice.openErr()} — couldn't download the image_`);
       }
 
       let finalBuffer = mediaBuffer;
@@ -59,10 +59,10 @@ module.exports = {
       const imagePath = path.join(imagesDir, `${groupJid}.jpg`);
       fs.writeFileSync(imagePath, finalBuffer);
 
-      await extra.reply(`*✅ WELCOME IMAGE UPDATED*\n\n_${pick(SLANG.good)}, new members will see this image_`);
+      await extra.reply(`*✅ WELCOME IMAGE UPDATED*\n\n_${voice.lead('affirm')}, new members will see this image_`);
     } catch (error) {
       console.error('SetWelcomeImage error:', error);
-      await extra.reply(`_${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`_${voice.openErr()} — ${error.message}_`);
     }
   }
 };

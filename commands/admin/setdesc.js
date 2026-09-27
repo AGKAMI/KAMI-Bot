@@ -2,7 +2,7 @@
  * Set Description Command - Change group description with template variables
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 const database = require('../../database');
 
 const config = require('../../config');
@@ -47,7 +47,7 @@ module.exports = {
       if (settings.lockDesc) {
         return extra.reply(
           `🔒 *DESCRIPTION LOCKED*\n\n` +
-          `_${pick(SLANG.vibe)}, the group description is locked by an admin_\n` +
+          `_${voice.openErr()}, the group description is locked by an admin_\n` +
           `Current desc: *${extra.groupMetadata?.desc || 'None'}*`
         );
       }
@@ -74,14 +74,14 @@ module.exports = {
         `✅ *DESCRIPTION UPDATED*\n\n` +
         `📝 *New description:* ${resolved}\n` +
         `👤 *Changed by:* @${senderNum}\n\n` +
-        `_${pick(SLANG.good)}, fresh description!_`,
+        `_${voice.lead('affirm')}, fresh description!_`,
         [extra.sender]
       );
 
     } catch (error) {
       console.error('SetDesc Error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n\n${voice.openErr()} — ${error.message}`);
     }
   }
 };

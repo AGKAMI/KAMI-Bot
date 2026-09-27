@@ -147,7 +147,7 @@ const checkGroup = async (sock, groupJid, teamKey) => {
             `@${memberNum} promoted to *${nextRank}*\n\n` +
             `📊 Activity: ${data.totalMessages} msgs, ${data.daysActive} days\n` +
             `📈 Met threshold for ${nextRank}\n\n` +
-            `_Consistency pays off ${pick(SLANG.vibe)}_ 👑`,
+            `_Consistency pays off, ${voice.tag('neutral')}_ 👑`,
           mentions: [memberJid],
         });
 
@@ -159,7 +159,7 @@ const checkGroup = async (sock, groupJid, teamKey) => {
               `You're now *${nextRank}* in ${teamKey}\n\n` +
               `📊 Your activity: ${data.totalMessages} msgs, ${data.daysActive} days\n` +
               `📈 You met the threshold — keep it up!\n\n` +
-              `_KAMI sees the effort ${pick(SLANG.good)}_ 👑`,
+              `_KAMI sees the effort, ${voice.tag('affirm')}_ 👑`,
           });
         } catch (e) {}
 
@@ -555,7 +555,7 @@ const runInactiveCheck = async (sock) => {
         `━━━━━━━━━━━━━━━━\n` +
         `*${teamDue.length}* member${teamDue.length === 1 ? '' : 's'} quiet for ${INACTIVE_THRESHOLD_DAYS}+ days:\n\n` +
         `${lines.join('\n')}` +
-        `\n\n_Pop in and stay active hey — inactive 14 more days after this = removed_ ${pick(SLANG.vibe)}`,
+        `\n\n_Pop in and stay active hey — inactive 14 more days after this = removed_ ${voice.lead('neutral')}`,
       mentions,
     });
 
@@ -583,7 +583,7 @@ const runInactiveCheck = async (sock) => {
   );
 };
 
-const { pick, SLANG } = require('../utils/format');
+const { pick, SLANG, voice } = require('../utils/format');
 
 module.exports = {
   checkGroup,

@@ -9,7 +9,7 @@ const { exec } = require('child_process');
 const ffmpegPath = require('ffmpeg-static');
 const config = require('../../config');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 const BASE = 'https://meme-api.com/gimme';
 
@@ -28,7 +28,7 @@ module.exports = {
       if (!query) {
         extra.fail();
         return await extra.reply(
-          `❌ _${pick(SLANG.error)} — usage: ${prefix}memesearch <query>_\n\n_Example: ${prefix}memesearch hello_`
+          `❌ _${voice.openErr()} — usage: ${prefix}memesearch <query>_\n\n_Example: ${prefix}memesearch hello_`
         );
       }
       
@@ -161,7 +161,7 @@ module.exports = {
       
     } catch (error) {
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)} — failed to fetch meme: ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — failed to fetch meme: ${error.message}_`);
     }
   }
 };

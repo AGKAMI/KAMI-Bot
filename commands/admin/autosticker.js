@@ -4,7 +4,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
@@ -27,7 +27,7 @@ module.exports = {
         const status = isOn ? 'ON' : 'OFF';
         const statusText = `📌 AUTOSTICKER STATUS\n\n` +
           `*Status*: ${status}\n\n` +
-          `When enabled, all images and videos go straight to sticker ${pick(SLANG.vibe)}\n\n` +
+          `When enabled, all images and videos go straight to sticker, ${voice.tag('affirm')}\n\n` +
           `📱 *Usage*:\n` +
           `• ${prefix}autosticker on\n` +
           `• ${prefix}autosticker off`;
@@ -44,15 +44,15 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).autosticker) {
-          return extra.reply(`✅ SUCCESS\n\nAutosticker is already on ${pick(SLANG.vibe)}`);
+          return extra.reply(`✅ SUCCESS\n\nAutosticker is already on, ${voice.tag('neutral')}`);
         }
         database.updateGroupSettings(extra.from, { autosticker: true });
-        return extra.reply(`✅ SUCCESS\n\nAutosticker turned ON ${pick(SLANG.good)}\n\nEvery image and video goes straight to sticker now`);
+        return extra.reply(`✅ SUCCESS\n\nAutosticker turned ON, ${voice.tag('affirm')}\n\nEvery image and video goes straight to sticker now`);
       }
       
       if (opt === 'off') {
         if (!database.getGroupSettings(extra.from).autosticker) {
-          return extra.reply(`⚠️ WARNING\n\nAutosticker is off already ${pick(SLANG.vibe)}`);
+          return extra.reply(`⚠️ WARNING\n\nAutosticker is off already, ${voice.tag('neutral')}`);
         }
         database.updateGroupSettings(extra.from, { autosticker: false });
         return extra.reply(`✅ SUCCESS\n\nAutosticker turned OFF`);

@@ -2,7 +2,7 @@
  * Members Command - Show group member count
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'members',
@@ -19,7 +19,7 @@ module.exports = {
 
       if (!groupMetadata || !groupMetadata.participants) {
         extra.fail();
-        return await extra.reply(`❌ *ERROR*\n\nCouldn't fetch group info, ${pick(SLANG.error)}`);
+        return await extra.reply(`❌ *ERROR*\n\nCouldn't fetch group info, ${voice.tag('err')}`);
       }
 
       const participants = groupMetadata.participants;
@@ -42,7 +42,7 @@ module.exports = {
         `- 📛 ${bold('Group:')} ${groupMetadata.subject || 'Unknown'}`,
         `- 📝 ${bold('Created:')} ${groupMetadata.creation ? new Date(groupMetadata.creation * 1000).toLocaleDateString('en-ZA') : 'Unknown'}`,
         "",
-        `_${pick(SLANG.vibe)} — ${total} member${total > 1 ? 's' : ''} strong_`
+        `_${voice.open()} — ${total} member${total > 1 ? 's' : ''} strong_`
       ].join('\n');
 
       await extra.reply(text);
@@ -50,7 +50,7 @@ module.exports = {
     } catch (error) {
       console.error('Members Error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n\n${voice.openErr()} — ${error.message}`);
     }
   }
 };

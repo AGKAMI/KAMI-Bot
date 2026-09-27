@@ -11,7 +11,7 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const webp = require('node-webpmux');
 const config = require('../../config');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 // Max file size: 50MB
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -95,13 +95,13 @@ module.exports = {
 
       if (!mediaBuffer) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't download that, try again`);
+        return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't download that, try again`);
       }
 
       // Check file size
       if (mediaBuffer.length > MAX_FILE_SIZE) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+        return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
       }
 
       // Write media to temp file
@@ -201,7 +201,7 @@ module.exports = {
     } catch (error) {
       console.error('Crop command error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't crop the sticker, try with an image or video`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't crop the sticker, try with an image or video`);
     } finally {
       // Always cleanup temp files
       tempFiles.forEach(file => deleteTempFile(file));

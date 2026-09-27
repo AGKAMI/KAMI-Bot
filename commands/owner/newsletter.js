@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 /**
  * Extract invite code from WhatsApp channel link
@@ -77,13 +77,13 @@ module.exports = {
                    args.join(' ');
       
       if (!text || text.trim().length === 0) {
-        return extra.reply(`*📰 NEWSLETTER*\n\n❌ ${pick(SLANG.error)} — need a whatsapp channel link\n\n💡 Example: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
+        return extra.reply(`*📰 NEWSLETTER*\n\n❌ ${voice.openErr()} — need a whatsapp channel link\n\n💡 Example: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
       }
       
       let link = text.replace(/^\.(newsletter|nl|channel|channelinfo)\s+/i, '').trim() || args.join(' ').trim();
       
       if (!link || link.length === 0) {
-        return extra.reply(`*📰 NEWSLETTER*\n\n❌ ${pick(SLANG.error)} — need a whatsapp channel link\n\n💡 Example: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
+        return extra.reply(`*📰 NEWSLETTER*\n\n❌ ${voice.openErr()} — need a whatsapp channel link\n\n💡 Example: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
       }
       
       // Try to extract invite code first (works with or without full URL)
@@ -145,7 +145,7 @@ module.exports = {
         if (error.message.includes('Invalid channel link')) {
           await extra.reply(`*❌ ERROR* — invalid channel link format\n\n💡 Please provide a valid WhatsApp channel link:\n   https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
         } else if (error.message.includes('Newsletter not found')) {
-          await extra.reply(`*❌ ERROR* — newsletter not found, ${pick(SLANG.vibe)}\n\n💡 The channel link might be invalid or the newsletter might not exist.`);
+          await extra.reply(`*❌ ERROR* — newsletter not found, ${voice.tag('err')}\n\n💡 The channel link might be invalid or the newsletter might not exist.`);
         } else if (error.message.includes('newsletterMetadata')) {
           await extra.reply(`*❌ ERROR* — newsletter feature not available\n\n💡 Make sure you are using Baileys v7.0.0-rc or higher.`);
         } else {

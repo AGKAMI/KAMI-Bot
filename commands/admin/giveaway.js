@@ -12,7 +12,7 @@
 
 const config = require('../../config');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 
 const activeGiveaways = new Map();
 const lastGiveaway = new Map();
@@ -75,11 +75,11 @@ module.exports = {
         const last = lastGiveaway.get(from);
         if (!last || last.winners.length === 0) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n\nNo previous giveaway to reroll, ${pick(SLANG.vibe)}`);
+          return extra.reply(`❌ *ERROR*\n\nNo previous giveaway to reroll, ${voice.tag('err')}`);
         }
         if (last.entries.length === 0) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n\nPrevious giveaway had no entries, ${pick(SLANG.vibe)}`);
+          return extra.reply(`❌ *ERROR*\n\nPrevious giveaway had no entries, ${voice.tag('err')}`);
         }
 
         const shuffled = [...last.entries].sort(() => Math.random() - 0.5);
@@ -96,7 +96,7 @@ module.exports = {
             `🎉 *NEW WINNER${rerollWinners.length > 1 ? 'S' : ''}:*`,
             winnerMentions,
             ``,
-            `_Congratulations, ${pick(SLANG.good)}! 🥳_`
+            `_Congratulations, ${voice.tag('affirm')}! 🥳_`
           ].join('\n'),
           mentions: rerollWinners,
         };
@@ -114,7 +114,7 @@ module.exports = {
             `🎉 *NEW WINNER${rerollWinners.length > 1 ? 'S' : ''}:*`,
             winnerMentions,
             ``,
-            `_Congratulations, ${pick(SLANG.good)}! 🥳_`
+            `_Congratulations, ${voice.tag('affirm')}! 🥳_`
           ].join('\n');
           rerollMsg.mentions = rerollWinners;
         }
@@ -216,11 +216,11 @@ module.exports = {
       // ── Validate ────────────────────────────────────────
       if (durationMs < 1000 || durationMs > 3 * 60 * 60 * 1000) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n\nDuration must be 1 second to 3 hours, ${pick(SLANG.vibe)}`);
+        return extra.reply(`❌ *ERROR*\n\nDuration must be 1 second to 3 hours, ${voice.tag('err')}`);
       }
       if (numWinners < 1 || numWinners > 20) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n\nWinners must be 1-20, ${pick(SLANG.vibe)}`);
+        return extra.reply(`❌ *ERROR*\n\nWinners must be 1-20, ${voice.tag('err')}`);
       }
 
       // ── Download media if replying to one ───────────────
@@ -265,7 +265,7 @@ module.exports = {
         caption.push(`📋 *Min Entries:* ${minEntries}`);
       }
 
-      caption.push(``, `✋ *React with 🎁 to enter!*`, `_Hurry, this one's closing soon — ${pick(SLANG.vibe)}_`);
+      caption.push(``, `✋ *React with 🎁 to enter!*`, `_Hurry, this one's closing soon — ${voice.tag('neutral')}_`);
 
       let sent;
       if (mediaBuffer) {
@@ -331,7 +331,7 @@ module.exports = {
               `❌ *No entries!*`,
               `🏆 *Prize:* ${prize}`,
               ``,
-              `Nobody entered hey — better luck next time, ${pick(SLANG.vibe)} 💀`
+              `Nobody entered hey — better luck next time, ${voice.tag('neutral')} 💀`
             ].join('\n')
           });
           return;
@@ -366,7 +366,7 @@ module.exports = {
               `👥 *Current:* ${entryList.length}`,
               `⏰ *Extended:* 2 more minutes`,
               ``,
-              `React with 🎁 to join — ${pick(SLANG.vibe)}!`
+              `React with 🎁 to join — ${voice.tag('neutral')}!`
             ].join('\n')
           });
           return;
@@ -382,7 +382,7 @@ module.exports = {
     } catch (error) {
       activeGiveaways.delete(extra.from);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n\n${voice.openErr()} — ${error.message}`);
     }
   },
 };
@@ -421,7 +421,7 @@ async function pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuf
     `🎉 *WINNER${winners.length > 1 ? 'S' : ''}:*`,
     winnerMentions,
     ``,
-    `_Congratulations, ${pick(SLANG.good)}! 🥳_`
+    `_Congratulations, ${voice.tag('affirm')}! 🥳_`
   ].join('\n');
 
   if (mediaBuffer) {

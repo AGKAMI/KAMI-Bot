@@ -4,7 +4,7 @@
 
 const axios = require('axios');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'translate',
@@ -63,14 +63,14 @@ module.exports = {
       if (!textToTranslate) {
         extra.fail();
         return await sock.sendMessage(chatId, { 
-          text: `❌ _${pick(SLANG.error)}, no text to translate — reply to a message or add text_`
+          text: `❌ _${voice.openErr()}, no text to translate — reply to a message or add text_`
         }, { quoted: msg });
       }
       
       if (!lang) {
         extra.fail();
         return await sock.sendMessage(chatId, { 
-          text: `❌ _${pick(SLANG.error)}, specify a language code_\n\n_Example:_ ${prefix}translate hello fr`
+          text: `❌ _${voice.openErr()}, specify a language code_\n\n_Example:_ ${prefix}translate hello fr`
         }, { quoted: msg });
       }
       
@@ -123,7 +123,7 @@ module.exports = {
       if (!translatedText) {
         extra.fail();
         return await sock.sendMessage(chatId, { 
-          text: `❌ _${pick(SLANG.error)}, translation failed — try again later_`
+          text: `❌ _${voice.openErr()}, translation failed — try again later_`
         }, { quoted: msg });
       }
       
@@ -136,7 +136,7 @@ module.exports = {
       console.error('❌ Error in translate command:', error);
       extra.fail();
       await sock.sendMessage(msg.key.remoteJid, { 
-        text: `❌ _${pick(SLANG.error)}, translation failed — try again later_`
+        text: `❌ _${voice.openErr()}, translation failed — try again later_`
       }, { quoted: msg });
     }
   }

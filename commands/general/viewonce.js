@@ -3,7 +3,7 @@
  */
 
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'viewonce',
@@ -27,7 +27,7 @@ module.exports = {
       if (!ctx?.quotedMessage || !ctx?.stanzaId) {
         return await sock.sendMessage(
           chatId,
-          { text: `⚠️ *WARNING*\n💡 ${pick(SLANG.error)}, reply to a view-once message to reveal it` },
+          { text: `⚠️ *WARNING*\n💡 ${voice.openErr()}, reply to a view-once message to reveal it` },
           { quoted: msg }
         );
       }
@@ -48,7 +48,7 @@ module.exports = {
         extra.fail();
         return await sock.sendMessage(
           chatId,
-          { text: `❌ *ERROR*\n💡 ${pick(SLANG.error)}, this isn't a view-once message` },
+          { text: `❌ *ERROR*\n💡 ${voice.openErr()}, this isn't a view-once message` },
           { quoted: msg }
         );
       }
@@ -87,7 +87,7 @@ module.exports = {
         extra.fail();
         return await sock.sendMessage(
           chatId,
-          { text: `❌ *ERROR*\n💡 ${pick(SLANG.error)}, unsupported view-once type` },
+          { text: `❌ *ERROR*\n💡 ${voice.openErr()}, unsupported view-once type` },
           { quoted: msg }
         );
       }
@@ -149,7 +149,7 @@ module.exports = {
         msg.key.remoteJid,
         {
           text:
-            `❌ *ERROR*\n💡 ${pick(SLANG.error)}, couldn't process view-once — ${(error.message || 'Unknown error')}`
+            `❌ *ERROR*\n💡 ${voice.openErr()}, couldn't process view-once — ${(error.message || 'Unknown error')}`
         },
         { quoted: msg }
       );

@@ -1,4 +1,4 @@
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const chains = new Map();
 module.exports = {
   name: 'wordchain',
@@ -15,7 +15,7 @@ module.exports = {
     }
     if (sub === 'stop') {
       chains.delete(ctx.from);
-      return ctx.reply(`${pick(SLANG.vibe)}, word chain stopped!`);
+      return ctx.reply(`${voice.lead('neutral')}, word chain stopped!`);
     }
     if (sub === 'score') {
       const g = chains.get(ctx.from);
@@ -23,7 +23,7 @@ module.exports = {
       return ctx.reply(`Words in chain: ${g.count}`);
     }
     const word = args.join(' ');
-    if (!word) { ctx.fail(); return ctx.reply(`❌ _${pick(SLANG.error)} — use: .chain start | .chain <word> | .chain stop | .chain score_`); }
+    if (!word) { ctx.fail(); return ctx.reply(`❌ _${voice.openErr()} — use: .chain start | .chain <word> | .chain stop | .chain score_`); }
     const g = chains.get(ctx.from);
     if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game — use .chain start_`); }
     if (g.last && !word.toLowerCase().startsWith(g.last)) {

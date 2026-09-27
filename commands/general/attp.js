@@ -6,7 +6,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { writeExifVid } = require('../../utils/exif');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'attp',
@@ -34,12 +34,12 @@ module.exports = {
       } catch (error) {
         console.error('Error generating attp sticker:', error);
         extra.fail();
-        await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't make the sticker`);
+        await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't make the sticker`);
       }
     } catch (error) {
       console.error('ATTP command error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — animated sticker failed`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — animated sticker failed`);
     }
   }
 };

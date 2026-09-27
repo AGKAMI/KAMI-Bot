@@ -1,4 +1,4 @@
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 module.exports = {
   name: 'poll',
   reactions: { received: '📊', done: '🗳️' },
@@ -8,7 +8,7 @@ module.exports = {
   groupOnly: true,
   execute: async (sock, msg, args, ctx) => {
     const question = args.join(' ');
-    if (!question) { ctx.fail(); return ctx.reply(`❌ _${pick(SLANG.error)} — usage: .poll <question>\nOr: .poll <q> | opt1 | opt2 | opt3_`); }
+    if (!question) { ctx.fail(); return ctx.reply(`❌ _${voice.openErr()} — usage: .poll <question>\nOr: .poll <q> | opt1 | opt2 | opt3_`); }
     const parts = question.split('|').map(s => s.trim());
     let text = '🗳️ poll\n\n';
     if (parts.length <= 1) {

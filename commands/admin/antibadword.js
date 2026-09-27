@@ -4,7 +4,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
@@ -42,7 +42,7 @@ module.exports = {
         if (settings.antibadword) {
           return extra.reply(
             `✅ *ANTIBADWORD*\n\n` +
-            `_Already on, ${pick(SLANG.vibe)}_`
+            `_Already on, ${voice.tag('neutral')}_`
           );
         }
         // Seed defaults so the filter works out of the box
@@ -55,7 +55,7 @@ module.exports = {
         database.updateGroupSettings(extra.from, { antibadword: true, badwords: seeded });
         return extra.reply(
           `✅ *ANTIBADWORD ON*\n\n` +
-          `_Bad word filter activated with ${seeded.length} patterns, ${pick(SLANG.good)}!_`
+          `_Bad word filter activated with ${seeded.length} patterns, ${voice.tag('affirm')}!_`
         );
       }
 
@@ -73,7 +73,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `${bold('Usage:')} ${prefix}antibadword set <warn|delete|kick>${pick(SLANG.vibe)}\n\n` +
+            `${bold('Usage:')} ${prefix}antibadword set <warn|delete|kick>, ${voice.tag('neutral')}\n\n` +
             `• _warn_ — warn the user but don't delete\n` +
             `• _delete_ — delete the bad message\n` +
             `• _kick_ — delete + kick the user`
@@ -83,7 +83,7 @@ module.exports = {
         return extra.reply(
           `✅ *ANTIBADWORD SET*\n\n` +
           `🔨 *Action:* ${action}\n\n` +
-          `_${pick(SLANG.good)}, bad word action updated!_`
+          `_${voice.lead('affirm')}, bad word action updated!_`
         );
       }
 
@@ -93,7 +93,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Tag a user to exempt, ${pick(SLANG.vibe)}_\n\n` +
+            `_Tag a user to exempt, ${voice.tag('neutral')}_\n\n` +
             `_Example: ${prefix}antibadword exempt @user_`
           );
         }
@@ -114,7 +114,7 @@ module.exports = {
           `✅ *USER EXEMPTED*\n\n` +
           `👤 *User:* ${mention(exemptJid)}\n` +
           `🛡️ *Status:* Bypasses bad word filter\n\n` +
-          `_${pick(SLANG.good)}, exempted!_`,
+          `_${voice.lead('affirm')}, exempted!_`,
           [exemptJid]
         );
       }
@@ -125,7 +125,7 @@ module.exports = {
         if (exempt.length === 0) {
           return extra.reply(
             `📋 *BADWORD EXCEPTIONS*\n\n` +
-            `_No users exempted yet, ${pick(SLANG.vibe)}_\n` +
+            `_No users exempted yet, ${voice.tag('err')}_\n` +
             `_Admins are always exempt by default_`
           );
         }
@@ -142,7 +142,7 @@ module.exports = {
       extra.fail();
       return extra.reply(
         `❌ *ERROR*\n\n` +
-        `_Use ${prefix}antibadword for usage, ${pick(SLANG.vibe)}_`
+        `_Use ${prefix}antibadword for usage, ${voice.tag('neutral')}_`
       );
 
     } catch (error) {

@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 
 const afkUsers = new Map();
 const afkHistory = new Map();
@@ -59,7 +59,7 @@ module.exports = {
                     return extra.reply(
                         `✅ *SUCCESS*\n\n` +
                         `💤 *AFK Users:* None\n\n` +
-                        `_Nobody's AFK right now, ${pick(SLANG.vibe)}_`
+                        `_Nobody's AFK right now, ${voice.tag('neutral')}_`
                     );
                 }
 
@@ -84,7 +84,7 @@ module.exports = {
                     return extra.reply(
                         `✅ *SUCCESS*\n\n` +
                         `💤 *AFK Users:* None in this group\n\n` +
-                        `_Nobody's AFK here, ${pick(SLANG.vibe)}_`
+                        `_Nobody's AFK here, ${voice.tag('neutral')}_`
                     );
                 }
 
@@ -137,7 +137,7 @@ module.exports = {
                         reasonText,
                         ...historyLines,
                         ``,
-                        `_Good to have you back, ${pick(SLANG.vibe)} 💀_`
+                        `_Good to have you back, ${voice.tag('neutral')} 💀_`
                     ].filter(Boolean).join('\n'),
                     mentions: [sender]
                 }, { quoted: msg });
@@ -160,14 +160,14 @@ module.exports = {
                     `👤 *User:* ${mention(sender)}`,
                     reasonLine,
                     ``,
-                    `_I'll let them know you're away, ${pick(SLANG.vibe)} 🫡_`
+                    `_I'll let them know you're away, ${voice.tag('neutral')} 🫡_`
                 ].filter(Boolean).join('\n'),
                 mentions: [sender]
             }, { quoted: msg });
 
         } catch (error) {
             extra.fail();
-            await extra.reply(`❌ *ERROR*\n\n💡 ${pick(SLANG.error)} — ${error.message}`);
+            await extra.reply(`❌ *ERROR*\n\n💡 ${voice.openErr()} — ${error.message}`);
         }
     }
 };

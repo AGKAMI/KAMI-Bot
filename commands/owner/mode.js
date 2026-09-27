@@ -6,7 +6,7 @@
 const config = require('../../config');
 const fs = require('fs');
 const path = require('path');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'mode',
@@ -41,22 +41,22 @@ module.exports = {
       
       if (mode === 'private' || mode === 'priv') {
         if (config.selfMode) {
-          return extra.reply(`*🔒 PRIVATE MODE*\n\n⚠️ Bot already private, ${pick(SLANG.vibe)}`);
+          return extra.reply(`*🔒 PRIVATE MODE*\n\n⚠️ Bot already private, ${voice.tag('neutral')}`);
         }
         
         updateConfig('selfMode', true);
         config.selfMode = true;
-        return extra.reply(`*🔒 PRIVATE MODE*\n\n✅ ${pick(SLANG.good)}, bot is now private — only owner can use commands`);
+        return extra.reply(`*🔒 PRIVATE MODE*\n\n✅ ${voice.lead('affirm')}, bot is now private — only owner can use commands`);
       }
       
       if (mode === 'public' || mode === 'pub') {
         if (!config.selfMode) {
-          return extra.reply(`*🌐 PUBLIC MODE*\n\n⚠️ Bot already public, ${pick(SLANG.vibe)}`);
+          return extra.reply(`*🌐 PUBLIC MODE*\n\n⚠️ Bot already public, ${voice.tag('neutral')}`);
         }
         
         updateConfig('selfMode', false);
         config.selfMode = false;
-        return extra.reply(`*🌐 PUBLIC MODE*\n\n✅ ${pick(SLANG.good)}, bot is now public — everyone can use commands`);
+        return extra.reply(`*🌐 PUBLIC MODE*\n\n✅ ${voice.lead('affirm')}, bot is now public — everyone can use commands`);
       }
       
       return extra.reply(`*❌ ERROR* — invalid mode\n💡 Usage: ${prefix}mode <private/public>`);

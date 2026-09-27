@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
@@ -123,12 +123,12 @@ module.exports = {
         `📅 Days active: ${activity.daysActive}/${DAYS_FOR_PROMOTE} (${daysProgress}%)\n\n`;
 
       if (progress >= 100 && daysProgress >= 100) {
-        text += `✅ _Ready for promotion! Ask an admin to promote you ${pick(SLANG.vibe)}_\n`;
+        text += `✅ _Ready for promotion! Ask an admin to promote you, ${voice.tag('affirm')}_\n`;
       } else {
-        text += `⏳ _Keep active ${pick(SLANG.vibe)}_\n`;
+        text += `⏳ _Keep active, ${voice.tag('neutral')}_\n`;
       }
     } else {
-      text += `_You've reached the highest role ${pick(SLANG.good)} 👑_\n`;
+      text += `_You've reached the highest role, ${voice.tag('affirm')} 👑_\n`;
     }
 
     return extra.reply(text, { mentions: [targetJid] });

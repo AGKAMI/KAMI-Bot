@@ -5,7 +5,7 @@
 
 const config = require('../../config');
 const database = require('../../database');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'setprefix',
@@ -42,7 +42,7 @@ module.exports = {
 
       await extra.reply(
         `*✅ PREFIX UPDATED*\n\n` +
-        `${pick(SLANG.good)}, prefix is now: *${newPrefix}*\n\n` +
+        `${voice.lead('affirm')}, prefix is now: *${newPrefix}*\n\n` +
         `🔄 New command format: ${newPrefix}command\n` +
         `💾 Saved to database — survives restarts`
       );

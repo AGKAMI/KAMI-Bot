@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { TEAMS } = require('./crewForms');
 const { sendButtons } = require('../../utils/buttonHelper');
 
@@ -109,7 +109,7 @@ module.exports = {
       if (entries.length === 0) {
         return extra.reply(
           `📋 PENDING APPLICATIONS\n\n` +
-          `No pending applications for ${teamLabel || 'this team'} ${pick(SLANG.vibe)}\n` +
+          `No pending applications for ${teamLabel || 'this team'}, ${voice.tag('err')}\n` +
           `Recruits can use \`${prefix}crew apply <team>\` to apply`
         );
       }
@@ -164,7 +164,7 @@ module.exports = {
       console.error('Crew applicants error:', error);
       await extra.reply(
         `❌ ERROR\n\n` +
-        `${pick(SLANG.error)} — couldn't load applicants`
+        `${voice.openErr()} — couldn't load applicants`
       );
     }
   },

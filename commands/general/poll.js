@@ -7,7 +7,7 @@
  */
 
 const config = require('../../config');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 const POLL_TTL = 24 * 60 * 60 * 1000; // 24 hours
@@ -104,7 +104,7 @@ module.exports = {
         if (!poll) return;
         polls.delete(pollId);
         sock.sendMessage(poll.groupId, {
-          text: `🏁 *POLL ENDED* (24h)\n\n${formatResults(poll)}\n\n_${pick(SLANG.vibe)}_`,
+          text: `🏁 *POLL ENDED* (24h)\n\n${formatResults(poll)}\n\n_${voice.lead('neutral')}_`,
           mentions: [...poll.votes.keys()],
         }).catch(() => {});
       }, POLL_TTL);
@@ -137,7 +137,7 @@ module.exports = {
     } catch (error) {
       console.error('Poll error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — ${error.message}`);
     }
   },
 };
@@ -196,7 +196,7 @@ onButton('poll:end:', async (sock, msg, from, sender, btnId) => {
   polls.delete(pollId);
 
   await sock.sendMessage(from, {
-    text: `🏁 *POLL ENDED*\n\n${formatResults(poll)}\n\n_${pick(SLANG.vibe)}_`,
+    text: `🏁 *POLL ENDED*\n\n${formatResults(poll)}\n\n_${voice.lead('neutral')}_`,
     mentions: [...poll.votes.keys()],
   });
 });

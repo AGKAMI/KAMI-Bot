@@ -10,7 +10,7 @@
 const path = require('path');
 const fs = require('fs');
 const config = require('../../config');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { normalizeJidWithLid } = require('../../utils/jidHelper');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { TEAMS } = require('../crew/crewForms');
@@ -157,7 +157,7 @@ module.exports = {
       const summary =
         `\u{1F916} *KAMI BOT*\n` +
         `----------\n\n` +
-        `Welcome to the Slammed Society, ${pick(SLANG.greeting)}\n\n` +
+        `Welcome to the Slammed Society, ${voice.mate()}\n\n` +
         `Tap a button to get started \u2B05\uFE0F`;
 
       await sendButtons(sock, extra.from, {
@@ -173,7 +173,7 @@ module.exports = {
     } catch (error) {
       console.error('[START] Error:', error);
       extra.fail();
-      await extra.reply(`\u274C _${pick(SLANG.error)} - ${error.message}_`);
+      await extra.reply(`\u274C _${voice.openErr()} - ${error.message}_`);
     }
   },
 };
@@ -278,7 +278,7 @@ onButton('start:confirm:', async (sock, msg, from, sender, btnId) => {
         `\u{1F6E1}\uFE0F *Team:* ${teamKey} \u2014 ${config.crewTeams[teamKey].name}\n` +
         `\u{1F4CB} *App ID:* ${result.app.appUid}\n\n` +
         `\u{1F4AC} I've DM'd you the application form.\n\n` +
-        `_${pick(SLANG.greeting)}, good luck!_`,
+        `_${voice.greetOpen()}, good luck!_`,
     });
   }
 });

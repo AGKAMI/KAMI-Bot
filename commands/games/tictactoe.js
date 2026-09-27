@@ -1,5 +1,5 @@
 const config = require('../../config');
-const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 const tttGames = new Map();
@@ -24,25 +24,25 @@ module.exports = {
         players: { X: null, O: null },
       });
       ctx.fail();
-      return ctx.reply(`❌ ${pick(SLANG.error)} — tic tac toe!\nFirst person to play is X.\nUse ${prefix}ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`);
+      return ctx.reply(`❌ ${voice.openErr()} — tic tac toe!\nFirst person to play is X.\nUse ${prefix}ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`);
     }
 
     if (['stop', 'end'].includes(sub)) {
       tttGames.delete(boardKey);
-      return ctx.reply(`${pick(SLANG.vibe)}, tic tac toe stopped!`);
+      return ctx.reply(`${voice.lead('neutral')}, tic tac toe stopped!`);
     }
 
     if (!/^\d$/.test(sub)) {
       ctx.fail();
-      return ctx.reply(`❌ _${pick(SLANG.error)} — use: ${prefix}ttt start | ${prefix}ttt <1-9> | ${prefix}ttt stop_`);
+      return ctx.reply(`❌ _${voice.openErr()} — use: ${prefix}ttt start | ${prefix}ttt <1-9> | ${prefix}ttt stop_`);
     }
 
     const g = tttGames.get(boardKey);
     if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game — use ${prefix}ttt start_`); }
 
     const pos = parseInt(sub) - 1;
-    if (pos < 0 || pos > 8) { ctx.fail(); return ctx.reply(`❌ _${pick(SLANG.error)} — use a number from 1-9_`); }
-    if (g.board[pos] !== ' ') { ctx.fail(); return ctx.reply(`❌ _spot taken — pick another, ${pick(SLANG.vibe)}_`); }
+    if (pos < 0 || pos > 8) { ctx.fail(); return ctx.reply(`❌ _${voice.openErr()} — use a number from 1-9_`); }
+    if (g.board[pos] !== ' ') { ctx.fail(); return ctx.reply(`❌ _spot taken — pick another, ${voice.tag('err')}_`); }
 
     const sender = ctx.sender;
     const token = g.turn;
@@ -67,7 +67,7 @@ module.exports = {
     if (winner) {
       tttGames.delete(boardKey);
       return sendButtons(sock, ctx.from, {
-        text: `🎉 ${mention(sender)} ${pick(SLANG.good)}! wins with ${token}!\n\n${formatBoard(g.board)}\n\n_Player X:_ ${g.players.X ? mention(g.players.X) : '—'}\n_Player O:_ ${g.players.O ? mention(g.players.O) : '—'}`,
+        text: `🎉 ${mention(sender)} wins with ${token}! ${voice.tag('affirm')}\n\n${formatBoard(g.board)}\n\n_Player X:_ ${g.players.X ? mention(g.players.X) : '—'}\n_Player O:_ ${g.players.O ? mention(g.players.O) : '—'}`,
         mentions: [g.players.X, g.players.O].filter(Boolean),
         footer: 'Tic Tac Toe',
         buttons: [
@@ -78,7 +78,7 @@ module.exports = {
     if (full) {
       tttGames.delete(boardKey);
       return sendButtons(sock, ctx.from, {
-        text: `🤝 ${pick(SLANG.vibe)}, draw!\n\n${formatBoard(g.board)}\n\n_Player X:_ ${g.players.X ? mention(g.players.X) : '—'}\n_Player O:_ ${g.players.O ? mention(g.players.O) : '—'}`,
+        text: `🤝 ${voice.lead('neutral')}, draw!\n\n${formatBoard(g.board)}\n\n_Player X:_ ${g.players.X ? mention(g.players.X) : '—'}\n_Player O:_ ${g.players.O ? mention(g.players.O) : '—'}`,
         mentions: [g.players.X, g.players.O].filter(Boolean),
         footer: 'Tic Tac Toe',
         buttons: [

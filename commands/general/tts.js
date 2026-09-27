@@ -3,7 +3,7 @@
  */
 
 const APIs = require('../../utils/api');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'tts',
@@ -45,7 +45,7 @@ const config = require('../../config');
     } catch (error) {
       console.error('TTS command error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't generate speech: ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't generate speech: ${error.message}`);
     }
   }
 };

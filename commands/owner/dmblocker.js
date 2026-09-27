@@ -4,7 +4,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'dmblocker',
@@ -42,13 +42,13 @@ module.exports = {
       if (action === 'on') {
         if (globalSettings.selfMode) {
           return await sock.sendMessage(chatId, {
-            text: `*⚠️ ALREADY ON*\n\n_DM Blocker is already *ON*, ${pick(SLANG.vibe)}_`
+            text: `*⚠️ ALREADY ON*\n\n_DM Blocker is already *ON*, ${voice.tag('neutral')}_`
           }, { quoted: msg });
         }
         database.updateGlobalSettings({ selfMode: true });
         return await sock.sendMessage(chatId, {
           text: `*✅ DM BLOCKER ON*\n\n` +
-               `_${pick(SLANG.good)}, dm blocker is now on_\n\n` +
+               `_${voice.lead('affirm')}, dm blocker is now on_\n\n` +
                `Only approved numbers can use this bot.\n` +
                `Use ${prefix}dmblocker approve <number> to add someone.`
         }, { quoted: msg });
@@ -57,13 +57,13 @@ module.exports = {
       if (action === 'off') {
         if (!globalSettings.selfMode) {
           return await sock.sendMessage(chatId, {
-            text: `*⚠️ ALREADY OFF*\n\n_DM Blocker is already *OFF*, ${pick(SLANG.vibe)}_`
+            text: `*⚠️ ALREADY OFF*\n\n_DM Blocker is already *OFF*, ${voice.tag('neutral')}_`
           }, { quoted: msg });
         }
         database.updateGlobalSettings({ selfMode: false });
         return await sock.sendMessage(chatId, {
           text: `*✅ DM BLOCKER OFF*\n\n` +
-               `_${pick(SLANG.good)}, dm blocker is now off_\n\n` +
+               `_${voice.lead('affirm')}, dm blocker is now off_\n\n` +
                `Anyone can now use this bot.`
         }, { quoted: msg });
       }
@@ -166,7 +166,7 @@ module.exports = {
     } catch (error) {
       console.error('DM Blocker Error:', error);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `_${pick(SLANG.error)} — ${error.message}_`
+        text: `_${voice.openErr()} — ${error.message}_`
       }, { quoted: msg });
     }
   }

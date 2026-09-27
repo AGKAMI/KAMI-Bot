@@ -1,4 +1,4 @@
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 const database = require('../../database');
 
 const config = require('../../config');
@@ -24,7 +24,7 @@ module.exports = {
       const allEvents = database.getCrewEvents(jid);
       if (!allEvents || Object.keys(allEvents).length === 0) {
         return sock.sendMessage(jid, {
-          text: `❌ *ERROR*\n\nNo upcoming events right now ${pick(SLANG.vibe)}\nMake one with: \`${prefix}crew event <name> <time>\``
+          text: `❌ *ERROR*\n\nNo upcoming events right now, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
         });
       }
 
@@ -38,7 +38,7 @@ module.exports = {
 
       if (upcoming.length === 0) {
         return sock.sendMessage(jid, {
-          text: `❌ *ERROR*\n\nNo upcoming events right now ${pick(SLANG.vibe)}\nMake one with: \`${prefix}crew event <name> <time>\``
+          text: `❌ *ERROR*\n\nNo upcoming events right now, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
         });
       }
 

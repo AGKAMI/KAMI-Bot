@@ -10,7 +10,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { TEAMS, buildAdminNotice } = require('./crewForms');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { SSRS, KSSPS, KSSMP, KSSMS, shuffle } = require('./questionPools');
 const { buildComparableIds } = require('../../utils/jidHelper');
 const { getTeamDisplayName } = require('../../utils/teamName');
@@ -313,9 +313,9 @@ async function submitApplication(sock, session) {
     `🆔 App ID: *${session.appUid}*\n\n` +
     (adminMsg === false
       ? `⚠️ _Couldn't notify the team admins automatically — but your application is stored._\n\n`
-      : `📲 _Your application has been sent to all ${session.teamKey} admins ${pick(SLANG.good)}_\n\n`) +
+      : `📲 _Your application has been sent to all ${session.teamKey} admins, ${voice.tag('affirm')}_\n\n`) +
     `⏳ Keep this App ID — an admin will accept or reject you.\n\n` +
-    `_${pick(SLANG.greeting)}, good luck!_`;
+    `_${voice.greetOpen()}, good luck!_`;
 
   await sock.sendMessage(session.jid, { text: confirm });
 
@@ -585,8 +585,8 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
     `🤖 _Bot reviewed your answers and you passed!_\n\n` +
     `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
     `🆔 App ID: *${appUid}*\n\n` +
-    `_An admin will add you to the group shortly ${pick(SLANG.good)}_\n\n` +
-    `_${pick(SLANG.greeting)}, welcome to the squad!_`;
+    `_An admin will add you to the group shortly, ${voice.tag('affirm')}_\n\n` +
+    `_${voice.greetOpen()}, welcome to the squad!_`;
 
   await sock.sendMessage(from, { text: confirm });
 

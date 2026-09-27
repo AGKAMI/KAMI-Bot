@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const execFilePromise = util.promisify(execFile);
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 // Repo-shipped yt-dlp binary (bin/yt-dlp) preferred, then config path, then bare command
 const repoYtDlp = path.join(__dirname, '..', '..', 'bin', 'yt-dlp');
@@ -121,10 +121,10 @@ module.exports = {
       const text = msg.message?.conversation ||
                    msg.message?.extendedTextMessage?.text ||
                    args.join(' ');
-      if (!text) return await extra.reply(`📝 _${pick(SLANG.vibe)}, send me a Facebook link hey_`);
+      if (!text) return await extra.reply(`📝 _${voice.lead('neutral')}, send me a Facebook link hey_`);
 
       const url = text.split(' ').slice(1).join(' ').trim();
-      if (!url) return await extra.reply(`📝 _${pick(SLANG.vibe)}, send me a Facebook link hey_`);
+      if (!url) return await extra.reply(`📝 _${voice.lead('neutral')}, send me a Facebook link hey_`);
 
       const patterns = [
         /https?:\/\/(?:www\.|m\.|web\.)?facebook\.com\//,
@@ -137,7 +137,7 @@ module.exports = {
       ];
       if (!patterns.some((p) => p.test(url))) {
         extra.fail();
-        return await extra.reply(`❌ _${pick(SLANG.error)}, invalid Facebook link_\n_use:_ .fb <facebook video link>`);
+        return await extra.reply(`❌ _${voice.openErr()}, invalid Facebook link_\n_use:_ .fb <facebook video link>`);
       }
 
       let videoData = null;
@@ -169,11 +169,11 @@ module.exports = {
         const detail = lastError?.message ? `\n\n_Source detail: _${lastError.message}_` : '';
         extra.fail();
         return await extra.reply(
-          `❌ _${pick(SLANG.error)} — couldn't get the video link_\n\n_All download sources failed._${detail}\n_Try a public post link (not login-walled)._`
+          `❌ _${voice.openErr()} — couldn't get the video link_\n\n_All download sources failed._${detail}\n_Try a public post link (not login-walled)._`
         );
       }
 
-      const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}\n_${pick(SLANG.vibe)}, enjoy_`;
+      const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}\n_${voice.lead('affirm')}, enjoy_`;
       let sendSuccess = false;
 
       // Method 1: direct URL
@@ -210,13 +210,13 @@ module.exports = {
       if (!sendSuccess) {
         extra.fail();
         return await extra.reply(
-          `❌ _${pick(SLANG.error)} — could not download the video_\n\n_The file might be too large for WhatsApp (>100MB)._\n_Try:_\n• _A shorter video_\n• _Using browser to download manually_`
+          `❌ _${voice.openErr()} — could not download the video_\n\n_The file might be too large for WhatsApp (>100MB)._\n_Try:_\n• _A shorter video_\n• _Using browser to download manually_`
         );
       }
     } catch (error) {
       console.error('.fb Error:', error.message || error);
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${(error.message || 'try again later')}_`);
+      await extra.reply(`❌ _${voice.openErr()} — ${(error.message || 'try again later')}_`);
     }
   },
 };

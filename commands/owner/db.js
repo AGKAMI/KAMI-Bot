@@ -4,7 +4,7 @@
  */
 
 const database = require('../../database');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 const fs = require('fs');
 const path = require('path');
 
@@ -110,7 +110,7 @@ async function showHelp(sock, msg, extra) {
     ``,
     `📋 *Tables:* ${Object.keys(TABLES).join(', ')}`,
     ``,
-    `_${pick(SLANG.vibe)} — handle with care_`
+    `_${voice.open()} — handle with care_`
   ].join('\n');
 
   await sock.sendMessage(extra.from, { text }, { quoted: msg });
@@ -273,7 +273,7 @@ async function resetTable(sock, msg, args, extra) {
     return extra.reply(
       `⚠️ WARNING\n\nThis will CLEAR all data in "${tableName}"\n\n` +
       `Type ${prefix}db reset ${tableName} confirm to proceed\n\n` +
-      `_This cannot be undone, ${pick(SLANG.vibe)}_`
+      `_This cannot be undone, ${voice.tag('neutral')}_`
     );
   }
 

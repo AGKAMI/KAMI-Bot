@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, voice } = require('../../utils/format');
 const { buildComparableIds } = require('../../utils/jidHelper');
 const { getTeamDisplayName } = require('../../utils/teamName');
 
@@ -83,7 +83,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew withdraw error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't withdraw application`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't withdraw application`);
     }
   },
 };

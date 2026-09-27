@@ -1,6 +1,6 @@
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 let cachedCommands = null;
 function getCommands() {
@@ -70,7 +70,7 @@ module.exports = {
     } catch (error) {
       console.error('[HELP] Error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — ${error.message}`);
     }
   }
 };

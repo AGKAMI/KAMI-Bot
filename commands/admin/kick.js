@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 // Lazy require to avoid circular dependency (kick.js ↔ handler.js via commandLoader)
@@ -103,7 +103,7 @@ module.exports = {
                 `🚫 *YOH THE AUDACITY* 💀\n\n` +
                 `${mention(extra.sender)} — you really just tried to kick KAMI??\n\n` +
                 `No way you tryna kick the owner bru 😭\n` +
-                `Don't act like a laaitie man, ${pick(SLANG.dismiss)}`,
+                `Don't act like a laaitie man, ${voice.tag('neutral')}`,
               mentions: [extra.sender],
             });
             return;
@@ -154,7 +154,7 @@ module.exports = {
                     `${mention(extra.sender)} kept trying to kick you hey 💀\n` +
                     `They got demoted for it\n` +
                     `You're not going anywhere\n\n` +
-                    `${pick(SLANG.protected)}`,
+                    `${voice.say('protected')}`,
                   mentions: [extra.sender],
                 });
               } catch (e) {}
@@ -181,7 +181,7 @@ module.exports = {
                       `🛡️ *KICK PROTECTION* 💀\n\n` +
                       `${mention(extra.sender)} tried kicking ${mention(target)} twice\n` +
                       `They got demoted for it\n\n` +
-                      `${pick(SLANG.protected)}`,
+                      `${voice.say('protected')}`,
                     mentions: [target, extra.sender],
                   });
                 } catch (e) {}
@@ -200,7 +200,7 @@ module.exports = {
                   ? `That's ${mention(ownerJid)}'s person wena 💀\n`
                   : `That's KAMI's person wena 💀\n`) +
                 `Only KAMI-Bot decides who stays and who goes\n\n` +
-                `${pick(SLANG.roast)}`,
+                `${voice.say('tease')}`,
               mentions: ownerJid
                 ? [target, extra.sender, ownerJid]
                 : [target, extra.sender],
@@ -213,7 +213,7 @@ module.exports = {
                   `🛡️ *YOU GOOD* 💪\n\n` +
                   `${mention(extra.sender)} tried kicking you hey 💀\n` +
                   `Sorted — you're not going anywhere\n\n` +
-                  `${pick(SLANG.protected)}`,
+                  `${voice.say('protected')}`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
@@ -225,7 +225,7 @@ module.exports = {
                   `🚫 *OOF* 💀\n\n` +
                   `You really just tried kicking someone KAMI added??\n\n` +
                   `Yoh the audacity bru 😭\n` +
-                  `Don't try that again hey, ${pick(SLANG.dismiss)}`,
+                  `Don't try that again hey, ${voice.tag('neutral')}`,
               });
             } catch (e) {}
 
@@ -249,7 +249,7 @@ module.exports = {
                     `🛡️ *PROTECTION* 💀\n\n` +
                     `${mention(extra.sender)} tried kicking ${mention(target)}\n` +
                     `Blocked — they really thought they could tho 😭\n\n` +
-                    `${pick(SLANG.roast)}`,
+                    `${voice.say('tease')}`,
                   mentions: [target, extra.sender],
                 });
               } catch (e) {}
@@ -277,7 +277,7 @@ module.exports = {
           `✅ SUCCESS\n\n` +
           `🔨 KICKED\n\n` +
           `${usernames.join(', ')} has been kicked\n\n` +
-          `_${pick(SLANG.vibe)}_`,
+          `_${voice.react('ok')}_`,
         mentions: usersToKick,
         footer: 'Kick Management',
         buttons: [
@@ -379,7 +379,7 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
         `✅ SUCCESS\n\n` +
         `🔄 RE-ADDED\n\n` +
         `${mention(target)} has been re-added to the group\n\n` +
-        `_${pick(SLANG.vibe)}_`,
+        `_${voice.react('ok')}_`,
       mentions: [target],
     });
   } catch (e) {

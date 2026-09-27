@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 
 function phoneToJid(phone) {
   if (!phone) return null;
@@ -89,7 +89,7 @@ module.exports = {
       console.error('Team Admin Error:', error);
       extra.fail();
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ *ERROR*\n\n_${pick(SLANG.error)} — ${error.message}_`
+        text: `❌ *ERROR*\n\n_${voice.openErr()} — ${error.message}_`
       }, { quoted: msg });
     }
   }

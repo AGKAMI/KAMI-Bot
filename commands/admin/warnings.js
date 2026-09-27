@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
@@ -52,7 +52,7 @@ module.exports = {
                 `👤 ${mention(target)}\n` +
                 `📊 *Warnings:* 0/${max}\n` +
                 `🟩🟩🟩🟩🟩\n\n` +
-                `_${pick(SLANG.good)}, they clean hey!_`,
+                `_${voice.lead('affirm')}, they clean hey!_`,
           mentions: [target]
         }, { quoted: msg });
       }
@@ -95,7 +95,7 @@ module.exports = {
         text += `_Auto-kick is armed and ready 💀_\n`;
       } else if (remaining <= 0) {
         text += `\n🔴 *MAX WARNINGS HIT*\n`;
-        text += `_This person should be removed ${pick(SLANG.vibe)}_\n`;
+        text += `_This person should be removed, ${voice.tag('neutral')}_\n`;
       } else {
         text += `\n_${remaining} more and they're gone_\n`;
       }
@@ -127,7 +127,7 @@ onButton('admin:clearwarnings', async (sock, msg, from, sender, btnId) => {
         `✅ SUCCESS\n\n` +
         `🗑️ WARNINGS CLEARED\n\n` +
         `${mention(target)} has been cleared of all warnings\n\n` +
-        `_${pick(SLANG.vibe)}_`,
+        `_${voice.react('ok')}_`,
       mentions: [target],
     });
   } catch (e) {

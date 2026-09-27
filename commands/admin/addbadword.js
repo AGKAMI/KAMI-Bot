@@ -4,7 +4,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'addbadword',
@@ -27,7 +27,7 @@ module.exports = {
         extra.fail();
         return extra.reply(
           `❌ *ERROR*\n\n` +
-          `_Provide a pattern to blacklist, ${pick(SLANG.vibe)}_\n\n` +
+          `_Provide a pattern to blacklist, ${voice.tag('neutral')}_\n\n` +
           `💡 *Pattern types:*\n` +
           `• _.addbadword bad* _ — wildcard (matches "badass", "badword")\n` +
           `• _.addbadword "bad word"_ — phrase (exact phrase match)\n` +
@@ -44,7 +44,7 @@ module.exports = {
       if (badwords.includes(normalized)) {
         return extra.reply(
           `⚠️ *ALREADY EXISTS*\n\n` +
-          `_${normalized} is already in the blacklist, ${pick(SLANG.vibe)}_`
+          `_${normalized} is already in the blacklist, ${voice.tag('neutral')}_`
         );
       }
 
@@ -64,7 +64,7 @@ module.exports = {
         `📝 *Pattern:* ${normalized}\n` +
         `🏷️ *Type:* ${typeLabel}\n` +
         `📊 *Total:* ${badwords.length} patterns (${wildcards} wildcards, ${phrases} phrases, ${simple} simple)\n\n` +
-        `_${pick(SLANG.good)}, blacklisted!_`
+        `_${voice.lead('affirm')}, blacklisted!_`
       );
 
     } catch (error) {

@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../../config');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, voice } = require('../../utils/format');
 const { normalizeJidWithLid } = require('../../utils/jidHelper');
 
 // Resolve DM JID from sender (redirects group clicks to DM)
@@ -367,7 +367,7 @@ module.exports = {
     } catch (error) {
       console.error('[ORDER] command error:', error);
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)} — couldn't load the catalog_`);
+      await extra.reply(`❌ _${voice.openErr()} — couldn't load the catalog_`);
     }
   },
 };

@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'setmenuimage',
@@ -88,7 +88,7 @@ module.exports = {
       // Write new image
       fs.writeFileSync(imagePath, finalBuffer);
       
-      await extra.reply(`*✅ MENU IMAGE UPDATED*\n\n✅ ${pick(SLANG.good)}, menu image is updated`);
+      await extra.reply(`*✅ MENU IMAGE UPDATED*\n\n✅ ${voice.lead('affirm')}, menu image is updated`);
       
     } catch (error) {
       console.error('SetMenuImage command error:', error);

@@ -8,7 +8,7 @@ const FormData = require('form-data');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { webp2png } = require('../../utils/webp2mp4');
 const sharp = require('sharp');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'gptimage',
@@ -37,7 +37,7 @@ module.exports = {
       if (!prompt) {
         extra.fail();
         return await extra.reply(
-          `❌ _${pick(SLANG.error)} — give me a prompt hey_\n\n` +
+          `❌ _${voice.openErr()} — give me a prompt hey_\n\n` +
           `_Usage: ${extra.prefix || '.'}gptimage <your prompt>_\n\n` +
           '_Example: change the background to a beach_'
         );
@@ -59,7 +59,7 @@ module.exports = {
       
       if (!isImage && !isSticker) {
         extra.fail();
-        return await extra.reply(`❌ _${pick(SLANG.error)} — reply to an image or sticker_`);
+        return await extra.reply(`❌ _${voice.openErr()} — reply to an image or sticker_`);
       }
       
       // Download media
@@ -72,7 +72,7 @@ module.exports = {
       
       if (!mediaBuffer) {
         extra.fail();
-        return await extra.reply(`❌ _${pick(SLANG.error)} — couldn't download the image — try again_`);
+        return await extra.reply(`❌ _${voice.openErr()} — couldn't download the image — try again_`);
       }
       
       // Convert sticker to image if needed
@@ -83,7 +83,7 @@ module.exports = {
         
         if (isAnimated) {
           extra.fail();
-          return await extra.reply(`❌ _${pick(SLANG.error)} — animated stickers don't work — use a static image_`);
+          return await extra.reply(`❌ _${voice.openErr()} — animated stickers don't work — use a static image_`);
         }
         
         // Convert webp sticker to PNG
@@ -92,7 +92,7 @@ module.exports = {
         } catch (error) {
           console.error('Error converting sticker to PNG:', error);
           extra.fail();
-          return await extra.reply(`❌ _${pick(SLANG.error)} — couldn't convert sticker — try with a regular image_`);
+          return await extra.reply(`❌ _${voice.openErr()} — couldn't convert sticker — try with a regular image_`);
         }
       }
       
@@ -139,7 +139,7 @@ module.exports = {
       
       if (!response.data) {
         extra.fail();
-        return await extra.edit(sent.key, `\u274C _${pick(SLANG.error)} - no image came back - try again_`);
+        return await extra.edit(sent.key, `\u274C _${voice.openErr()} - no image came back - try again_`);
       }
       
       const resultImageBuffer = Buffer.from(response.data);
@@ -147,7 +147,7 @@ module.exports = {
       // Validate buffer
       if (!resultImageBuffer || resultImageBuffer.length === 0) {
         extra.fail();
-        return await extra.edit(sent.key, `\u274C _${pick(SLANG.error)} - empty image returned - try again_`);
+        return await extra.edit(sent.key, `\u274C _${voice.openErr()} - empty image returned - try again_`);
       }
       
       // Check if response is actually an image (not JSON error)
@@ -156,10 +156,10 @@ module.exports = {
         try {
           const errData = JSON.parse(resultImageBuffer.toString());
           extra.fail();
-          return await extra.edit(sent.key, `\u274C _${pick(SLANG.error)} - ${errData.error || 'API returned error'}_`);
+          return await extra.edit(sent.key, `\u274C _${voice.openErr()} - ${errData.error || 'API returned error'}_`);
         } catch {}
         extra.fail();
-        return await extra.edit(sent.key, `\u274C _${pick(SLANG.error)} - API returned non-image data_`);
+        return await extra.edit(sent.key, `\u274C _${voice.openErr()} - API returned non-image data_`);
       }
       
       // Check file size (WhatsApp image limit is 5MB)
@@ -167,7 +167,7 @@ module.exports = {
       if (resultImageBuffer.length > maxImageSize) {
         extra.fail();
         return await extra.edit(sent.key,
-          `\u274C _${pick(SLANG.error)} - image too large: ${(resultImageBuffer.length / 1024 / 1024).toFixed(2)}MB (max 5MB)_\n` +
+          `\u274C _${voice.openErr()} - image too large: ${(resultImageBuffer.length / 1024 / 1024).toFixed(2)}MB (max 5MB)_\n` +
           '_The API returned an image that exceeds WhatsApp limits._'
         );
       }
@@ -188,23 +188,23 @@ module.exports = {
         const status = error.response.status;
         if (status === 400) {
           extra.fail();
-          return await extra.reply(`❌ _${pick(SLANG.error)} — bad request — check your prompt and image_`);
+          return await extra.reply(`❌ _${voice.openErr()} — bad request — check your prompt and image_`);
         } else if (status === 429) {
           extra.fail();
-          return await extra.reply(`❌ _${pick(SLANG.error)} — rate limit hit — try again later_`);
+          return await extra.reply(`❌ _${voice.openErr()} — rate limit hit — try again later_`);
         } else if (status === 500) {
           extra.fail();
-          return await extra.reply(`❌ _${pick(SLANG.error)} — server error — try again later_`);
+          return await extra.reply(`❌ _${voice.openErr()} — server error — try again later_`);
         }
       }
       
       if (error.code === 'ECONNABORTED') {
         extra.fail();
-        return await extra.reply(`❌ _${pick(SLANG.error)} — request timed out — try again_`);
+        return await extra.reply(`❌ _${voice.openErr()} — request timed out — try again_`);
       }
       
       extra.fail();
-      return await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message || 'something went stukkend'}_`);
+      return await extra.reply(`❌ _${voice.openErr()} — ${error.message || 'something went stukkend'}_`);
     }
   },
 };

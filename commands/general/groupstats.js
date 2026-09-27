@@ -2,7 +2,7 @@
 
 const config = require('../../config');
 const { getStats } = require('../../utils/groupstats');
-const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
 
 module.exports = {
     name: 'groupstats',
@@ -52,7 +52,7 @@ ${topText}
         } catch (err) {
             console.error('[groupstats cmd] error:', err);
             extra.fail();
-            extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)}, couldn't load stats`);
+            extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()}, couldn't load stats`);
         }
     }
 };

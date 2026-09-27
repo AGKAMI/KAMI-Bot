@@ -10,7 +10,7 @@ const config = require('../../config');
 const axios = require('axios');
 const { getTeamDisplayName } = require('../../utils/teamName');
 const { sendButtons } = require('../../utils/buttonHelper');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { TEAMS, buildHiredMessage } = require('./crewForms');
 const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
 
@@ -280,14 +280,14 @@ module.exports = {
           roleWarn + '\n' +
           (ownerVIP
             ? '_The owner himself has accepted this member. Welcome to the squad._ 👑'
-            : '_Hired message + group pic + invite sent to them_' + pick(SLANG.vibe)),
+            : '_Hired message + group pic + invite sent to them_' + ' ' + voice.tag('neutral')),
         mentions: applicantJid ? [applicantJid] : [],
       }, { quoted: msg });
 
     } catch (error) {
       console.error('Crew accept error:', error);
       console.error('Crew accept error stack:', error.stack);
-      await extra.reply('❌ ERROR\n\n' + pick(SLANG.error) + ' — couldn\'t accept applicant\n\n`' + error.message + '`');
+      await extra.reply('❌ ERROR\n\n' + voice.openErr() + ' — couldn\'t accept applicant\n\n`' + error.message + '`');
     }
   },
 };

@@ -4,7 +4,7 @@
 
 const APIs = require('../../utils/api');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'weather',
@@ -18,7 +18,7 @@ module.exports = {
     const prefix = config.prefix || '.';
     try {
       if (args.length === 0) {
-        return await extra.reply(`\u{1F4DD} _${pick(SLANG.vibe)}, give me a city name_\n\n_Example:_ ${prefix}weather london`);
+        return await extra.reply(`\u{1F4DD} _${voice.lead('neutral')}, give me a city name_\n\n_Example:_ ${prefix}weather london`);
       }
       
       const city = args.join(' ');
@@ -41,7 +41,7 @@ module.exports = {
       
     } catch (error) {
       extra.fail();
-      await extra.reply(`\u274C _${pick(SLANG.error)}, couldn't get the weather right now_`);
+      await extra.reply(`\u274C _${voice.openErr()}, couldn't get the weather right now_`);
     }
   }
 };

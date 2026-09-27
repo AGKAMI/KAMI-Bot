@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
 const { TEAMS } = require('./crewForms');
 
@@ -68,7 +68,7 @@ module.exports = {
       if (allPending.length === 0) {
         return extra.reply(
           `📋 ALL PENDING APPLICATIONS\n\n` +
-          `No pending applications across any team ${pick(SLANG.vibe)}\n\n` +
+          `No pending applications across any team, ${voice.tag('err')}\n\n` +
           `Teams: ${Object.keys(crewTeams).join(', ')}`
         );
       }
@@ -130,7 +130,7 @@ module.exports = {
     } catch (error) {
       console.error('Crew pending error:', error);
       await extra.reply(
-        `❌ ERROR\n\n${pick(SLANG.error)} — couldn't load pending applications`
+        `❌ ERROR\n\n${voice.openErr()} — couldn't load pending applications`
       );
     }
   },

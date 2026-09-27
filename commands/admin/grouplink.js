@@ -2,7 +2,7 @@
  * Group Link Command - Get group invite link
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
     name: 'grouplink',
@@ -23,7 +23,7 @@ module.exports = {
         let text = `🔗 GROUP INVITE LINK\n\n`;
         text += `📱 *Group*: ${extra.groupMetadata.subject}\n`;
         text += `🔗 *Link*: ${link}\n\n`;
-        text += `⚠️ Don't share this publicly ${pick(SLANG.vibe)}`;
+        text += `⚠️ Don't share this publicly, ${voice.tag('neutral')}`;
         
         await extra.reply(text);
         

@@ -2,7 +2,7 @@
  * Group Info Command - Display group information
  */
 
-const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
 
 module.exports = {
     name: 'groupinfo',
@@ -45,7 +45,7 @@ module.exports = {
         
       } catch (error) {
         extra.fail();
-        await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
+        await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — ${error.message}`);
       }
     }
   };

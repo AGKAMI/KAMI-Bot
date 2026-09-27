@@ -4,7 +4,7 @@
 
 const APIs = require('../../utils/api');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'translate',
@@ -39,7 +39,7 @@ module.exports = {
       
     } catch (error) {
       extra.fail();
-      await extra.reply(`\u274C *ERROR*\n\u{1F4A1} ${pick(SLANG.error)}, translation failed - ${error.message}\n\n\u{1F4A1} Supported codes: en, es, fr, de, it, pt, ru, ja, ko, zh`);
+      await extra.reply(`\u274C *ERROR*\n\u{1F4A1} ${voice.openErr()}, translation failed - ${error.message}\n\n\u{1F4A1} Supported codes: en, es, fr, de, it, pt, ru, ja, ko, zh`);
     }
   }
 };

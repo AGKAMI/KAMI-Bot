@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
@@ -87,7 +87,7 @@ module.exports = {
           `✅ SUCCESS\n\n` +
           `⬆️ PROMOTED\n\n` +
           `${mention(target)} is now a group admin${protectionNote}\n\n` +
-          `_${pick(SLANG.vibe)}_`,
+          `_${voice.react('ok')}_`,
         mentions: [target],
         footer: 'Admin Actions',
         buttons: [

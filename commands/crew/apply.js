@@ -8,7 +8,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { TEAMS } = require('./crewForms');
 const { resolveUser } = require('./crewHelpers');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
@@ -42,7 +42,7 @@ module.exports = {
       const teamKey = args[0].toUpperCase();
       if (!TEAMS[teamKey] || !config.crewTeams[teamKey]) {
         return extra.reply(
-          `❌ ERROR\n\nInvalid team ${pick(SLANG.error)}\n\n` +
+          `❌ ERROR\n\nInvalid team, ${voice.tag('err')}\n\n` +
           `Teams: ${Object.keys(TEAMS).join(', ')}`
         );
       }
@@ -84,7 +84,7 @@ module.exports = {
         (applyingForSomeone
           ? `📲 I've DM'd ${mention(applicantJid)} the application form.\n\n`
           : `📲 I've DM'd you the application form.\n\n`) +
-        `_${pick(SLANG.greeting)}, good luck!_`;
+        `_${voice.greetOpen()}, good luck!_`;
 
       await sock.sendMessage(extra.from, {
         text: confirmText,
@@ -93,7 +93,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew apply error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't start the application`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't start the application`);
     }
   },
 };

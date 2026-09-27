@@ -4,7 +4,7 @@
 
 const { truth } = require('@bochilteam/scraper');
 const { translate } = require('@vitalets/google-translate-api');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
     name: 'truth',
@@ -25,7 +25,7 @@ module.exports = {
       } catch (error) {
         console.error('Truth Error:', error);
         extra.fail();
-        await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+        await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
       }
     }
   };

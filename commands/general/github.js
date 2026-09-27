@@ -4,7 +4,7 @@
 
 const axios = require('axios');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
     name: 'github',
@@ -85,7 +85,7 @@ module.exports = {
         } catch (error) {
             console.error('GitHub command error:', error);
             extra.fail();
-            await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — ${error.message}`);
+            await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — ${error.message}`);
         }
     }
 };

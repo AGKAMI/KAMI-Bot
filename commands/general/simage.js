@@ -4,7 +4,7 @@
 
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { webp2png } = require('../../utils/webp2mp4');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'simage',
@@ -49,7 +49,7 @@ module.exports = {
       
       if (!stickerBuffer) {
         extra.fail();
-        return await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't download the sticker, try again`);
+        return await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't download the sticker, try again`);
       }
       
       // Check if sticker is animated
@@ -89,7 +89,7 @@ module.exports = {
     } catch (error) {
       console.error('Error in simage command:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't convert sticker to image`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't convert sticker to image`);
     }
   }
 };

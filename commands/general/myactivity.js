@@ -1,7 +1,7 @@
 // commands/general/myactivity.js
 
 const { getStats } = require('../../utils/groupstats');
-const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
 
 module.exports = {
     name: 'myactivity',
@@ -51,7 +51,7 @@ module.exports = {
         } catch (err) {
             console.error('[myactivity cmd] error:', err);
             extra.fail();
-            extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)}, couldn't load your activity`);
+            extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()}, couldn't load your activity`);
         }
     }
 };

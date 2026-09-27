@@ -7,7 +7,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
@@ -97,7 +97,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew reroll error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't reroll application`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't reroll application`);
     }
   },
 };

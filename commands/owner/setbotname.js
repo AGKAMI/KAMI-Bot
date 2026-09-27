@@ -5,7 +5,7 @@
 const config = require('../../config');
 const fs = require('fs');
 const path = require('path');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'setbotname',
@@ -70,7 +70,7 @@ module.exports = {
       // Reload config module cache
       delete require.cache[require.resolve('../../config')];
       
-      await extra.reply(`*✅ NAME UPDATED*\n\n✅ ${pick(SLANG.good)}, bot name is now: *${newBotName}*\n\n🔄 New name will show in menus`);
+      await extra.reply(`*✅ NAME UPDATED*\n\n✅ ${voice.lead('affirm')}, bot name is now: *${newBotName}*\n\n🔄 New name will show in menus`);
       
     } catch (error) {
       console.error('Setbotname command error:', error);

@@ -6,7 +6,7 @@
 
 const config = require('../../config');
 const database = require('../../database');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 const TOGGLES = [
@@ -67,7 +67,7 @@ module.exports = {
     } catch (error) {
       console.error('Settings error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — ${error.message}`);
     }
   },
 };

@@ -12,7 +12,7 @@ const ffmpegPath = require('ffmpeg-static');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const config = require('../../config');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 // Max file size: 50MB
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -70,14 +70,14 @@ module.exports = {
       
       if (!mediaBuffer) {
         extra.fail();
-        await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — couldn't download that, try again`);
+        await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't download that, try again`);
         return;
       }
       
       // Check file size
       if (mediaBuffer.length > MAX_FILE_SIZE) {
         extra.fail();
-        await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+        await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
         return;
       }
       
@@ -145,7 +145,7 @@ module.exports = {
     } catch (error) {
       console.error('Sticker command error:', error);
       extra.fail();
-      await extra.reply(`\u274C *ERROR*\n\u{1F4A1} ${pick(SLANG.error)} - couldn't make the sticker, check if the media is valid`);
+      await extra.reply(`\u274C *ERROR*\n\u{1F4A1} ${voice.openErr()} - couldn't make the sticker, check if the media is valid`);
     } finally {
       // Always cleanup temp files
       tempFiles.forEach(file => deleteTempFile(file));

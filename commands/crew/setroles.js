@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'setroles',
@@ -58,7 +58,7 @@ module.exports = {
     } catch (error) {
       console.error('Crew setroles error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't set roles`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't set roles`);
     }
   },
 };

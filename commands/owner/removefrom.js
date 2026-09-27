@@ -9,7 +9,7 @@
 
 const config = require('../../config');
 const database = require('../../database');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 
 const EXTRA_GROUPS = {
   GENERAL:   { jid: '120363417242897528@g.us', name: 'SS Crew General' },
@@ -211,14 +211,14 @@ module.exports = {
         text:
           `✅ SUCCESS\n\n➖ REMOVED FROM ${groupName.toUpperCase()}\n\n` +
           `${mention(target)} has been removed from ${groupName}\n\n` +
-          `_${pick(SLANG.vibe)}_`,
+          `_${voice.react('ok')}_`,
         mentions: [target],
       }, { quoted: msg });
 
     } catch (error) {
       console.error('RemoveFrom error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't remove them`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't remove them`);
     }
   },
 };

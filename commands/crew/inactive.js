@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
@@ -56,7 +56,7 @@ module.exports = {
       return extra.reply(
         `✅ *ALL GOOD*\n\n` +
         `No inactive members in the last ${days} days\n` +
-        `_Everyone's been active ${pick(SLANG.good)}_`
+        `_Everyone's been active, ${voice.tag('affirm')}_`
       );
     }
 

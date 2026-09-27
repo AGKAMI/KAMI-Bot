@@ -67,164 +67,40 @@ const kv = (label, value) => `${bold(`${label}:`)} ${value}`;
 // ─── Status Messages ──────────────────────────────────────────────────────────
 
 const status = {
-  wait: (msg = 'Loading...') => `⏳ ${bold(msg)}`,
-  success: (msg = 'Done!') => `✅ ${bold(msg)}`,
-  error: (msg = 'Something went wrong') => `❌ ${msg}`,
+  wait: (msg = 'One mo, loading...') => `⏳ ${bold(msg)}`,
+  success: (msg = 'Done, lekke') => `✅ ${bold(msg)}`,
+  error: (msg = 'Eish, something went stukkend') => `❌ ${msg}`,
   warn: (msg) => `⚠️ ${msg}`,
   info: (msg) => `ℹ️ ${msg}`,
 };
 
-// ─── Tsotsitaal / Kasi Slang Dictionary ───────────────────────────────────────
-// Safe, broadly recognised terms. Applied to bot casual messages.
-// DO NOT use: sharp (Kermes rejected as closer), mampara (too offensive),
-//             naai (too aggressive), gashu (confusing across regions)
+// ─── South African voice ─────────────────────────────────────────────────────
+// Lexicon + phrase banks + position-aware helpers live in utils/slang.js
+// (and utils/slang-lex.js). Re-exported here so existing
+// `const { SLANG, pick } = require('../../utils/format')` keeps working.
 
-const SLANG = {
-  // ── Greetings ────────────────────────────────────────────
-  greeting: [
-    'howzit', 'aweh', 'heita', 'heita mbokodo', 'yoh wena',
-    'sho mbokodo', 'heita gents', 'aweh sisi', 'heita baba',
-  ],
+const { voice, SLANG, pick } = require('./slang');
 
-  // ── Positive feedback ────────────────────────────────────
-  good: [
-    'lekke', 'kiff', 'kwaai', 'scores', 'clocked it', 'sharp sharp',
-    'ngeke', 'uyeze', 'phanda', 'lekker gents', 'oke shem',
-  ],
-
-  // ── Addressing users ─────────────────────────────────────
-  friend: [
-    'laaitie', 'my bru', 'wena', 'mbokodo', 'sisi', 'baba',
-    'boet', 'gents', 'shem', 'ndoda', 'makhulu', 'gogo',
-  ],
-
-  // ── Errors / negative ────────────────────────────────────
-  error: [
-    'moegoe', 'sleg', 'stukkend', 'yoh', 'haiibo', 'cima',
-    'eish', 'hayibo', 'awu', 'shem', 'yoh shame',
-  ],
-
-  // ── Intensity ────────────────────────────────────────────
-  intensifier: [
-    'lank', 'lekker', 'phanda', 'yoh', 'honestly', 'ngeke ke',
-  ],
-
-  // ── General ──────────────────────────────────────────────
-  yes: ['yebo', 'yebo shame', 'sho', 'aweh', 'ybo', 'ngo'],
-  no: ['awu', 'hayi', 'yoh nah', 'khona into e-off', 'haye', 'khona'],
-  thanks: ['enkosi', 'ke a leboha', 'thanks shame', 'sho lekke', 'ncawe'],
-  bye: ['totsiens', 'later hey', 'shiya gentleman', 'shiya', 'sala kahle'],
-
-  // ── Filler / vibe ────────────────────────────────────────
-  vibe: ['sho', 'yazi', 'manje', 'nje', 'bathong', 'mos', 'yoh', 'shem'],
-
-  // ── Roast energy (someone did something wild) ────────────
-  roast: [
-    'yoh the audacity 💀',
-    'not you trying that 💀',
-    'shame man... cima 😭',
-    'you thought hey 💀',
-    'bathong the boldness 😭',
-    'agine the nerve 💀',
-    'hao khonahale bru 💀',
-    'wena you really went there 💀',
-    'not this behaviour 😭',
-    'yoh the shameless energy 💀',
-    'and you thought we wouldn\'t notice 😭',
-    'caught in 4k my guy 💀',
-  ],
-
-  // ── Dismissal energy (blocking/shutting down) ────────────
-  dismiss: [
-    'nah not happening 💀',
-    'try again boet 💀',
-    'yoh nice try tho 😭',
-    'not today laaitie 💀',
-    'wena you really tried 😭',
-    'sho... anyway 💀',
-    'cima man, cima 😭',
-    'and then... nothing happened 💀',
-    'gone kanje, just like that 😭',
-    'not on KAMI\'s watch 💀',
-    'zero aura points for that attempt 😭',
-  ],
-
-  // ── Protection success (handled the situation) ───────────
-  protected: [
-    'sorted lekke ✅',
-    'handled, don\'t worry about it 💪',
-    'KAMI\'s people stay protected 🔒',
-    'caught in 4k, handled 📸',
-    'yebo, that\'s how we do it 💪',
-    'clocked it and dealt with it ✅',
-    'sorted, nobody touches KAMI\'s people 🔒',
-    'handled with the quickness 💪',
-  ],
-
-  // ── Warning energy (one more time and...) ────────────────
-  warning: [
-    'one more time and see what happens 💀',
-    'push your luck why don\'t you 😭',
-    'yoh you\'re on thin ice laaitie 💀',
-    'test KAMI and find out 😭',
-    'keep that energy and see 💀',
-    'not twice hey, once was enough 😭',
-  ],
-
-  // ── Celebration / hype ───────────────────────────────────
-  hype: [
-    'ngeke ke! 🔥', 'lekker gents! 🎉', 'scores! 💪',
-    'yebo shame! 🥳', 'clocked it! ✅', 'phanda! 🔥',
-    'oke shem! 🎊', 'kwaai moves! 💯',
-  ],
-
-  // ── Confusion / disbelief ────────────────────────────────
-  confused: [
-    'bathong what just happened 💀',
-    'yoh I\'m confused 😭',
-    'wait... what? 💀',
-    'hao khonahale, seriously? 😭',
-    'eish, that doesn\'t add up 💀',
-    'mos... what\'s going on here 😭',
-  ],
-
-  // ── Sadness / sympathy ───────────────────────────────────
-  sad: [
-    'yoh that\'s heavy hey 😔',
-    'shame man, that hurts 💔',
-    'eish, sorry about that 😢',
-    'bathong, that\'s not nice 😔',
-    'yoh shame, take it easy 💪',
-  ],
-};
-
-/**
- * Pick a random item from an array
- */
-const pick = (arr) => {
-  if (!arr || arr.length === 0) return '';
-  return arr[Math.floor(Math.random() * arr.length)];
-};
 
 /**
  * Get a random greeting
  */
-const greet = () => pick(SLANG.greeting);
+const greet = () => voice.hi();
 
 /**
  * Get a random positive response
  */
-const lekker = () => pick(SLANG.good);
+const lekker = () => voice.ok();
 
 /**
  * Get a random friend address
  */
-const chommie = () => pick(SLANG.friend);
+const chommie = () => voice.addr();
 
 /**
  * Get a random casual closer
  */
-const closer = () => pick(['sho', 'lekker', 'yazi']);
+const closer = () => voice.tag('neutral');
 
 // ─── Pre-built Message Templates ──────────────────────────────────────────────
 
@@ -245,7 +121,7 @@ const templates = {
       bold('KAMI BOT'),
       SEP,
       '',
-      `${bold(greet().toUpperCase())} @${name}! 👋`,
+      `${bold(voice.greetOpen())} @${name}! 👋`,
       '',
       `- 👤 ${bold('Welcome to')} ${group}`,
       `- 💀 ${bold('Member')} #${memberCount}`,
@@ -258,7 +134,7 @@ const templates = {
       '- No illegal content',
       '- No toxic behavior',
       '',
-      `_${pick(SLANG.greeting)}, you're in good hands_`,
+      `_Sho, you are in good hands here_`,
     ].join('\n');
   },
 
@@ -269,16 +145,16 @@ const templates = {
     return [
       `${bold('TOTSIENS')} @${name} 👋`,
       '',
-      `${pick(SLANG.vibe)}, we'll miss you hey.`,
-      `_Go well, chommie._`,
+      `_Sala kahle, we will miss you hey._`,
+      `_Go well, ${voice.mate()}._`,
     ].join('\n');
   },
 
   /**
-   * Error message with tsotsitaal flair
+   * Error message in a natural SA voice
    */
   errorMsg: (detail = null) => {
-    const base = `${pick(SLANG.error)} — something went stukkend`;
+    const base = `${voice.openErr()} — something went stukkend, ${voice.tag('err')}`;
     return detail ? `${base}\n${italic(detail)}` : base;
   },
 
@@ -286,21 +162,21 @@ const templates = {
    * Permission denied
    */
   permDenied: (role = 'owner') => {
-    return `${bold('NO ACCESS')} — this one's for the ${role} only`;
+    return `${bold('NO ACCESS')} — this one is for the ${role} only, ${voice.tag('err')}`;
   },
 
   /**
    * Group-only command
    */
   groupOnly: () => {
-    return `${bold('Group only')} — this needs to run in a group, ${pick(SLANG.vibe)}`;
+    return `${bold('Group only')} — this needs to run in a group, ${voice.tag('neutral')}`;
   },
 
   /**
    * Admin-only command
    */
   adminOnly: () => {
-    return `${bold('Admins only')} — you need to be an admin for this`;
+    return `${bold('Admins only')} — you need to be an admin for this one, ${voice.tag('neutral')}`;
   },
 };
 
@@ -317,7 +193,7 @@ module.exports = {
   section, field, kv, status,
 
   // Slang
-  SLANG, pick, greet, lekker, chommie, closer,
+  SLANG, pick, greet, lekker, chommie, closer, voice,
 
   // Templates
   templates,

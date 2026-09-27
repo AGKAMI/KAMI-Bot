@@ -4,7 +4,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'delbadword',
@@ -27,7 +27,7 @@ module.exports = {
         extra.fail();
         return extra.reply(
           `❌ *ERROR*\n\n` +
-          `_Provide the pattern to remove, ${pick(SLANG.vibe)}_\n\n` +
+          `_Provide the pattern to remove, ${voice.tag('neutral')}_\n\n` +
           `_Example: ${prefix}delbadword bad*_`
         );
       }
@@ -40,7 +40,7 @@ module.exports = {
         extra.fail();
         return extra.reply(
           `❌ *NOT FOUND*\n\n` +
-          `_${normalized} isn't in the blacklist, ${pick(SLANG.vibe)}_\n\n` +
+          `_${normalized} isn't in the blacklist, ${voice.tag('err')}_\n\n` +
           `_Use ${prefix}antibadword status to see all patterns_`
         );
       }
@@ -56,7 +56,7 @@ module.exports = {
         `✅ *PATTERN REMOVED*\n\n` +
         `📝 *Pattern:* ${normalized}\n` +
         `📊 *Remaining:* ${updated.length} patterns (${wildcards} wildcards, ${phrases} phrases, ${simple} simple)\n\n` +
-        `_${pick(SLANG.good)}, removed from blacklist!_`
+        `_${voice.lead('affirm')}, removed from blacklist!_`
       );
 
     } catch (error) {

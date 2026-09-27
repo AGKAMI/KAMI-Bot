@@ -2,7 +2,7 @@
  * Ping Command - Check bot response time
  */
 
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
     name: 'ping',
@@ -33,7 +33,7 @@ module.exports = {
           `⚡ *Response:* ${responseTime}ms`,
           `📊 *Quality:* ${quality}`,
           ``,
-          `⏱️ _Tested just now, ${pick(SLANG.vibe)}_`
+          `⏱️ _Tested just now, ${voice.tag('neutral')}_`
         ].join('\n');
         
         await sock.sendMessage(extra.from, {

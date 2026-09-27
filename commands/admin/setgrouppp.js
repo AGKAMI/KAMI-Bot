@@ -3,7 +3,7 @@
  */
 
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const database = require('../../database');
 
 const config = require('../../config');
@@ -30,7 +30,7 @@ module.exports = {
           `❌ *ERROR*`,
           '',
           `💡 Reply to an image with ${prefix}setgrouppp`,
-          `_Make sure the replied message is a photo, ${pick(SLANG.vibe)}_`
+          `_Make sure the replied message is a photo, ${voice.tag('neutral')}_`
         ].join('\n');
         return await extra.reply(text);
       }
@@ -46,7 +46,7 @@ module.exports = {
         const text = [
           `🔒 *GROUP LOCKED*`,
           '',
-          `- This group is locked, ${pick(SLANG.vibe)}`,
+          `- This group is locked, ${voice.tag('err')}`,
           `- Only admins can unlock it with .unlock`
         ].join('\n');
         return await extra.reply(text);
@@ -72,7 +72,7 @@ module.exports = {
 
       if (!mediaBuffer) {
         extra.fail();
-        return await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — couldn't download the image, try again`);
+        return await extra.reply(`❌ *ERROR*\n\n${voice.openErr()} — couldn't download the image, try again`);
       }
 
       await sock.updateProfilePicture(from, mediaBuffer);
@@ -83,7 +83,7 @@ module.exports = {
         `- 🖼️ ${bold('New profile picture set')}`,
         `- 👤 ${bold('Changed by')} ${mention(extra.sender)}`,
         "",
-        `_${pick(SLANG.good)} — group looking fresh, ${pick(SLANG.vibe)}_`
+        `_${voice.lead('affirm')} — group looking fresh, ${voice.tag('affirm')}_`
       ].join('\n');
 
       await sock.sendMessage(from, { text, mentions: [extra.sender] }, { quoted: msg });
@@ -91,7 +91,7 @@ module.exports = {
     } catch (error) {
       console.error('SetGroupPP Error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n\n${voice.openErr()} — ${error.message}`);
     }
   }
 };

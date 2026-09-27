@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 const activeReminders = new Map();
@@ -37,7 +37,7 @@ module.exports = {
                     return extra.reply(
                         `✅ *SUCCESS*\n\n` +
                         `📋 *Active Reminders:* None\n\n` +
-                        `_No reminders set for this group, ${pick(SLANG.vibe)}_`
+                        `_No reminders set for this group, ${voice.tag('err')}_`
                     );
                 }
 
@@ -71,7 +71,7 @@ module.exports = {
                     extra.fail();
                     return extra.reply(
                         `❌ *ERROR*\n\n` +
-                        `💡 Invalid reminder number. Use *${prefix}remind list* to see active reminders, ${pick(SLANG.vibe)}`
+                        `💡 Invalid reminder number. Use *${prefix}remind list* to see active reminders, ${voice.tag('neutral')}`
                     );
                 }
 
@@ -83,7 +83,7 @@ module.exports = {
                     `✅ *SUCCESS*\n\n` +
                     `🗑️ *Reminder #${index + 1} cancelled*\n` +
                     `📝 *Message:* ${reminder.message}\n\n` +
-                    `_Done, ${pick(SLANG.vibe)} 🫡_`
+                    `_Done, ${voice.tag('neutral')} 🫡_`
                 );
             }
 
@@ -107,7 +107,7 @@ module.exports = {
                 return extra.reply(
                     `❌ *ERROR*\n\n` +
                     `📋 Max ${MAX_REMINDERS} active reminders per group.\n` +
-                    `Use *${prefix}remind list* or *${prefix}remind cancel <number>*, ${pick(SLANG.vibe)}`
+                    `Use *${prefix}remind list* or *${prefix}remind cancel <number>*, ${voice.tag('neutral')}`
                 );
             }
 
@@ -148,7 +148,7 @@ module.exports = {
 
             if (ms > 7 * 24 * 60 * 60 * 1000) {
                 extra.fail();
-                return extra.reply(`❌ *ERROR*\n\n💡 Max reminder is 7 days, ${pick(SLANG.vibe)}`);
+                return extra.reply(`❌ *ERROR*\n\n💡 Max reminder is 7 days, ${voice.tag('err')}`);
             }
 
             const messageText = args.slice(1).join(' ');
@@ -190,7 +190,7 @@ module.exports = {
                             `👤 *For:* ${targetJids.map(j => mention(j)).join(', ')}`,
                             `📝 *Message:* ${cleanMessage}`,
                             ``,
-                            `_Set ${amount} ${fullUnit} ago — ${pick(SLANG.vibe)}_`
+                            `_Set ${amount} ${fullUnit} ago — ${voice.tag('neutral')}_`
                         ].join('\n'),
                         mentions: targetJids,
                         footer: 'Reminder',
@@ -219,13 +219,13 @@ module.exports = {
                   `👤 *Who:* ${targetJids.map(j => mention(j)).join(', ')}\n` +
                   `⏳ *When:* ${amount} ${fullUnit} from now\n` +
                   `📝 *Message:* ${cleanMessage}\n\n` +
-                  `_I'll ping ${targetJids.length > 1 ? 'them' : 'you'}, ${pick(SLANG.vibe)} 🫡_`,
+                  `_I'll ping ${targetJids.length > 1 ? 'them' : 'you'}, ${voice.tag('neutral')} 🫡_`,
                 mentions: targetJids
               }, { quoted: msg });
 
         } catch (error) {
             extra.fail();
-            await extra.reply(`❌ *ERROR*\n\n💡 ${pick(SLANG.error)} — ${error.message}`);
+            await extra.reply(`❌ *ERROR*\n\n💡 ${voice.openErr()} — ${error.message}`);
         }
     }
 };
@@ -253,7 +253,7 @@ onButton('remind:again:', async (sock, msg, from, sender, btnId) => {
             `👤 *For:* ${fired.targetJids.map(j => mention(j)).join(', ')}`,
             `📝 *Message:* ${fired.message}`,
             ``,
-            `_Snoozed ${fired.amount} ${fired.fullUnit} — ${pick(SLANG.vibe)}_`
+            `_Snoozed ${fired.amount} ${fired.fullUnit} — ${voice.tag('neutral')}_`
         ].join('\n'),
         mentions: fired.targetJids,
         footer: 'Reminder',

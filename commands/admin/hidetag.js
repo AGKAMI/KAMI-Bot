@@ -5,7 +5,7 @@
  */
 
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'hidetag',
@@ -106,7 +106,7 @@ module.exports = {
     } catch (error) {
       console.error('HideTag command error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\nCouldn't tag everyone ${pick(SLANG.vibe)}`);
+      await extra.reply(`❌ ERROR\n\nCouldn't tag everyone, ${voice.tag('err')}`);
     }
   },
 };

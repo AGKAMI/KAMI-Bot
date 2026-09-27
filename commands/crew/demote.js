@@ -1,6 +1,6 @@
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 const getRoleEmoji = (role, roles) => {
@@ -70,7 +70,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew demote error:', error);
-      await extra.reply('❌ ERROR\n\n' + pick(SLANG.error) + ' — couldn\'t demote');
+      await extra.reply('❌ ERROR\n\n' + voice.openErr() + ' — couldn\'t demote');
     }
   },
 };

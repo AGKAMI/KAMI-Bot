@@ -2,7 +2,7 @@
  * Set Name Command - Change group name with template variables
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 const database = require('../../database');
 
 const config = require('../../config');
@@ -47,7 +47,7 @@ module.exports = {
       if (settings.lockName) {
         return extra.reply(
           `🔒 *NAME LOCKED*\n\n` +
-          `_${pick(SLANG.vibe)}, the group name is locked by an admin_\n` +
+          `_${voice.openErr()}, the group name is locked by an admin_\n` +
           `Current name: *${extra.groupMetadata?.subject || 'Unknown'}*`
         );
       }
@@ -75,14 +75,14 @@ module.exports = {
         `📝 *New name:* ${resolved}\n` +
         `👤 *Changed by:* @${senderNum}\n` +
         `📛 *Old name:* ${currentName}\n\n` +
-        `_${pick(SLANG.good)}, fresh name!_`,
+        `_${voice.lead('affirm')}, fresh name!_`,
         [extra.sender]
       );
 
     } catch (error) {
       console.error('SetName Error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n\n${voice.openErr()} — ${error.message}`);
     }
   }
 };

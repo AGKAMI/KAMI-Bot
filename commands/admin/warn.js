@@ -4,7 +4,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
@@ -98,7 +98,7 @@ module.exports = {
                 `✅ SUCCESS\n\n` +
                 `🔨 KICKED\n\n` +
                 `${mention(target)} has been removed for exceeding max warnings\n\n` +
-                `_${pick(SLANG.vibe)}_`,
+                `_${voice.react('ok')}_`,
               mentions: [target]
             });
           } catch (e) {
@@ -147,7 +147,7 @@ onButton('admin:undowarn', async (sock, msg, from, sender, btnId) => {
         `✅ SUCCESS\n\n` +
         `↩️ WARNING REMOVED\n\n` +
         `${mention(target)} has been cleared of their last warning\n\n` +
-        `_${pick(SLANG.vibe)}_`,
+        `_${voice.react('ok')}_`,
       mentions: [target],
     });
   } catch (e) {
@@ -192,7 +192,7 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
         `✅ SUCCESS\n\n` +
         `🔨 KICKED\n\n` +
         `${mention(target)} has been removed from the group\n\n` +
-        `_${pick(SLANG.vibe)}_`,
+        `_${voice.react('ok')}_`,
       mentions: [target],
     });
     const database = require('../../database');

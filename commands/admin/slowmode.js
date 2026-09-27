@@ -2,7 +2,7 @@
  * Slowmode Command - Set message cooldown per user with bypass system
  */
 
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const database = require('../../database');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
@@ -53,7 +53,7 @@ module.exports = {
         }
         return extra.reply(
           `✅ *SLOWMODE*\n\n` +
-          `_Already on at ${current}s, ${pick(SLANG.vibe)}_`
+          `_Already on at ${current}s, ${voice.tag('neutral')}_`
         );
       }
 
@@ -65,7 +65,7 @@ module.exports = {
           `🐢 *SLOWMODE OFF*\n\n` +
           `✅ *Slowmode disabled*\n` +
           `👤 *Changed by:* ${mention(sender)}\n\n` +
-          `_${pick(SLANG.vibe)} — free messages for everyone_`,
+          `_${voice.open()} — free messages for everyone_`,
           [sender]
         );
       }
@@ -76,7 +76,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Tag a user to bypass, ${pick(SLANG.vibe)}_\n\n` +
+            `_Tag a user to bypass, ${voice.tag('neutral')}_\n\n` +
             `_Example: ${prefix}slowmode bypass @user_`
           );
         }
@@ -96,7 +96,7 @@ module.exports = {
           `✅ *SLOWMODE BYPASS*\n\n` +
           `👤 *User:* ${mention(bypassJid)}\n` +
           `🐢 *Status:* Bypasses slowmode\n\n` +
-          `_${pick(SLANG.good)}, exempted!_`,
+          `_${voice.lead('affirm')}, exempted!_`,
           [bypassJid]
         );
       }
@@ -107,7 +107,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Tag a user to remove bypass, ${pick(SLANG.vibe)}_\n\n` +
+            `_Tag a user to remove bypass, ${voice.tag('neutral')}_\n\n` +
             `_Example: ${prefix}slowmode unbypass @user_`
           );
         }
@@ -184,14 +184,14 @@ module.exports = {
         `👤 *Set by:* ${mention(sender)}\n` +
         `⚠️ *Rule:* Members must wait ${cooldownLabel} between messages\n` +
         `👑 *Admins:* Always bypass\n\n` +
-        `_${pick(SLANG.good)}, keeping the chat clean!_`,
+        `_${voice.lead('affirm')}, keeping the chat clean!_`,
         [sender]
       );
 
     } catch (error) {
       console.error('Slowmode Error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n\n${voice.openErr()} — ${error.message}`);
     }
   }
 };

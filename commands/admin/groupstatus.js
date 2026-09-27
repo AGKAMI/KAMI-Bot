@@ -7,7 +7,7 @@ const {
 const { PassThrough } = require('stream');
 const ffmpeg = require('fluent-ffmpeg');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 // Single default color for text statuses (purple)
 const PURPLE_COLOR = '#9C27B0';
@@ -31,7 +31,7 @@ module.exports = {
       // Only inside groups
       if (!extra.isGroup) {
         extra.fail();
-        return extra.reply(`❌ ERROR\n\nThis only works in groups ${pick(SLANG.vibe)}`);
+        return extra.reply(`❌ ERROR\n\nThis only works in groups, ${voice.tag('err')}`);
       }
 
       const caption = (args.join(' ') || '').trim();
@@ -52,14 +52,14 @@ module.exports = {
           );
         }
 
-        await extra.reply(`⏳ POSTING\n\nPosting status ${pick(SLANG.vibe)}...`);
+        await extra.reply(`⏳ POSTING\n\nPosting status, ${voice.tag('neutral')}...`);
 
         try {
           await groupStatus(sock, from, {
             text: caption,
             backgroundColor: PURPLE_COLOR,
           });
-          return extra.reply(`✅ SUCCESS\n\nStatus posted ${pick(SLANG.vibe)}`);
+          return extra.reply(`✅ SUCCESS\n\nStatus posted, ${voice.tag('affirm')}`);
         } catch (e) {
           console.error('groupstatus text error:', e);
           extra.fail();
@@ -90,7 +90,7 @@ module.exports = {
 
       // IMAGE (also handles stickers)
       if (/image|sticker/i.test(mtype)) {
-        await extra.reply(`⏳ POSTING\n\nPosting image status ${pick(SLANG.vibe)}...`);
+        await extra.reply(`⏳ POSTING\n\nPosting image status, ${voice.tag('neutral')}...`);
         let buf;
         try {
           buf = await downloadBuf();
@@ -105,7 +105,7 @@ module.exports = {
             image: buf,
             caption: caption || '',
           });
-          return extra.reply(`✅ SUCCESS\n\nImage status posted ${pick(SLANG.vibe)}`);
+          return extra.reply(`✅ SUCCESS\n\nImage status posted, ${voice.tag('affirm')}`);
         } catch (e) {
           console.error('groupstatus image error:', e);
           extra.fail();
@@ -115,7 +115,7 @@ module.exports = {
 
       // VIDEO
       if (/video/i.test(mtype)) {
-        await extra.reply(`⏳ POSTING\n\nPosting video status ${pick(SLANG.vibe)}...`);
+        await extra.reply(`⏳ POSTING\n\nPosting video status, ${voice.tag('neutral')}...`);
         let buf;
         try {
           buf = await downloadBuf();
@@ -130,7 +130,7 @@ module.exports = {
             video: buf,
             caption: caption || '',
           });
-          return extra.reply(`✅ SUCCESS\n\nVideo status posted ${pick(SLANG.vibe)}`);
+          return extra.reply(`✅ SUCCESS\n\nVideo status posted, ${voice.tag('affirm')}`);
         } catch (e) {
           console.error('groupstatus video error:', e);
           extra.fail();
@@ -140,7 +140,7 @@ module.exports = {
 
       // AUDIO (voice-style group status)
       if (/audio/i.test(mtype)) {
-        await extra.reply(`⏳ POSTING\n\nPosting audio status ${pick(SLANG.vibe)}...`);
+        await extra.reply(`⏳ POSTING\n\nPosting audio status, ${voice.tag('neutral')}...`);
         let buf;
         try {
           buf = await downloadBuf();
@@ -171,7 +171,7 @@ module.exports = {
             ptt: true,
             waveform,
           });
-          return extra.reply(`✅ SUCCESS\n\nAudio status posted ${pick(SLANG.vibe)}`);
+          return extra.reply(`✅ SUCCESS\n\nAudio status posted, ${voice.tag('affirm')}`);
         } catch (e) {
           console.error('groupstatus audio error:', e);
           extra.fail();

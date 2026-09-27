@@ -2,7 +2,7 @@
  * Mute Command - Close group (only admins can send)
  */
 
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons } = require('../../utils/buttonHelper');
 const database = require('../../database');
 
@@ -29,7 +29,7 @@ module.exports = {
         }
 
         await sendButtons(sock, extra.from, {
-          text: `🔒 MUTED\n\nGroup closed ${pick(SLANG.vibe)}\nOnly admins can talk now${muteNote}`,
+          text: `🔒 MUTED\n\nGroup closed, ${voice.tag('neutral')}\nOnly admins can talk now${muteNote}`,
           footer: 'Mute Management',
           buttons: [
             { id: 'admin:unmute', text: '🔓 Unmute' },

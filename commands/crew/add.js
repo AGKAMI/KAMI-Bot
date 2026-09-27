@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 const getRoleEmoji = (role, roles) => {
@@ -169,7 +169,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew add error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't add member`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't add member`);
     }
   },
 };

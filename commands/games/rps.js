@@ -1,5 +1,5 @@
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 module.exports = {
   name: 'rps',
   reactions: { received: '✊', done: '🤝' },
@@ -11,10 +11,10 @@ module.exports = {
     const choices = ['rock', 'paper', 'scissors'];
     const bot = choices[Math.floor(Math.random() * 3)];
     const user = (args[0] || '').toLowerCase();
-    if (!choices.includes(user)) { ctx.fail(); return ctx.reply(`❌ _${pick(SLANG.error)} — usage: ${prefix}rps <rock|paper|scissors>_`); }
-    if (user === bot) return ctx.reply(`${pick(SLANG.vibe)}, it's a tie! Both chose ${user}`);
+    if (!choices.includes(user)) { ctx.fail(); return ctx.reply(`❌ _${voice.openErr()} — usage: ${prefix}rps <rock|paper|scissors>_`); }
+    if (user === bot) return ctx.reply(`${voice.lead('neutral')}, it's a tie! Both chose ${user}`);
     const win = (user === 'rock' && bot === 'scissors') || (user === 'paper' && bot === 'rock') || (user === 'scissors' && bot === 'paper');
-    if (win) return ctx.reply(`${pick(SLANG.good)}, you win! ${user} beats ${bot}`);
-    return ctx.reply(`${pick(SLANG.error)}, you lose! ${bot} beats ${user}`);
+    if (win) return ctx.reply(`${voice.lead('affirm')}, you win! ${user} beats ${bot}`);
+    return ctx.reply(`${voice.openErr()}, you lose! ${bot} beats ${user}`);
   }
 };

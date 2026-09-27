@@ -7,7 +7,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { buildDeniedMessage } = require('./crewForms');
 const { sendButtons } = require('../../utils/buttonHelper');
 
@@ -132,13 +132,13 @@ module.exports = {
           '📝 Reason: ' + reason + '\n\n' +
           (ownerVIP
             ? '_The owner himself has denied this application. The verdict is final._ 👑'
-            : '_Denial sent to them_' + pick(SLANG.vibe)),
+            : '_Denial sent to them_' + ' ' + voice.tag('neutral')),
         mentions: applicantJid ? [applicantJid] : [],
       }, { quoted: msg });
 
     } catch (error) {
       console.error('Crew deny error:', error);
-      await extra.reply('❌ ERROR\n\n' + pick(SLANG.error) + ' — couldn\'t deny applicant');
+      await extra.reply('❌ ERROR\n\n' + voice.openErr() + ' — couldn\'t deny applicant');
     }
   },
 };

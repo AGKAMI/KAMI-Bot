@@ -9,7 +9,7 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 const MAX_REDIRECTS = 5;
 
@@ -158,13 +158,13 @@ module.exports = {
     }
 
     try {
-      await extra.reply(`*🔄 UPDATING*\n\n🔄 ${pick(SLANG.vibe)}, updating the bot, wait a sec...`);
+      await extra.reply(`*🔄 UPDATING*\n\n🔄 ${voice.lead('neutral')}, updating the bot, wait a sec...`);
 
       const { copiedFiles } = await updateViaZip(zipUrl);
 
       const summary = copiedFiles.length
-        ? `*✅ UPDATE COMPLETE*\n\n✅ ${pick(SLANG.good)}, ${copiedFiles.length} files updated`
-        : `*✅ UPDATE COMPLETE*\n\n✅ ${pick(SLANG.vibe)}, no files needed updating`;
+        ? `*✅ UPDATE COMPLETE*\n\n✅ ${voice.lead('affirm')}, ${copiedFiles.length} files updated`
+        : `*✅ UPDATE COMPLETE*\n\n✅ ${voice.lead('affirm')}, no files needed updating`;
 
       await sock.sendMessage(chatId, { text: `${summary}\n\n🔁 Restarting…` }, { quoted: msg });
 

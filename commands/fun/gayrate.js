@@ -1,5 +1,5 @@
 // commands/fun/gayrate.js
-const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
 module.exports = {
   name: 'gayrate',
   reactions: { received: '🌈', done: '💯' },
@@ -34,7 +34,7 @@ module.exports = {
     } catch (error) {
       console.error('[gayrate] ERROR:', error);
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)} — something went stukkend hey_`);
+      await extra.reply(`❌ _${voice.openErr()} — something went stukkend hey_`);
     }
   }
 };

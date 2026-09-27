@@ -3,7 +3,7 @@ const path = require('path');
 const config = require('../../config');
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 // Max file size: 10MB for profile pictures
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -60,7 +60,7 @@ module.exports = {
         // Set the profile picture
         await sock.updateProfilePicture(sock.user.id.split(':')[0] + '@s.whatsapp.net', { url: imagePath });
 
-        await extra.reply(`*✅ PROFILE PIC UPDATED*\n\n✅ ${pick(SLANG.good)}, bot profile pic is updated`);
+        await extra.reply(`*✅ PROFILE PIC UPDATED*\n\n✅ ${voice.lead('affirm')}, bot profile pic is updated`);
       } catch (error) {
         console.error('setbotpp error:', error);
         extra.reply(`*❌ ERROR* — couldn't update profile pic`);

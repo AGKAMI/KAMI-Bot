@@ -3,7 +3,7 @@
  */
 
 const db = require('../../database');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
@@ -39,7 +39,7 @@ module.exports = {
       db.updateGroupSettings(groupId, { welcome: enable });
       
       await sock.sendMessage(groupId, {
-        text: `✅ SUCCESS\n\nWelcome messages ${enable ? 'enabled' : 'disabled'} ${pick(SLANG.vibe)}${enable ? '\n\nNew members will get a welcome now' : ''}`
+        text: `✅ SUCCESS\n\nWelcome messages ${enable ? 'enabled' : 'disabled'}, ${voice.tag('affirm')}${enable ? '\n\nNew members will get a welcome now' : ''}`
       }, { quoted: msg });
       
     } catch (error) {

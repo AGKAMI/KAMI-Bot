@@ -4,7 +4,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
@@ -41,13 +41,13 @@ module.exports = {
         if (settings.antiflood) {
           return extra.reply(
             `✅ *ANTIFLOOD*\n\n` +
-            `_Already on, ${pick(SLANG.vibe)}_`
+            `_Already on, ${voice.tag('neutral')}_`
           );
         }
         database.updateGroupSettings(extra.from, { antiflood: true });
         return extra.reply(
           `✅ *ANTIFLOOD ON*\n\n` +
-          `_Anti-flood protection activated, ${pick(SLANG.good)}!_`
+          `_Anti-flood protection activated, ${voice.tag('affirm')}!_`
         );
       }
 
@@ -65,7 +65,7 @@ module.exports = {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `_Usage: ${prefix}antiflood set <limit> <window>s <action>_\n\n` +
-            `_${pick(SLANG.vibe)}:_\n` +
+            `_${voice.lead('neutral')}:_\n` +
             `• _Limit = max messages in window_\n` +
             `• _Window = time in seconds_\n` +
             `• _Action = warn / delete / kick_\n\n` +
@@ -114,7 +114,7 @@ module.exports = {
           `📊 *Limit:* ${limit} messages\n` +
           `⏱️ *Window:* ${windowSec}s\n` +
           `🔨 *Action:* ${action}\n\n` +
-          `_${pick(SLANG.good)}, anti-flood is set!_`
+          `_${voice.lead('affirm')}, anti-flood is set!_`
         );
       }
 
@@ -124,7 +124,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Tag a user to exempt, ${pick(SLANG.vibe)}_\n\n` +
+            `_Tag a user to exempt, ${voice.tag('neutral')}_\n\n` +
             `_Example: ${prefix}antiflood exempt @user_`
           );
         }
@@ -144,7 +144,7 @@ module.exports = {
           `✅ *USER EXEMPTED*\n\n` +
           `👤 *User:* ${mention(exemptJid)}\n` +
           `🛡️ *Status:* Bypasses flood detection\n\n` +
-          `_${pick(SLANG.good)}, exempted!_`,
+          `_${voice.lead('affirm')}, exempted!_`,
           [exemptJid]
         );
       }
@@ -155,7 +155,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Tag a user to unexempt, ${pick(SLANG.vibe)}_\n\n` +
+            `_Tag a user to unexempt, ${voice.tag('neutral')}_\n\n` +
             `_Example: ${prefix}antiflood unexempt @user_`
           );
         }
@@ -185,7 +185,7 @@ module.exports = {
         if (exempt.length === 0) {
           return extra.reply(
             `📋 *EXEMPT LIST*\n\n` +
-            `_No users exempted yet, ${pick(SLANG.vibe)}_`
+            `_No users exempted yet, ${voice.tag('err')}_`
           );
         }
 
@@ -201,7 +201,7 @@ module.exports = {
       extra.fail();
       return extra.reply(
         `❌ *ERROR*\n\n` +
-        `_Use ${prefix}antiflood for usage, ${pick(SLANG.vibe)}_`
+        `_Use ${prefix}antiflood for usage, ${voice.tag('neutral')}_`
       );
 
     } catch (error) {

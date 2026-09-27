@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'getpp',
@@ -39,7 +39,7 @@ module.exports = {
         
         if (!ppUrl) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
+          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic found for this oke`);
         }
         
         // Download the profile picture
@@ -60,21 +60,21 @@ module.exports = {
             profileError.output?.statusCode === 500 ||
             profileError.message?.includes('not found')) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
+          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic found for this oke`);
         } else if (profileError.output?.statusCode === 401 || 
                    profileError.message?.includes('forbidden') || 
                    profileError.message?.includes('unauthorized')) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — profile pic is private or not available`);
+          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — profile pic is private or not available`);
         } else {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
+          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic found for this oke`);
         }
       }
       
     } catch (error) {
       extra.fail();
-      extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)} — no profile pic found for this oke`);
+      extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic found for this oke`);
     }
   }
 };

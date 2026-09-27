@@ -1,4 +1,4 @@
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const config = require('../../config');
 const WORDS = ['python','javascript','banana','computer','elephant','guitar','house','internet','jacket','king','lion','monkey','notebook','orange','piano','queen','rabbit','sun','tree','umbrella','violin','water','yellow','zebra','mountain','river','ocean','rocket','phone','castle'];
 function mask(word, guessed) {
@@ -16,7 +16,7 @@ module.exports = {
     const sub = (args[0] || '').toLowerCase();
     if (sub === 'stop') {
       games.delete(ctx.from);
-      return ctx.reply(`${pick(SLANG.vibe)}, group hangman stopped!`);
+      return ctx.reply(`${voice.lead('neutral')}, group hangman stopped!`);
     }
     const g = games.get(ctx.from);
     if (!g) {
@@ -30,20 +30,20 @@ module.exports = {
       return ctx.reply(`📝 group hangman active!\n\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6\nUse ${config.prefix}ghang <letter>`);
     }
     if (sub.length === 1 && /^[a-z]$/.test(sub)) {
-      if (g.guessed.has(sub)) return ctx.reply(`already guessed that, ${pick(SLANG.vibe)}`);
+      if (g.guessed.has(sub)) return ctx.reply(`already guessed that, ${voice.tag('neutral')}`);
       g.guessed.add(sub);
       if (g.word.includes(sub)) {
         const m = mask(g.word, g.guessed);
         if (!m.includes('_')) {
           games.delete(ctx.from);
-          return ctx.reply(`🎉 ${pick(SLANG.good)}, group won! word: ${g.word}`);
+          return ctx.reply(`🎉 ${voice.lead('affirm')}, group won! word: ${g.word}`);
         }
         return ctx.reply(`✅ ${sub} is in the word!\n${m}\nWrong: ${g.wrong}/6`);
       }
       g.wrong++;
       if (g.wrong >= 6) {
         games.delete(ctx.from);
-        return ctx.reply(`💀 ${pick(SLANG.error)}, game over! word: ${g.word}`);
+        return ctx.reply(`💀 ${voice.openErr()}, game over! word: ${g.word}`);
       }
       ctx.fail();
       return ctx.reply(`❌ ${sub} not in word!\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6`);

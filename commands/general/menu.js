@@ -1,6 +1,6 @@
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton, isButtonModeOn } = require('../../utils/buttonHelper');
 const fs = require('fs');
 const path = require('path');
@@ -43,7 +43,7 @@ function buildCategoryText(cat) {
   for (const cmd of items) {
     text += `${prefix}${cmd.name}${cmd.description ? ` — \`${cmd.description}\`` : ''}\n`;
   }
-  if (items.length === 0) text += `_No commands here yet, ${pick(SLANG.vibe)}_`;
+  if (items.length === 0) text += `_No commands here yet, ${voice.tag('err')}_`;
   text += `\n----------\n_Use ${prefix}help <cmd> for info_`;
   return text;
 }
@@ -121,7 +121,7 @@ module.exports = {
       // NOTE: no newsletter ctx — buttons don't work with it, so image + buttons = single message
       if (isButtonModeOn() && requested !== 'all') {
         const summary = [
-          `*KAMI BOT* ${pick(SLANG.greeting)}! 👋`,
+          `*KAMI BOT* ${voice.greetOpen()}! 👋`,
           ``,
           `🤖 Tap a button to see that section's commands 👇`,
           ``,
@@ -175,7 +175,7 @@ module.exports = {
     } catch (error) {
       console.error('[MENU] Error:', error);
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)} — ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
     }
   }
 };
@@ -186,7 +186,7 @@ module.exports = {
 // Category detail views = plain text, no buttons
 
 const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
-const mainText = `*KAMI BOT* ${pick(SLANG.greeting)}! 👋\n\n🤖 Tap a button to see that section's commands 👇\n\n📖 Full list: *${config.prefix || '.'}menu all*`;
+const mainText = `*KAMI BOT* ${voice.greetOpen()}! 👋\n\n🤖 Tap a button to see that section's commands 👇\n\n📖 Full list: *${config.prefix || '.'}menu all*`;
 const mainBtns = [
   { id: 'menu:admin',   text: '🛡️ Admin' },
   { id: 'menu:crew',    text: '🔰 Crew' },

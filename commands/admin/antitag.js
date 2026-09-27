@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 module.exports = {
@@ -39,10 +39,10 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antitag) {
-          return extra.reply(`✅ SUCCESS\n\nAntitag is already on ${pick(SLANG.vibe)}`);
+          return extra.reply(`✅ SUCCESS\n\nAntitag is already on, ${voice.tag('neutral')}`);
         }
         database.updateGroupSettings(extra.from, { antitag: true });
-        return extra.reply(`✅ SUCCESS\n\nAntitag turned ON ${pick(SLANG.good)}`);
+        return extra.reply(`✅ SUCCESS\n\nAntitag turned ON, ${voice.tag('affirm')}`);
       }
       
       if (opt === 'off') {
@@ -66,7 +66,7 @@ module.exports = {
           antitagAction: setAction,
           antitag: true // Auto-enable when setting action
         });
-        return extra.reply(`✅ SUCCESS\n\nAntitag action set to ${setAction} ${pick(SLANG.good)}`);
+        return extra.reply(`✅ SUCCESS\n\nAntitag action set to ${setAction}, ${voice.tag('affirm')}`);
       }
       
       if (opt === 'get') {

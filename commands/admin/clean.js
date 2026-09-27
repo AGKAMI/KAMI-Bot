@@ -2,7 +2,7 @@
  * Clean Command - Delete messages in group
  */
 
-const { bold, pick, SLANG } = require('../../utils/format');
+const { bold, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'clean',
@@ -33,7 +33,7 @@ module.exports = {
       const msgs = store.messages.get(jid);
       if (!msgs || msgs.size === 0) {
         extra.fail();
-        return extra.reply(`❌ ERROR\n\nNo stored messages found ${pick(SLANG.vibe)}`);
+        return extra.reply(`❌ ERROR\n\nNo stored messages found, ${voice.tag('err')}`);
       }
 
       let messagesToDelete = [];
@@ -69,7 +69,7 @@ module.exports = {
     } catch (e) {
       console.error('[clean cmd] error:', e);
       extra.fail();
-      extra.reply(`❌ ERROR\n\nCouldn't clean the messages ${pick(SLANG.vibe)}`);
+      extra.reply(`❌ ERROR\n\nCouldn't clean the messages, ${voice.tag('err')}`);
     }
   }
 };

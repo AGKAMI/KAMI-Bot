@@ -2,7 +2,7 @@
  * Admins Command - List all group admins
  */
 
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'admins',
@@ -19,14 +19,14 @@ module.exports = {
 
       if (!groupMetadata || !groupMetadata.participants) {
         extra.fail();
-        return await extra.reply(`❌ *ERROR*\n\nCouldn't fetch group info, ${pick(SLANG.error)}`);
+        return await extra.reply(`❌ *ERROR*\n\nCouldn't fetch group info, ${voice.tag('err')}`);
       }
 
       const participants = groupMetadata.participants;
       const admins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
 
       if (admins.length === 0) {
-        return await extra.reply(`👥 *ADMINS*\n\nNo admins found in this group, ${pick(SLANG.vibe)}`);
+        return await extra.reply(`👥 *ADMINS*\n\nNo admins found in this group, ${voice.tag('err')}`);
       }
 
       const lines = [
@@ -46,7 +46,7 @@ module.exports = {
       }
 
       lines.push('');
-      lines.push(`_${pick(SLANG.vibe)} — ${admins.length} admin${admins.length > 1 ? 's' : ''} running this group_`);
+      lines.push(`_${voice.open()} — ${admins.length} admin${admins.length > 1 ? 's' : ''} running this group_`);
 
       const mentionList = admins.map(a => a.id || a.jid);
 
@@ -55,7 +55,7 @@ module.exports = {
     } catch (error) {
       console.error('Admins Error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n\n${voice.openErr()} — ${error.message}`);
     }
   }
 };

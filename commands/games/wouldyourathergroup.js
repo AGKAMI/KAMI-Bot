@@ -1,4 +1,4 @@
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const questions = [
   'Have the ability to fly or be invisible?',
   'Always be 10 minutes late or 20 minutes early?',
@@ -21,7 +21,7 @@ module.exports = {
   execute: async (sock, msg, args, ctx) => {
     const q = questions[Math.floor(Math.random() * questions.length)];
     const parts = q.split(' or ');
-    let text = `🧠 Would You Rather (Group)\n\n1️⃣ ${parts[0].trim()}\n2️⃣ ${parts[1].trim()}\n\nReact to vote, ${pick(SLANG.vibe)}!`;
+    let text = `🧠 Would You Rather (Group)\n\n1️⃣ ${parts[0].trim()}\n2️⃣ ${parts[1].trim()}\n\nReact to vote, ${voice.tag('neutral')}!`;
     await ctx.reply(text);
   }
 };

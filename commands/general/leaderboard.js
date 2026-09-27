@@ -3,7 +3,7 @@
  * Supports time periods: today, week, month, all-time
  */
 
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const fs = require('fs');
 const path = require('path');
 
@@ -87,7 +87,7 @@ module.exports = {
             const stats = aggregateStats(from, period);
             if (!stats || Object.keys(stats.users).length === 0) {
                 extra.fail();
-                return extra.reply(`❌ *ERROR*\n\n💡 No message data yet for this period, ${pick(SLANG.vibe)}`);
+                return extra.reply(`❌ *ERROR*\n\n💡 No message data yet for this period, ${voice.tag('err')}`);
             }
 
             const sorted = Object.entries(stats.users)
@@ -118,7 +118,7 @@ module.exports = {
             }
 
             lines.push(`----------`);
-            lines.push(`_Showing top ${sorted.length} of ${Object.keys(stats.users).length} — ${pick(SLANG.vibe)}_`);
+            lines.push(`_Showing top ${sorted.length} of ${Object.keys(stats.users).length} — ${voice.tag('neutral')}_`);
 
             await sock.sendMessage(from, {
                 text: lines.join('\n'),
@@ -127,7 +127,7 @@ module.exports = {
 
         } catch (error) {
             extra.fail();
-            await extra.reply(`❌ *ERROR*\n\n💡 ${pick(SLANG.error)} — ${error.message}`);
+            await extra.reply(`❌ *ERROR*\n\n💡 ${voice.openErr()} — ${error.message}`);
         }
     }
 };

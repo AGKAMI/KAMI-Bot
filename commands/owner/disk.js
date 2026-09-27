@@ -8,7 +8,7 @@ const config = require('../../config');
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'disk',
@@ -68,13 +68,13 @@ module.exports = {
           `💾 *DISK USAGE*\n` +
           `━━━━━━━━━━━━━━━━\n` +
           `📦 Total: *${total}*\n\n${lines}${gcLine}\n\n` +
-          `_${pick(SLANG.vibe)}_`,
+          `_${voice.lead('neutral')}_`,
       }, { quoted: msg });
 
     } catch (error) {
       console.error('Disk error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — ${error.message}`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — ${error.message}`);
     }
   },
 };

@@ -4,7 +4,7 @@
  */
 
 const config = require('../../config');
-const { pick, SLANG, mention } = require('../../utils/format');
+const { pick, SLANG, mention, voice } = require('../../utils/format');
 
 function phoneToJid(phone) {
   if (!phone) return null;
@@ -69,7 +69,7 @@ module.exports = {
     } catch (error) {
       console.error('Add error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't add them`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't add them`);
     }
   },
 };

@@ -8,7 +8,7 @@ const path = require('path');
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
 const { sendButtons } = require('../../utils/buttonHelper');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
   name: 'list',
@@ -70,7 +70,7 @@ module.exports = {
     } catch (err) {
       console.error('list.js error:', err);
       extra.fail();
-      await extra.reply(`❌ _${pick(SLANG.error)}, couldn't load the commands list_`);
+      await extra.reply(`❌ _${voice.openErr()}, couldn't load the commands list_`);
     }
   }
 };

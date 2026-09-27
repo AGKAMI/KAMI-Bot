@@ -6,7 +6,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, mention } = require('../../utils/format');
+const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
 const { TEAMS } = require('./crewForms');
 
@@ -61,7 +61,7 @@ module.exports = {
       if (shown.length === 0) {
         return extra.reply(
           `📋 APPLICATION HISTORY\n\n` +
-          `No processed applications${filterTeam ? ` for ${filterTeam}` : ''} ${pick(SLANG.vibe)}`
+          `No processed applications${filterTeam ? ` for ${filterTeam}` : ''}, ${voice.tag('err')}`
         );
       }
 
@@ -101,7 +101,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew history error:', error);
-      await extra.reply(`❌ ERROR\n\n${pick(SLANG.error)} — couldn't load application history`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't load application history`);
     }
   },
 };

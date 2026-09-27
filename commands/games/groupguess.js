@@ -1,4 +1,4 @@
-const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
 const games = new Map();
 module.exports = {
   name: 'groupguess',
@@ -15,16 +15,16 @@ module.exports = {
     }
     if (sub === 'stop') {
       games.delete(ctx.from);
-      return ctx.reply(`${pick(SLANG.vibe)}, group guess ended!`);
+      return ctx.reply(`${voice.lead('neutral')}, group guess ended!`);
     }
     const n = parseInt(args[0]);
-    if (isNaN(n)) { ctx.fail(); return ctx.reply(`❌ _${pick(SLANG.error)} — usage: .gguess start | .gguess <number> | .gguess stop_`); }
+    if (isNaN(n)) { ctx.fail(); return ctx.reply(`❌ _${voice.openErr()} — usage: .gguess start | .gguess <number> | .gguess stop_`); }
     const g = games.get(ctx.from);
     if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game — .gguess start_`); }
     if (n === g.target) {
       const winner = mention(ctx.sender);
       games.delete(ctx.from);
-      return ctx.reply(`🎉 ${pick(SLANG.good)}, ${winner} got it! Number was ${g.target}. Attempts: ${g.attempts}`);
+      return ctx.reply(`🎉 ${voice.lead('affirm')}, ${winner} got it! Number was ${g.target}. Attempts: ${g.attempts}`);
     }
     g.attempts++;
     if (n < g.target) return ctx.reply('📈 Higher!');

@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 /**
  * Format time difference into human-readable string
@@ -67,7 +67,7 @@ const botVersion = 'V1.0.2';
     } catch (error) {
       console.error('Error in uptime command:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${pick(SLANG.error)}, couldn't get uptime info — try again later`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()}, couldn't get uptime info — try again later`);
     }
   }
 };

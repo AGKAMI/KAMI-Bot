@@ -2,7 +2,7 @@ const yts = require('yt-search');
 const axios = require('axios');
 const APIs = require('../../utils/api');
 const config = require('../../config');
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { toVideo } = require('../../utils/converter');
 
 const processedMessages = new Map(); // id → timestamp
@@ -53,14 +53,14 @@ module.exports = {
       let sent;
       try {
         const text = args.join(' ').trim();
-        if (!text) return extra.reply(`📝 _${pick(SLANG.vibe)}, what video do you want to download?_`);
+        if (!text) return extra.reply(`📝 _${voice.lead('neutral')}, what video do you want to download?_`);
 
         let videoUrl = text;
 
         if (!text.startsWith('http://') && !text.startsWith('https://')) {
           try {
             const { videos } = await yts(text);
-            if (!videos || videos.length === 0) { extra.fail(); return extra.reply(`❌ _${pick(SLANG.error)}, no videos found_`); }
+            if (!videos || videos.length === 0) { extra.fail(); return extra.reply(`❌ _${voice.openErr()}, no videos found_`); }
             videoUrl = videos[0].url;
           } catch (e) {
             extra.fail();
@@ -75,7 +75,7 @@ module.exports = {
         ];
         if (!patterns.some(p => p.test(videoUrl))) {
           extra.fail();
-          return extra.reply(`❌ _${pick(SLANG.error)}, invalid YouTube link_\n_Use:_ ${prefix}video <url or search>`);
+          return extra.reply(`❌ _${voice.openErr()}, invalid YouTube link_\n_Use:_ ${prefix}video <url or search>`);
         }
 
         sent = await extra.reply(`🔄 _searching..._`);
@@ -88,7 +88,7 @@ module.exports = {
           return await extra.edit(sent.key, `❌ _download failed hey — ${err.message}_`);
         }
 
-        if (!videoData.download) { extra.fail(); return await extra.edit(sent.key, `❌ _${pick(SLANG.error)}, no download URL received_`); }
+        if (!videoData.download) { extra.fail(); return await extra.edit(sent.key, `❌ _${voice.openErr()}, no download URL received_`); }
 
         await extra.edit(sent.key, `⬇️ *Downloading:* ${videoData.title || 'video'}...`);
 
@@ -129,7 +129,7 @@ module.exports = {
           console.log('[VIDEO] encode skipped:', encErr?.message || encErr);
         }
 
-        const caption = '*DOWNLOADED BY KAMI BOT*\n\n' + (videoData.title ? '📝 ' + videoData.title : '') + `\n_${pick(SLANG.vibe)}, enjoy_`;
+        const caption = '*DOWNLOADED BY KAMI BOT*\n\n' + (videoData.title ? '📝 ' + videoData.title : '') + `\n_${voice.lead('affirm')}, enjoy_`;
 
         await sock.sendMessage(extra.from, {
           video: sendBuffer,
@@ -141,9 +141,9 @@ module.exports = {
       } catch (error) {
         console.error('[VIDEO] Error:', error?.message || error);
         if (sent) {
-          try { { extra.fail(); await extra.edit(sent.key, `❌ _${pick(SLANG.error)} — ${(error?.message || 'try again')}_`); } } catch (_) {}
+          try { { extra.fail(); await extra.edit(sent.key, `❌ _${voice.openErr()} — ${(error?.message || 'try again')}_`); } } catch (_) {}
         } else {
-          try { { extra.fail(); await extra.reply(`❌ _${pick(SLANG.error)} — ${(error?.message || 'try again')}_`); } } catch (_) {}
+          try { { extra.fail(); await extra.reply(`❌ _${voice.openErr()} — ${(error?.message || 'try again')}_`); } } catch (_) {}
         }
       }
     };

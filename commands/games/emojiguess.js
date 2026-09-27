@@ -1,4 +1,4 @@
-const { bold, italic, pick, SLANG, mention } = require('../../utils/format');
+const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const config = require('../../config');
 const rounds = [
@@ -35,13 +35,13 @@ module.exports = {
     const sub = (args[0] || '').toLowerCase();
     if (sub === 'answer' || sub === 'skip') {
       const g = active.get(ctx.from);
-      if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game, ${pick(SLANG.vibe)}_`); }
+      if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game, ${voice.tag('err')}_`); }
       active.delete(ctx.from);
       return startRound(sock, ctx.from, msg);
     }
     if (sub === 'stop') {
       active.delete(ctx.from);
-      return ctx.reply(`${pick(SLANG.vibe)}, emoji guess stopped!`);
+      return ctx.reply(`${voice.lead('neutral')}, emoji guess stopped!`);
     }
     const guess = args.join(' ').toLowerCase();
     const g = active.get(ctx.from);
@@ -50,7 +50,7 @@ module.exports = {
         const winner = mention(ctx.sender);
         active.delete(ctx.from);
         return sendButtons(sock, ctx.from, {
-          text: `🎉 ${pick(SLANG.good)}, ${winner} guessed it! *${g.answer}*`,
+          text: `🎉 ${voice.lead('affirm')}, ${winner} guessed it! *${g.answer}*`,
           mentions: [ctx.sender],
           footer: 'Emoji Guess',
           buttons: [
@@ -60,7 +60,7 @@ module.exports = {
       }
       const hint = g.answer.split(' ').map(w => w[0] + '_'.repeat(w.length - 1)).join(' / ');
       ctx.fail();
-      return ctx.reply(`❌ ${pick(SLANG.error)}, wrong! hint: ${hint}`);
+      return ctx.reply(`❌ ${voice.openErr()}, wrong! hint: ${hint}`);
     }
     return startRound(sock, ctx.from, msg);
   }
