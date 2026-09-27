@@ -1,12 +1,15 @@
 # HANDOFF
 
 ## Goal
-"Full SA voice everywhere" for KAMI Bot — pan-SA mix (Joburg kasi + Cape Town kaaps + Durban) across **every** user-visible string, not just the slang slots. Three phases: (1) reaction system ✅, (2) position-aware `voice.*` library + migrate all `pick(SLANG.*)` ✅, (3) rewrite every hardcoded English literal — including crew/game question content — in full-strength kasi/kaaps register (in progress, this session).
+"Full SA voice everywhere" for KAMI Bot — pan-SA mix (Joburg kasi + Cape Town kaaps + Durban) across **every** user-visible string, not just the slang slots. Three phases: (1) reaction system ✅, (2) position-aware `voice.*` library + migrate all `pick(SLANG.*)` ✅, (3) rewrite every hardcoded English literal — including crew/game question content — in full-strength kasi/kaaps register ✅ — all three phases committed through `002fff8`).
 
 ## Current State
-- **Pushed**: `cea1d92` (reactions) → `cc823af` (voice library) → **`36e48e0`** (other session: phase-2 prose rewrite + unblock flow + mojibake repair + **`STYLE.md`**). `git ls-remote origin main` == `36e48e0`. Phase-2 (1806 string ids) is committed — nothing outstanding there.
-- **Closer policy (KAMI's instruction, this session)**: a tsotsitaal closer only where it *earns its place* — emotional beats yes, instructions/usage/hints/factual status lines/no, never stacked on a line that already ends on a tag, never bolted onto every message. **`STYLE.md` was amended to say exactly this** (replacing the other session's *"every message ends with a closer"* rule).
-- **Closer cleanup (this session, was uncommitted at handoff)**: **69 `voice.tag(...)` closers removed across 34 files** — 30 in pass 1 (instructions, usage/hints, double closers, same-message-already-has-voice) + 39 in pass 2 (factual `✅ SUCCESS` / `⏳ POSTING` / status one-liners) + 2 `— sharp sharp` closers in `commands/general/start.js` (banned word + double closer). ❌ errors, celebrations and taunts keep their closers. Tools: `%TEMP%\opencode\classify-tags.js` → `strip-entries.json`, `classify-deep.js` → `strip-deep.json`, `apply-strip.js <entries.json> [--dry]`.
+- **Pushed**: `cea1d92` (reactions) → `cc823af` (voice library) → `36e48e0` (phase-2 + unblock + mojibake + STYLE.md) → `193be69` (closer cleanup, 35 files) → **`002fff8`** (LID/block + tts fixes). `git ls-remote origin main` == `002fff8`. Phase-2 + closer cleanup both committed — nothing outstanding.
+- **Deployed `002fff8`**: SFTP-uploaded all 7 changed files (md5 verified) → panel restart `POST https://control.bot-hosting.net/api/client/servers/08b6894d/power {"signal":"restart"}` → HTTP 204, state `running`.
+- **LID bug fixed (`002fff8`)**: `.block @user` threw `Unable to resolve LID for PN JID: <digits>@s.whatsapp.net` because mentions can arrive as **LID digits on the phone-number server** (e.g. `203341602779235@…` = your own `27683993925`). Fix: `candidateJids` / `mentionJid` / `updateBlockStatusSafe` in `utils/jidHelper.js` normalize to the real PN jid, then fall back across `@lid`/`@s.whatsapp.net` variants. Wired into `block.js`, `unblock.js`, `ban.js` (×2), `unban.js`, and the 5 silent auto-block sites in `handler.js` (DM-blocker ×3, anti-bot, anti-call). Success messages now print the real number, not LID digits.
+- **TTS fixed (`002fff8`)**: `commands/general/tts.js` used `config` before its `require` (ReferenceError killed every run) and `axios.get()`-ed what is actually a **Buffer**. Both fixed; live test returns a valid 9 KB MP3.
+- **Closer policy (KAMI's instruction)**: a tsotsitaal closer only where it *earns its place* — emotional beats yes, instructions/usage/hints/factual status lines no, never stacked on a line that already ends on a tag, never bolted onto every message. **`STYLE.md` says exactly this**.
+- **Closer cleanup (committed as `193be69`)**: **69 `voice.tag(...)` closers removed across 34 files** — 30 pass 1 + 39 pass 2 + 2 `— sharp sharp` in `commands/general/start.js`. ❌ errors, celebrations and taunts keep their closers. Tools: `%TEMP%\opencode\classify-tags.js` → `strip-entries.json`, `classify-deep.js` → `strip-deep.json`, `apply-strip.js <entries.json> [--dry]`.
 - **Verification green**: `checkall.js` → 230 files, 0 failed; `runtime-smoke.js` → **4/4**, 0 errors; `node --check` clean on all touched files; `voice.tag()` still returns values (`lekke`).
 - **Phase-2 ledger**: `%TEMP%\opencode\patched-ids.txt` = **1806 string ids rewritten** (dump `all-strings.ndjson` 1743 strings; 176 remaining = 145 non-pool metadata/facts/logs + 31 deliberately-blunt wrong answers in `questionPools.js`).
 - **`questionPools.js`**: 680 questions rewritten (30 blunt bad-answer options intentional); **0 option `id`s contain `:`** (callback token safety).
@@ -49,13 +52,16 @@
 - **Only apply one patch file per dump generation** — regenerate `all-strings.ndjson` after each apply.
 - **Never commit**: `__pycache__/`, `app.json`, `check.js`, `check_disk.py`, `kami_session/`, `upload_code.py`, `upload_images.py`, `upload_sftp.py`.
 - Concurrent committer (author `Kermes <kermes@oracle.local>`) → `git ls-remote origin main` before pushing.
-- Deploy: push to `main` → restart from bot-hosting panel (GitHub auto-pull). SFTP fallback `fi9.bot-hosting.cloud:2022`.
+- Deploy: push to `main` → restart from panel. **Panel API base = `https://control.bot-hosting.net/api/client/servers/08b6894d`** (key `ptlc_…`, header `Authorization: Bearer`, restart returns 204). Workflow mirror: `.github/workflows/deploy-bot-hosting.yml`.
+- **Server `git pull` does NOT update** (post-restart `.git/refs/heads/main` was still `193be69`) → SFTP is the deploy of record: `fi9.bot-hosting.cloud:2022`, chroot **is** the bot dir (`REMOTE_BASE="/"`, never `/home/container`), md5-verify every file. `upload_sftp.py` has the working template.
+- Panel says node `fi5` / sftp `fi5.bot-hosting.net` — stale metadata; **`fi9.bot-hosting.cloud` is the live host**.
+- **Mentions can arrive as LID digits on `@s.whatsapp.net`** — any command passing a mention straight into `updateBlockStatus`/`sendMessage` can throw "Unable to resolve LID for PN JID". Use `updateBlockStatusSafe` / `mentionJid` from `utils/jidHelper.js`.
+- **`APIs.textToSpeech` resolves to a Buffer**, not a URL — never `axios.get()` it blind.
 
 ## Next Steps
-1. Commit the closer cleanup: `fix: closers only where they earn their place — strip 69 bolted-on voice tags, drop banned sharp sharp, amend style guide` (stage the 34 modified files only; never the junk untracked set).
-2. `git push origin main` → restart from the bot-hosting panel.
-3. Spot-check real WhatsApp output: a ✅ confirmation (no closer), a ❌ failure (closer kept), a crew application question, `.menu`.
-4. Optional, low value: the last **31 pool** strings (blunt wrong answers) and **145 non-pool** leftovers (`description:` metadata, 8ball/twotruthsonelie facts, console logs) — most are intentionally literal.
+1. **Live WhatsApp test** (needs a real session — can't be done locally): `.block @AG KAMI ` → expect `✅ BLOCKED … @27683993925` (no LID error); `.tts howzit` → voice note; `.unblock me`; `.ban @user` / `.unban @user`.
+2. If any LID error surfaces elsewhere: remaining raw `updateBlockStatus(` sites are constructed-PN with silent catch — `commands/owner/approve.js:44`, `commands/owner/dmblocker.js:94`, `commands/crew/applyHelper.js:84`, `commands/general/start.js:227/258`, `commands/general/order.js:362` — swap to `updateBlockStatusSafe` if they ever misfire.
+3. Optional, low value: the last **31 pool** strings (blunt wrong answers) and **145 non-pool** leftovers (`description:` metadata, 8ball/twotruthsonelie facts, console logs) — most are intentionally literal.
 
 ## Memory Keys
 mcp__claude-flow__memory_search { query: "KAMI-Bot phase 2 prose rewrite dump rules apply sharp ban option id colon", namespace: "project" }
