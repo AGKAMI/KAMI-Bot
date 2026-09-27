@@ -39,7 +39,7 @@ function formatResults(poll) {
     return `${bar} ${opt} — ${counts[i]} vote${counts[i] === 1 ? '' : 's'} (${pct}%)`;
   });
 
-  return `${poll.question}\n\n${lines.join('\n')}\n\n👥 ${total} vote${total === 1 ? '' : 's'} cast`;
+  return `${poll.question}\n\n${lines.join('\n')}\n\n👥 ${total} vote${total === 1 ? '' : 's'} in`;
 }
 
 module.exports = {
@@ -47,7 +47,7 @@ module.exports = {
   reactions: { received: '✏️', done: '🗳️' },
   aliases: ['vote', 'survey'],
   category: 'general',
-  description: 'Create a button-based poll with live results',
+  description: 'Make a button poll with live results',
   usage: '.poll <question> | <option1> | <option2> ...',
   groupOnly: true,
 
@@ -61,7 +61,7 @@ module.exports = {
         const active = [...polls.values()].filter(p => p.groupId === from);
         if (active.length === 0) {
           return extra.reply(
-            `📊 *POLLS*\n\nNo active polls in this group\n\n` +
+            `📊 *POLLS*\n\nNo active polls in this group, shame\n\n` +
             `Create one:\n\`${prefix}poll Pizza night? | Yes | No | Maybe\``
           );
         }
@@ -69,7 +69,7 @@ module.exports = {
         for (const poll of active) {
           await sendButtons(sock, from, {
             text: formatResults(poll),
-            footer: `Poll by ${poll.creator.split('@')[0]} — vote below`,
+            footer: `Poll by ${poll.creator.split('@')[0]} — vote below, hey, hey`,
             buttons: [
               ...poll.options.map((opt, i) => ({ id: `poll:vote:${poll.id}:${i}`, text: `🗳️ ${opt}` })),
               { id: `poll:results:${poll.id}`, text: '📊 Results' },
@@ -86,7 +86,7 @@ module.exports = {
       if (parts.length < 3) {
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nNeed a question and at least 2 options\n\n` +
+          `❌ ERROR\n\nI need a question and at least 2 options\n\n` +
           `Usage:\n\`${prefix}poll Pizza night? | Yes | No | Maybe\``
         );
       }
@@ -124,7 +124,7 @@ module.exports = {
           `📊 *NEW POLL*\n\n` +
           `${question}\n\n` +
           `Tap to vote 👇\n` +
-          `_Results: ${prefix}poll — one vote per person, revote to change_`,
+          `_Results: ${prefix}poll — one vote each, change your vote anytime_`,
         footer: `Poll by ${mention(extra.sender)}`,
         mentions: [extra.sender],
         buttons: [
@@ -160,7 +160,7 @@ onButton('poll:vote:', async (sock, msg, from, sender, btnId) => {
   await sock.sendMessage(from, {
     text: revote
       ? `🔄 ${mention(sender)} changed their vote to *${poll.options[idx]}*`
-      : `🗳️ ${mention(sender)} voted — tap ${config.prefix || '.'}poll for results`,
+      : `🗳️ ${mention(sender)} voted — tap ${config.prefix || '.'}poll for the results`,
     mentions: [sender],
   }, { quoted: msg });
 });
@@ -187,7 +187,7 @@ onButton('poll:end:', async (sock, msg, from, sender, btnId) => {
   const isOwnerBtn = (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === senderNum);
   if (senderNum !== creatorNum && !isOwnerBtn) {
     return await sock.sendMessage(from, {
-      text: `🚫 *POLL CREATOR ONLY*\n\nOnly ${mention(poll.creator)} or the owner can end this poll`,
+      text: `🚫 *POLL CREATOR ONLY*\n\nOnly ${mention(poll.creator)} or the owner can end this poll, shame, shame`,
       mentions: [poll.creator],
     });
   }

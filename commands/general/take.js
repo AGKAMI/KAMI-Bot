@@ -13,7 +13,7 @@ module.exports = {
   name: 'take',
   reactions: { received: '🎒', generating: '⬇️', done: '✅' },
   aliases: ['steal'],
-  description: 'Steal a sticker and change its packname',
+  description: 'Nick a sticker and change its pack name',
   usage: '.take [packname] (reply to sticker)',
   category: 'general',
   
@@ -36,7 +36,7 @@ module.exports = {
     const stickerMsg = targetMessage.message?.stickerMessage;
     
     if (!stickerMsg) {
-      return extra.reply(`⚠️ *WARNING*\n💡 Reply to a sticker with ${prefix}take to steal it`);
+      return extra.reply(`⚠️ *WARNING*\n💡 Reply to a sticker with ${prefix}take to nick it`);
     }
     
     try {
@@ -47,7 +47,7 @@ module.exports = {
         { logger: undefined, reuploadRequest: sock.updateMediaMessage },
       );
       
-      if (!mediaBuffer) { extra.fail(); return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't download the sticker, try again`); }
+      if (!mediaBuffer) { extra.fail(); return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't grab the sticker — try again`); }
       
       const userName = msg.pushName || extra.sender.split('@')[0];
       const packname = args.length ? args.join(' ') : userName;
@@ -79,7 +79,7 @@ module.exports = {
     } catch (error) {
       console.error('Take command error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't steal the sticker, try again`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't nick the sticker — try again`);
     }
   },
 };

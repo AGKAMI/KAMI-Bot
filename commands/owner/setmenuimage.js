@@ -13,7 +13,7 @@ module.exports = {
   reactions: { received: '🖼️', generating: '🎨', done: '📸' },
   aliases: ['setmenuimg', 'changemenuimage'],
   category: 'owner',
-  description: 'Set or change the menu image (owner only)',
+  description: 'Set or change the menu image — owner only',
   usage: '.setmenuimage (reply to image/sticker)',
   ownerOnly: true,
   adminOnly: false,
@@ -27,14 +27,14 @@ module.exports = {
       // Check if message is a reply
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       if (!ctx?.quotedMessage) {
-        return extra.reply(`*📷 SET MENU IMAGE*\n\n💡 Reply to an image or sticker to set as menu image`);
+        return extra.reply(`*📷 SET MENU IMAGE*\n\n💡 Reply to an image or sticker to use as the menu image`);
       }
       
       const quotedMsg = ctx.quotedMessage;
       const imageMsg = quotedMsg.imageMessage || quotedMsg.stickerMessage;
       
       if (!imageMsg) {
-        return extra.reply(`*❌ ERROR* — need an image or sticker in the reply`);
+        return extra.reply(`*❌ ERROR* — reply with an image or sticker`);
       }
       
       // Download the media
@@ -55,7 +55,7 @@ module.exports = {
       );
       
       if (!mediaBuffer) {
-        return extra.reply(`*❌ ERROR* — couldn't download the image, try again`);
+        return extra.reply(`*❌ ERROR* — couldn't grab the image — try again`);
       }
       
       // Convert to JPEG if it's a sticker (webp)
@@ -88,11 +88,11 @@ module.exports = {
       // Write new image
       fs.writeFileSync(imagePath, finalBuffer);
       
-      await extra.reply(`*✅ MENU IMAGE UPDATED*\n\n✅ ${voice.lead('affirm')}, menu image is updated`);
+      await extra.reply(`*✅ MENU IMAGE UPDATED*\n\n✅ ${voice.lead('affirm')}, menu image is sorted`);
       
     } catch (error) {
       console.error('SetMenuImage command error:', error);
-      await extra.reply(`*❌ ERROR* — failed to set menu image: ${error.message}`);
+      await extra.reply(`*❌ ERROR* — couldn't set the menu image: ${error.message}`);
     }
   }
 };

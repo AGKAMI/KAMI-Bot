@@ -145,7 +145,7 @@ const templates = {
     return [
       `${bold('TOTSIENS')} @${name} 👋`,
       '',
-      `_Sala kahle, we will miss you hey._`,
+      `_Sala kahle, we'll miss you hey._`,
       `_Go well, ${voice.mate()}._`,
     ].join('\n');
   },
@@ -176,7 +176,7 @@ const templates = {
    * Admin-only command
    */
   adminOnly: () => {
-    return `${bold('Admins only')} — you need to be an admin for this one, ${voice.tag('neutral')}`;
+    return `${bold('Admins only')} — you gotta be an admin for this one, ${voice.tag('neutral')}`;
   },
 };
 

@@ -20,7 +20,7 @@ module.exports = {
       const text = args.join(' ');
       if (!text) {
         return await sock.sendMessage(msg.key.remoteJid, { 
-          text: `_${voice.lead('neutral')}, give me text to generate_\n\n_Example:_ ${prefix}snow Nick` 
+          text: `_${voice.lead('neutral')}, give me text to work with_\n\n_Example:_ ${prefix}snow Nick` 
         }, { quoted: msg });
       }
       

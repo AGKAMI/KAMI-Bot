@@ -19,12 +19,12 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply(`⚠️ *WARNING*\n💡 Give me some text hey\n\n📝 *Example:* ${bold(extra.prefix || '.' + 'attp Hello World')}`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Give me some text, hey\n\n📝 *Example:* ${bold(extra.prefix || '.' + 'attp Hello World')}`);
       }
       
       const text = args.join(' ');
       if (text.length > 50) {
-        return extra.reply(`⚠️ *WARNING*\n💡 That's too long — max 50 characters`);
+        return extra.reply(`⚠️ *WARNING*\n💡 That's too long — 50 characters max`);
       }
       
       try {

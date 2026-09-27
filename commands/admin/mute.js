@@ -11,7 +11,7 @@ module.exports = {
     reactions: { received: '🔇', done: '✅' },
     aliases: ['close', 'closegroup'],
     category: 'admin',
-    description: 'Close group (only admins can send messages)',
+    description: 'Close the group (only admins can send)',
     usage: '.mute',
     groupOnly: true,
     adminOnly: true,

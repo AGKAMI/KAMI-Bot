@@ -19,7 +19,7 @@ module.exports = {
   reactions: { received: '👍', done: '✅' },
   aliases: [],
   category: 'owner',
-  description: 'Approve a number to bypass DM blocker',
+  description: 'Approve a number past the DM blocker',
   usage: '.approve <number>',
   ownerOnly: true,
 
@@ -57,24 +57,24 @@ module.exports = {
     try {
       await sock.sendMessage(targetJid, {
         text: `🎉 *WELCOME TO KAMI BOT* 🤖\n\n` +
-              `✅ You have been *approved* by KAMI\n` +
-              `🔓 You can now message this bot directly\n\n` +
-              `Send *${prefix}menu* to see all available commands\n` +
-              `Type *${prefix}help* if you need assistance\n\n` +
+              `✅ You're *approved* by KAMI\n` +
+              `🔓 You can message this bot directly now\n\n` +
+              `Send *${prefix}menu* for everything I can do\n` +
+              `Type *${prefix}help* if you get stuck\n\n` +
               `_Lekke, enjoy the bot!_ 💀`
       });
     } catch (e) {}
 
     // Confirm in chat with details
     let reply = added
-      ? `*✅ APPROVED*\n\n_${digits} can now use the bot in DMs._`
+      ? `*✅ APPROVED*\n\n_${digits} can use the bot in DMs now._`
       : `*⚠️ ALREADY APPROVED*\n\n_${digits} is already approved._`;
 
     if (wasBlocked) {
-      reply += `\n\n🔓 *UNBLOCKED* — removed from WhatsApp block list`;
+      reply += `\n\n🔓 *UNBLOCKED* — off the WhatsApp block list`;
     }
     if (wasBanned) {
-      reply += `\n\n🔨 *BAN LIFTED* — removed from bot ban list`;
+      reply += `\n\n🔨 *BAN LIFTED* — off the bot ban list`;
     }
 
     await sock.sendMessage(extra.from, { text: reply }, { quoted: msg });

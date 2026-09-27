@@ -17,7 +17,7 @@ const TEAMS = {
 // Returns the 6 application questions for a team (adapted to team role).
 const getQuestions = (teamKey) => {
   const base = [
-    ['ACTIVITY', 'How many hours per day do you play CPM?'],
+    ['ACTIVITY', 'How long do you play CPM in a day?'],
     ['AGE', 'How old are you?'],
     ['EXPERIENCE', teamKey === 'KSSPS'
       ? 'Have you done private security or close protection in CPM before?'
@@ -25,22 +25,22 @@ const getQuestions = (teamKey) => {
         ? 'Have you managed security teams or coordinated operations in CPM?'
         : teamKey === 'KSSMP'
           ? 'Have you done law enforcement or patrol work in CPM?'
-          : 'Have you done security/VIP work in CPM before?'],
+          : 'Ever done security or VIP work in CPM?'],
     ['LOYALTY', teamKey === 'KSSPS'
       ? 'Will you follow direct orders from |SS| KAMI without hesitation?'
       : teamKey === 'KSSMS'
         ? 'Will you put SS interests above all else?'
-        : 'Will you prioritize SS events over other crews?'],
+        : 'Will you put SS events before any other crew?'],
     ['COMMUNICATION', teamKey === 'KSSMP'
       ? 'Can you respond quickly to security alerts on WhatsApp?'
-      : 'Are you active on WhatsApp daily?'],
+      : 'Are you on WhatsApp every day?'],
     ['SCENARIO', teamKey === 'KSSPS'
       ? 'A player is following |SS| KAMI aggressively during a meet. What do you do?'
       : teamKey === 'KSSMS'
         ? 'Two security team members are conflicting during an operation. How do you handle it?'
         : teamKey === 'KSSMP'
           ? 'A player is speeding through a restricted zone during an event. What do you do?'
-          : 'A VIP car gets rammed during an event. What do you do?']
+          : 'A VIP car gets rammed mid-event. What\'s your move?']
   ];
   return base.map(([name, q], i) => `${['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣'][i]} ${['⏱️','🎂','🎯','🔰','📲','🚨'][i]} *${name}* — ${q}`);
 };
@@ -71,7 +71,7 @@ const buildHiredMessage = (teamKey, inviteLink) => {
     `━━━━━━━━━━━━━━━━\n\n` +
     `✅ *STATUS: HIRED*\n\n` +
     `🎉 *WELCOME TO THE ${team.role.split('—')[0].trim().toUpperCase()}*\n\n` +
-    `You've been accepted into ${team.label} ${team.emoji}\n\n` +
+    `Aweh — you're in ${team.label} ${team.emoji}\n\n` +
     `🔰 Your role: *${team.role}*\n` +
     `📲 Report to: *|SS| KAMI*\n` +
     `⚡ Follow all SS rules.\n\n` +
@@ -90,8 +90,8 @@ const buildDeniedMessage = (teamKey, reason) => {
     `━━━━━━━━━━━━━━━━\n\n` +
     `❌ *STATUS: NOT SELECTED*\n\n` +
     `💬 *WHY?*\n${reason || 'No reason given'}\n\n` +
-    `🔄 *WHAT NOW:*\nYou can reapply after *7 days*. Use that time to get more CPM experience and prove your loyalty to SS.\n\n` +
-    `_Don't take it personal, yazi. Keep grinding._ 💪`;
+    `🔄 *WHAT NOW:*\nYou can reapply after *7 days*. Use that time to rack up CPM experience and prove you're solid for SS.\n\n` +
+    `_It's not personal, yazi — keep grinding._ 💪`;
 };
 
 // Minimum requirements — shown to admins so they know what to look for
@@ -135,7 +135,7 @@ const buildAdminNotice = (app) => {
     `📋 *MINIMUM REQUIREMENTS:*\n` +
     REQUIREMENTS.map(r => `• ${r}`).join('\n') + '\n\n' +
     `━━━━━━━━━━━━━━━━\n\n` +
-    `_Tap a button below or type manually:_\n` +
+    `_Hit a button below or type it yourself:_\n` +
     `✅ \`${prefix}crew accept ${app.appUid}\`\n` +
     `❌ \`${prefix}crew deny ${app.appUid} <reason>\`\n` +
     `📋 \`${prefix}crew applicants ${app.team}\``;
@@ -152,12 +152,12 @@ const buildAdminNotice = (app) => {
 // Format questions with numbered list for admin review
 const getQuestionsForAdmin = (teamKey) => {
   const q = [
-    ['1️⃣', '⏱️', 'ACTIVITY', 'How many hours per day do you play CPM?'],
+    ['1️⃣', '⏱️', 'ACTIVITY', 'How long do you play CPM in a day?'],
     ['2️⃣', '🎂', 'AGE', 'How old are you?'],
     ['3️⃣', '🎯', 'EXPERIENCE', 'Relevant experience in CPM?'],
-    ['4️⃣', '🔰', 'LOYALTY', 'Will they follow orders and prioritize SS?'],
-    ['5️⃣', '📲', 'COMMUNICATION', 'Are they active on WhatsApp daily?'],
-    ['6️⃣', '🚨', 'SCENARIO', 'Do they show common sense under pressure?'],
+    ['4️⃣', '🔰', 'LOYALTY', 'Will they follow orders and put SS first?'],
+    ['5️⃣', '📲', 'COMMUNICATION', 'Are they on WhatsApp every day?'],
+    ['6️⃣', '🚨', 'SCENARIO', 'Do they keep their head when it\'s chaos?'],
   ];
   return q.map(([n, em, name, hint]) => `${n} ${em} *${name}* — ${hint}`).join('\n');
 };

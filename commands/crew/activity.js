@@ -5,7 +5,7 @@ module.exports = {
   name: 'activity',
   reactions: { received: '📊', done: '📈' },
   aliases: ['audit', 'log'],
-  description: 'View admin activity or command audit log',
+  description: 'Check admin activity or the command audit log',
   usage: 'activity [admin @mention] [days]',
   isCrew: true,
 
@@ -52,7 +52,7 @@ module.exports = {
       if (entries.length === 0) {
         return extra.reply(
           `📋 ACTIVITY LOG\n\n` +
-          `No activity found for @${targetAdmin} in the last ${days} days`,
+          `No activity for @${targetAdmin} in the last ${days} days, shame`,
           { mentions: [`${targetAdmin}@s.whatsapp.net`] }
         );
       }
@@ -107,7 +107,7 @@ module.exports = {
     if (Object.keys(activity).length === 0) {
       return extra.reply(
         `📋 ACTIVITY LOG\n\n` +
-        `No admin activity in the last ${days} days`
+        `No admin activity in the last ${days} days, ne`
       );
     }
 
@@ -121,7 +121,7 @@ module.exports = {
       const total = stats.accepted + stats.denied + stats.cancelled + stats.rerolled;
       text += `@${num}\n`;
       if (total > 0) {
-        text += `  ✅ ${stats.accepted} accepted · ❌ ${stats.denied} denied · 🚫 ${stats.cancelled} cancelled · 🔄 ${stats.rerolled} rerolled\n`;
+        text += `  ✅ ${stats.accepted} accepted · ❌ ${stats.denied} denied · 🚫 ${stats.cancelled} cancelled · 🔄 ${stats.rerolled} rolled back\n`;
       }
       text += `  ⚡ ${stats.commands} commands\n\n`;
     }

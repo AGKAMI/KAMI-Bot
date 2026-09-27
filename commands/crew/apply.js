@@ -19,7 +19,7 @@ module.exports = {
   name: null,
   aliases: ['tryout'],
   category: 'crew',
-  description: 'Start a crew application (bot DMs you or the applicant the form)',
+  description: 'Start a crew application (I\'ll DM you or them the form)',
   usage: '.crew apply <team> [@mention|number]',
   groupOnly: false,
   ownerOnly: false,
@@ -34,7 +34,7 @@ module.exports = {
           `Usage:\n` +
           `• \`${prefix}crew apply <team>\` — apply for yourself\n` +
           `• \`${prefix}crew apply <team> @user\` — apply for someone\n` +
-          `• \`${prefix}crew apply <team> 0833882383\` — apply for someone by number\n\n` +
+          `• \`${prefix}crew apply <team> 0833882383\` — apply on behalf of someone by number\n\n` +
           `Teams: ${Object.keys(TEAMS).join(', ')}`
         );
       }
@@ -82,8 +82,8 @@ module.exports = {
         `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
         `🆔 *App ID:* ${result.app.appUid}\n\n` +
         (applyingForSomeone
-          ? `📲 I've DM'd ${mention(applicantJid)} the application form.\n\n`
-          : `📲 I've DM'd you the application form.\n\n`) +
+          ? `📲 Dropped the form in ${mention(applicantJid)}'s DMs.\n\n`
+          : `📲 Dropped the form in your DMs.\n\n`) +
         `_${voice.greetOpen()}, good luck!_`;
 
       await sock.sendMessage(extra.from, {
@@ -93,7 +93,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew apply error:', error);
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't start the application`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't kick it off, shame`);
     }
   },
 };
@@ -125,12 +125,12 @@ onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
   if (!app && processed) {
     const action = processed.action === 'accepted' ? '✅ accepted' : '❌ denied';
     await sock.sendMessage(from, {
-      text: `⚠️ Application *${uid}* was already ${action} by an admin.\n\nNothing to do.`,
+      text: `⚠️ *${uid}* was already ${action} by an admin.\n\nNothing to do here.`,
     });
     return;
   }
   await sock.sendMessage(from, {
-    text: `❌ *Deny Application*\n\nType a reason to deny *${uid}*:\n\`${p}crew deny ${uid} <reason>\``,
+    text: `❌ *Deny Application*\n\nDrop a reason for denying *${uid}*\n\`${p}crew deny ${uid} <reason>\``,
   });
 });
 

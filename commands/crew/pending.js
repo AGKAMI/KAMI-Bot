@@ -15,7 +15,7 @@ module.exports = {
   name: null,
   aliases: ['allpending', 'all'],
   category: 'crew',
-  description: 'View all pending applications across all teams',
+  description: 'See every pending application across all teams',
   usage: '.crew pending',
   groupOnly: false,
   ownerOnly: false,
@@ -32,7 +32,7 @@ module.exports = {
 
       if (!extra.isOwner && !isGroupAdmin && !database.isTeamAdmin(extra.sender)) {
         return extra.reply(
-          `❌ ERROR\n\nOnly admins can view applications`
+          `❌ ERROR\n\nEish, only admins can see applications`
         );
       }
 
@@ -44,7 +44,7 @@ module.exports = {
             try {
               await sock.sendMessage(app.jid, {
                 text: `⏰ *APPLICATION EXPIRED*\n\n` +
-                      `Your *${app.team}* application (ID: *${app.appUid}*) has expired after 7 days with no review.\n\n` +
+                      `Your *${app.team}* application (ID: *${app.appUid}*) expired after 7 days with nobody reviewing it.\n\n` +
                       `🔄 You can reapply anytime: \`${prefix}crew apply ${app.team}\``
               });
             } catch (e) {}
@@ -68,7 +68,7 @@ module.exports = {
       if (allPending.length === 0) {
         return extra.reply(
           `📋 ALL PENDING APPLICATIONS\n\n` +
-          `No pending applications across any team, ${voice.tag('err')}\n\n` +
+          `Nothing pending on any team, ${voice.tag('err')}\n\n` +
           `Teams: ${Object.keys(crewTeams).join(', ')}`
         );
       }
@@ -130,7 +130,7 @@ module.exports = {
     } catch (error) {
       console.error('Crew pending error:', error);
       await extra.reply(
-        `❌ ERROR\n\n${voice.openErr()} — couldn't load pending applications`
+        `❌ ERROR\n\n${voice.openErr()} — couldn't pull the pending ones`
       );
     }
   },

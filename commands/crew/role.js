@@ -13,7 +13,7 @@ module.exports = {
   name: null,
   aliases: ['setrole'],
   category: 'crew',
-  description: 'Set custom role for member',
+  description: 'Set a custom role for a member',
   usage: '.crew role @user|number <role>',
   groupOnly: true,
   ownerOnly: true,
@@ -28,7 +28,7 @@ module.exports = {
 
       if (!resolved.jid) {
         return extra.reply(
-          `❌ ERROR\n\nTag or add a number\n\nUsage: ${prefix}crew role @user|number <role>`
+          `❌ ERROR\n\nTag someone or drop a number\n\nUsage: ${prefix}crew role @user|number <role>`
         );
       }
 
@@ -36,12 +36,12 @@ module.exports = {
 
       const member = database.getCrewMember(extra.from, target);
       if (!member) {
-        return extra.reply(`❌ ERROR\n\n${mention(target)} is not in this crew`);
+        return extra.reply(`❌ ERROR\n\n${mention(target)} isn't in this crew, hey`);
       }
 
       const newRole = resolved.args.join(' ').trim();
       if (!newRole) {
-        return extra.reply(`❌ ERROR\n\nProvide a role name`);
+        return extra.reply(`❌ ERROR\n\nGive me a role name`);
       }
 
       const oldRole = member.role;
@@ -56,13 +56,13 @@ module.exports = {
             : `🏷️ ROLE UPDATED\n\n`) +
           `${mention(target)}\n\n` +
           `${oldRole} → ${bold(newRole)}` +
-          (ownerVIP ? `\n\n_The owner himself has set this role._ 👑` : ''),
+          (ownerVIP ? `\n\n_The owner personally set this role._ 👑` : ''),
         mentions: [target],
       }, { quoted: msg });
 
     } catch (error) {
       console.error('Crew role error:', error);
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't update role`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't set the role`);
     }
   },
 };

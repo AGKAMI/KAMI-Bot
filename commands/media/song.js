@@ -36,7 +36,7 @@ module.exports = {
       if (activeAudioDownloads > 2) {
         activeAudioDownloads--;
         extra.fail();
-        return await extra.reply(`❌ _too many downloads — try again in a few seconds_`);
+        return await extra.reply(`❌ _too many downloads — give it a few seconds_`);
       }
       const text = args.join(' ');
       const chatId = msg.key.remoteJid;
@@ -57,7 +57,7 @@ module.exports = {
         const search = await yts(text);
         if (!search || !search.videos.length) {
           extra.fail();
-          return await extra.edit(sent.key, `❌ _${voice.openErr()}, no results found for that one_`);
+          return await extra.edit(sent.key, `❌ _${voice.openErr()}, nothing for that one, shame_`);
         }
         video = search.videos[0];
       }

@@ -1,5 +1,5 @@
 /**
- * SetWelcomeStyle - Customize text overlay on welcome image
+ * SetWelcomeStyle - Change the text overlay on the welcome image
  */
 
 const db = require('../../database');
@@ -11,7 +11,7 @@ module.exports = {
   reactions: { received: '🎨', done: '🎀' },
   aliases: ['welcomestyle'],
   category: 'admin',
-  description: 'Customize text overlay on welcome image',
+  description: 'Change the text overlay on the welcome image',
   usage: '.setwelcomestyle <option> <value>',
   groupOnly: true,
   ownerOnly: true, adminOnly: false,
@@ -62,14 +62,14 @@ module.exports = {
       const validPositions = ['top', 'center', 'bottom'];
       if (option === 'position' && !validPositions.includes(value)) {
         extra.fail();
-        return extra.reply(`❌ _position must be: top, center, or bottom_`);
+        return extra.reply(`❌ _position must be top, center or bottom_`);
       }
 
       if (option === 'fontsize' || option === 'subfontsize') {
         const num = parseInt(value);
         if (isNaN(num) || num < 16 || num > 80) {
           extra.fail();
-          return extra.reply(`❌ _font size must be between 16 and 80_`);
+          return extra.reply(`❌ _font size must be 16 to 80_`);
         }
       }
 

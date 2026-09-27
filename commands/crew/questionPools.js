@@ -18,7 +18,7 @@ function shuffle(arr) {
 // ══════════════════════════════════════════════════════════════
 const SSRS = {
   activity: [
-    { text: 'How many hours per day do you play CPM?', options: [
+    { text: 'How many hours a day you play CPM?', options: [
       { id: 'Less than 1 hour', label: '<1 hr', score: 1 },
       { id: '1-2 hours', label: '1-2 hrs', score: 2 },
       { id: '2-3 hours', label: '2-3 hrs', score: 3 },
@@ -27,172 +27,172 @@ const SSRS = {
       { id: '5-6 hours', label: '5-6 hrs', score: 6 },
       { id: '6+ hours', label: '6+ hrs', score: 7 },
     ]},
-    { text: 'On a typical day, how much time do you spend in CPM?', options: [
+    { text: 'On a normal day, how much time you spend in CPM, hey?', options: [
       { id: 'Quick sessions only', label: 'Quick sessions', score: 1 },
       { id: 'A couple hours', label: 'Couple hours', score: 2 },
-      { id: 'Most of my free time', label: 'Most free time', score: 4 },
-      { id: 'I play all day when I can', label: 'All day', score: 6 },
+      { id: 'Most of my free time, lekke', label: 'Most free time', score: 4 },
+      { id: 'I play all day when I can, lekke', label: 'All day', score: 6 },
     ]},
-    { text: 'What does your CPM schedule look like?', options: [
-      { id: 'Play whenever I feel like it', label: 'Whenever', score: 1 },
-      { id: 'Play a few times a week', label: 'Few times/week', score: 2 },
+    { text: 'What your CPM schedule look like?', options: [
+      { id: 'Play when I feel like it', label: 'Whenever', score: 1 },
+      { id: 'Play a few times a week, hey', label: 'Few times/week', score: 2 },
       { id: 'Play every day after school/work', label: 'Daily routine', score: 4 },
-      { id: 'CPM is my main activity', label: 'Main activity', score: 6 },
+      { id: 'CPM is my main activity, lekke', label: 'Main activity', score: 6 },
     ]},
-    { text: 'How often are you online in CPM?', options: [
-      { id: 'Rarely — once or twice a week', label: 'Rarely', score: 1 },
-      { id: 'Sometimes — few times a week', label: 'Sometimes', score: 2 },
+    { text: 'How often you online in CPM, hey?', options: [
+      { id: 'Rarely, once or twice a week', label: 'Rarely', score: 1 },
+      { id: 'Sometimes, few times a week', label: 'Sometimes', score: 2 },
       { id: 'Often — almost every day', label: 'Often', score: 4 },
       { id: 'Always — every single day', label: 'Always', score: 6 },
     ]},
-    { text: 'When do you usually play CPM?', options: [
+    { text: 'When you usually play CPM?', options: [
       { id: 'Only when bored', label: 'When bored', score: 1 },
       { id: 'Evenings and weekends', label: 'Evenings/weekends', score: 3 },
       { id: 'Every chance I get', label: 'Every chance', score: 5 },
-      { id: 'I plan my day around CPM', label: 'Plan around CPM', score: 6 },
+      { id: 'I plan my day around CPM, lekke', label: 'Plan around CPM', score: 6 },
     ]},
-    { text: 'How many days per week do you play?', options: [
+    { text: 'How many days a week you play?', options: [
       { id: '1-2 days', label: '1-2 days', score: 1 },
       { id: '3-4 days', label: '3-4 days', score: 3 },
       { id: '5-6 days', label: '5-6 days', score: 5 },
       { id: 'All 7 days', label: '7 days', score: 7 },
     ]},
-    { text: 'What keeps you playing CPM regularly?', options: [
-      { id: 'Nothing specific — I play when I want', label: 'No reason', score: 1 },
+    { text: 'What keeps you playing CPM, hey?', options: [
+      { id: 'Nothing specific, I play when I feel it', label: 'No reason', score: 1 },
       { id: 'The cars and customization', label: 'Cars/customization', score: 2 },
       { id: 'The community and events', label: 'Community/events', score: 4 },
-      { id: 'Being part of a crew keeps me active', label: 'Crew motivation', score: 6 },
+      { id: 'Being in a crew keeps me active', label: 'Crew motivation', score: 6 },
     ]},
-    { text: 'How consistent is your CPM activity?', options: [
-      { id: 'Very inconsistent — I disappear for days', label: 'Inconsistent', score: 1 },
-      { id: 'Somewhat consistent — play most weeks', label: 'Most weeks', score: 3 },
+    { text: 'How consistent your CPM activity?', options: [
+      { id: 'Very inconsistent, I disappear for days, shame', label: 'Inconsistent', score: 1 },
+      { id: 'Somewhat consistent, play most weeks', label: 'Most weeks', score: 3 },
       { id: 'Very consistent — daily player', label: 'Daily player', score: 5 },
-      { id: 'Extremely consistent — never miss a day', label: 'Never miss', score: 7 },
+      { id: 'Extremely consistent, never miss a day, shame', label: 'Never miss', score: 7 },
     ]},
-    { text: 'If you joined SSRS, how often would you be available?', options: [
-      { id: 'Whenever I feel like it', label: 'Whenever', score: 1 },
-      { id: 'A few times a week', label: 'Few times/week', score: 3 },
+    { text: 'If you joined SSRS, how often you be available?', options: [
+      { id: 'Whenever I feel like it, lekke', label: 'Whenever', score: 1 },
+      { id: 'A few times a week, hey', label: 'Few times/week', score: 3 },
       { id: 'Every day if needed', label: 'Daily', score: 5 },
       { id: '24/7 — I am always available', label: 'Always available', score: 7 },
     ]},
-    { text: 'How would you rate your CPM activity level?', options: [
+    { text: 'How you rate your CPM activity level, hey?', options: [
       { id: 'Low — casual player', label: 'Low', score: 1 },
       { id: 'Medium — regular player', label: 'Medium', score: 3 },
       { id: 'High — very active', label: 'High', score: 5 },
       { id: 'No-life — CPM is life', label: 'No-life', score: 7 },
     ]},
-    { text: 'Do you play CPM daily or just occasionally?', options: [
-      { id: 'Only when friends are on', label: 'With friends', score: 2 },
-      { id: 'A few times a week', label: 'Few times/week', score: 3 },
-      { id: 'Yes, I play every day', label: 'Daily', score: 5 },
+    { text: 'You play CPM daily or just occasionally?', options: [
+      { id: 'Only when friends are on, shame', label: 'With friends', score: 2 },
+      { id: 'A few times a week, hey', label: 'Few times/week', score: 3 },
+      { id: 'Yes, I play every day, lekke', label: 'Daily', score: 5 },
       { id: 'Multiple times a day', label: 'Multiple daily', score: 7 },
     ]},
-    { text: 'How much of your free time goes to CPM?', options: [
-      { id: 'Very little — I have other hobbies', label: 'Very little', score: 1 },
-      { id: 'Some — it is one of many', label: 'Some', score: 2 },
-      { id: 'Most — it is my main game', label: 'Most', score: 5 },
+    { text: 'How much your free time goes to CPM?', options: [
+      { id: 'Very little, I\'ve other hobbies', label: 'Very little', score: 1 },
+      { id: 'Some — it\'s one of many', label: 'Some', score: 2 },
+      { id: 'Most — it\'s my main game', label: 'Most', score: 5 },
       { id: 'All — nothing else matters', label: 'All', score: 7 },
     ]},
-    { text: 'What is your CPM session length usually?', options: [
+    { text: 'What\'s your CPM session length usually?', options: [
       { id: '15-30 minutes', label: '15-30 min', score: 1 },
       { id: '30-60 minutes', label: '30-60 min', score: 2 },
       { id: '1-2 hours', label: '1-2 hrs', score: 4 },
       { id: '3+ hours', label: '3+ hrs', score: 6 },
     ]},
-    { text: 'How active are you compared to other games?', options: [
-      { id: 'CPM is just one of many', label: 'One of many', score: 2 },
-      { id: 'CPM is my main game', label: 'Main game', score: 4 },
-      { id: 'CPM is the only game I play', label: 'Only game', score: 6 },
+    { text: 'How active you compared to the other games?', options: [
+      { id: 'CPM is just one of many, shame', label: 'One of many', score: 2 },
+      { id: 'CPM is my main game, lekke', label: 'Main game', score: 4 },
+      { id: 'CPM is the only game I play, shame', label: 'Only game', score: 6 },
     ]},
-    { text: 'Would you describe yourself as a hardcore or casual player?', options: [
+    { text: 'You see yourself as hardcore or casual, hey?', options: [
       { id: 'Very casual', label: 'Very casual', score: 1 },
       { id: 'Somewhat casual', label: 'Somewhat casual', score: 2 },
       { id: 'Moderate player', label: 'Moderate', score: 4 },
       { id: 'Hardcore player', label: 'Hardcore', score: 6 },
     ]},
-    { text: 'How often do you join events in CPM?', options: [
-      { id: 'Never — I just free roam', label: 'Never', score: 1 },
-      { id: 'Sometimes — if I see one', label: 'Sometimes', score: 2 },
-      { id: 'Often — I look for events', label: 'Often', score: 4 },
-      { id: 'Always — I am at every event', label: 'Always', score: 6 },
+    { text: 'How often you join events in CPM, hey?', options: [
+      { id: 'Never, I just free roam, shame', label: 'Never', score: 1 },
+      { id: 'Sometimes, if I see one, shame', label: 'Sometimes', score: 2 },
+      { id: 'Often, I look for events', label: 'Often', score: 4 },
+      { id: 'Always — I\'m at every event', label: 'Always', score: 6 },
     ]},
-    { text: 'If SSRS has a convoy at 8pm, can you make it?', options: [
-      { id: 'Probably not — my schedule is random', label: 'Probably not', score: 1 },
-      { id: 'Maybe — depends on the day', label: 'Maybe', score: 3 },
-      { id: 'Yes — I will be there', label: 'Yes', score: 5 },
-      { id: 'Definitely — I will be early', label: 'Definitely', score: 7 },
+    { text: 'If SSRS has a convoy at 8pm, you make it?', options: [
+      { id: 'Probably not, my schedule is random, shame', label: 'Probably not', score: 1 },
+      { id: 'Maybe, depends on the day, hey', label: 'Maybe', score: 3 },
+      { id: 'Yes — I\'ll be there', label: 'Yes', score: 5 },
+      { id: 'Definitely — I\'ll be early', label: 'Definitely', score: 7 },
     ]},
-    { text: 'How many CPM servers have you been in?', options: [
+    { text: 'How many CPM servers you been in?', options: [
       { id: 'Just my own', label: 'Just mine', score: 1 },
       { id: 'A few', label: 'A few', score: 2 },
-      { id: 'Many — I explore different ones', label: 'Many', score: 4 },
-      { id: 'I have been in most active servers', label: 'Most servers', score: 6 },
+      { id: 'Many, I explore different ones, lekke', label: 'Many', score: 4 },
+      { id: 'I\'ve been in most active servers', label: 'Most servers', score: 6 },
     ]},
-    { text: 'Do you play alone or with others?', options: [
+    { text: 'You play alone or with others?', options: [
       { id: 'Mostly alone', label: 'Alone', score: 1 },
       { id: 'Sometimes with friends', label: 'With friends', score: 3 },
       { id: 'Always in a group', label: 'In a group', score: 5 },
       { id: 'I organize groups myself', label: 'Organize groups', score: 7 },
     ]},
-    { text: 'What time do you usually get online?', options: [
+    { text: 'What time you usually get online?', options: [
       { id: 'No fixed time', label: 'No fixed time', score: 1 },
       { id: 'Afternoon', label: 'Afternoon', score: 3 },
       { id: 'Evening', label: 'Evening', score: 4 },
-      { id: 'I am online all day', label: 'All day', score: 6 },
+      { id: 'I\'m online all day', label: 'All day', score: 6 },
     ]},
-    { text: 'Have you ever taken a break from CPM?', options: [
+    { text: 'You ever taken a break from CPM?', options: [
       { id: 'Yes — multiple long breaks', label: 'Multiple breaks', score: 1 },
       { id: 'Yes — one short break', label: 'One short break', score: 2 },
       { id: 'No — I play consistently', label: 'No breaks', score: 5 },
       { id: 'No — CPM is life', label: 'Never stopped', score: 7 },
     ]},
-    { text: 'How many CPM accounts have you had?', options: [
+    { text: 'How many CPM accounts you had?', options: [
       { id: 'Just one', label: 'One', score: 3 },
       { id: '2-3', label: '2-3', score: 2 },
       { id: '4+', label: '4+', score: 1 },
     ]},
-    { text: 'Would you say CPM is your main game right now?', options: [
-      { id: 'No — I play other games more', label: 'No', score: 1 },
-      { id: 'It is one of my main games', label: 'One of main', score: 3 },
-      { id: 'Yes — CPM is my main game', label: 'Yes', score: 5 },
-      { id: 'Yes — and I do not play anything else', label: 'Only CPM', score: 7 },
+    { text: 'Would you say CPM your main game right now, hey?', options: [
+      { id: 'No, I play other games more, shame', label: 'No', score: 1 },
+      { id: 'It\'s one of my main games', label: 'One of main', score: 3 },
+      { id: 'Yes, CPM is my main game, lekke, lekke', label: 'Yes', score: 5 },
+      { id: 'Yes — and I don\'t play anything else', label: 'Only CPM', score: 7 },
     ]},
-    { text: 'How often do you check CPM social media or updates?', options: [
+    { text: 'How often you check CPM social media or updates?', options: [
       { id: 'Never', label: 'Never', score: 1 },
       { id: 'Sometimes', label: 'Sometimes', score: 2 },
       { id: 'Often — I stay updated', label: 'Often', score: 4 },
       { id: 'Always — first to know', label: 'Always', score: 6 },
     ]},
-    { text: 'If CPM had a major update, how fast would you log in?', options: [
+    { text: 'If CPM dropped a big update, how fast you log in?', options: [
       { id: 'Eventually', label: 'Eventually', score: 1 },
       { id: 'Same day', label: 'Same day', score: 3 },
       { id: 'Within hours', label: 'Within hours', score: 5 },
       { id: 'Immediately', label: 'Immediately', score: 7 },
     ]},
-    { text: 'How many CPM servers are you currently in?', options: [
+    { text: 'How many CPM servers you currently in?', options: [
       { id: 'None', label: 'None', score: 1 },
       { id: '1-2', label: '1-2', score: 2 },
       { id: '3-5', label: '3-5', score: 4 },
       { id: '6+', label: '6+', score: 6 },
     ]},
-    { text: 'Do you play CPM on weekdays or weekends?', options: [
+    { text: 'You play CPM on weekdays or weekends?', options: [
       { id: 'Weekends only', label: 'Weekends only', score: 2 },
       { id: 'Both — whenever I can', label: 'Both', score: 4 },
       { id: 'Every day — no distinction', label: 'Every day', score: 6 },
     ]},
-    { text: 'How would you describe your CPM habit?', options: [
-      { id: 'I play when I am bored', label: 'When bored', score: 1 },
-      { id: 'It is a regular hobby', label: 'Regular hobby', score: 3 },
-      { id: 'It is a daily routine', label: 'Daily routine', score: 5 },
+    { text: 'How you describe your CPM habit, hey?', options: [
+      { id: 'I play when I\'m bored', label: 'When bored', score: 1 },
+      { id: 'It\'s a regular hobby', label: 'Regular hobby', score: 3 },
+      { id: 'It\'s a daily routine', label: 'Daily routine', score: 5 },
       { id: 'It is an addiction', label: 'Addiction', score: 7 },
     ]},
-    { text: 'Can you commit to being online for scheduled events?', options: [
-      { id: 'No — my schedule is too random', label: 'No', score: 1 },
+    { text: 'You able to commit to being online for scheduled events?', options: [
+      { id: 'No, my schedule is too random, shame', label: 'No', score: 1 },
       { id: 'Sometimes — if I remember', label: 'Sometimes', score: 2 },
       { id: 'Yes — I set reminders', label: 'Yes', score: 5 },
-      { id: 'Always — it is in my calendar', label: 'Always', score: 7 },
+      { id: 'Always — it\'s in my calendar', label: 'Always', score: 7 },
     ]},
-    { text: 'What motivates you to keep playing CPM?', options: [
+    { text: 'What keeps you grinding CPM, hey?', options: [
       { id: 'Nothing in particular', label: 'Nothing', score: 1 },
       { id: 'The cars', label: 'Cars', score: 2 },
       { id: 'The community', label: 'Community', score: 4 },
@@ -205,33 +205,33 @@ const SSRS = {
       { text: 'How old are you?', opts: ['15','16','17','18','19','20','21+'] },
       { text: 'What is your age?', opts: ['15-16','17','18','19','20','21+'] },
       { text: 'Age range?', opts: ['15','16','17','18','19','20','21+'] },
-      { text: 'How many years old are you?', opts: ['15','16','17','18','19','20','21+'] },
-      { text: 'What age bracket do you fall in?', opts: ['15-16','17-18','19-20','21+'] },
+      { text: 'How many years old are you, hey?', opts: ['15','16','17','18','19','20','21+'] },
+      { text: 'What age bracket you fall in?', opts: ['15-16','17-18','19-20','21+'] },
       { text: 'Tell us your age:', opts: ['15','16','17','18','19','20','21+'] },
-      { text: 'How old will you be this year?', opts: ['15','16','17','18','19','20','21+'] },
+      { text: 'How old will you be this year, hey?', opts: ['15','16','17','18','19','20','21+'] },
       { text: 'Your age please:', opts: ['15-16','17','18','19','20','21+'] },
-      { text: 'What year were you born?', opts: ['2011 (15)','2010 (16)','2009 (17)','2008 (18)','2007 (19)','2006 (20)','2005 or earlier (21+)'] },
+      { text: 'What year you born?', opts: ['2011 (15)','2010 (16)','2009 (17)','2008 (18)','2007 (19)','2006 (20)','2005 or earlier (21+)'] },
       { text: 'Select your age group:', opts: ['15-16','17-18','19-20','21+'] },
-      { text: 'How old are you right now?', opts: ['15','16','17','18','19','20','21+'] },
-      { text: 'What is your current age?', opts: ['15-16','17','18','19','20','21+'] },
+      { text: 'How old you right now?', opts: ['15','16','17','18','19','20','21+'] },
+      { text: 'What\'s your current age?', opts: ['15-16','17','18','19','20','21+'] },
       { text: 'Please state your age:', opts: ['15','16','17','18','19','20','21+'] },
       { text: 'Age?', opts: ['15-16','17','18','19','20','21+'] },
-      { text: 'How many years have you been alive?', opts: ['15','16','17','18','19','20','21+'] },
-      { text: 'Which age group are you in?', opts: ['15-16','17-18','19-20','21+'] },
-      { text: 'What age are you turning this year?', opts: ['15','16','17','18','19','20','21+'] },
+      { text: 'How many years you been alive?', opts: ['15','16','17','18','19','20','21+'] },
+      { text: 'Which age group you in?', opts: ['15-16','17-18','19-20','21+'] },
+      { text: 'What age you turning this year, hey?', opts: ['15','16','17','18','19','20','21+'] },
       { text: 'Your age:', opts: ['15-16','17','18','19','20','21+'] },
-      { text: 'How old do you claim to be?', opts: ['15','16','17','18','19','20','21+'] },
-      { text: 'Date of birth or age?', opts: ['15-16','17','18','19','20','21+'] },
+      { text: 'How old you claim to be?', opts: ['15','16','17','18','19','20','21+'] },
+      { text: 'Date of birth or your age?', opts: ['15-16','17','18','19','20','21+'] },
       { text: 'Select your age:', opts: ['15','16','17','18','19','20','21+'] },
-      { text: 'What is your age range?', opts: ['15-16','17-18','19-20','21+'] },
+      { text: 'What\'s your age range?', opts: ['15-16','17-18','19-20','21+'] },
       { text: 'Old are you?', opts: ['15','16','17','18','19','20','21+'] },
       { text: 'Age verification — how old?', opts: ['15-16','17','18','19','20','21+'] },
       { text: 'State your age:', opts: ['15','16','17','18','19','20','21+'] },
-      { text: 'What age bracket applies to you?', opts: ['15-16','17-18','19-20','21+'] },
-      { text: 'How old are you in years?', opts: ['15','16','17','18','19','20','21+'] },
+      { text: 'Which age bracket applies to you?', opts: ['15-16','17-18','19-20','21+'] },
+      { text: 'How old you in years?', opts: ['15','16','17','18','19','20','21+'] },
       { text: 'Your current age is:', opts: ['15-16','17','18','19','20','21+'] },
       { text: 'What is your age?', opts: ['15','16','17','18','19','20','21+'] },
-      { text: 'How old are you — pick one:', opts: ['15','16','17','18','19','20','21+'] },
+      { text: 'How old are you, pick one, hey:', opts: ['15','16','17','18','19','20','21+'] },
     ];
     const v = variants[i % variants.length];
     const scores = [2, 3, 4, 5, 5, 6, 7];
@@ -242,519 +242,519 @@ const SSRS = {
   }),
 
   experience: [
-    { text: 'Have you done road safety or convoy work in CPM before?', options: [
+    { text: 'You done road safety or convoy work in CPM before?', options: [
       { id: 'Yes — multiple teams', label: 'Multiple teams', score: 6 },
       { id: 'Yes — one team only', label: 'One team', score: 4 },
       { id: 'Yes — solo experience', label: 'Solo experience', score: 3 },
       { id: 'A little — casual play', label: 'Casual play', score: 2 },
       { id: 'A little — watched others', label: 'Watched others', score: 1 },
-      { id: 'No — but willing to learn', label: 'Willing to learn', score: 3 },
+      { id: 'No, but willing to learn, hey', label: 'Willing to learn', score: 3 },
       { id: 'No — completely new', label: 'Completely new', score: 1 },
     ]},
-    { text: 'How experienced are you with CPM road safety?', options: [
-      { id: 'Very experienced — done it for years', label: 'Very experienced', score: 7 },
-      { id: 'Experienced — done it many times', label: 'Experienced', score: 5 },
-      { id: 'Some experience — done it a few times', label: 'Some', score: 3 },
-      { id: 'Limited — only seen it happen', label: 'Limited', score: 2 },
-      { id: 'None — but eager to learn', label: 'None', score: 2 },
+    { text: 'How experienced you with CPM road safety?', options: [
+      { id: 'Very experienced, done it for years, lekke', label: 'Very experienced', score: 7 },
+      { id: 'Experienced, done it many times, lekke', label: 'Experienced', score: 5 },
+      { id: 'Some experience, done it a few times, hey', label: 'Some', score: 3 },
+      { id: 'Limited, only seen it happen, shame', label: 'Limited', score: 2 },
+      { id: 'None, but eager to learn, hey', label: 'None', score: 2 },
     ]},
-    { text: 'Have you ever been part of a CPM convoy?', options: [
+    { text: 'You ever been part of a CPM convoy?', options: [
       { id: 'Yes — I led one', label: 'Led one', score: 7 },
-      { id: 'Yes — I was in the convoy', label: 'Was in convoy', score: 4 },
-      { id: 'Yes — I watched from a distance', label: 'Watched', score: 2 },
-      { id: 'No — but I want to', label: 'Want to', score: 3 },
-      { id: 'No — never been in one', label: 'Never', score: 1 },
+      { id: 'Yes, I was in the convoy, lekke', label: 'Was in convoy', score: 4 },
+      { id: 'Yes, I watched from a distance', label: 'Watched', score: 2 },
+      { id: 'No, but I wanna', label: 'Want to', score: 3 },
+      { id: 'No, never been in one, shame', label: 'Never', score: 1 },
     ]},
-    { text: 'What road safety experience do you have in CPM?', options: [
+    { text: 'What road safety experience you got in CPM, hey?', options: [
       { id: 'Led multiple convoys', label: 'Led convoys', score: 7 },
       { id: 'Part of convoy teams', label: 'Convoy member', score: 5 },
       { id: 'Helped with traffic control', label: 'Traffic control', score: 4 },
       { id: 'Attended safety events', label: 'Attended events', score: 3 },
       { id: 'No experience', label: 'No experience', score: 1 },
     ]},
-    { text: 'How many convoy operations have you been part of?', options: [
+    { text: 'How many convoy operations you been part of?', options: [
       { id: 'None', label: 'None', score: 1 },
       { id: '1-3', label: '1-3', score: 2 },
       { id: '4-10', label: '4-10', score: 4 },
       { id: '11-20', label: '11-20', score: 6 },
       { id: '20+', label: '20+', score: 7 },
     ]},
-    { text: 'Do you know how to manage traffic flow in CPM?', options: [
-      { id: 'Yes — I can lead traffic management', label: 'Lead traffic', score: 7 },
-      { id: 'Yes — I can follow traffic protocols', label: 'Follow protocols', score: 5 },
+    { text: 'You know how to manage traffic flow in CPM, hey?', options: [
+      { id: 'Yes, I can lead traffic management, lekke', label: 'Lead traffic', score: 7 },
+      { id: 'Yes, I can follow traffic protocols, hey', label: 'Follow protocols', score: 5 },
       { id: 'Somewhat — I understand basics', label: 'Basics', score: 3 },
-      { id: 'No — but I can learn', label: 'Can learn', score: 2 },
+      { id: 'No, but I can learn, hey', label: 'Can learn', score: 2 },
       { id: 'No — no idea', label: 'No idea', score: 1 },
     ]},
-    { text: 'Have you worked with road safety teams before?', options: [
+    { text: 'You worked with road safety teams before?', options: [
       { id: 'Yes — in multiple games', label: 'Multiple games', score: 7 },
       { id: 'Yes — in CPM only', label: 'CPM only', score: 5 },
-      { id: 'Yes — in other mobile games', label: 'Other games', score: 4 },
-      { id: 'No — this is my first time', label: 'First time', score: 1 },
+      { id: 'Yes, in other mobile games, shame', label: 'Other games', score: 4 },
+      { id: 'No, this my first time, hey', label: 'First time', score: 1 },
     ]},
-    { text: 'What role have you played in previous crews?', options: [
+    { text: 'What role you played in previous crews?', options: [
       { id: 'Leader / Manager', label: 'Leader', score: 7 },
       { id: 'Senior member', label: 'Senior', score: 5 },
       { id: 'Regular member', label: 'Regular', score: 3 },
       { id: 'New recruit', label: 'Recruit', score: 2 },
-      { id: 'Never been in a crew', label: 'Never', score: 1 },
+      { id: 'Never been in a crew, shame', label: 'Never', score: 1 },
     ]},
-    { text: 'How long have you been playing CPM?', options: [
+    { text: 'How long you been playing CPM?', options: [
       { id: 'Less than 6 months', label: '<6 months', score: 1 },
       { id: '6-12 months', label: '6-12 months', score: 3 },
       { id: '1-2 years', label: '1-2 years', score: 5 },
       { id: '2-3 years', label: '2-3 years', score: 6 },
       { id: '3+ years', label: '3+ years', score: 7 },
     ]},
-    { text: 'Have you ever organized a CPM event?', options: [
+    { text: 'You ever organized a CPM event?', options: [
       { id: 'Yes — multiple events', label: 'Multiple events', score: 7 },
       { id: 'Yes — one event', label: 'One event', score: 5 },
       { id: 'No — but I helped', label: 'Helped', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'Do you understand CPM road rules and safety protocols?', options: [
-      { id: 'Yes — I know them well', label: 'Know well', score: 7 },
-      { id: 'Yes — I know the basics', label: 'Know basics', score: 4 },
-      { id: 'Somewhat — I have heard of them', label: 'Heard of them', score: 2 },
+    { text: 'You understand CPM road rules and safety protocols?', options: [
+      { id: 'Yes, I know them well, boet', label: 'Know well', score: 7 },
+      { id: 'Yes, I know the basics, hey', label: 'Know basics', score: 4 },
+      { id: 'Somewhat, I\'ve heard of them', label: 'Heard of them', score: 2 },
       { id: 'No — teach me', label: 'Teach me', score: 2 },
     ]},
-    { text: 'What CPM experience makes you suitable for SSRS?', options: [
-      { id: 'I have led road safety operations', label: 'Led operations', score: 7 },
-      { id: 'I have been in safety crews before', label: 'Was in crews', score: 5 },
-      { id: 'I know the game well', label: 'Know the game', score: 3 },
-      { id: 'I am willing to learn everything', label: 'Willing to learn', score: 3 },
+    { text: 'What CPM experience makes you suitable for SSRS, hey?', options: [
+      { id: 'I\'ve led road safety operations', label: 'Led operations', score: 7 },
+      { id: 'I\'ve been in safety crews before', label: 'Was in crews', score: 5 },
+      { id: 'I know the game well, boet', label: 'Know the game', score: 3 },
+      { id: 'I\'m willing to learn everything', label: 'Willing to learn', score: 3 },
     ]},
-    { text: 'How well do you know CPM maps and roads?', options: [
-      { id: 'Perfectly — I know every road', label: 'Perfect', score: 7 },
+    { text: 'How well you know CPM maps and roads?', options: [
+      { id: 'Perfectly, I know every road, boet', label: 'Perfect', score: 7 },
       { id: 'Very well — most routes', label: 'Very well', score: 5 },
       { id: 'Okay — main roads only', label: 'Main roads', score: 3 },
       { id: 'Not well — still learning', label: 'Learning', score: 2 },
     ]},
-    { text: 'Have you ever been a convoy leader?', options: [
+    { text: 'You ever been a convoy leader?', options: [
       { id: 'Yes — multiple times', label: 'Multiple times', score: 7 },
       { id: 'Yes — once or twice', label: 'Once or twice', score: 5 },
-      { id: 'No — but I was second in command', label: 'Second in command', score: 4 },
-      { id: 'No — I was a member', label: 'Was a member', score: 3 },
+      { id: 'No, but I was second in command, hey', label: 'Second in command', score: 4 },
+      { id: 'No, I was a member', label: 'Was a member', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'What security experience do you have?', options: [
+    { text: 'What security experience you got?', options: [
       { id: 'Professional IRL security', label: 'Professional IRL', score: 7 },
       { id: 'CPM security teams', label: 'CPM security', score: 5 },
       { id: 'Other game security', label: 'Other games', score: 3 },
       { id: 'None', label: 'None', score: 1 },
     ]},
-    { text: 'How many CPM events have you attended?', options: [
+    { text: 'How many CPM events you attended?', options: [
       { id: 'None', label: 'None', score: 1 },
       { id: '1-5', label: '1-5', score: 2 },
       { id: '6-15', label: '6-15', score: 4 },
       { id: '16-30', label: '16-30', score: 6 },
       { id: '30+', label: '30+', score: 7 },
     ]},
-    { text: 'Have you ever been kicked from a crew?', options: [
+    { text: 'You ever been kicked from a crew?', options: [
       { id: 'Yes — for bad behavior', label: 'Yes, bad behavior', score: 0 },
       { id: 'Yes — for inactivity', label: 'Yes, inactivity', score: 1 },
-      { id: 'No — always left on good terms', label: 'Good terms', score: 5 },
-      { id: 'No — never been in a crew', label: 'Never in crew', score: 2 },
+      { id: 'No, always left on good terms', label: 'Good terms', score: 5 },
+      { id: 'No, never been in a crew, shame', label: 'Never in crew', score: 2 },
     ]},
-    { text: 'Do you have experience with CPM police roleplay?', options: [
+    { text: 'You have experience with CPM police roleplay?', options: [
       { id: 'Yes — extensive', label: 'Extensive', score: 6 },
       { id: 'Yes — some', label: 'Some', score: 4 },
       { id: 'No — but interested', label: 'Interested', score: 3 },
       { id: 'No — not interested', label: 'Not interested', score: 1 },
     ]},
-    { text: 'How well do you handle CPM driving tests?', options: [
+    { text: 'How well you handle CPM driving tests?', options: [
       { id: 'Perfectly — never fail', label: 'Perfect', score: 7 },
       { id: 'Very well — rarely fail', label: 'Very well', score: 5 },
       { id: 'Okay — sometimes pass', label: 'Okay', score: 3 },
       { id: 'Badly — always fail', label: 'Badly', score: 1 },
     ]},
-    { text: 'Have you ever managed a team in any game?', options: [
+    { text: 'You ever managed a team in any game?', options: [
       { id: 'Yes — large teams (20+)', label: 'Large teams', score: 7 },
       { id: 'Yes — small teams (5-20)', label: 'Small teams', score: 5 },
       { id: 'Yes — very small teams (<5)', label: 'Very small', score: 3 },
-      { id: 'No — but I want to learn', label: 'Want to learn', score: 3 },
+      { id: 'No, but I wanna learn', label: 'Want to learn', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'What makes you different from other applicants?', options: [
-      { id: 'My experience speaks for itself', label: 'Experience', score: 6 },
-      { id: 'I am dedicated and reliable', label: 'Dedicated', score: 5 },
-      { id: 'I am a fast learner', label: 'Fast learner', score: 4 },
+    { text: 'What makes you different from the other applicants, hey?', options: [
+      { id: 'My experience speaks for itself, boet', label: 'Experience', score: 6 },
+      { id: 'I\'m dedicated and reliable', label: 'Dedicated', score: 5 },
+      { id: 'I\'m a fast learner', label: 'Fast learner', score: 4 },
       { id: 'I bring positive energy', label: 'Positive energy', score: 3 },
-      { id: 'Nothing special — just want to join', label: 'Just want to join', score: 1 },
+      { id: 'Nothing special, I just wanna join, lekke', label: 'Just want to join', score: 1 },
     ]},
-    { text: 'Do you know any SS members personally?', options: [
+    { text: 'You know any SS members personally?', options: [
       { id: 'Yes — multiple', label: 'Multiple', score: 5 },
       { id: 'Yes — one or two', label: 'One or two', score: 3 },
-      { id: 'No — but I have seen them around', label: 'Seen them', score: 2 },
+      { id: 'No, but I\'ve seen them around', label: 'Seen them', score: 2 },
       { id: 'No — completely new', label: 'Completely new', score: 1 },
     ]},
-    { text: 'Have you ever held a leadership position in a crew?', options: [
+    { text: 'You ever held a leadership position in a crew, hey?', options: [
       { id: 'Yes — founder/leader', label: 'Founder/leader', score: 7 },
       { id: 'Yes — co-leader/officer', label: 'Co-leader', score: 6 },
       { id: 'Yes — senior member', label: 'Senior', score: 4 },
-      { id: 'No — always a regular member', label: 'Regular', score: 2 },
+      { id: 'No, always a regular member', label: 'Regular', score: 2 },
     ]},
-    { text: 'How do you handle conflict in a team?', options: [
-      { id: 'I mediate and find solutions', label: 'Mediate', score: 7 },
-      { id: 'I follow the chain of command', label: 'Chain of command', score: 5 },
-      { id: 'I stay out of it', label: 'Stay out', score: 2 },
-      { id: 'I confront the problem directly', label: 'Confront', score: 4 },
+    { text: 'How you handle conflict in a team, hey?', options: [
+      { id: 'I mediate and find solutions, hey', label: 'Mediate', score: 7 },
+      { id: 'I follow the chain of command, always', label: 'Chain of command', score: 5 },
+      { id: 'I stay out of it, shame', label: 'Stay out', score: 2 },
+      { id: 'I confront the problem straight up, always', label: 'Confront', score: 4 },
     ]},
-    { text: 'What is your biggest strength for SSRS?', options: [
+    { text: 'What\'s your biggest strength for SSRS?', options: [
       { id: 'My driving skills', label: 'Driving skills', score: 5 },
       { id: 'My communication', label: 'Communication', score: 6 },
       { id: 'My reliability', label: 'Reliability', score: 7 },
       { id: 'My experience', label: 'Experience', score: 5 },
     ]},
-    { text: 'Why should we pick you over other applicants?', options: [
+    { text: 'Why must we pick you over the other applicants, hey?', options: [
       { id: 'I have more experience', label: 'More experience', score: 6 },
       { id: 'I am more dedicated', label: 'More dedicated', score: 6 },
-      { id: 'I will be more active', label: 'More active', score: 5 },
-      { id: 'I am a better team player', label: 'Better team player', score: 6 },
-      { id: 'I do not know — you decide', label: 'You decide', score: 2 },
+      { id: 'I\'ll be more active', label: 'More active', score: 5 },
+      { id: 'I\'m a better team player', label: 'Better team player', score: 6 },
+      { id: 'I don\'t know — you decide', label: 'You decide', score: 2 },
     ]},
-    { text: 'Have you ever been promoted in a crew?', options: [
+    { text: 'You ever been promoted in a crew, hey?', options: [
       { id: 'Yes — multiple times', label: 'Multiple times', score: 7 },
       { id: 'Yes — once', label: 'Once', score: 5 },
-      { id: 'No — but I deserved it', label: 'Deserved it', score: 3 },
+      { id: 'No, but I deserved it, shame', label: 'Deserved it', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'How do you handle following orders you disagree with?', options: [
-      { id: 'Follow them — trust the chain', label: 'Follow them', score: 7 },
-      { id: 'Follow but ask questions later', label: 'Follow, ask later', score: 5 },
+    { text: 'How you handle following orders you disagree with?', options: [
+      { id: 'Follow them, trust the chain, always', label: 'Follow them', score: 7 },
+      { id: 'Follow but ask questions later, hey', label: 'Follow, ask later', score: 5 },
       { id: 'Question them first', label: 'Question first', score: 3 },
       { id: 'Refuse if I disagree', label: 'Refuse', score: 0 },
     ]},
   ],
 
   loyalty: [
-    { text: 'Will you prioritize SSRS over other crews?', options: [
-      { id: 'Yes — SSRS comes first always', label: 'SSRS first', score: 7 },
-      { id: 'Yes — but I have other commitments', label: 'Yes, but', score: 4 },
+    { text: 'Will you prioritize SSRS over other crews, hey?', options: [
+      { id: 'Yes, SSRS comes first always', label: 'SSRS first', score: 7 },
+      { id: 'Yes, but I\'ve other commitments', label: 'Yes, but', score: 4 },
       { id: 'Depends on the situation', label: 'Depends', score: 2 },
-      { id: 'No — I treat all crews equally', label: 'Equal', score: 1 },
+      { id: 'No, I treat all crews equally, hey', label: 'Equal', score: 1 },
     ]},
-    { text: 'If another crew offers you a better rank, what do you do?', options: [
-      { id: 'Stay with SSRS — loyalty matters', label: 'Stay loyal', score: 7 },
-      { id: 'Consider it — but SSRS is priority', label: 'Consider', score: 4 },
+    { text: 'If another crew offers you a better rank, what you do, hey?', options: [
+      { id: 'Stay with SSRS, loyalty matters, always', label: 'Stay loyal', score: 7 },
+      { id: 'Consider it, but SSRS is priority', label: 'Consider', score: 4 },
       { id: 'Take the better offer', label: 'Take offer', score: 0 },
-      { id: 'Depends on what they offer', label: 'Depends', score: 2 },
+      { id: 'Depends what they offer', label: 'Depends', score: 2 },
     ]},
-    { text: 'How long do you plan to stay in SSRS?', options: [
-      { id: 'Forever — this is my crew', label: 'Forever', score: 7 },
-      { id: 'As long as I am having fun', label: 'Having fun', score: 5 },
-      { id: 'Until something better comes along', label: 'Until better', score: 0 },
-      { id: 'I do not know yet', label: 'Do not know', score: 2 },
+    { text: 'How long you plan to stay in SSRS?', options: [
+      { id: 'Forever, this is my crew, lekke', label: 'Forever', score: 7 },
+      { id: 'As long as I\'m having fun', label: 'Having fun', score: 5 },
+      { id: 'Until something better comes along, shame', label: 'Until better', score: 0 },
+      { id: 'I don\'t know yet', label: 'Do not know', score: 2 },
     ]},
-    { text: 'Would you leave SSRS if your friend started another crew?', options: [
-      { id: 'No — SSRS is my crew', label: 'No', score: 7 },
-      { id: 'Maybe — depends on the crew', label: 'Maybe', score: 3 },
+    { text: 'Would you leave SSRS if your friend started another crew, hey?', options: [
+      { id: 'No, SSRS is my crew, always', label: 'No', score: 7 },
+      { id: 'Maybe, depends on the crew', label: 'Maybe', score: 3 },
       { id: 'Yes — friends come first', label: 'Yes', score: 0 },
     ]},
-    { text: 'What does loyalty mean to you in a crew?', options: [
+    { text: 'What loyalty mean to you in a crew, hey?', options: [
       { id: 'Staying no matter what', label: 'Stay no matter what', score: 7 },
       { id: 'Being active and reliable', label: 'Active and reliable', score: 6 },
       { id: 'Following orders without question', label: 'Follow orders', score: 5 },
-      { id: 'Having friends in the crew', label: 'Having friends', score: 3 },
+      { id: 'Having friends in the crew, shame', label: 'Having friends', score: 3 },
       { id: 'Getting rewards and ranks', label: 'Rewards', score: 0 },
     ]},
-    { text: 'If SSRS is losing members, what do you do?', options: [
-      { id: 'Recruit new members to help', label: 'Recruit', score: 7 },
-      { id: 'Stay and support the crew', label: 'Stay and support', score: 6 },
+    { text: 'If SSRS is losing members, what you do, hey?', options: [
+      { id: 'Recruit new members to help, lekke', label: 'Recruit', score: 7 },
+      { id: 'Stay and support the crew, always', label: 'Stay and support', score: 6 },
       { id: 'Consider leaving', label: 'Consider leaving', score: 1 },
       { id: 'Leave before it collapses', label: 'Leave', score: 0 },
     ]},
-    { text: 'Would you defend SSRS if someone talks badly about it?', options: [
-      { id: 'Yes — always defend my crew', label: 'Always defend', score: 7 },
-      { id: 'Yes — but only if it is serious', label: 'If serious', score: 5 },
-      { id: 'Ignore it — do not engage', label: 'Ignore', score: 3 },
+    { text: 'Would you defend SSRS if someone talks badly about it, hey?', options: [
+      { id: 'Yes, always defend my crew', label: 'Always defend', score: 7 },
+      { id: 'Yes — but only if it\'s serious', label: 'If serious', score: 5 },
+      { id: 'Ignore it — don\'t engage', label: 'Ignore', score: 3 },
       { id: 'No — not my problem', label: 'Not my problem', score: 0 },
     ]},
-    { text: 'How important is crew loyalty to you?', options: [
+    { text: 'How important crew loyalty to you, hey?', options: [
       { id: 'The most important thing', label: 'Most important', score: 7 },
       { id: 'Very important', label: 'Very important', score: 6 },
       { id: 'Somewhat important', label: 'Somewhat', score: 3 },
       { id: 'Not that important', label: 'Not important', score: 0 },
     ]},
-    { text: 'If |SS| KAMI asks you to do something you do not want to, what do you do?', options: [
+    { text: 'If |SS| KAMI asks you to do something you don\'t want to, what do you do?', options: [
       { id: 'Do it without question', label: 'Do it', score: 7 },
-      { id: 'Do it but ask why later', label: 'Do it, ask later', score: 5 },
+      { id: 'Do it but ask why later, hey', label: 'Do it, ask later', score: 5 },
       { id: 'Ask why first', label: 'Ask why', score: 4 },
-      { id: 'Refuse if I do not agree', label: 'Refuse', score: 0 },
+      { id: 'Refuse if I don\'t agree', label: 'Refuse', score: 0 },
     ]},
-    { text: 'Would you stay in SSRS even if you are not getting promoted?', options: [
-      { id: 'Yes — I am here for the crew', label: 'Yes', score: 7 },
-      { id: 'Maybe — depends on how long', label: 'Maybe', score: 4 },
-      { id: 'No — I want to progress', label: 'No', score: 2 },
+    { text: 'Would you stay in SSRS even if you aren\'t getting promoted?', options: [
+      { id: 'Yes — I\'m here for the crew', label: 'Yes', score: 7 },
+      { id: 'Maybe, depends on how long', label: 'Maybe', score: 4 },
+      { id: 'No, I wanna progress', label: 'No', score: 2 },
     ]},
-    { text: 'What happens if SSRS has internal drama?', options: [
-      { id: 'I stay neutral and focused', label: 'Stay neutral', score: 7 },
+    { text: 'What happens if SSRS got internal drama?', options: [
+      { id: 'I stay neutral and focused, always', label: 'Stay neutral', score: 7 },
       { id: 'I support my side', label: 'Support side', score: 3 },
-      { id: 'I leave to avoid drama', label: 'Leave', score: 0 },
+      { id: 'I leave to avoid drama, shame', label: 'Leave', score: 0 },
       { id: 'I try to mediate', label: 'Mediate', score: 6 },
     ]},
-    { text: 'Do you put crew goals above personal goals?', options: [
+    { text: 'You put crew goals above your own goals, hey?', options: [
       { id: 'Always — crew comes first', label: 'Always', score: 7 },
       { id: 'Usually — but sometimes personal', label: 'Usually', score: 5 },
       { id: 'It depends', label: 'Depends', score: 3 },
       { id: 'No — personal comes first', label: 'Personal first', score: 0 },
     ]},
-    { text: 'Would you report a friend breaking crew rules?', options: [
+    { text: 'Would you report a friend breaking crew rules, hey?', options: [
       { id: 'Yes — rules are rules', label: 'Yes', score: 7 },
-      { id: 'Yes — but talk to them first', label: 'Talk first', score: 6 },
-      { id: 'Maybe — depends on the rule', label: 'Maybe', score: 3 },
+      { id: 'Yes, but talk to them first', label: 'Talk first', score: 6 },
+      { id: 'Maybe, depends on the rule', label: 'Maybe', score: 3 },
       { id: 'No — friends first', label: 'No', score: 0 },
     ]},
-    { text: 'How do you show loyalty to your crew?', options: [
+    { text: 'How you show loyalty to your crew, hey?', options: [
       { id: 'Being active every day', label: 'Daily activity', score: 6 },
       { id: 'Attending every event', label: 'Attend events', score: 6 },
       { id: 'Defending the crew publicly', label: 'Defend publicly', score: 7 },
       { id: 'Following all orders', label: 'Follow orders', score: 5 },
     ]},
-    { text: 'If SSRS has a bad reputation, do you stay?', options: [
-      { id: 'Yes — I help fix it', label: 'Help fix', score: 7 },
+    { text: 'If SSRS has a bad reputation, you stay?', options: [
+      { id: 'Yes, I help fix it, hey', label: 'Help fix', score: 7 },
       { id: 'Yes — I stay loyal', label: 'Stay loyal', score: 6 },
-      { id: 'Depends on why it is bad', label: 'Depends', score: 3 },
-      { id: 'No — I protect my image', label: 'No', score: 0 },
+      { id: 'Depends on why it\'s bad', label: 'Depends', score: 3 },
+      { id: 'No, I protect my image, shame', label: 'No', score: 0 },
     ]},
-    { text: 'What would make you leave SSRS?', options: [
+    { text: 'What would make you leave SSRS, hey?', options: [
       { id: 'Nothing — I am committed', label: 'Nothing', score: 7 },
-      { id: 'If they kick me out', label: 'If kicked', score: 5 },
-      { id: 'If there is too much drama', label: 'Too much drama', score: 2 },
-      { id: 'If a better crew comes along', label: 'Better crew', score: 0 },
+      { id: 'If they kick me out, shame', label: 'If kicked', score: 5 },
+      { id: 'If there\'s too much drama', label: 'Too much drama', score: 2 },
+      { id: 'If a better crew comes along, hey', label: 'Better crew', score: 0 },
     ]},
-    { text: 'Do you talk to other crews while in SSRS?', options: [
+    { text: 'You talk to other crews while in SSRS?', options: [
       { id: 'No — SSRS only', label: 'SSRS only', score: 7 },
-      { id: 'Yes — but only as friends', label: 'Friends only', score: 4 },
-      { id: 'Yes — I keep my options open', label: 'Keep options', score: 1 },
+      { id: 'Yes, but only as friends', label: 'Friends only', score: 4 },
+      { id: 'Yes, I keep my options open, hey', label: 'Keep options', score: 1 },
     ]},
-    { text: 'Would you sacrifice your free time for an SSRS event?', options: [
+    { text: 'Would you give up your free time for an SSRS event?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — if it is important', label: 'If important', score: 5 },
-      { id: 'Maybe — depends on my schedule', label: 'Maybe', score: 3 },
-      { id: 'No — my time is mine', label: 'No', score: 0 },
+      { id: 'Yes — if it\'s important', label: 'If important', score: 5 },
+      { id: 'Maybe, depends on my schedule', label: 'Maybe', score: 3 },
+      { id: 'No, my time is mine, shame', label: 'No', score: 0 },
     ]},
-    { text: 'How do you feel about crew hierarchy?', options: [
+    { text: 'How you feel about crew hierarchy?', options: [
       { id: 'I respect it fully', label: 'Respect fully', score: 7 },
       { id: 'I understand it', label: 'Understand', score: 5 },
-      { id: 'I think it is unnecessary', label: 'Unnecessary', score: 1 },
-      { id: 'I want to be at the top', label: 'Want top', score: 2 },
+      { id: 'I think it\'s unnecessary', label: 'Unnecessary', score: 1 },
+      { id: 'I wanna be at the top, hey', label: 'Want top', score: 2 },
     ]},
-    { text: 'Would you recruit for SSRS on your own time?', options: [
+    { text: 'Would you recruit for SSRS on your own time, hey?', options: [
       { id: 'Yes — actively', label: 'Actively', score: 7 },
-      { id: 'Yes — if I find good people', label: 'If find good', score: 5 },
+      { id: 'Yes, if I find good people, lekke', label: 'If find good', score: 5 },
       { id: 'Maybe — if asked', label: 'If asked', score: 3 },
       { id: 'No — not my job', label: 'No', score: 1 },
     ]},
-    { text: 'What does being an SS member mean to you?', options: [
+    { text: 'What being an SS member mean to you?', options: [
       { id: 'Family and brotherhood', label: 'Family/brotherhood', score: 7 },
-      { id: 'Being part of something big', label: 'Something big', score: 6 },
+      { id: 'Being part of something big, lekke', label: 'Something big', score: 6 },
       { id: 'Having status and respect', label: 'Status/respect', score: 3 },
       { id: 'Getting rewards and ranks', label: 'Rewards', score: 0 },
     ]},
-    { text: 'If SSRS is at war with another crew, what do you do?', options: [
+    { text: 'If SSRS is at war with another crew, what you do, hey?', options: [
       { id: 'Fight for SSRS', label: 'Fight', score: 7 },
       { id: 'Support from behind', label: 'Support', score: 5 },
       { id: 'Stay out of it', label: 'Stay out', score: 1 },
       { id: 'Leave to avoid conflict', label: 'Leave', score: 0 },
     ]},
-    { text: 'Do you follow SSRS social media accounts?', options: [
+    { text: 'You follow SSRS social media accounts?', options: [
       { id: 'Yes — all of them', label: 'All', score: 6 },
       { id: 'Yes — some of them', label: 'Some', score: 4 },
       { id: 'No — but I will', label: 'Will follow', score: 3 },
       { id: 'No — not interested', label: 'Not interested', score: 0 },
     ]},
-    { text: 'Would you wait weeks for a promotion?', options: [
+    { text: 'Would you wait weeks for a promotion, hey?', options: [
       { id: 'Yes — I am patient', label: 'Yes', score: 7 },
-      { id: 'Yes — but I would ask about it', label: 'Yes, ask', score: 5 },
-      { id: 'No — I expect quick progress', label: 'No', score: 2 },
+      { id: 'Yes, but I\'d ask about it', label: 'Yes, ask', score: 5 },
+      { id: 'No, I expect quick progress, hey', label: 'No', score: 2 },
     ]},
-    { text: 'How do you handle being demoted?', options: [
-      { id: 'Accept it and work harder', label: 'Work harder', score: 7 },
-      { id: 'Accept it but feel disappointed', label: 'Disappointed', score: 4 },
+    { text: 'How you handle being demoted?', options: [
+      { id: 'Accept it and work harder, hey', label: 'Work harder', score: 7 },
+      { id: 'Accept it but feel disappointed, shame', label: 'Disappointed', score: 4 },
       { id: 'Ask why and argue', label: 'Argue', score: 1 },
       { id: 'Leave the crew', label: 'Leave', score: 0 },
     ]},
-    { text: 'Would you attend an SSRS event at 6am?', options: [
+    { text: 'Would you attend an SSRS event at 6am, hey?', options: [
       { id: 'Yes — no matter what', label: 'Yes', score: 7 },
-      { id: 'Yes — if it is important', label: 'If important', score: 5 },
-      { id: 'Maybe — depends on my schedule', label: 'Maybe', score: 3 },
-      { id: 'No — that is too early', label: 'No', score: 0 },
+      { id: 'Yes — if it\'s important', label: 'If important', score: 5 },
+      { id: 'Maybe, depends on my schedule', label: 'Maybe', score: 3 },
+      { id: 'No — that\'s too early', label: 'No', score: 0 },
     ]},
-    { text: 'What is more important: rank or loyalty?', options: [
+    { text: 'What matters more, rank or loyalty?', options: [
       { id: 'Loyalty — always', label: 'Loyalty', score: 7 },
       { id: 'Both equally', label: 'Both', score: 5 },
-      { id: 'Rank — I want to progress', label: 'Rank', score: 2 },
+      { id: 'Rank, I wanna progress', label: 'Rank', score: 2 },
     ]},
   ],
 
   communication: [
-    { text: 'Are you active on WhatsApp daily?', options: [
+    { text: 'You active on WhatsApp daily?', options: [
       { id: 'Yes — very active', label: 'Very active', score: 7 },
       { id: 'Yes — but sometimes busy', label: 'Sometimes busy', score: 5 },
       { id: 'Sometimes — depends on mood', label: 'Depends on mood', score: 3 },
-      { id: 'Rarely — I check when I can', label: 'Rarely', score: 1 },
-      { id: 'No — I prefer not to chat', label: 'No chat', score: 0 },
+      { id: 'Rarely, I check when I can, shame', label: 'Rarely', score: 1 },
+      { id: 'No, I\'d rather not chat', label: 'No chat', score: 0 },
     ]},
-    { text: 'How fast do you respond to WhatsApp messages?', options: [
-      { id: 'Instantly — always on my phone', label: 'Instantly', score: 7 },
+    { text: 'How fast you respond to WhatsApp messages?', options: [
+      { id: 'Instantly, always on my phone, hey', label: 'Instantly', score: 7 },
       { id: 'Within minutes', label: 'Minutes', score: 5 },
       { id: 'Within an hour', label: 'Hour', score: 3 },
       { id: 'Sometimes hours later', label: 'Hours later', score: 1 },
       { id: 'Very slowly', label: 'Very slowly', score: 0 },
     ]},
-    { text: 'Do you check the SS WhatsApp group regularly?', options: [
-      { id: 'Yes — I read every message', label: 'Read every message', score: 7 },
+    { text: 'You check the SS WhatsApp group regularly?', options: [
+      { id: 'Yes, I read every message, hey', label: 'Read every message', score: 7 },
       { id: 'Yes — I skim through', label: 'Skim through', score: 5 },
       { id: 'Sometimes — if I remember', label: 'Sometimes', score: 3 },
-      { id: 'Rarely — I mute most groups', label: 'Rarely', score: 1 },
+      { id: 'Rarely, I mute most groups, shame', label: 'Rarely', score: 1 },
     ]},
-    { text: 'How do you prefer to communicate?', options: [
+    { text: 'How you prefer to communicate, hey?', options: [
       { id: 'WhatsApp text', label: 'WhatsApp text', score: 5 },
       { id: 'Voice notes', label: 'Voice notes', score: 4 },
       { id: 'Voice calls', label: 'Voice calls', score: 5 },
       { id: 'In-game chat', label: 'In-game chat', score: 3 },
-      { id: 'I do not like communicating', label: 'No communication', score: 0 },
+      { id: 'I don\'t like communicating', label: 'No communication', score: 0 },
     ]},
-    { text: 'Can you be reached at any time of day?', options: [
+    { text: 'You able to be reached at any time of day, hey?', options: [
       { id: 'Yes — 24/7', label: '24/7', score: 7 },
       { id: 'Yes — during waking hours', label: 'Waking hours', score: 5 },
-      { id: 'Sometimes — depends on my schedule', label: 'Sometimes', score: 3 },
-      { id: 'No — I have specific hours', label: 'Specific hours', score: 2 },
+      { id: 'Sometimes, depends on my schedule, hey', label: 'Sometimes', score: 3 },
+      { id: 'No, I\'ve specific hours', label: 'Specific hours', score: 2 },
     ]},
-    { text: 'How do you handle miscommunication in a team?', options: [
+    { text: 'How you handle miscommunication in a team, hey?', options: [
       { id: 'Ask for clarification immediately', label: 'Ask clarification', score: 7 },
-      { id: 'Try to figure it out myself', label: 'Figure out', score: 4 },
-      { id: 'Ignore it and hope it resolves', label: 'Ignore', score: 1 },
+      { id: 'Try figure it out myself, shame', label: 'Figure out', score: 4 },
+      { id: 'Ignore it and hope it sorts itself out, shame', label: 'Ignore', score: 1 },
       { id: 'Get frustrated and leave', label: 'Get frustrated', score: 0 },
     ]},
-    { text: 'Do you speak up when something is wrong?', options: [
+    { text: 'You speak up when something is wrong?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — but only if it is serious', label: 'If serious', score: 5 },
-      { id: 'Sometimes — depends on who is involved', label: 'Sometimes', score: 3 },
+      { id: 'Yes — but only if it\'s serious', label: 'If serious', score: 5 },
+      { id: 'Sometimes, depends on who is involved', label: 'Sometimes', score: 3 },
       { id: 'No — I keep quiet', label: 'Keep quiet', score: 0 },
     ]},
-    { text: 'How do you feel about group chats?', options: [
+    { text: 'How you feel about group chats?', options: [
       { id: 'Love them — always active', label: 'Love them', score: 7 },
       { id: 'Fine with them', label: 'Fine', score: 5 },
       { id: 'Neutral — they exist', label: 'Neutral', score: 3 },
       { id: 'Do not like them', label: 'Do not like', score: 1 },
     ]},
-    { text: 'Would you use voice chat during events?', options: [
+    { text: 'Would you use voice chat during events, hey?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
       { id: 'Yes — if needed', label: 'If needed', score: 5 },
-      { id: 'Maybe — depends on the situation', label: 'Maybe', score: 3 },
+      { id: 'Maybe, depends on the situation', label: 'Maybe', score: 3 },
       { id: 'No — I prefer text', label: 'Prefer text', score: 2 },
-      { id: 'No — I do not use voice', label: 'No voice', score: 0 },
+      { id: 'No — I don\'t use voice', label: 'No voice', score: 0 },
     ]},
-    { text: 'How do you handle arguments in chat?', options: [
+    { text: 'How you handle arguments in chat, hey?', options: [
       { id: 'Stay calm and logical', label: 'Stay calm', score: 7 },
       { id: 'Try to mediate', label: 'Mediate', score: 6 },
       { id: 'Stay out of it', label: 'Stay out', score: 3 },
-      { id: 'Get involved and defend my side', label: 'Get involved', score: 2 },
+      { id: 'Get involved and defend my side, shame', label: 'Get involved', score: 2 },
       { id: 'Leave the chat', label: 'Leave', score: 0 },
     ]},
-    { text: 'Do you follow communication protocols in crews?', options: [
+    { text: 'You follow communication protocols in crews, hey?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — most of the time', label: 'Most of time', score: 5 },
+      { id: 'Yes, most of the time, hey', label: 'Most of time', score: 5 },
       { id: 'Sometimes — if I remember', label: 'Sometimes', score: 3 },
-      { id: 'No — I communicate my own way', label: 'Own way', score: 1 },
+      { id: 'No, I communicate my own way, hey', label: 'Own way', score: 1 },
     ]},
-    { text: 'How do you feel about daily check-ins?', options: [
-      { id: 'Love them — keeps me connected', label: 'Love them', score: 7 },
+    { text: 'How you feel about daily check-ins?', options: [
+      { id: 'Love them, keeps me connected, lekke', label: 'Love them', score: 7 },
       { id: 'Fine with them', label: 'Fine', score: 5 },
       { id: 'Annoying but necessary', label: 'Annoying', score: 3 },
-      { id: 'Hate them — too much pressure', label: 'Hate them', score: 0 },
+      { id: 'Hate them, too much pressure, shame', label: 'Hate them', score: 0 },
     ]},
-    { text: 'Can you type fast enough to keep up with group chat?', options: [
-      { id: 'Yes — I type very fast', label: 'Very fast', score: 7 },
+    { text: 'You able to type fast enough to keep up with group chat?', options: [
+      { id: 'Yes, I type very fast, lekke', label: 'Very fast', score: 7 },
       { id: 'Yes — decent speed', label: 'Decent', score: 5 },
       { id: 'Sometimes — I fall behind', label: 'Fall behind', score: 3 },
-      { id: 'No — I am very slow', label: 'Very slow', score: 1 },
+      { id: 'No — I\'m very slow', label: 'Very slow', score: 1 },
     ]},
-    { text: 'How do you feel about being added to multiple groups?', options: [
-      { id: 'No problem — I can handle it', label: 'No problem', score: 7 },
-      { id: 'Fine as long as they are active', label: 'Fine', score: 5 },
+    { text: 'How you feel about being added to multiple groups?', options: [
+      { id: 'No problem, I can handle it, lekke', label: 'No problem', score: 7 },
+      { id: 'Fine as long as they\'re active', label: 'Fine', score: 5 },
       { id: 'Prefer fewer groups', label: 'Fewer groups', score: 3 },
-      { id: 'Do not add me to groups', label: 'Do not add', score: 0 },
+      { id: 'Don\'t add me to groups', label: 'Do not add', score: 0 },
     ]},
-    { text: 'Do you respond to messages even when not tagged?', options: [
+    { text: 'You respond to messages even when not tagged?', options: [
       { id: 'Yes — I join conversations', label: 'Join conversations', score: 7 },
-      { id: 'Sometimes — if it interests me', label: 'Sometimes', score: 4 },
+      { id: 'Sometimes, if it interests me, shame', label: 'Sometimes', score: 4 },
       { id: 'No — only when tagged', label: 'Only when tagged', score: 2 },
       { id: 'No — I lurk', label: 'Lurk', score: 1 },
     ]},
-    { text: 'How do you handle receiving orders via chat?', options: [
+    { text: 'How you handle receiving orders via chat, hey?', options: [
       { id: 'Follow them immediately', label: 'Follow immediately', score: 7 },
-      { id: 'Follow them when I can', label: 'Follow when can', score: 5 },
+      { id: 'Follow them when I can, shame', label: 'Follow when can', score: 5 },
       { id: 'Ask questions first', label: 'Ask questions', score: 4 },
-      { id: 'Ignore if I do not like them', label: 'Ignore', score: 0 },
+      { id: 'Ignore if I don\'t like them', label: 'Ignore', score: 0 },
     ]},
-    { text: 'Would you help new members with questions?', options: [
+    { text: 'Would you help new members with questions, hey?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — if I have time', label: 'If time', score: 5 },
-      { id: 'Maybe — depends on the question', label: 'Maybe', score: 3 },
+      { id: 'Yes, if I\'ve time', label: 'If time', score: 5 },
+      { id: 'Maybe, depends on the question', label: 'Maybe', score: 3 },
       { id: 'No — not my responsibility', label: 'No', score: 0 },
     ]},
-    { text: 'How do you feel about status updates in groups?', options: [
-      { id: 'Love them — keeps me informed', label: 'Love them', score: 6 },
+    { text: 'How you feel about status updates in groups, hey?', options: [
+      { id: 'Love them, keeps me informed, lekke', label: 'Love them', score: 6 },
       { id: 'Fine with them', label: 'Fine', score: 5 },
-      { id: 'Do not care either way', label: 'Do not care', score: 3 },
+      { id: 'Don\'t care either way', label: 'Do not care', score: 3 },
       { id: 'Annoying — too many notifications', label: 'Annoying', score: 1 },
     ]},
-    { text: 'Do you read pinned messages in groups?', options: [
+    { text: 'You read pinned messages in groups, hey?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — if they look important', label: 'If important', score: 5 },
+      { id: 'Yes, if they look important', label: 'If important', score: 5 },
       { id: 'Sometimes', label: 'Sometimes', score: 3 },
       { id: 'No — I skip them', label: 'Skip', score: 0 },
     ]},
-    { text: 'How do you feel about being muted in a group?', options: [
-      { id: 'Fine — it is the admin call', label: 'Fine', score: 7 },
-      { id: 'Annoyed but I accept it', label: 'Annoyed', score: 4 },
-      { id: 'I would leave the group', label: 'Leave', score: 0 },
+    { text: 'How you feel about being muted in a group, hey?', options: [
+      { id: 'Fine — it\'s the admin call', label: 'Fine', score: 7 },
+      { id: 'Annoyed but I accept it, shame', label: 'Annoyed', score: 4 },
+      { id: 'I\'d leave the group', label: 'Leave', score: 0 },
     ]},
-    { text: 'Would you report a problem to leadership immediately?', options: [
+    { text: 'Would you report a problem to leadership immediately, hey?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — if it is serious', label: 'If serious', score: 5 },
-      { id: 'Maybe — depends on the problem', label: 'Maybe', score: 3 },
-      { id: 'No — I handle it myself', label: 'Handle myself', score: 2 },
+      { id: 'Yes — if it\'s serious', label: 'If serious', score: 5 },
+      { id: 'Maybe, depends on the problem', label: 'Maybe', score: 3 },
+      { id: 'No, I handle it myself, hey', label: 'Handle myself', score: 2 },
     ]},
-    { text: 'How do you handle silence in a group?', options: [
+    { text: 'How you handle silence in a group, hey?', options: [
       { id: 'Start a conversation', label: 'Start conversation', score: 7 },
       { id: 'Wait for someone else', label: 'Wait', score: 4 },
-      { id: 'Leave and come back later', label: 'Leave', score: 2 },
+      { id: 'Leave and come back later, hey', label: 'Leave', score: 2 },
       { id: 'I prefer silence', label: 'Prefer silence', score: 1 },
     ]},
-    { text: 'Can you follow a chain of command in chat?', options: [
+    { text: 'You able to follow a chain of command in chat, hey?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — most of the time', label: 'Most of time', score: 5 },
+      { id: 'Yes, most of the time, hey', label: 'Most of time', score: 5 },
       { id: 'Sometimes', label: 'Sometimes', score: 3 },
-      { id: 'No — I talk to whoever', label: 'Talk to whoever', score: 1 },
+      { id: 'No, I talk to whoever, hey', label: 'Talk to whoever', score: 1 },
     ]},
-    { text: 'How do you feel about late-night events?', options: [
-      { id: 'Love them — I am a night owl', label: 'Love them', score: 6 },
+    { text: 'How you feel about late-night events?', options: [
+      { id: 'Love them — I\'m a night owl', label: 'Love them', score: 6 },
       { id: 'Fine with them', label: 'Fine', score: 5 },
-      { id: 'Sometimes — depends on the time', label: 'Sometimes', score: 3 },
+      { id: 'Sometimes, depends on the time, hey', label: 'Sometimes', score: 3 },
       { id: 'No — I am asleep', label: 'Asleep', score: 1 },
     ]},
-    { text: 'Do you respond to polls in groups?', options: [
+    { text: 'You respond to polls in groups, hey?', options: [
       { id: 'Yes — always', label: 'Always', score: 6 },
-      { id: 'Yes — if they interest me', label: 'If interest', score: 4 },
+      { id: 'Yes, if they interest me', label: 'If interest', score: 4 },
       { id: 'Sometimes', label: 'Sometimes', score: 3 },
       { id: 'No — I ignore them', label: 'Ignore', score: 0 },
     ]},
-    { text: 'How do you feel about sharing your phone number with crew?', options: [
+    { text: 'How you feel about sharing your phone number with crew?', options: [
       { id: 'Fine — for coordination', label: 'Fine', score: 6 },
       { id: 'Only if necessary', label: 'If necessary', score: 4 },
-      { id: 'No — I keep it private', label: 'Private', score: 2 },
+      { id: 'No, I keep it private, hey', label: 'Private', score: 2 },
     ]},
-    { text: 'Would you help organize an event via chat?', options: [
+    { text: 'Would you help organize an event via chat, hey?', options: [
       { id: 'Yes — I love organizing', label: 'Love organizing', score: 7 },
       { id: 'Yes — if asked', label: 'If asked', score: 5 },
-      { id: 'Maybe — depends on the event', label: 'Maybe', score: 3 },
+      { id: 'Maybe, depends on the event', label: 'Maybe', score: 3 },
       { id: 'No — not my thing', label: 'No', score: 0 },
     ]},
-    { text: 'How do you handle being removed from a group?', options: [
+    { text: 'How you handle being removed from a group?', options: [
       { id: 'Accept it — admin decision', label: 'Accept', score: 7 },
       { id: 'Ask why', label: 'Ask why', score: 4 },
       { id: 'Get upset', label: 'Get upset', score: 1 },
@@ -763,177 +763,177 @@ const SSRS = {
   ],
 
   scenario: [
-    { text: 'A VIP car gets rammed during an SSRS event. What do you do?', options: [
-      { id: 'Protect the VIP, call for backup, document the incident', label: 'Protect + backup', score: 7, correct: true },
-      { id: 'Stay with the VIP but do not call backup', label: 'Stay but no call', score: 3 },
+    { text: 'A VIP car gets rammed at an SSRS event. What you do, hey?', options: [
+      { id: 'Protect the VIP, call backup, document the incident', label: 'Protect + backup', score: 7, correct: true },
+      { id: 'Stay with the VIP but don\'t call backup', label: 'Stay but no call', score: 3 },
       { id: 'Chase the rammer', label: 'Chase them', score: 2 },
-      { id: 'Take photos for evidence first', label: 'Photos first', score: 3 },
+      { id: 'Take photos for evidence first, hey', label: 'Photos first', score: 3 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Blame the VIP driver', label: 'Blame VIP', score: 0 },
     ]},
-    { text: 'You are leading a convoy and traffic is blocking the route. What do you do?', options: [
-      { id: 'Find an alternate route and communicate it', label: 'Alternate route', score: 7, correct: true },
-      { id: 'Stop and wait for traffic to clear', label: 'Stop and wait', score: 3 },
+    { text: 'You leading a convoy and traffic is blocking the route. What you do, hey?', options: [
+      { id: 'Find another route and tell the crew', label: 'Alternate route', score: 7, correct: true },
+      { id: 'Stop and wait for traffic to clear, hey', label: 'Stop and wait', score: 3 },
       { id: 'Yell at the traffic to move', label: 'Yell at traffic', score: 1 },
       { id: 'Abandon the convoy', label: 'Abandon', score: 0 },
       { id: 'Drive through the traffic recklessly', label: 'Drive through', score: 0 },
     ]},
-    { text: 'A new member is being disrespectful in the group. What do you do?', options: [
-      { id: 'Report to leadership and let them handle it', label: 'Report to leadership', score: 7, correct: true },
+    { text: 'A new member is being disrespectful in the group. What you do, hey?', options: [
+      { id: 'Report to leadership and let them handle it, hey', label: 'Report to leadership', score: 7, correct: true },
       { id: 'Confront them publicly', label: 'Confront publicly', score: 2 },
       { id: 'Kick them immediately', label: 'Kick immediately', score: 3 },
       { id: 'Ignore it', label: 'Ignore', score: 1 },
       { id: 'Leave the group', label: 'Leave', score: 0 },
     ]},
-    { text: 'You see an SSRS member breaking rules in another server. What do you do?', options: [
-      { id: 'Report to SSRS leadership privately', label: 'Report privately', score: 7, correct: true },
-      { id: 'Confront them in that server', label: 'Confront in server', score: 3 },
-      { id: 'Ignore it — not my problem', label: 'Ignore', score: 1 },
+    { text: 'You see an SSRS member breaking rules in another server. What you do, hey?', options: [
+      { id: 'Report to SSRS leadership privately, hey', label: 'Report privately', score: 7, correct: true },
+      { id: 'Confront them in that server, shame', label: 'Confront in server', score: 3 },
+      { id: 'Ignore it, not my problem, shame', label: 'Ignore', score: 1 },
       { id: 'Leave the server', label: 'Leave server', score: 0 },
     ]},
-    { text: 'During a convoy, your car breaks down. What do you do?', options: [
-      { id: 'Pull over safely, inform the convoy, wait for help', label: 'Pull over + inform', score: 7, correct: true },
-      { id: 'Try to fix it while blocking traffic', label: 'Fix in traffic', score: 1 },
+    { text: 'During a convoy, your car breaks down. What you do, hey?', options: [
+      { id: 'Pull over safely, tell the convoy, wait for help', label: 'Pull over + inform', score: 7, correct: true },
+      { id: 'Try fix it while blocking traffic', label: 'Fix in traffic', score: 1 },
       { id: 'Abandon the car and continue on foot', label: 'Abandon car', score: 2 },
       { id: 'Ignore it and keep driving', label: 'Keep driving', score: 0 },
     ]},
-    { text: 'A rival crew is trash-talking SSRS in a shared server. What do you do?', options: [
-      { id: 'Stay calm, represent SS professionally', label: 'Stay professional', score: 7, correct: true },
+    { text: 'A rival crew is trash-talking SSRS in a shared server. What you do, hey?', options: [
+      { id: 'Stay calm, represent SS professionally, always', label: 'Stay professional', score: 7, correct: true },
       { id: 'Trash-talk back', label: 'Trash-talk back', score: 0 },
-      { id: 'Report them to server admin', label: 'Report to admin', score: 5 },
+      { id: 'Report them to the server admin', label: 'Report to admin', score: 5 },
       { id: 'Leave the server', label: 'Leave server', score: 2 },
       { id: 'Start a fight', label: 'Start fight', score: 0 },
     ]},
-    { text: 'You are assigned to guard duty but your friends are having a meet. What do you do?', options: [
-      { id: 'Do guard duty — duty comes first', label: 'Guard duty first', score: 7, correct: true },
-      { id: 'Skip guard duty for the meet', label: 'Skip for meet', score: 0 },
-      { id: 'Try to do both at the same time', label: 'Do both', score: 2 },
-      { id: 'Ask someone to cover for you', label: 'Ask for cover', score: 5 },
+    { text: 'You assigned to guard duty but your friends are having a meet. What you do, hey?', options: [
+      { id: 'Do guard duty, duty comes first, always', label: 'Guard duty first', score: 7, correct: true },
+      { id: 'Skip guard duty for the meet, shame', label: 'Skip for meet', score: 0 },
+      { id: 'Try do both at the same time', label: 'Do both', score: 2 },
+      { id: 'Ask someone to cover for you, hey', label: 'Ask for cover', score: 5 },
     ]},
-    { text: 'The event coordinator makes a mistake that causes chaos. What do you do?', options: [
-      { id: 'Help fix the situation, do not blame publicly', label: 'Help fix', score: 7, correct: true },
-      { id: 'Point out the mistake publicly', label: 'Point out publicly', score: 1 },
-      { id: 'Leave and let them deal with it', label: 'Leave', score: 0 },
+    { text: 'The event coordinator makes a mistake that causes chaos. What you do, hey?', options: [
+      { id: 'Help fix the situation, don\'t blame publicly', label: 'Help fix', score: 7, correct: true },
+      { id: 'Point out the mistake publicly, shame', label: 'Point out publicly', score: 1 },
+      { id: 'Leave and let them deal with it, shame', label: 'Leave', score: 0 },
       { id: 'Take over without permission', label: 'Take over', score: 2 },
     ]},
-    { text: 'You notice a member is inactive but has not been removed. What do you do?', options: [
+    { text: 'You notice a member is inactive but hasn\'t been removed. What you do, hey?', options: [
       { id: 'Report to leadership', label: 'Report to leadership', score: 7, correct: true },
       { id: 'Remove them yourself', label: 'Remove yourself', score: 3 },
-      { id: 'Message them to check in', label: 'Message them', score: 5 },
+      { id: 'Message them to check in, hey', label: 'Message them', score: 5 },
       { id: 'Ignore it', label: 'Ignore', score: 2 },
     ]},
-    { text: 'During a meet, a random player joins and starts causing trouble. What do you do?', options: [
-      { id: 'Ask them to leave politely, report if they do not', label: 'Ask + report', score: 7, correct: true },
+    { text: 'During a meet, a random player joins and starts causing trouble. What you do, hey?', options: [
+      { id: 'Ask them to leave politely, report if they don\'t', label: 'Ask + report', score: 7, correct: true },
       { id: 'Ignore them', label: 'Ignore', score: 2 },
       { id: 'Attack them immediately', label: 'Attack', score: 0 },
       { id: 'Leave the meet', label: 'Leave', score: 0 },
     ]},
-    { text: 'You are late for an SSRS event. What do you do?', options: [
-      { id: 'Apologize and join when ready', label: 'Apologize + join', score: 7, correct: true },
-      { id: 'Do not show up at all', label: 'Do not show up', score: 0 },
-      { id: 'Show up without saying anything', label: 'Show up silent', score: 2 },
+    { text: 'You running late for an SSRS event. What you do, hey?', options: [
+      { id: 'Apologize and join when ready, hey', label: 'Apologize + join', score: 7, correct: true },
+      { id: 'Don\'t show up at all', label: 'Do not show up', score: 0 },
+      { id: 'Just show up without saying anything', label: 'Show up silent', score: 2 },
       { id: 'Make excuses', label: 'Make excuses', score: 1 },
     ]},
-    { text: 'Two SSRS members are fighting in the group. What do you do?', options: [
-      { id: 'Stay neutral, report to leadership', label: 'Stay neutral + report', score: 7, correct: true },
+    { text: 'Two SSRS members are fighting in the group, hey. What you do, hey?', options: [
+      { id: 'Stay neutral, report to leadership, hey', label: 'Stay neutral + report', score: 7, correct: true },
       { id: 'Take sides', label: 'Take sides', score: 1 },
       { id: 'Try to mediate', label: 'Mediate', score: 5 },
       { id: 'Leave the group temporarily', label: 'Leave temporarily', score: 2 },
     ]},
-    { text: 'You are asked to recruit for SSRS. How do you approach it?', options: [
-      { id: 'Look for dedicated, loyal players', label: 'Look for dedicated', score: 7, correct: true },
+    { text: 'You asked to recruit for SSRS. How you approach it?', options: [
+      { id: 'Look for dedicated, loyal players, lekke', label: 'Look for dedicated', score: 7, correct: true },
       { id: 'Recruit anyone who asks', label: 'Recruit anyone', score: 2 },
       { id: 'Only recruit friends', label: 'Friends only', score: 3 },
-      { id: 'Do not recruit — not my job', label: 'Do not recruit', score: 0 },
+      { id: 'Don\'t recruit — not my job', label: 'Do not recruit', score: 0 },
     ]},
-    { text: 'You see SSRS members in a server that is known for drama. What do you do?', options: [
-      { id: 'Stay out of the drama, focus on SS', label: 'Stay out', score: 7, correct: true },
+    { text: 'You see SSRS members in a server that\'s known for drama. What do you do?', options: [
+      { id: 'Stay out the drama, focus on SS', label: 'Stay out', score: 7, correct: true },
       { id: 'Join the drama', label: 'Join drama', score: 0 },
       { id: 'Report to SSRS leadership', label: 'Report', score: 5 },
       { id: 'Leave the server', label: 'Leave server', score: 4 },
     ]},
-    { text: 'An event needs someone to do a boring task. What do you do?', options: [
-      { id: 'Volunteer — someone has to do it', label: 'Volunteer', score: 7, correct: true },
+    { text: 'An event needs someone to do a boring task. What you do, hey?', options: [
+      { id: 'Volunteer, someone has to do it, lekke', label: 'Volunteer', score: 7, correct: true },
       { id: 'Wait for someone else', label: 'Wait', score: 2 },
       { id: 'Complain about it', label: 'Complain', score: 0 },
       { id: 'Leave before being asked', label: 'Leave', score: 0 },
     ]},
-    { text: 'You are given a rank you think is too low. What do you do?', options: [
-      { id: 'Work hard to prove I deserve more', label: 'Work hard', score: 7, correct: true },
-      { id: 'Ask why I got that rank', label: 'Ask why', score: 4 },
+    { text: 'You given a rank you think is too low. What you do, hey?', options: [
+      { id: 'Work hard to prove I deserve more, lekke', label: 'Work hard', score: 7, correct: true },
+      { id: 'Ask why I got that rank, hey', label: 'Ask why', score: 4 },
       { id: 'Complain publicly', label: 'Complain', score: 0 },
       { id: 'Leave the crew', label: 'Leave', score: 0 },
     ]},
-    { text: 'A non-member asks to join SSRS. What do you do?', options: [
-      { id: 'Tell them to apply properly', label: 'Apply properly', score: 7, correct: true },
+    { text: 'A non-member asks to join SSRS. What you do, hey?', options: [
+      { id: 'Tell them to apply properly, hey', label: 'Apply properly', score: 7, correct: true },
       { id: 'Add them without permission', label: 'Add without permission', score: 0 },
       { id: 'Ignore them', label: 'Ignore', score: 2 },
-      { id: 'Let them join as a trial', label: 'Trial join', score: 3 },
+      { id: 'Let them join as a trial, hey', label: 'Trial join', score: 3 },
     ]},
-    { text: 'You are in a convoy and another crew convoy is going the same way. What do you do?', options: [
-      { id: 'Maintain formation, do not engage', label: 'Maintain formation', score: 7, correct: true },
+    { text: 'You in a convoy and another crew convoy is going the same way. What you do, hey?', options: [
+      { id: 'Maintain formation, don\'t engage', label: 'Maintain formation', score: 7, correct: true },
       { id: 'Race them', label: 'Race', score: 0 },
       { id: 'Merge convoys', label: 'Merge', score: 3 },
       { id: 'Block their path', label: 'Block path', score: 0 },
     ]},
-    { text: 'You accidentally break a rule during an event. What do you do?', options: [
+    { text: 'You accidentally break a rule during an event. What you do, hey?', options: [
       { id: 'Admit the mistake immediately', label: 'Admit immediately', score: 7, correct: true },
       { id: 'Hope nobody noticed', label: 'Hope nobody noticed', score: 1 },
       { id: 'Blame someone else', label: 'Blame others', score: 0 },
       { id: 'Leave before being caught', label: 'Leave', score: 0 },
     ]},
-    { text: 'You are asked to work with a member you do not get along with. What do you do?', options: [
-      { id: 'Be professional, put crew first', label: 'Be professional', score: 7, correct: true },
-      { id: 'Refuse to work with them', label: 'Refuse', score: 0 },
+    { text: 'You are asked to work with a member you don\'t get along with. What do you do?', options: [
+      { id: 'Stay professional, put crew first', label: 'Be professional', score: 7, correct: true },
+      { id: 'Refuse to work with them, shame', label: 'Refuse', score: 0 },
       { id: 'Do the minimum required', label: 'Minimum', score: 2 },
       { id: 'Cause problems', label: 'Cause problems', score: 0 },
     ]},
-    { text: 'You notice a bug that could be exploited during an event. What do you do?', options: [
-      { id: 'Report it to leadership immediately', label: 'Report immediately', score: 7, correct: true },
+    { text: 'You notice a bug that could be exploited during an event. What you do, hey?', options: [
+      { id: 'Report it to leadership immediately, hey', label: 'Report immediately', score: 7, correct: true },
       { id: 'Exploit it for advantage', label: 'Exploit', score: 0 },
-      { id: 'Tell other members to use it', label: 'Tell others', score: 0 },
+      { id: 'Tell the other members to use it, shame', label: 'Tell others', score: 0 },
       { id: 'Ignore it', label: 'Ignore', score: 2 },
     ]},
-    { text: 'The event is boring and people are leaving. What do you do?', options: [
-      { id: 'Stay and help make it better', label: 'Stay and help', score: 7, correct: true },
+    { text: 'The event is boring and people are leaving. What you do, hey?', options: [
+      { id: 'Stay and help make it better, lekke', label: 'Stay and help', score: 7, correct: true },
       { id: 'Leave with the others', label: 'Leave', score: 0 },
       { id: 'Complain about it', label: 'Complain', score: 0 },
       { id: 'Start your own event', label: 'Start own event', score: 4 },
     ]},
-    { text: 'You are promoted but feel unready. What do you do?', options: [
-      { id: 'Accept it and learn on the job', label: 'Accept + learn', score: 7, correct: true },
+    { text: 'You promoted but feel unready. What you do, hey?', options: [
+      { id: 'Accept it and learn on the job, lekke', label: 'Accept + learn', score: 7, correct: true },
       { id: 'Decline the promotion', label: 'Decline', score: 3 },
-      { id: 'Accept but do nothing different', label: 'Accept, no change', score: 2 },
+      { id: 'Accept but don\'thing different', label: 'Accept, no change', score: 2 },
       { id: 'Ask for training first', label: 'Ask for training', score: 6 },
     ]},
-    { text: 'You see a member selling SSRS info to another crew. What do you do?', options: [
+    { text: 'You see a member selling SSRS info to another crew. What you do, hey?', options: [
       { id: 'Report to leadership immediately', label: 'Report immediately', score: 7, correct: true },
       { id: 'Confront them privately', label: 'Confront privately', score: 5 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Leave the crew', label: 'Leave', score: 0 },
     ]},
-    { text: 'An SSRS event overlaps with a real-life commitment. What do you do?', options: [
-      { id: 'Handle real life first, inform the crew', label: 'Real life first', score: 7, correct: true },
+    { text: 'An SSRS event overlaps with a real-life commitment. What you do, hey?', options: [
+      { id: 'Handle real life first, tell the crew', label: 'Real life first', score: 7, correct: true },
       { id: 'Skip the real-life commitment', label: 'Skip real life', score: 2 },
       { id: 'Try to do both', label: 'Do both', score: 3 },
-      { id: 'Do not show up to either', label: 'Skip both', score: 0 },
+      { id: 'Don\'t show up to either', label: 'Skip both', score: 0 },
     ]},
-    { text: 'You are asked to train a new member. How do you approach it?', options: [
+    { text: 'You asked to train a new member. How you approach it?', options: [
       { id: 'Be patient and thorough', label: 'Patient + thorough', score: 7, correct: true },
-      { id: 'Give them the basics and leave', label: 'Basics only', score: 3 },
+      { id: 'Give them the basics and bounce', label: 'Basics only', score: 3 },
       { id: 'Ignore the request', label: 'Ignore', score: 0 },
-      { id: 'Tell them to figure it out', label: 'Figure it out', score: 0 },
+      { id: 'Tell them to figure it out, hey', label: 'Figure it out', score: 0 },
     ]},
-    { text: 'You are in a voice call and someone is being toxic. What do you do?', options: [
-      { id: 'Mute them, report to leadership', label: 'Mute + report', score: 7, correct: true },
+    { text: 'You in a voice call and someone is being toxic. What you do, hey?', options: [
+      { id: 'Mute them, report to leadership, hey', label: 'Mute + report', score: 7, correct: true },
       { id: 'Argue back', label: 'Argue back', score: 0 },
       { id: 'Leave the call', label: 'Leave call', score: 3 },
-      { id: 'Kick them from the call', label: 'Kick them', score: 5 },
+      { id: 'Kick them from the call, hey', label: 'Kick them', score: 5 },
     ]},
-    { text: 'You notice the event schedule has a conflict. What do you do?', options: [
+    { text: 'You notice the event schedule has a conflict. What you do, hey?', options: [
       { id: 'Notify leadership immediately', label: 'Notify leadership', score: 7, correct: true },
-      { id: 'Ignore it — not my problem', label: 'Ignore', score: 0 },
-      { id: 'Try to fix it yourself', label: 'Fix yourself', score: 4 },
+      { id: 'Ignore it, not my problem, shame', label: 'Ignore', score: 0 },
+      { id: 'Try fix it yourself', label: 'Fix yourself', score: 4 },
       { id: 'Complain after the event', label: 'Complain after', score: 1 },
     ]},
   ],
@@ -946,511 +946,511 @@ const KSSPS = {
   activity: SSRS.activity,
   age: SSRS.age,
   experience: [
-    { text: 'Have you done private security or close protection in CPM?', options: [
+    { text: 'You done private security or close protection in CPM, hey?', options: [
       { id: 'Yes — multiple teams', label: 'Multiple teams', score: 6 },
       { id: 'Yes — one team only', label: 'One team', score: 4 },
       { id: 'Yes — solo experience', label: 'Solo experience', score: 3 },
       { id: 'A little — casual play', label: 'Casual play', score: 2 },
       { id: 'A little — watched others', label: 'Watched others', score: 1 },
-      { id: 'No — but willing to learn', label: 'Willing to learn', score: 3 },
+      { id: 'No, but willing to learn, hey', label: 'Willing to learn', score: 3 },
       { id: 'No — completely new', label: 'Completely new', score: 1 },
     ]},
-    { text: 'How experienced are you with VIP protection in CPM?', options: [
+    { text: 'How experienced you with VIP protection in CPM, hey?', options: [
       { id: 'Very experienced', label: 'Very experienced', score: 7 },
       { id: 'Experienced', label: 'Experienced', score: 5 },
       { id: 'Some experience', label: 'Some', score: 3 },
       { id: 'Limited', label: 'Limited', score: 2 },
-      { id: 'None — but eager to learn', label: 'None', score: 2 },
+      { id: 'None, but eager to learn, hey', label: 'None', score: 2 },
     ]},
-    { text: 'Have you ever guarded a VIP in CPM?', options: [
-      { id: 'Yes — I was lead bodyguard', label: 'Lead bodyguard', score: 7 },
-      { id: 'Yes — I was part of the team', label: 'Team member', score: 5 },
+    { text: 'You ever guarded a VIP in CPM, hey?', options: [
+      { id: 'Yes, I was lead bodyguard, lekke', label: 'Lead bodyguard', score: 7 },
+      { id: 'Yes, I was part of the team, lekke', label: 'Team member', score: 5 },
       { id: 'Yes — I observed', label: 'Observed', score: 2 },
-      { id: 'No — but I want to', label: 'Want to', score: 3 },
+      { id: 'No, but I wanna', label: 'Want to', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'What private security experience do you have in CPM?', options: [
+    { text: 'What private security experience you have in CPM, hey?', options: [
       { id: 'Led security details', label: 'Led details', score: 7 },
       { id: 'Part of security teams', label: 'Security teams', score: 5 },
       { id: 'Helped with VIP escort', label: 'VIP escort', score: 4 },
       { id: 'Attended security events', label: 'Attended events', score: 3 },
       { id: 'No experience', label: 'No experience', score: 1 },
     ]},
-    { text: 'How many VIP protection operations have you done?', options: [
+    { text: 'How many VIP protection operations you done?', options: [
       { id: 'None', label: 'None', score: 1 },
       { id: '1-3', label: '1-3', score: 2 },
       { id: '4-10', label: '4-10', score: 4 },
       { id: '11-20', label: '11-20', score: 6 },
       { id: '20+', label: '20+', score: 7 },
     ]},
-    { text: 'Do you know how to perform a security sweep in CPM?', options: [
-      { id: 'Yes — I can lead a sweep', label: 'Lead sweep', score: 7 },
-      { id: 'Yes — I can follow protocols', label: 'Follow protocols', score: 5 },
+    { text: 'You know how to perform a security sweep in CPM, hey?', options: [
+      { id: 'Yes, I can lead a sweep, lekke', label: 'Lead sweep', score: 7 },
+      { id: 'Yes, I can follow protocols, hey', label: 'Follow protocols', score: 5 },
       { id: 'Somewhat — I understand basics', label: 'Basics', score: 3 },
-      { id: 'No — but I can learn', label: 'Can learn', score: 2 },
+      { id: 'No, but I can learn, hey', label: 'Can learn', score: 2 },
       { id: 'No — no idea', label: 'No idea', score: 1 },
     ]},
-    { text: 'Have you worked with close protection teams before?', options: [
+    { text: 'You worked with close protection teams before?', options: [
       { id: 'Yes — in multiple games', label: 'Multiple games', score: 7 },
       { id: 'Yes — in CPM only', label: 'CPM only', score: 5 },
-      { id: 'Yes — in other mobile games', label: 'Other games', score: 4 },
-      { id: 'No — this is my first time', label: 'First time', score: 1 },
+      { id: 'Yes, in other mobile games, shame', label: 'Other games', score: 4 },
+      { id: 'No, this my first time, hey', label: 'First time', score: 1 },
     ]},
-    { text: 'What role have you played in previous security crews?', options: [
+    { text: 'What role you played in previous security crews?', options: [
       { id: 'Security Chief / Team Lead', label: 'Chief/Lead', score: 7 },
       { id: 'Senior bodyguard', label: 'Senior', score: 5 },
       { id: 'Regular bodyguard', label: 'Regular', score: 3 },
       { id: 'New recruit', label: 'Recruit', score: 2 },
-      { id: 'Never been in a security crew', label: 'Never', score: 1 },
+      { id: 'Never been in a security crew, shame', label: 'Never', score: 1 },
     ]},
-    { text: 'How long have you been playing CPM?', options: [
+    { text: 'How long you been playing CPM?', options: [
       { id: 'Less than 6 months', label: '<6 months', score: 1 },
       { id: '6-12 months', label: '6-12 months', score: 3 },
       { id: '1-2 years', label: '1-2 years', score: 5 },
       { id: '2-3 years', label: '2-3 years', score: 6 },
       { id: '3+ years', label: '3+ years', score: 7 },
     ]},
-    { text: 'Have you ever organized a VIP meet in CPM?', options: [
+    { text: 'You ever organized a VIP meet in CPM, hey?', options: [
       { id: 'Yes — multiple meets', label: 'Multiple meets', score: 7 },
       { id: 'Yes — one meet', label: 'One meet', score: 5 },
       { id: 'No — but I helped', label: 'Helped', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'Do you understand CPM security protocols?', options: [
-      { id: 'Yes — I know them well', label: 'Know well', score: 7 },
-      { id: 'Yes — I know the basics', label: 'Know basics', score: 4 },
-      { id: 'Somewhat — I have heard of them', label: 'Heard of them', score: 2 },
+    { text: 'You understand CPM security protocols?', options: [
+      { id: 'Yes, I know them well, boet', label: 'Know well', score: 7 },
+      { id: 'Yes, I know the basics, hey', label: 'Know basics', score: 4 },
+      { id: 'Somewhat, I\'ve heard of them', label: 'Heard of them', score: 2 },
       { id: 'No — teach me', label: 'Teach me', score: 2 },
     ]},
-    { text: 'What CPM experience makes you suitable for KSSPS?', options: [
-      { id: 'I have led VIP protection operations', label: 'Led operations', score: 7 },
-      { id: 'I have been in security crews before', label: 'Was in crews', score: 5 },
-      { id: 'I know the game well', label: 'Know the game', score: 3 },
-      { id: 'I am willing to learn everything', label: 'Willing to learn', score: 3 },
+    { text: 'What CPM experience makes you suitable for KSSPS, hey?', options: [
+      { id: 'I\'ve led VIP protection operations', label: 'Led operations', score: 7 },
+      { id: 'I\'ve been in security crews before', label: 'Was in crews', score: 5 },
+      { id: 'I know the game well, boet', label: 'Know the game', score: 3 },
+      { id: 'I\'m willing to learn everything', label: 'Willing to learn', score: 3 },
     ]},
-    { text: 'How well do you know CPM VIP locations?', options: [
-      { id: 'Perfectly — I know every safe spot', label: 'Perfect', score: 7 },
+    { text: 'How well you know CPM VIP locations?', options: [
+      { id: 'Perfectly, I know every safe spot, boet', label: 'Perfect', score: 7 },
       { id: 'Very well — most locations', label: 'Very well', score: 5 },
       { id: 'Okay — main areas only', label: 'Main areas', score: 3 },
       { id: 'Not well — still learning', label: 'Learning', score: 2 },
     ]},
-    { text: 'Have you ever been a security team leader?', options: [
+    { text: 'You ever been a security team leader?', options: [
       { id: 'Yes — multiple times', label: 'Multiple times', score: 7 },
       { id: 'Yes — once or twice', label: 'Once or twice', score: 5 },
-      { id: 'No — but I was second in command', label: 'Second in command', score: 4 },
-      { id: 'No — I was a bodyguard', label: 'Was bodyguard', score: 3 },
+      { id: 'No, but I was second in command, hey', label: 'Second in command', score: 4 },
+      { id: 'No, I was a bodyguard', label: 'Was bodyguard', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'What security experience do you have?', options: [
+    { text: 'What security experience you got?', options: [
       { id: 'Professional IRL security', label: 'Professional IRL', score: 7 },
       { id: 'CPM security teams', label: 'CPM security', score: 5 },
       { id: 'Other game security', label: 'Other games', score: 3 },
       { id: 'None', label: 'None', score: 1 },
     ]},
-    { text: 'How many CPM security events have you attended?', options: [
+    { text: 'How many CPM security events you attended?', options: [
       { id: 'None', label: 'None', score: 1 },
       { id: '1-5', label: '1-5', score: 2 },
       { id: '6-15', label: '6-15', score: 4 },
       { id: '16-30', label: '16-30', score: 6 },
       { id: '30+', label: '30+', score: 7 },
     ]},
-    { text: 'Have you ever been dismissed from a security team?', options: [
+    { text: 'You ever been dismissed from a security team?', options: [
       { id: 'Yes — for bad behavior', label: 'Yes, bad behavior', score: 0 },
       { id: 'Yes — for inactivity', label: 'Yes, inactivity', score: 1 },
-      { id: 'No — always left on good terms', label: 'Good terms', score: 5 },
-      { id: 'No — never been in a team', label: 'Never in team', score: 2 },
+      { id: 'No, always left on good terms', label: 'Good terms', score: 5 },
+      { id: 'No, never been in a team, shame', label: 'Never in team', score: 2 },
     ]},
-    { text: 'Do you have experience with CPM bodyguard simulations?', options: [
+    { text: 'You have experience with CPM bodyguard simulations?', options: [
       { id: 'Yes — extensive', label: 'Extensive', score: 6 },
       { id: 'Yes — some', label: 'Some', score: 4 },
       { id: 'No — but interested', label: 'Interested', score: 3 },
       { id: 'No — not interested', label: 'Not interested', score: 1 },
     ]},
-    { text: 'How well do you handle CPM driving under pressure?', options: [
+    { text: 'How well you handle CPM driving under pressure?', options: [
       { id: 'Perfectly — never panic', label: 'Perfect', score: 7 },
       { id: 'Very well — rarely panic', label: 'Very well', score: 5 },
       { id: 'Okay — sometimes I freeze', label: 'Okay', score: 3 },
       { id: 'Badly — I always panic', label: 'Badly', score: 1 },
     ]},
-    { text: 'Have you ever managed a security team in any game?', options: [
+    { text: 'You ever managed a security team in any game?', options: [
       { id: 'Yes — large teams (20+)', label: 'Large teams', score: 7 },
       { id: 'Yes — small teams (5-20)', label: 'Small teams', score: 5 },
       { id: 'Yes — very small teams (<5)', label: 'Very small', score: 3 },
-      { id: 'No — but I want to learn', label: 'Want to learn', score: 3 },
+      { id: 'No, but I wanna learn', label: 'Want to learn', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'What makes you different from other KSSPS applicants?', options: [
+    { text: 'What makes you different from other KSSPS applicants, hey?', options: [
       { id: 'My security experience', label: 'Security experience', score: 6 },
-      { id: 'I am dedicated and reliable', label: 'Dedicated', score: 5 },
-      { id: 'I am a fast learner', label: 'Fast learner', score: 4 },
+      { id: 'I\'m dedicated and reliable', label: 'Dedicated', score: 5 },
+      { id: 'I\'m a fast learner', label: 'Fast learner', score: 4 },
       { id: 'I bring positive energy', label: 'Positive energy', score: 3 },
-      { id: 'Nothing special — just want to join', label: 'Just want to join', score: 1 },
+      { id: 'Nothing special, I just wanna join, lekke', label: 'Just want to join', score: 1 },
     ]},
-    { text: 'Do you know any KSSPS members personally?', options: [
+    { text: 'You know any KSSPS members personally?', options: [
       { id: 'Yes — multiple', label: 'Multiple', score: 5 },
       { id: 'Yes — one or two', label: 'One or two', score: 3 },
-      { id: 'No — but I have seen them around', label: 'Seen them', score: 2 },
+      { id: 'No, but I\'ve seen them around', label: 'Seen them', score: 2 },
       { id: 'No — completely new', label: 'Completely new', score: 1 },
     ]},
-    { text: 'Have you ever held a leadership position in a security crew?', options: [
+    { text: 'You ever held a leadership position in a security crew?', options: [
       { id: 'Yes — founder/leader', label: 'Founder/leader', score: 7 },
       { id: 'Yes — co-leader/officer', label: 'Co-leader', score: 6 },
       { id: 'Yes — senior member', label: 'Senior', score: 4 },
-      { id: 'No — always a regular member', label: 'Regular', score: 2 },
+      { id: 'No, always a regular member', label: 'Regular', score: 2 },
     ]},
-    { text: 'How do you handle conflict in a security team?', options: [
-      { id: 'I mediate and find solutions', label: 'Mediate', score: 7 },
-      { id: 'I follow the chain of command', label: 'Chain of command', score: 5 },
-      { id: 'I stay out of it', label: 'Stay out', score: 2 },
-      { id: 'I confront the problem directly', label: 'Confront', score: 4 },
+    { text: 'How you handle conflict in a security team, hey?', options: [
+      { id: 'I mediate and find solutions, hey', label: 'Mediate', score: 7 },
+      { id: 'I follow the chain of command, always', label: 'Chain of command', score: 5 },
+      { id: 'I stay out of it, shame', label: 'Stay out', score: 2 },
+      { id: 'I confront the problem straight up, always', label: 'Confront', score: 4 },
     ]},
-    { text: 'What is your biggest strength for KSSPS?', options: [
+    { text: 'What\'s your biggest strength for KSSPS?', options: [
       { id: 'My driving skills', label: 'Driving skills', score: 5 },
       { id: 'My communication', label: 'Communication', score: 6 },
       { id: 'My reliability', label: 'Reliability', score: 7 },
       { id: 'My experience', label: 'Experience', score: 5 },
     ]},
-    { text: 'Why should we pick you over other KSSPS applicants?', options: [
-      { id: 'I have more security experience', label: 'More experience', score: 6 },
+    { text: 'Why must we pick you over the other KSSPS applicants, hey?', options: [
+      { id: 'I\'ve got more security experience', label: 'More experience', score: 6 },
       { id: 'I am more dedicated', label: 'More dedicated', score: 6 },
-      { id: 'I will be more active', label: 'More active', score: 5 },
-      { id: 'I am a better team player', label: 'Better team player', score: 6 },
-      { id: 'I do not know — you decide', label: 'You decide', score: 2 },
+      { id: 'I\'ll be more active', label: 'More active', score: 5 },
+      { id: 'I\'m a better team player', label: 'Better team player', score: 6 },
+      { id: 'I don\'t know — you decide', label: 'You decide', score: 2 },
     ]},
-    { text: 'Have you ever been promoted in a security crew?', options: [
+    { text: 'You ever been promoted in a security crew?', options: [
       { id: 'Yes — multiple times', label: 'Multiple times', score: 7 },
       { id: 'Yes — once', label: 'Once', score: 5 },
-      { id: 'No — but I deserved it', label: 'Deserved it', score: 3 },
+      { id: 'No, but I deserved it, shame', label: 'Deserved it', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'How do you handle following orders you disagree with?', options: [
-      { id: 'Follow them — trust the chain', label: 'Follow them', score: 7 },
-      { id: 'Follow but ask questions later', label: 'Follow, ask later', score: 5 },
+    { text: 'How you handle following orders you disagree with?', options: [
+      { id: 'Follow them, trust the chain, always', label: 'Follow them', score: 7 },
+      { id: 'Follow but ask questions later, hey', label: 'Follow, ask later', score: 5 },
       { id: 'Question them first', label: 'Question first', score: 3 },
       { id: 'Refuse if I disagree', label: 'Refuse', score: 0 },
     ]},
   ],
   loyalty: [
-    { text: 'Will you follow direct orders from |SS| KAMI without hesitation?', options: [
+    { text: 'Will you follow direct orders from |SS| KAMI without hesitation, hey?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — but I will ask why later', label: 'Yes, ask later', score: 5 },
+      { id: 'Yes — but I\'ll ask why later', label: 'Yes, ask later', score: 5 },
       { id: 'Depends on the order', label: 'Depends', score: 3 },
-      { id: 'No — I think for myself', label: 'Think for myself', score: 1 },
+      { id: 'No, I think for myself, hey', label: 'Think for myself', score: 1 },
     ]},
-    { text: 'If another crew offers you a better rank, what do you do?', options: [
-      { id: 'Stay with KSSPS — loyalty matters', label: 'Stay loyal', score: 7 },
-      { id: 'Consider it — but KSSPS is priority', label: 'Consider', score: 4 },
+    { text: 'If another crew offers you a better rank, what you do, hey?', options: [
+      { id: 'Stay with KSSPS, loyalty matters, always', label: 'Stay loyal', score: 7 },
+      { id: 'Consider it, but KSSPS is priority', label: 'Consider', score: 4 },
       { id: 'Take the better offer', label: 'Take offer', score: 0 },
-      { id: 'Depends on what they offer', label: 'Depends', score: 2 },
+      { id: 'Depends what they offer', label: 'Depends', score: 2 },
     ]},
-    { text: 'How long do you plan to stay in KSSPS?', options: [
-      { id: 'Forever — this is my crew', label: 'Forever', score: 7 },
-      { id: 'As long as I am having fun', label: 'Having fun', score: 5 },
-      { id: 'Until something better comes along', label: 'Until better', score: 0 },
-      { id: 'I do not know yet', label: 'Do not know', score: 2 },
+    { text: 'How long you plan to stay in KSSPS?', options: [
+      { id: 'Forever, this is my crew, lekke', label: 'Forever', score: 7 },
+      { id: 'As long as I\'m having fun', label: 'Having fun', score: 5 },
+      { id: 'Until something better comes along, shame', label: 'Until better', score: 0 },
+      { id: 'I don\'t know yet', label: 'Do not know', score: 2 },
     ]},
-    { text: 'Would you leave KSSPS if your friend started another crew?', options: [
-      { id: 'No — KSSPS is my crew', label: 'No', score: 7 },
-      { id: 'Maybe — depends on the crew', label: 'Maybe', score: 3 },
+    { text: 'Would you leave KSSPS if your friend started another crew, hey?', options: [
+      { id: 'No, KSSPS is my crew, always', label: 'No', score: 7 },
+      { id: 'Maybe, depends on the crew', label: 'Maybe', score: 3 },
       { id: 'Yes — friends come first', label: 'Yes', score: 0 },
     ]},
-    { text: 'What does loyalty mean to you in KSSPS?', options: [
+    { text: 'What loyalty mean to you in KSSPS?', options: [
       { id: 'Staying no matter what', label: 'Stay no matter what', score: 7 },
       { id: 'Being active and reliable', label: 'Active and reliable', score: 6 },
       { id: 'Following orders without question', label: 'Follow orders', score: 5 },
-      { id: 'Having friends in the crew', label: 'Having friends', score: 3 },
+      { id: 'Having friends in the crew, shame', label: 'Having friends', score: 3 },
       { id: 'Getting rewards and ranks', label: 'Rewards', score: 0 },
     ]},
-    { text: 'If KSSPS is losing members, what do you do?', options: [
-      { id: 'Recruit new members to help', label: 'Recruit', score: 7 },
-      { id: 'Stay and support the crew', label: 'Stay and support', score: 6 },
+    { text: 'If KSSPS is losing members, what you do, hey?', options: [
+      { id: 'Recruit new members to help, lekke', label: 'Recruit', score: 7 },
+      { id: 'Stay and support the crew, always', label: 'Stay and support', score: 6 },
       { id: 'Consider leaving', label: 'Consider leaving', score: 1 },
       { id: 'Leave before it collapses', label: 'Leave', score: 0 },
     ]},
-    { text: 'Would you defend KSSPS if someone talks badly about it?', options: [
-      { id: 'Yes — always defend my crew', label: 'Always defend', score: 7 },
-      { id: 'Yes — but only if it is serious', label: 'If serious', score: 5 },
-      { id: 'Ignore it — do not engage', label: 'Ignore', score: 3 },
+    { text: 'Would you defend KSSPS if someone talks badly about it, hey?', options: [
+      { id: 'Yes, always defend my crew', label: 'Always defend', score: 7 },
+      { id: 'Yes — but only if it\'s serious', label: 'If serious', score: 5 },
+      { id: 'Ignore it — don\'t engage', label: 'Ignore', score: 3 },
       { id: 'No — not my problem', label: 'Not my problem', score: 0 },
     ]},
-    { text: 'How important is crew loyalty to you?', options: [
+    { text: 'How important crew loyalty to you, hey?', options: [
       { id: 'The most important thing', label: 'Most important', score: 7 },
       { id: 'Very important', label: 'Very important', score: 6 },
       { id: 'Somewhat important', label: 'Somewhat', score: 3 },
       { id: 'Not that important', label: 'Not important', score: 0 },
     ]},
-    { text: 'If |SS| KAMI asks you to do something you do not want to, what do you do?', options: [
+    { text: 'If |SS| KAMI asks you to do something you don\'t want to, what do you do?', options: [
       { id: 'Do it without question', label: 'Do it', score: 7 },
-      { id: 'Do it but ask why later', label: 'Do it, ask later', score: 5 },
+      { id: 'Do it but ask why later, hey', label: 'Do it, ask later', score: 5 },
       { id: 'Ask why first', label: 'Ask why', score: 4 },
-      { id: 'Refuse if I do not agree', label: 'Refuse', score: 0 },
+      { id: 'Refuse if I don\'t agree', label: 'Refuse', score: 0 },
     ]},
-    { text: 'Would you stay in KSSPS even if you are not getting promoted?', options: [
-      { id: 'Yes — I am here for the crew', label: 'Yes', score: 7 },
-      { id: 'Maybe — depends on how long', label: 'Maybe', score: 4 },
-      { id: 'No — I want to progress', label: 'No', score: 2 },
+    { text: 'Would you stay in KSSPS even if you aren\'t getting promoted?', options: [
+      { id: 'Yes — I\'m here for the crew', label: 'Yes', score: 7 },
+      { id: 'Maybe, depends on how long', label: 'Maybe', score: 4 },
+      { id: 'No, I wanna progress', label: 'No', score: 2 },
     ]},
-    { text: 'What happens if KSSPS has internal drama?', options: [
-      { id: 'I stay neutral and focused', label: 'Stay neutral', score: 7 },
+    { text: 'What happens if KSSPS got internal drama?', options: [
+      { id: 'I stay neutral and focused, always', label: 'Stay neutral', score: 7 },
       { id: 'I support my side', label: 'Support side', score: 3 },
-      { id: 'I leave to avoid drama', label: 'Leave', score: 0 },
+      { id: 'I leave to avoid drama, shame', label: 'Leave', score: 0 },
       { id: 'I try to mediate', label: 'Mediate', score: 6 },
     ]},
-    { text: 'Do you put crew goals above personal goals?', options: [
+    { text: 'You put crew goals above your own goals, hey?', options: [
       { id: 'Always — crew comes first', label: 'Always', score: 7 },
       { id: 'Usually — but sometimes personal', label: 'Usually', score: 5 },
       { id: 'It depends', label: 'Depends', score: 3 },
       { id: 'No — personal comes first', label: 'Personal first', score: 0 },
     ]},
-    { text: 'Would you report a friend breaking crew rules?', options: [
+    { text: 'Would you report a friend breaking crew rules, hey?', options: [
       { id: 'Yes — rules are rules', label: 'Yes', score: 7 },
-      { id: 'Yes — but talk to them first', label: 'Talk first', score: 6 },
-      { id: 'Maybe — depends on the rule', label: 'Maybe', score: 3 },
+      { id: 'Yes, but talk to them first', label: 'Talk first', score: 6 },
+      { id: 'Maybe, depends on the rule', label: 'Maybe', score: 3 },
       { id: 'No — friends first', label: 'No', score: 0 },
     ]},
-    { text: 'How do you show loyalty to your crew?', options: [
+    { text: 'How you show loyalty to your crew, hey?', options: [
       { id: 'Being active every day', label: 'Daily activity', score: 6 },
       { id: 'Attending every event', label: 'Attend events', score: 6 },
       { id: 'Defending the crew publicly', label: 'Defend publicly', score: 7 },
       { id: 'Following all orders', label: 'Follow orders', score: 5 },
     ]},
-    { text: 'If KSSPS has a bad reputation, do you stay?', options: [
-      { id: 'Yes — I help fix it', label: 'Help fix', score: 7 },
+    { text: 'If KSSPS has a bad reputation, you stay?', options: [
+      { id: 'Yes, I help fix it, hey', label: 'Help fix', score: 7 },
       { id: 'Yes — I stay loyal', label: 'Stay loyal', score: 6 },
-      { id: 'Depends on why it is bad', label: 'Depends', score: 3 },
-      { id: 'No — I protect my image', label: 'No', score: 0 },
+      { id: 'Depends on why it\'s bad', label: 'Depends', score: 3 },
+      { id: 'No, I protect my image, shame', label: 'No', score: 0 },
     ]},
-    { text: 'What would make you leave KSSPS?', options: [
+    { text: 'What would make you leave KSSPS, hey?', options: [
       { id: 'Nothing — I am committed', label: 'Nothing', score: 7 },
-      { id: 'If they kick me out', label: 'If kicked', score: 5 },
-      { id: 'If there is too much drama', label: 'Too much drama', score: 2 },
-      { id: 'If a better crew comes along', label: 'Better crew', score: 0 },
+      { id: 'If they kick me out, shame', label: 'If kicked', score: 5 },
+      { id: 'If there\'s too much drama', label: 'Too much drama', score: 2 },
+      { id: 'If a better crew comes along, hey', label: 'Better crew', score: 0 },
     ]},
-    { text: 'Do you talk to other crews while in KSSPS?', options: [
+    { text: 'You talk to other crews while in KSSPS?', options: [
       { id: 'No — KSSPS only', label: 'KSSPS only', score: 7 },
-      { id: 'Yes — but only as friends', label: 'Friends only', score: 4 },
-      { id: 'Yes — I keep my options open', label: 'Keep options', score: 1 },
+      { id: 'Yes, but only as friends', label: 'Friends only', score: 4 },
+      { id: 'Yes, I keep my options open, hey', label: 'Keep options', score: 1 },
     ]},
-    { text: 'Would you sacrifice your free time for a KSSPS event?', options: [
+    { text: 'Would you give up your free time for a KSSPS event?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — if it is important', label: 'If important', score: 5 },
-      { id: 'Maybe — depends on my schedule', label: 'Maybe', score: 3 },
-      { id: 'No — my time is mine', label: 'No', score: 0 },
+      { id: 'Yes — if it\'s important', label: 'If important', score: 5 },
+      { id: 'Maybe, depends on my schedule', label: 'Maybe', score: 3 },
+      { id: 'No, my time is mine, shame', label: 'No', score: 0 },
     ]},
-    { text: 'How do you feel about crew hierarchy?', options: [
+    { text: 'How you feel about crew hierarchy?', options: [
       { id: 'I respect it fully', label: 'Respect fully', score: 7 },
       { id: 'I understand it', label: 'Understand', score: 5 },
-      { id: 'I think it is unnecessary', label: 'Unnecessary', score: 1 },
-      { id: 'I want to be at the top', label: 'Want top', score: 2 },
+      { id: 'I think it\'s unnecessary', label: 'Unnecessary', score: 1 },
+      { id: 'I wanna be at the top, hey', label: 'Want top', score: 2 },
     ]},
-    { text: 'Would you recruit for KSSPS on your own time?', options: [
+    { text: 'Would you recruit for KSSPS on your own time, hey?', options: [
       { id: 'Yes — actively', label: 'Actively', score: 7 },
-      { id: 'Yes — if I find good people', label: 'If find good', score: 5 },
+      { id: 'Yes, if I find good people, lekke', label: 'If find good', score: 5 },
       { id: 'Maybe — if asked', label: 'If asked', score: 3 },
       { id: 'No — not my job', label: 'No', score: 1 },
     ]},
-    { text: 'What does being a KSSPS member mean to you?', options: [
+    { text: 'What being a KSSPS member mean to you?', options: [
       { id: 'Family and brotherhood', label: 'Family/brotherhood', score: 7 },
-      { id: 'Being part of something big', label: 'Something big', score: 6 },
+      { id: 'Being part of something big, lekke', label: 'Something big', score: 6 },
       { id: 'Having status and respect', label: 'Status/respect', score: 3 },
       { id: 'Getting rewards and ranks', label: 'Rewards', score: 0 },
     ]},
-    { text: 'If KSSPS is at war with another crew, what do you do?', options: [
+    { text: 'If KSSPS is at war with another crew, what you do, hey?', options: [
       { id: 'Fight for KSSPS', label: 'Fight', score: 7 },
       { id: 'Support from behind', label: 'Support', score: 5 },
       { id: 'Stay out of it', label: 'Stay out', score: 1 },
       { id: 'Leave to avoid conflict', label: 'Leave', score: 0 },
     ]},
-    { text: 'Do you follow KSSPS social media accounts?', options: [
+    { text: 'You follow KSSPS social media accounts?', options: [
       { id: 'Yes — all of them', label: 'All', score: 6 },
       { id: 'Yes — some of them', label: 'Some', score: 4 },
       { id: 'No — but I will', label: 'Will follow', score: 3 },
       { id: 'No — not interested', label: 'Not interested', score: 0 },
     ]},
-    { text: 'Would you wait weeks for a promotion?', options: [
+    { text: 'Would you wait weeks for a promotion, hey?', options: [
       { id: 'Yes — I am patient', label: 'Yes', score: 7 },
-      { id: 'Yes — but I would ask about it', label: 'Yes, ask', score: 5 },
-      { id: 'No — I expect quick progress', label: 'No', score: 2 },
+      { id: 'Yes, but I\'d ask about it', label: 'Yes, ask', score: 5 },
+      { id: 'No, I expect quick progress, hey', label: 'No', score: 2 },
     ]},
-    { text: 'How do you handle being demoted?', options: [
-      { id: 'Accept it and work harder', label: 'Work harder', score: 7 },
-      { id: 'Accept it but feel disappointed', label: 'Disappointed', score: 4 },
+    { text: 'How you handle being demoted?', options: [
+      { id: 'Accept it and work harder, hey', label: 'Work harder', score: 7 },
+      { id: 'Accept it but feel disappointed, shame', label: 'Disappointed', score: 4 },
       { id: 'Ask why and argue', label: 'Argue', score: 1 },
       { id: 'Leave the crew', label: 'Leave', score: 0 },
     ]},
-    { text: 'Would you attend a KSSPS event at 6am?', options: [
+    { text: 'Would you attend a KSSPS event at 6am, hey?', options: [
       { id: 'Yes — no matter what', label: 'Yes', score: 7 },
-      { id: 'Yes — if it is important', label: 'If important', score: 5 },
-      { id: 'Maybe — depends on my schedule', label: 'Maybe', score: 3 },
-      { id: 'No — that is too early', label: 'No', score: 0 },
+      { id: 'Yes — if it\'s important', label: 'If important', score: 5 },
+      { id: 'Maybe, depends on my schedule', label: 'Maybe', score: 3 },
+      { id: 'No — that\'s too early', label: 'No', score: 0 },
     ]},
-    { text: 'What is more important: rank or loyalty?', options: [
+    { text: 'What matters more, rank or loyalty?', options: [
       { id: 'Loyalty — always', label: 'Loyalty', score: 7 },
       { id: 'Both equally', label: 'Both', score: 5 },
-      { id: 'Rank — I want to progress', label: 'Rank', score: 2 },
+      { id: 'Rank, I wanna progress', label: 'Rank', score: 2 },
     ]},
   ],
   communication: SSRS.communication,
   scenario: [
-    { text: 'A player is following |SS| KAMI aggressively during a meet. What do you do?', options: [
-      { id: 'Stay calm, call backup, escort KAMI to safety', label: 'Stay calm + backup', score: 7, correct: true },
-      { id: 'Stay calm but wait and see what happens', label: 'Wait and see', score: 3 },
+    { text: 'A player is following |SS| KAMI aggressively during a meet. What you do, hey?', options: [
+      { id: 'Stay calm, call backup, get KAMI to safety', label: 'Stay calm + backup', score: 7, correct: true },
+      { id: 'Stay calm and wait to see what happens', label: 'Wait and see', score: 3 },
       { id: 'Rush the player alone without backup', label: 'Rush alone', score: 1 },
       { id: 'Tell KAMI to just drive faster', label: 'Tell KAMI to go', score: 2 },
       { id: 'Yell at the player over voice chat', label: 'Yell at them', score: 0 },
-      { id: 'Ignore it — it is not my problem', label: 'Ignore it', score: 0 },
+      { id: 'Ignore it — it isn\'t my problem', label: 'Ignore it', score: 0 },
     ]},
-    { text: 'You are assigned to guard a VIP but your friends are having a meet. What do you do?', options: [
-      { id: 'Guard duty — VIP comes first', label: 'Guard first', score: 7, correct: true },
-      { id: 'Skip guard duty for the meet', label: 'Skip for meet', score: 0 },
-      { id: 'Try to do both at the same time', label: 'Do both', score: 2 },
-      { id: 'Ask someone to cover for you', label: 'Ask for cover', score: 5 },
+    { text: 'You assigned to guard a VIP but your friends are having a meet. What you do, hey?', options: [
+      { id: 'Guard duty, VIP comes first, always', label: 'Guard first', score: 7, correct: true },
+      { id: 'Skip guard duty for the meet, shame', label: 'Skip for meet', score: 0 },
+      { id: 'Try do both at the same time', label: 'Do both', score: 2 },
+      { id: 'Ask someone to cover for you, hey', label: 'Ask for cover', score: 5 },
     ]},
-    { text: 'During a VIP escort, the VIP gets rammed by a random player. What do you do?', options: [
-      { id: 'Push the rammer away, get VIP to safety', label: 'Push + safety', score: 7, correct: true },
+    { text: 'During a VIP escort, the VIP gets rammed by a random player. What you do, hey?', options: [
+      { id: 'Push the rammer away, get the VIP to safety', label: 'Push + safety', score: 7, correct: true },
       { id: 'Chase the rammer', label: 'Chase rammer', score: 2 },
       { id: 'Ignore it and keep escorting', label: 'Keep escorting', score: 3 },
       { id: 'Stop and argue with the rammer', label: 'Argue', score: 0 },
     ]},
-    { text: 'You notice a suspicious player near the VIP location. What do you do?', options: [
-      { id: 'Alert the team and increase security', label: 'Alert + increase security', score: 7, correct: true },
+    { text: 'You notice a suspicious player near the VIP location. What you do, hey?', options: [
+      { id: 'Alert the team and increase security, hey', label: 'Alert + increase security', score: 7, correct: true },
       { id: 'Approach them alone', label: 'Approach alone', score: 2 },
-      { id: 'Ignore it — might be nothing', label: 'Ignore', score: 1 },
-      { id: 'Tell the VIP to leave immediately', label: 'Tell VIP to leave', score: 4 },
+      { id: 'Ignore it, might be nothing, shame', label: 'Ignore', score: 1 },
+      { id: 'Tell the VIP to leave, now now', label: 'Tell VIP to leave', score: 4 },
     ]},
-    { text: 'A rival crew member tries to join your security detail. What do you do?', options: [
-      { id: 'Report to leadership, do not let them in', label: 'Report + block', score: 7, correct: true },
-      { id: 'Let them join — the more the merrier', label: 'Let them join', score: 0 },
+    { text: 'A rival crew member tries to join your security detail. What you do, hey?', options: [
+      { id: 'Report to leadership, don\'t let them in', label: 'Report + block', score: 7, correct: true },
+      { id: 'Let them join, the more the merrier', label: 'Let them join', score: 0 },
       { id: 'Ignore it', label: 'Ignore', score: 1 },
       { id: 'Confront them publicly', label: 'Confront', score: 3 },
     ]},
-    { text: 'The VIP wants to go somewhere unsafe. What do you do?', options: [
-      { id: 'Advise against it, explain the risks', label: 'Advise against', score: 7, correct: true },
+    { text: 'The VIP wants to go somewhere unsafe. What you do, hey?', options: [
+      { id: 'Advise against it and explain the risks', label: 'Advise against', score: 7, correct: true },
       { id: 'Follow their orders without question', label: 'Follow orders', score: 3 },
       { id: 'Refuse to go', label: 'Refuse', score: 4 },
-      { id: 'Go anyway — they are the VIP', label: 'Go anyway', score: 1 },
+      { id: 'Go anyway — they\'re the VIP', label: 'Go anyway', score: 1 },
     ]},
-    { text: 'You are on guard duty and nothing is happening. What do you do?', options: [
-      { id: 'Stay alert — threats can come anytime', label: 'Stay alert', score: 7, correct: true },
+    { text: 'You on guard duty and nothing is happening. What you do, hey?', options: [
+      { id: 'Stay alert, threats can come anytime, always', label: 'Stay alert', score: 7, correct: true },
       { id: 'Relax — nothing is happening', label: 'Relax', score: 1 },
       { id: 'Leave my post briefly', label: 'Leave post', score: 0 },
       { id: 'Play on my phone', label: 'Play on phone', score: 0 },
     ]},
-    { text: 'Two VIPs want different security routes. What do you do?', options: [
-      { id: 'Coordinate with leadership to decide', label: 'Coordinate', score: 7, correct: true },
+    { text: 'Two VIPs want different security routes. What you do, hey?', options: [
+      { id: 'Coordinate with leadership to decide, hey', label: 'Coordinate', score: 7, correct: true },
       { id: 'Choose the safer route', label: 'Choose safer', score: 5 },
       { id: 'Let them decide', label: 'Let them decide', score: 3 },
       { id: 'Split the team', label: 'Split team', score: 2 },
     ]},
-    { text: 'You see an SS member being harassed by randoms. What do you do?', options: [
-      { id: 'Step in and protect them', label: 'Protect them', score: 7, correct: true },
+    { text: 'You see an SS member being harassed by randoms. What you do, hey?', options: [
+      { id: 'Step in and protect them, lekke', label: 'Protect them', score: 7, correct: true },
       { id: 'Report to leadership', label: 'Report', score: 5 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Leave', label: 'Leave', score: 0 },
     ]},
-    { text: 'Your shift is over but the next guard has not arrived. What do you do?', options: [
-      { id: 'Stay until the replacement arrives', label: 'Stay until replacement', score: 7, correct: true },
+    { text: 'Your shift is over but the next guard hasn\'t arrived. What you do, hey?', options: [
+      { id: 'Stay until the replacement arrives, always', label: 'Stay until replacement', score: 7, correct: true },
       { id: 'Leave anyway', label: 'Leave', score: 0 },
       { id: 'Call leadership', label: 'Call leadership', score: 5 },
-      { id: 'Leave a message and go', label: 'Leave message', score: 2 },
+      { id: 'Leave a message and go, hey', label: 'Leave message', score: 2 },
     ]},
-    { text: 'A VIP asks you to keep a secret from leadership. What do you do?', options: [
-      { id: 'Report to leadership — no secrets', label: 'Report', score: 7, correct: true },
+    { text: 'A VIP asks you to keep a secret from leadership. What you do, hey?', options: [
+      { id: 'Report to leadership, no secrets', label: 'Report', score: 7, correct: true },
       { id: 'Keep the secret', label: 'Keep secret', score: 1 },
-      { id: 'Depends on what it is', label: 'Depends', score: 3 },
+      { id: 'Depends what it is', label: 'Depends', score: 3 },
       { id: 'Tell another guard', label: 'Tell another guard', score: 4 },
     ]},
-    { text: 'You are escorting a VIP and traffic blocks the route. What do you do?', options: [
-      { id: 'Find alternate route, keep VIP safe', label: 'Alternate route', score: 7, correct: true },
-      { id: 'Wait for traffic to clear', label: 'Wait', score: 3 },
+    { text: 'You escorting a VIP and traffic blocks the route. What you do, hey?', options: [
+      { id: 'Find another route, keep the VIP safe', label: 'Alternate route', score: 7, correct: true },
+      { id: 'Wait for traffic to clear, hey', label: 'Wait', score: 3 },
       { id: 'Push through traffic', label: 'Push through', score: 1 },
       { id: 'Panic', label: 'Panic', score: 0 },
     ]},
-    { text: 'A player claims to be a VIP but is not on the list. What do you do?', options: [
-      { id: 'Verify with leadership before allowing access', label: 'Verify first', score: 7, correct: true },
-      { id: 'Let them in — benefit of the doubt', label: 'Let in', score: 0 },
+    { text: 'A player claims to be a VIP but isn\'t on the list. What do you do?', options: [
+      { id: 'Verify with leadership before you let them in', label: 'Verify first', score: 7, correct: true },
+      { id: 'Let them in, benefit of the doubt', label: 'Let in', score: 0 },
       { id: 'Turn them away', label: 'Turn away', score: 4 },
       { id: 'Ignore them', label: 'Ignore', score: 2 },
     ]},
-    { text: 'You are guarding a VIP and your connection drops. What do you do?', options: [
-      { id: 'Reconnect immediately, report the gap', label: 'Reconnect + report', score: 7, correct: true },
-      { id: 'Reconnect when I feel like it', label: 'Reconnect later', score: 1 },
-      { id: 'Do not worry about it', label: 'Do not worry', score: 0 },
+    { text: 'You guarding a VIP and your connection drops. What you do, hey?', options: [
+      { id: 'Reconnect immediately, report the gap, hey', label: 'Reconnect + report', score: 7, correct: true },
+      { id: 'Reconnect when I feel like it, shame', label: 'Reconnect later', score: 1 },
+      { id: 'Don\'t worry about it', label: 'Do not worry', score: 0 },
     ]},
-    { text: 'A VIP wants to go somewhere you have not scouted. What do you do?', options: [
-      { id: 'Scout it first, then escort', label: 'Scout first', score: 7, correct: true },
-      { id: 'Go anyway — trust the VIP', label: 'Go anyway', score: 2 },
-      { id: 'Refuse — unscouted areas are dangerous', label: 'Refuse', score: 5 },
-      { id: 'Send someone else to check', label: 'Send someone', score: 5 },
+    { text: 'A VIP wants to go somewhere you haven\'t scouted. What you do, hey?', options: [
+      { id: 'Scout it first, then escort, hey', label: 'Scout first', score: 7, correct: true },
+      { id: 'Go anyway, trust the VIP', label: 'Go anyway', score: 2 },
+      { id: 'Refuse, unscouted areas are dangerous', label: 'Refuse', score: 5 },
+      { id: 'Send someone else to check, hey', label: 'Send someone', score: 5 },
     ]},
-    { text: 'You notice a flaw in the security plan. What do you do?', options: [
+    { text: 'You notice a flaw in the security plan. What you do, hey?', options: [
       { id: 'Report to leadership immediately', label: 'Report immediately', score: 7, correct: true },
       { id: 'Fix it yourself', label: 'Fix yourself', score: 4 },
-      { id: 'Ignore it — not my job', label: 'Ignore', score: 0 },
+      { id: 'Ignore it, not my job, shame', label: 'Ignore', score: 0 },
       { id: 'Tell other guards', label: 'Tell guards', score: 3 },
     ]},
-    { text: 'A VIP is being rude to your team. What do you do?', options: [
+    { text: 'A VIP is being rude to your team. What you do, hey?', options: [
       { id: 'Stay professional, report later', label: 'Stay professional', score: 7, correct: true },
       { id: 'Be rude back', label: 'Be rude back', score: 0 },
       { id: 'Quit the assignment', label: 'Quit', score: 0 },
       { id: 'Confront the VIP', label: 'Confront', score: 1 },
     ]},
-    { text: 'You are asked to work a double shift. What do you do?', options: [
-      { id: 'Accept — the team needs me', label: 'Accept', score: 7, correct: true },
+    { text: 'You asked to work a double shift. What you do, hey?', options: [
+      { id: 'Accept, the team needs me', label: 'Accept', score: 7, correct: true },
       { id: 'Refuse — I need rest', label: 'Refuse', score: 3 },
       { id: 'Accept but complain', label: 'Accept, complain', score: 2 },
       { id: 'Ignore the request', label: 'Ignore', score: 0 },
     ]},
-    { text: 'You see a fellow guard sleeping on duty. What do you do?', options: [
-      { id: 'Wake them up, report to leadership', label: 'Wake + report', score: 7, correct: true },
+    { text: 'You see a fellow guard sleeping on duty. What you do, hey?', options: [
+      { id: 'Wake them up, report to leadership, hey', label: 'Wake + report', score: 7, correct: true },
       { id: 'Wake them up quietly', label: 'Wake quietly', score: 5 },
       { id: 'Ignore it', label: 'Ignore', score: 1 },
-      { id: 'Take a photo and share it', label: 'Take photo', score: 0 },
+      { id: 'Take a photo and share it, shame', label: 'Take photo', score: 0 },
     ]},
-    { text: 'A VIP asks you to do something outside your role. What do you do?', options: [
-      { id: 'Explain my role, suggest the right person', label: 'Explain + redirect', score: 7, correct: true },
-      { id: 'Do it anyway — keep the VIP happy', label: 'Do it', score: 3 },
+    { text: 'A VIP asks you to do something outside your role. What you do, hey?', options: [
+      { id: 'Explain my role and suggest the right person', label: 'Explain + redirect', score: 7, correct: true },
+      { id: 'Do it anyway, keep the VIP happy', label: 'Do it', score: 3 },
       { id: 'Refuse', label: 'Refuse', score: 4 },
       { id: 'Ignore the request', label: 'Ignore', score: 1 },
     ]},
-    { text: 'You are in a convoy and the VIP car breaks down. What do you do?', options: [
-      { id: 'Protect the VIP, call for backup transport', label: 'Protect + backup', score: 7, correct: true },
+    { text: 'You in a convoy and the VIP car breaks down. What you do, hey?', options: [
+      { id: 'Protect the VIP, call backup transport', label: 'Protect + backup', score: 7, correct: true },
       { id: 'Leave the VIP and continue', label: 'Leave VIP', score: 0 },
-      { id: 'Try to fix the car', label: 'Fix car', score: 3 },
+      { id: 'Try fix the car', label: 'Fix car', score: 3 },
       { id: 'Panic', label: 'Panic', score: 0 },
     ]},
-    { text: 'A rival crew challenges your security skills. What do you do?', options: [
-      { id: 'Stay professional, ignore the challenge', label: 'Stay professional', score: 7, correct: true },
+    { text: 'A rival crew challenges your security skills. What you do, hey?', options: [
+      { id: 'Stay professional, ignore the challenge, hey', label: 'Stay professional', score: 7, correct: true },
       { id: 'Accept the challenge', label: 'Accept', score: 2 },
       { id: 'Trash talk back', label: 'Trash talk', score: 0 },
       { id: 'Report to leadership', label: 'Report', score: 5 },
     ]},
-    { text: 'You are assigned to a VIP you do not trust. What do you do?', options: [
-      { id: 'Do my job professionally regardless', label: 'Professional', score: 7, correct: true },
+    { text: 'You are assigned to a VIP you don\'t trust. What do you do?', options: [
+      { id: 'Do my job properly regardless', label: 'Professional', score: 7, correct: true },
       { id: 'Request a different assignment', label: 'Request different', score: 4 },
       { id: 'Watch them closely', label: 'Watch closely', score: 5 },
       { id: 'Refuse the assignment', label: 'Refuse', score: 1 },
     ]},
-    { text: 'You notice the VIP left their car unlocked. What do you do?', options: [
-      { id: 'Lock it and inform the VIP', label: 'Lock + inform', score: 7, correct: true },
+    { text: 'You notice the VIP left their car unlocked. What you do, hey?', options: [
+      { id: 'Lock it and inform the VIP, hey', label: 'Lock + inform', score: 7, correct: true },
       { id: 'Ignore it', label: 'Ignore', score: 1 },
       { id: 'Tell other guards', label: 'Tell guards', score: 4 },
-      { id: 'Leave it — not my car', label: 'Leave it', score: 0 },
+      { id: 'Leave it, not my car', label: 'Leave it', score: 0 },
     ]},
-    { text: 'A VIP wants to go to an area with known griefers. What do you do?', options: [
-      { id: 'Advise against, suggest safer alternative', label: 'Advise + suggest', score: 7, correct: true },
+    { text: 'A VIP wants to go to an area with known griefers. What you do, hey?', options: [
+      { id: 'Advise against it, suggest a safer option', label: 'Advise + suggest', score: 7, correct: true },
       { id: 'Go anyway — VIP choice', label: 'Go anyway', score: 1 },
       { id: 'Refuse to go', label: 'Refuse', score: 5 },
       { id: 'Send a scout first', label: 'Send scout', score: 6 },
     ]},
-    { text: 'You are guarding a VIP and your teammate is AFK. What do you do?', options: [
-      { id: 'Cover their position, report to leadership', label: 'Cover + report', score: 7, correct: true },
-      { id: 'Leave my post to find them', label: 'Leave post', score: 0 },
+    { text: 'You guarding a VIP and your teammate is AFK. What you do, hey?', options: [
+      { id: 'Cover their position, report to leadership, hey', label: 'Cover + report', score: 7, correct: true },
+      { id: 'Leave my post to find them, shame', label: 'Leave post', score: 0 },
       { id: 'Ignore it', label: 'Ignore', score: 1 },
       { id: 'Do nothing', label: 'Do nothing', score: 0 },
     ]},
-    { text: 'A VIP asks you to keep their location secret from leadership. What do you do?', options: [
-      { id: 'Report to leadership — no secrets', label: 'Report', score: 7, correct: true },
+    { text: 'A VIP asks you to keep their location secret from leadership. What you do, hey?', options: [
+      { id: 'Report to leadership, no secrets', label: 'Report', score: 7, correct: true },
       { id: 'Keep the secret', label: 'Keep secret', score: 0 },
       { id: 'Depends on the situation', label: 'Depends', score: 2 },
     ]},
@@ -1464,513 +1464,513 @@ const KSSMP = {
   activity: SSRS.activity,
   age: SSRS.age,
   experience: [
-    { text: 'Have you done law enforcement or patrol work in CPM?', options: [
+    { text: 'You done law enforcement or patrol work in CPM, hey?', options: [
       { id: 'Yes — multiple teams', label: 'Multiple teams', score: 6 },
       { id: 'Yes — one team only', label: 'One team', score: 4 },
       { id: 'Yes — solo experience', label: 'Solo experience', score: 3 },
       { id: 'A little — casual play', label: 'Casual play', score: 2 },
       { id: 'A little — watched others', label: 'Watched others', score: 1 },
-      { id: 'No — but willing to learn', label: 'Willing to learn', score: 3 },
+      { id: 'No, but willing to learn, hey', label: 'Willing to learn', score: 3 },
       { id: 'No — completely new', label: 'Completely new', score: 1 },
     ]},
-    { text: 'How experienced are you with CPM law enforcement?', options: [
+    { text: 'How experienced you with CPM law enforcement?', options: [
       { id: 'Very experienced', label: 'Very experienced', score: 7 },
       { id: 'Experienced', label: 'Experienced', score: 5 },
       { id: 'Some experience', label: 'Some', score: 3 },
       { id: 'Limited', label: 'Limited', score: 2 },
-      { id: 'None — but eager to learn', label: 'None', score: 2 },
+      { id: 'None, but eager to learn, hey', label: 'None', score: 2 },
     ]},
-    { text: 'Have you ever done traffic patrol in CPM?', options: [
+    { text: 'You ever done traffic patrol in CPM, hey?', options: [
       { id: 'Yes — I led patrols', label: 'Led patrols', score: 7 },
-      { id: 'Yes — I was part of patrols', label: 'Patrol member', score: 5 },
+      { id: 'Yes, I was part of patrols, lekke', label: 'Patrol member', score: 5 },
       { id: 'Yes — I observed', label: 'Observed', score: 2 },
-      { id: 'No — but I want to', label: 'Want to', score: 3 },
+      { id: 'No, but I wanna', label: 'Want to', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'What law enforcement experience do you have in CPM?', options: [
+    { text: 'What law enforcement experience you got in CPM, hey?', options: [
       { id: 'Led police operations', label: 'Led operations', score: 7 },
       { id: 'Part of police teams', label: 'Police teams', score: 5 },
       { id: 'Helped with traffic control', label: 'Traffic control', score: 4 },
       { id: 'Attended police events', label: 'Attended events', score: 3 },
       { id: 'No experience', label: 'No experience', score: 1 },
     ]},
-    { text: 'How many patrol operations have you been part of?', options: [
+    { text: 'How many patrol operations you been part of?', options: [
       { id: 'None', label: 'None', score: 1 },
       { id: '1-3', label: '1-3', score: 2 },
       { id: '4-10', label: '4-10', score: 4 },
       { id: '11-20', label: '11-20', score: 6 },
       { id: '20+', label: '20+', score: 7 },
     ]},
-    { text: 'Do you know how to perform a traffic stop in CPM?', options: [
-      { id: 'Yes — I can lead traffic stops', label: 'Lead stops', score: 7 },
-      { id: 'Yes — I can follow protocols', label: 'Follow protocols', score: 5 },
+    { text: 'You know how to perform a traffic stop in CPM, hey?', options: [
+      { id: 'Yes, I can lead traffic stops, lekke', label: 'Lead stops', score: 7 },
+      { id: 'Yes, I can follow protocols, hey', label: 'Follow protocols', score: 5 },
       { id: 'Somewhat — I understand basics', label: 'Basics', score: 3 },
-      { id: 'No — but I can learn', label: 'Can learn', score: 2 },
+      { id: 'No, but I can learn, hey', label: 'Can learn', score: 2 },
       { id: 'No — no idea', label: 'No idea', score: 1 },
     ]},
-    { text: 'Have you worked with police teams before?', options: [
+    { text: 'You worked with police teams before?', options: [
       { id: 'Yes — in multiple games', label: 'Multiple games', score: 7 },
       { id: 'Yes — in CPM only', label: 'CPM only', score: 5 },
-      { id: 'Yes — in other mobile games', label: 'Other games', score: 4 },
-      { id: 'No — this is my first time', label: 'First time', score: 1 },
+      { id: 'Yes, in other mobile games, shame', label: 'Other games', score: 4 },
+      { id: 'No, this my first time, hey', label: 'First time', score: 1 },
     ]},
-    { text: 'What role have you played in previous police crews?', options: [
+    { text: 'What role you played in previous police crews?', options: [
       { id: 'Chief / Captain', label: 'Chief/Captain', score: 7 },
       { id: 'Sergeant / Officer', label: 'Sergeant', score: 5 },
       { id: 'Regular officer', label: 'Regular', score: 3 },
       { id: 'Cadet / Recruit', label: 'Cadet', score: 2 },
-      { id: 'Never been in a police crew', label: 'Never', score: 1 },
+      { id: 'Never been in a police crew, shame', label: 'Never', score: 1 },
     ]},
-    { text: 'How long have you been playing CPM?', options: [
+    { text: 'How long you been playing CPM?', options: [
       { id: 'Less than 6 months', label: '<6 months', score: 1 },
       { id: '6-12 months', label: '6-12 months', score: 3 },
       { id: '1-2 years', label: '1-2 years', score: 5 },
       { id: '2-3 years', label: '2-3 years', score: 6 },
       { id: '3+ years', label: '3+ years', score: 7 },
     ]},
-    { text: 'Have you ever organized a police patrol in CPM?', options: [
+    { text: 'You ever organized a police patrol in CPM, hey?', options: [
       { id: 'Yes — multiple patrols', label: 'Multiple patrols', score: 7 },
       { id: 'Yes — one patrol', label: 'One patrol', score: 5 },
       { id: 'No — but I helped', label: 'Helped', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'Do you understand CPM law enforcement protocols?', options: [
-      { id: 'Yes — I know them well', label: 'Know well', score: 7 },
-      { id: 'Yes — I know the basics', label: 'Know basics', score: 4 },
-      { id: 'Somewhat — I have heard of them', label: 'Heard of them', score: 2 },
+    { text: 'You understand CPM law enforcement protocols?', options: [
+      { id: 'Yes, I know them well, boet', label: 'Know well', score: 7 },
+      { id: 'Yes, I know the basics, hey', label: 'Know basics', score: 4 },
+      { id: 'Somewhat, I\'ve heard of them', label: 'Heard of them', score: 2 },
       { id: 'No — teach me', label: 'Teach me', score: 2 },
     ]},
-    { text: 'What CPM experience makes you suitable for KSSMP?', options: [
-      { id: 'I have led law enforcement operations', label: 'Led operations', score: 7 },
-      { id: 'I have been in police crews before', label: 'Was in crews', score: 5 },
-      { id: 'I know the game well', label: 'Know the game', score: 3 },
-      { id: 'I am willing to learn everything', label: 'Willing to learn', score: 3 },
+    { text: 'What CPM experience makes you suitable for KSSMP, hey?', options: [
+      { id: 'I\'ve led law enforcement operations', label: 'Led operations', score: 7 },
+      { id: 'I\'ve been in police crews before', label: 'Was in crews', score: 5 },
+      { id: 'I know the game well, boet', label: 'Know the game', score: 3 },
+      { id: 'I\'m willing to learn everything', label: 'Willing to learn', score: 3 },
     ]},
-    { text: 'How well do you know CPM traffic laws?', options: [
-      { id: 'Perfectly — I know every law', label: 'Perfect', score: 7 },
+    { text: 'How well you know CPM traffic laws?', options: [
+      { id: 'Perfectly, I know every law, boet', label: 'Perfect', score: 7 },
       { id: 'Very well — most laws', label: 'Very well', score: 5 },
       { id: 'Okay — main laws only', label: 'Main laws', score: 3 },
       { id: 'Not well — still learning', label: 'Learning', score: 2 },
     ]},
-    { text: 'Have you ever been a patrol leader?', options: [
+    { text: 'You ever been a patrol leader?', options: [
       { id: 'Yes — multiple times', label: 'Multiple times', score: 7 },
       { id: 'Yes — once or twice', label: 'Once or twice', score: 5 },
-      { id: 'No — but I was second in command', label: 'Second in command', score: 4 },
-      { id: 'No — I was an officer', label: 'Was officer', score: 3 },
+      { id: 'No, but I was second in command, hey', label: 'Second in command', score: 4 },
+      { id: 'No, I was an officer', label: 'Was officer', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'What law enforcement experience do you have?', options: [
+    { text: 'What law enforcement experience you got?', options: [
       { id: 'Professional IRL law enforcement', label: 'Professional IRL', score: 7 },
       { id: 'CPM police teams', label: 'CPM police', score: 5 },
       { id: 'Other game police', label: 'Other games', score: 3 },
       { id: 'None', label: 'None', score: 1 },
     ]},
-    { text: 'How many CPM police events have you attended?', options: [
+    { text: 'How many CPM police events you attended?', options: [
       { id: 'None', label: 'None', score: 1 },
       { id: '1-5', label: '1-5', score: 2 },
       { id: '6-15', label: '6-15', score: 4 },
       { id: '16-30', label: '16-30', score: 6 },
       { id: '30+', label: '30+', score: 7 },
     ]},
-    { text: 'Have you ever been dismissed from a police team?', options: [
+    { text: 'You ever been dismissed from a police team?', options: [
       { id: 'Yes — for bad behavior', label: 'Yes, bad behavior', score: 0 },
       { id: 'Yes — for inactivity', label: 'Yes, inactivity', score: 1 },
-      { id: 'No — always left on good terms', label: 'Good terms', score: 5 },
-      { id: 'No — never been in a team', label: 'Never in team', score: 2 },
+      { id: 'No, always left on good terms', label: 'Good terms', score: 5 },
+      { id: 'No, never been in a team, shame', label: 'Never in team', score: 2 },
     ]},
-    { text: 'Do you have experience with CPM police roleplay?', options: [
+    { text: 'You have experience with CPM police roleplay?', options: [
       { id: 'Yes — extensive', label: 'Extensive', score: 6 },
       { id: 'Yes — some', label: 'Some', score: 4 },
       { id: 'No — but interested', label: 'Interested', score: 3 },
       { id: 'No — not interested', label: 'Not interested', score: 1 },
     ]},
-    { text: 'How well do you handle CPM driving under pursuit?', options: [
+    { text: 'How well you handle CPM driving under pursuit?', options: [
       { id: 'Perfectly — never lose them', label: 'Perfect', score: 7 },
-      { id: 'Very well — rarely lose them', label: 'Very well', score: 5 },
-      { id: 'Okay — sometimes I lose them', label: 'Okay', score: 3 },
-      { id: 'Badly — I always lose them', label: 'Badly', score: 1 },
+      { id: 'Very well, rarely lose them', label: 'Very well', score: 5 },
+      { id: 'Okay, sometimes I lose them, shame', label: 'Okay', score: 3 },
+      { id: 'Badly, I always lose them', label: 'Badly', score: 1 },
     ]},
-    { text: 'Have you ever managed a police team in any game?', options: [
+    { text: 'You ever managed a police team in any game?', options: [
       { id: 'Yes — large teams (20+)', label: 'Large teams', score: 7 },
       { id: 'Yes — small teams (5-20)', label: 'Small teams', score: 5 },
       { id: 'Yes — very small teams (<5)', label: 'Very small', score: 3 },
-      { id: 'No — but I want to learn', label: 'Want to learn', score: 3 },
+      { id: 'No, but I wanna learn', label: 'Want to learn', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'What makes you different from other KSSMP applicants?', options: [
+    { text: 'What makes you different from other KSSMP applicants, hey?', options: [
       { id: 'My law enforcement experience', label: 'LE experience', score: 6 },
-      { id: 'I am dedicated and reliable', label: 'Dedicated', score: 5 },
-      { id: 'I am a fast learner', label: 'Fast learner', score: 4 },
+      { id: 'I\'m dedicated and reliable', label: 'Dedicated', score: 5 },
+      { id: 'I\'m a fast learner', label: 'Fast learner', score: 4 },
       { id: 'I bring positive energy', label: 'Positive energy', score: 3 },
-      { id: 'Nothing special — just want to join', label: 'Just want to join', score: 1 },
+      { id: 'Nothing special, I just wanna join, lekke', label: 'Just want to join', score: 1 },
     ]},
-    { text: 'Do you know any KSSMP members personally?', options: [
+    { text: 'You know any KSSMP members personally?', options: [
       { id: 'Yes — multiple', label: 'Multiple', score: 5 },
       { id: 'Yes — one or two', label: 'One or two', score: 3 },
-      { id: 'No — but I have seen them around', label: 'Seen them', score: 2 },
+      { id: 'No, but I\'ve seen them around', label: 'Seen them', score: 2 },
       { id: 'No — completely new', label: 'Completely new', score: 1 },
     ]},
-    { text: 'Have you ever held a leadership position in a police crew?', options: [
+    { text: 'You ever held a leadership position in a police crew?', options: [
       { id: 'Yes — founder/leader', label: 'Founder/leader', score: 7 },
       { id: 'Yes — co-leader/officer', label: 'Co-leader', score: 6 },
       { id: 'Yes — senior member', label: 'Senior', score: 4 },
-      { id: 'No — always a regular member', label: 'Regular', score: 2 },
+      { id: 'No, always a regular member', label: 'Regular', score: 2 },
     ]},
-    { text: 'How do you handle conflict in a police team?', options: [
-      { id: 'I mediate and find solutions', label: 'Mediate', score: 7 },
-      { id: 'I follow the chain of command', label: 'Chain of command', score: 5 },
-      { id: 'I stay out of it', label: 'Stay out', score: 2 },
-      { id: 'I confront the problem directly', label: 'Confront', score: 4 },
+    { text: 'How you handle conflict in a police team, hey?', options: [
+      { id: 'I mediate and find solutions, hey', label: 'Mediate', score: 7 },
+      { id: 'I follow the chain of command, always', label: 'Chain of command', score: 5 },
+      { id: 'I stay out of it, shame', label: 'Stay out', score: 2 },
+      { id: 'I confront the problem straight up, always', label: 'Confront', score: 4 },
     ]},
-    { text: 'What is your biggest strength for KSSMP?', options: [
+    { text: 'What\'s your biggest strength for KSSMP?', options: [
       { id: 'My driving skills', label: 'Driving skills', score: 5 },
       { id: 'My communication', label: 'Communication', score: 6 },
       { id: 'My reliability', label: 'Reliability', score: 7 },
       { id: 'My experience', label: 'Experience', score: 5 },
     ]},
-    { text: 'Why should we pick you over other KSSMP applicants?', options: [
-      { id: 'I have more law enforcement experience', label: 'More experience', score: 6 },
+    { text: 'Why must we pick you over the other KSSMP applicants, hey?', options: [
+      { id: 'I\'ve got more law enforcement experience', label: 'More experience', score: 6 },
       { id: 'I am more dedicated', label: 'More dedicated', score: 6 },
-      { id: 'I will be more active', label: 'More active', score: 5 },
-      { id: 'I am a better team player', label: 'Better team player', score: 6 },
-      { id: 'I do not know — you decide', label: 'You decide', score: 2 },
+      { id: 'I\'ll be more active', label: 'More active', score: 5 },
+      { id: 'I\'m a better team player', label: 'Better team player', score: 6 },
+      { id: 'I don\'t know — you decide', label: 'You decide', score: 2 },
     ]},
-    { text: 'Have you ever been promoted in a police crew?', options: [
+    { text: 'You ever been promoted in a police crew?', options: [
       { id: 'Yes — multiple times', label: 'Multiple times', score: 7 },
       { id: 'Yes — once', label: 'Once', score: 5 },
-      { id: 'No — but I deserved it', label: 'Deserved it', score: 3 },
+      { id: 'No, but I deserved it, shame', label: 'Deserved it', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'How do you handle following orders you disagree with?', options: [
-      { id: 'Follow them — trust the chain', label: 'Follow them', score: 7 },
-      { id: 'Follow but ask questions later', label: 'Follow, ask later', score: 5 },
+    { text: 'How you handle following orders you disagree with?', options: [
+      { id: 'Follow them, trust the chain, always', label: 'Follow them', score: 7 },
+      { id: 'Follow but ask questions later, hey', label: 'Follow, ask later', score: 5 },
       { id: 'Question them first', label: 'Question first', score: 3 },
       { id: 'Refuse if I disagree', label: 'Refuse', score: 0 },
     ]},
   ],
   loyalty: [
-    { text: 'Will you prioritize KSSMP over other crews?', options: [
-      { id: 'Yes — KSSMP comes first always', label: 'KSSMP first', score: 7 },
-      { id: 'Yes — but I have other commitments', label: 'Yes, but', score: 4 },
+    { text: 'Will you prioritize KSSMP over other crews, hey?', options: [
+      { id: 'Yes, KSSMP comes first always', label: 'KSSMP first', score: 7 },
+      { id: 'Yes, but I\'ve other commitments', label: 'Yes, but', score: 4 },
       { id: 'Depends on the situation', label: 'Depends', score: 2 },
-      { id: 'No — I treat all crews equally', label: 'Equal', score: 1 },
+      { id: 'No, I treat all crews equally, hey', label: 'Equal', score: 1 },
     ]},
-    { text: 'If another crew offers you a better rank, what do you do?', options: [
-      { id: 'Stay with KSSMP — loyalty matters', label: 'Stay loyal', score: 7 },
-      { id: 'Consider it — but KSSMP is priority', label: 'Consider', score: 4 },
+    { text: 'If another crew offers you a better rank, what you do, hey?', options: [
+      { id: 'Stay with KSSMP, loyalty matters, always', label: 'Stay loyal', score: 7 },
+      { id: 'Consider it, but KSSMP is priority', label: 'Consider', score: 4 },
       { id: 'Take the better offer', label: 'Take offer', score: 0 },
-      { id: 'Depends on what they offer', label: 'Depends', score: 2 },
+      { id: 'Depends what they offer', label: 'Depends', score: 2 },
     ]},
-    { text: 'How long do you plan to stay in KSSMP?', options: [
-      { id: 'Forever — this is my crew', label: 'Forever', score: 7 },
-      { id: 'As long as I am having fun', label: 'Having fun', score: 5 },
-      { id: 'Until something better comes along', label: 'Until better', score: 0 },
-      { id: 'I do not know yet', label: 'Do not know', score: 2 },
+    { text: 'How long you plan to stay in KSSMP?', options: [
+      { id: 'Forever, this is my crew, lekke', label: 'Forever', score: 7 },
+      { id: 'As long as I\'m having fun', label: 'Having fun', score: 5 },
+      { id: 'Until something better comes along, shame', label: 'Until better', score: 0 },
+      { id: 'I don\'t know yet', label: 'Do not know', score: 2 },
     ]},
-    { text: 'Would you leave KSSMP if your friend started another crew?', options: [
-      { id: 'No — KSSMP is my crew', label: 'No', score: 7 },
-      { id: 'Maybe — depends on the crew', label: 'Maybe', score: 3 },
+    { text: 'Would you leave KSSMP if your friend started another crew, hey?', options: [
+      { id: 'No, KSSMP is my crew, always', label: 'No', score: 7 },
+      { id: 'Maybe, depends on the crew', label: 'Maybe', score: 3 },
       { id: 'Yes — friends come first', label: 'Yes', score: 0 },
     ]},
-    { text: 'What does loyalty mean to you in KSSMP?', options: [
+    { text: 'What loyalty mean to you in KSSMP?', options: [
       { id: 'Staying no matter what', label: 'Stay no matter what', score: 7 },
       { id: 'Being active and reliable', label: 'Active and reliable', score: 6 },
       { id: 'Following orders without question', label: 'Follow orders', score: 5 },
-      { id: 'Having friends in the crew', label: 'Having friends', score: 3 },
+      { id: 'Having friends in the crew, shame', label: 'Having friends', score: 3 },
       { id: 'Getting rewards and ranks', label: 'Rewards', score: 0 },
     ]},
-    { text: 'If KSSMP is losing members, what do you do?', options: [
-      { id: 'Recruit new members to help', label: 'Recruit', score: 7 },
-      { id: 'Stay and support the crew', label: 'Stay and support', score: 6 },
+    { text: 'If KSSMP is losing members, what you do, hey?', options: [
+      { id: 'Recruit new members to help, lekke', label: 'Recruit', score: 7 },
+      { id: 'Stay and support the crew, always', label: 'Stay and support', score: 6 },
       { id: 'Consider leaving', label: 'Consider leaving', score: 1 },
       { id: 'Leave before it collapses', label: 'Leave', score: 0 },
     ]},
-    { text: 'Would you defend KSSMP if someone talks badly about it?', options: [
-      { id: 'Yes — always defend my crew', label: 'Always defend', score: 7 },
-      { id: 'Yes — but only if it is serious', label: 'If serious', score: 5 },
-      { id: 'Ignore it — do not engage', label: 'Ignore', score: 3 },
+    { text: 'Would you defend KSSMP if someone talks badly about it, hey?', options: [
+      { id: 'Yes, always defend my crew', label: 'Always defend', score: 7 },
+      { id: 'Yes — but only if it\'s serious', label: 'If serious', score: 5 },
+      { id: 'Ignore it — don\'t engage', label: 'Ignore', score: 3 },
       { id: 'No — not my problem', label: 'Not my problem', score: 0 },
     ]},
-    { text: 'How important is crew loyalty to you?', options: [
+    { text: 'How important crew loyalty to you, hey?', options: [
       { id: 'The most important thing', label: 'Most important', score: 7 },
       { id: 'Very important', label: 'Very important', score: 6 },
       { id: 'Somewhat important', label: 'Somewhat', score: 3 },
       { id: 'Not that important', label: 'Not important', score: 0 },
     ]},
-    { text: 'If |SS| KAMI asks you to do something you do not want to, what do you do?', options: [
+    { text: 'If |SS| KAMI asks you to do something you don\'t want to, what do you do?', options: [
       { id: 'Do it without question', label: 'Do it', score: 7 },
-      { id: 'Do it but ask why later', label: 'Do it, ask later', score: 5 },
+      { id: 'Do it but ask why later, hey', label: 'Do it, ask later', score: 5 },
       { id: 'Ask why first', label: 'Ask why', score: 4 },
-      { id: 'Refuse if I do not agree', label: 'Refuse', score: 0 },
+      { id: 'Refuse if I don\'t agree', label: 'Refuse', score: 0 },
     ]},
-    { text: 'Would you stay in KSSMP even if you are not getting promoted?', options: [
-      { id: 'Yes — I am here for the crew', label: 'Yes', score: 7 },
-      { id: 'Maybe — depends on how long', label: 'Maybe', score: 4 },
-      { id: 'No — I want to progress', label: 'No', score: 2 },
+    { text: 'Would you stay in KSSMP even if you aren\'t getting promoted?', options: [
+      { id: 'Yes — I\'m here for the crew', label: 'Yes', score: 7 },
+      { id: 'Maybe, depends on how long', label: 'Maybe', score: 4 },
+      { id: 'No, I wanna progress', label: 'No', score: 2 },
     ]},
-    { text: 'What happens if KSSMP has internal drama?', options: [
-      { id: 'I stay neutral and focused', label: 'Stay neutral', score: 7 },
+    { text: 'What happens if KSSMP got internal drama?', options: [
+      { id: 'I stay neutral and focused, always', label: 'Stay neutral', score: 7 },
       { id: 'I support my side', label: 'Support side', score: 3 },
-      { id: 'I leave to avoid drama', label: 'Leave', score: 0 },
+      { id: 'I leave to avoid drama, shame', label: 'Leave', score: 0 },
       { id: 'I try to mediate', label: 'Mediate', score: 6 },
     ]},
-    { text: 'Do you put crew goals above personal goals?', options: [
+    { text: 'You put crew goals above your own goals, hey?', options: [
       { id: 'Always — crew comes first', label: 'Always', score: 7 },
       { id: 'Usually — but sometimes personal', label: 'Usually', score: 5 },
       { id: 'It depends', label: 'Depends', score: 3 },
       { id: 'No — personal comes first', label: 'Personal first', score: 0 },
     ]},
-    { text: 'Would you report a friend breaking crew rules?', options: [
+    { text: 'Would you report a friend breaking crew rules, hey?', options: [
       { id: 'Yes — rules are rules', label: 'Yes', score: 7 },
-      { id: 'Yes — but talk to them first', label: 'Talk first', score: 6 },
-      { id: 'Maybe — depends on the rule', label: 'Maybe', score: 3 },
+      { id: 'Yes, but talk to them first', label: 'Talk first', score: 6 },
+      { id: 'Maybe, depends on the rule', label: 'Maybe', score: 3 },
       { id: 'No — friends first', label: 'No', score: 0 },
     ]},
-    { text: 'How do you show loyalty to your crew?', options: [
+    { text: 'How you show loyalty to your crew, hey?', options: [
       { id: 'Being active every day', label: 'Daily activity', score: 6 },
       { id: 'Attending every event', label: 'Attend events', score: 6 },
       { id: 'Defending the crew publicly', label: 'Defend publicly', score: 7 },
       { id: 'Following all orders', label: 'Follow orders', score: 5 },
     ]},
-    { text: 'If KSSMP has a bad reputation, do you stay?', options: [
-      { id: 'Yes — I help fix it', label: 'Help fix', score: 7 },
+    { text: 'If KSSMP has a bad reputation, you stay?', options: [
+      { id: 'Yes, I help fix it, hey', label: 'Help fix', score: 7 },
       { id: 'Yes — I stay loyal', label: 'Stay loyal', score: 6 },
-      { id: 'Depends on why it is bad', label: 'Depends', score: 3 },
-      { id: 'No — I protect my image', label: 'No', score: 0 },
+      { id: 'Depends on why it\'s bad', label: 'Depends', score: 3 },
+      { id: 'No, I protect my image, shame', label: 'No', score: 0 },
     ]},
-    { text: 'What would make you leave KSSMP?', options: [
+    { text: 'What would make you leave KSSMP, hey?', options: [
       { id: 'Nothing — I am committed', label: 'Nothing', score: 7 },
-      { id: 'If they kick me out', label: 'If kicked', score: 5 },
-      { id: 'If there is too much drama', label: 'Too much drama', score: 2 },
-      { id: 'If a better crew comes along', label: 'Better crew', score: 0 },
+      { id: 'If they kick me out, shame', label: 'If kicked', score: 5 },
+      { id: 'If there\'s too much drama', label: 'Too much drama', score: 2 },
+      { id: 'If a better crew comes along, hey', label: 'Better crew', score: 0 },
     ]},
-    { text: 'Do you talk to other crews while in KSSMP?', options: [
+    { text: 'You talk to other crews while in KSSMP?', options: [
       { id: 'No — KSSMP only', label: 'KSSMP only', score: 7 },
-      { id: 'Yes — but only as friends', label: 'Friends only', score: 4 },
-      { id: 'Yes — I keep my options open', label: 'Keep options', score: 1 },
+      { id: 'Yes, but only as friends', label: 'Friends only', score: 4 },
+      { id: 'Yes, I keep my options open, hey', label: 'Keep options', score: 1 },
     ]},
-    { text: 'Would you sacrifice your free time for a KSSMP event?', options: [
+    { text: 'Would you give up your free time for a KSSMP event?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — if it is important', label: 'If important', score: 5 },
-      { id: 'Maybe — depends on my schedule', label: 'Maybe', score: 3 },
-      { id: 'No — my time is mine', label: 'No', score: 0 },
+      { id: 'Yes — if it\'s important', label: 'If important', score: 5 },
+      { id: 'Maybe, depends on my schedule', label: 'Maybe', score: 3 },
+      { id: 'No, my time is mine, shame', label: 'No', score: 0 },
     ]},
-    { text: 'How do you feel about crew hierarchy?', options: [
+    { text: 'How you feel about crew hierarchy?', options: [
       { id: 'I respect it fully', label: 'Respect fully', score: 7 },
       { id: 'I understand it', label: 'Understand', score: 5 },
-      { id: 'I think it is unnecessary', label: 'Unnecessary', score: 1 },
-      { id: 'I want to be at the top', label: 'Want top', score: 2 },
+      { id: 'I think it\'s unnecessary', label: 'Unnecessary', score: 1 },
+      { id: 'I wanna be at the top, hey', label: 'Want top', score: 2 },
     ]},
-    { text: 'Would you recruit for KSSMP on your own time?', options: [
+    { text: 'Would you recruit for KSSMP on your own time, hey?', options: [
       { id: 'Yes — actively', label: 'Actively', score: 7 },
-      { id: 'Yes — if I find good people', label: 'If find good', score: 5 },
+      { id: 'Yes, if I find good people, lekke', label: 'If find good', score: 5 },
       { id: 'Maybe — if asked', label: 'If asked', score: 3 },
       { id: 'No — not my job', label: 'No', score: 1 },
     ]},
-    { text: 'What does being a KSSMP member mean to you?', options: [
+    { text: 'What being a KSSMP member mean to you?', options: [
       { id: 'Family and brotherhood', label: 'Family/brotherhood', score: 7 },
-      { id: 'Being part of something big', label: 'Something big', score: 6 },
+      { id: 'Being part of something big, lekke', label: 'Something big', score: 6 },
       { id: 'Having status and respect', label: 'Status/respect', score: 3 },
       { id: 'Getting rewards and ranks', label: 'Rewards', score: 0 },
     ]},
-    { text: 'If KSSMP is at war with another crew, what do you do?', options: [
+    { text: 'If KSSMP is at war with another crew, what you do, hey?', options: [
       { id: 'Fight for KSSMP', label: 'Fight', score: 7 },
       { id: 'Support from behind', label: 'Support', score: 5 },
       { id: 'Stay out of it', label: 'Stay out', score: 1 },
       { id: 'Leave to avoid conflict', label: 'Leave', score: 0 },
     ]},
-    { text: 'Do you follow KSSMP social media accounts?', options: [
+    { text: 'You follow KSSMP social media accounts?', options: [
       { id: 'Yes — all of them', label: 'All', score: 6 },
       { id: 'Yes — some of them', label: 'Some', score: 4 },
       { id: 'No — but I will', label: 'Will follow', score: 3 },
       { id: 'No — not interested', label: 'Not interested', score: 0 },
     ]},
-    { text: 'Would you wait weeks for a promotion?', options: [
+    { text: 'Would you wait weeks for a promotion, hey?', options: [
       { id: 'Yes — I am patient', label: 'Yes', score: 7 },
-      { id: 'Yes — but I would ask about it', label: 'Yes, ask', score: 5 },
-      { id: 'No — I expect quick progress', label: 'No', score: 2 },
+      { id: 'Yes, but I\'d ask about it', label: 'Yes, ask', score: 5 },
+      { id: 'No, I expect quick progress, hey', label: 'No', score: 2 },
     ]},
-    { text: 'How do you handle being demoted?', options: [
-      { id: 'Accept it and work harder', label: 'Work harder', score: 7 },
-      { id: 'Accept it but feel disappointed', label: 'Disappointed', score: 4 },
+    { text: 'How you handle being demoted?', options: [
+      { id: 'Accept it and work harder, hey', label: 'Work harder', score: 7 },
+      { id: 'Accept it but feel disappointed, shame', label: 'Disappointed', score: 4 },
       { id: 'Ask why and argue', label: 'Argue', score: 1 },
       { id: 'Leave the crew', label: 'Leave', score: 0 },
     ]},
-    { text: 'Would you attend a KSSMP event at 6am?', options: [
+    { text: 'Would you attend a KSSMP event at 6am, hey?', options: [
       { id: 'Yes — no matter what', label: 'Yes', score: 7 },
-      { id: 'Yes — if it is important', label: 'If important', score: 5 },
-      { id: 'Maybe — depends on my schedule', label: 'Maybe', score: 3 },
-      { id: 'No — that is too early', label: 'No', score: 0 },
+      { id: 'Yes — if it\'s important', label: 'If important', score: 5 },
+      { id: 'Maybe, depends on my schedule', label: 'Maybe', score: 3 },
+      { id: 'No — that\'s too early', label: 'No', score: 0 },
     ]},
-    { text: 'What is more important: rank or loyalty?', options: [
+    { text: 'What matters more, rank or loyalty?', options: [
       { id: 'Loyalty — always', label: 'Loyalty', score: 7 },
       { id: 'Both equally', label: 'Both', score: 5 },
-      { id: 'Rank — I want to progress', label: 'Rank', score: 2 },
+      { id: 'Rank, I wanna progress', label: 'Rank', score: 2 },
     ]},
   ],
   communication: SSRS.communication,
   scenario: [
-    { text: 'A player is speeding through a restricted zone during an event. What do you do?', options: [
-      { id: 'Signal them to stop, call for backup if needed', label: 'Signal + backup', score: 7, correct: true },
-      { id: 'Follow them at a safe distance', label: 'Follow safely', score: 3 },
+    { text: 'A player is speeding through a restricted zone during an event. What you do, hey?', options: [
+      { id: 'Signal them to stop, call backup if needed', label: 'Signal + backup', score: 7, correct: true },
+      { id: 'Follow them at a safe distance, hey', label: 'Follow safely', score: 3 },
       { id: 'Chase them at high speed', label: 'Chase them', score: 2 },
-      { id: 'Radio other officers to set up a roadblock', label: 'Roadblock', score: 5 },
-      { id: 'Ignore it — focus on the event perimeter', label: 'Ignore it', score: 0 },
+      { id: 'Radio the other officers to set a roadblock', label: 'Roadblock', score: 5 },
+      { id: 'Ignore it, focus on the event perimeter', label: 'Ignore it', score: 0 },
       { id: 'Block the road with my own car', label: 'Block road', score: 1 },
     ]},
-    { text: 'You pull over a player and they start being aggressive. What do you do?', options: [
-      { id: 'Stay calm, call backup, de-escalate', label: 'Stay calm + backup', score: 7, correct: true },
+    { text: 'You pull over a player and they start being aggressive. What you do, hey?', options: [
+      { id: 'Stay calm, call backup, de-escalate, hey', label: 'Stay calm + backup', score: 7, correct: true },
       { id: 'Be aggressive back', label: 'Be aggressive back', score: 0 },
       { id: 'Arrest them immediately', label: 'Arrest immediately', score: 3 },
       { id: 'Let them go', label: 'Let them go', score: 1 },
       { id: 'Leave the scene', label: 'Leave', score: 0 },
     ]},
-    { text: 'You witness a hit-and-run during a meet. What do you do?', options: [
-      { id: 'Get plate info, report to leadership, help victim', label: 'Report + help', score: 7, correct: true },
+    { text: 'You witness a hit-and-run during a meet. What you do, hey?', options: [
+      { id: 'Get plate info, report to leadership, help the victim', label: 'Report + help', score: 7, correct: true },
       { id: 'Chase the hit-and-run driver', label: 'Chase', score: 2 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Just help the victim', label: 'Just help victim', score: 4 },
     ]},
-    { text: 'A non-officer is using police lights and sirens. What do you do?', options: [
-      { id: 'Pull them over and report to leadership', label: 'Pull over + report', score: 7, correct: true },
+    { text: 'A non-officer is using police lights and sirens. What you do, hey?', options: [
+      { id: 'Pull them over and report to leadership, hey', label: 'Pull over + report', score: 7, correct: true },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Confront them aggressively', label: 'Confront', score: 2 },
       { id: 'Arrest them', label: 'Arrest', score: 4 },
     ]},
-    { text: 'During a patrol, you find an abandoned car blocking traffic. What do you do?', options: [
-      { id: 'Report it, direct traffic around it', label: 'Report + direct', score: 7, correct: true },
+    { text: 'During a patrol, you find an abandoned car blocking traffic. What you do, hey?', options: [
+      { id: 'Report it and direct traffic around it', label: 'Report + direct', score: 7, correct: true },
       { id: 'Move it myself', label: 'Move it', score: 3 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Tow it', label: 'Tow it', score: 4 },
     ]},
-    { text: 'A fellow officer is not following protocol. What do you do?', options: [
-      { id: 'Remind them of protocol privately', label: 'Remind privately', score: 7, correct: true },
+    { text: 'A fellow officer isn\'t following protocol. What do you do?', options: [
+      { id: 'Remind them of protocol privately, hey', label: 'Remind privately', score: 7, correct: true },
       { id: 'Report them to leadership', label: 'Report', score: 5 },
       { id: 'Ignore it', label: 'Ignore', score: 1 },
       { id: 'Call them out publicly', label: 'Call out publicly', score: 2 },
     ]},
-    { text: 'You are called to a disturbance at a meet. What do you do?', options: [
-      { id: 'Assess the situation, call backup if needed', label: 'Assess + backup', score: 7, correct: true },
+    { text: 'You called to a disturbance at a meet. What you do, hey?', options: [
+      { id: 'Assess the situation, call backup if needed, hey', label: 'Assess + backup', score: 7, correct: true },
       { id: 'Rush in alone', label: 'Rush in', score: 2 },
       { id: 'Ignore the call', label: 'Ignore', score: 0 },
       { id: 'Wait for more officers', label: 'Wait', score: 4 },
     ]},
-    { text: 'A player asks you for help but you are off duty. What do you do?', options: [
-      { id: 'Help them anyway — duty never ends', label: 'Help anyway', score: 7, correct: true },
-      { id: 'Tell them I am off duty', label: 'Off duty', score: 3 },
+    { text: 'A player asks you for help but you\'re off duty. What you do, hey?', options: [
+      { id: 'Help them anyway, duty never ends, lekke', label: 'Help anyway', score: 7, correct: true },
+      { id: 'Tell them I\'m off duty', label: 'Off duty', score: 3 },
       { id: 'Ignore them', label: 'Ignore', score: 0 },
-      { id: 'Direct them to on-duty officers', label: 'Direct them', score: 5 },
+      { id: 'Direct them to the on-duty officers', label: 'Direct them', score: 5 },
     ]},
-    { text: 'You notice a road hazard during patrol. What do you do?', options: [
-      { id: 'Report it and warn other drivers', label: 'Report + warn', score: 7, correct: true },
+    { text: 'You notice a road hazard during patrol. What you do, hey?', options: [
+      { id: 'Report it and warn the other drivers', label: 'Report + warn', score: 7, correct: true },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Block the road myself', label: 'Block road', score: 3 },
-      { id: 'Hope someone else deals with it', label: 'Hope someone else', score: 0 },
+      { id: 'Hope someone else sorts it out', label: 'Hope someone else', score: 0 },
     ]},
-    { text: 'A VIP wants a police escort but you are busy. What do you do?', options: [
-      { id: 'Find another officer to help', label: 'Find another officer', score: 7, correct: true },
-      { id: 'Do it myself — VIP comes first', label: 'Do it myself', score: 4 },
+    { text: 'A VIP wants a police escort but you\'re busy. What you do, hey?', options: [
+      { id: 'Find another officer to help, hey', label: 'Find another officer', score: 7, correct: true },
+      { id: 'Do it myself, VIP comes first, always', label: 'Do it myself', score: 4 },
       { id: 'Tell them to wait', label: 'Tell them to wait', score: 3 },
       { id: 'Refuse', label: 'Refuse', score: 1 },
     ]},
-    { text: 'You see a player breaking traffic laws. What do you do?', options: [
-      { id: 'Pull them over and issue a warning', label: 'Pull over + warn', score: 7, correct: true },
+    { text: 'You see a player breaking traffic laws. What you do, hey?', options: [
+      { id: 'Pull them over and issue a warning, hey', label: 'Pull over + warn', score: 7, correct: true },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Chase them', label: 'Chase', score: 3 },
       { id: 'Report their plate', label: 'Report plate', score: 5 },
     ]},
-    { text: 'During a chase, the suspect heads toward a crowd. What do you do?', options: [
-      { id: 'Back off — public safety first', label: 'Back off', score: 7, correct: true },
+    { text: 'During a chase, the suspect heads toward a crowd. What you do, hey?', options: [
+      { id: 'Back off, public safety first, hey', label: 'Back off', score: 7, correct: true },
       { id: 'Continue the chase', label: 'Continue chase', score: 0 },
       { id: 'Ram them off the road', label: 'Ram them', score: 0 },
       { id: 'Call for backup', label: 'Call backup', score: 5 },
     ]},
-    { text: 'A player claims they were wrongly ticketed. What do you do?', options: [
-      { id: 'Review the evidence, explain my decision', label: 'Review + explain', score: 7, correct: true },
+    { text: 'A player claims they were wrongly ticketed. What you do, hey?', options: [
+      { id: 'Review the evidence, explain my decision, hey', label: 'Review + explain', score: 7, correct: true },
       { id: 'Ignore their complaint', label: 'Ignore', score: 1 },
       { id: 'Void the ticket immediately', label: 'Void ticket', score: 3 },
       { id: 'Argue with them', label: 'Argue', score: 0 },
     ]},
-    { text: 'You are asked to arrest a friend. What do you do?', options: [
-      { id: 'Do it — duty comes first', label: 'Do it', score: 7, correct: true },
+    { text: 'You asked to arrest a friend. What you do, hey?', options: [
+      { id: 'Do it, duty comes first, always', label: 'Do it', score: 7, correct: true },
       { id: 'Refuse — friends first', label: 'Refuse', score: 0 },
       { id: 'Let them go', label: 'Let them go', score: 0 },
-      { id: 'Ask someone else to do it', label: 'Ask someone else', score: 4 },
+      { id: 'Ask someone else to do it, shame', label: 'Ask someone else', score: 4 },
     ]},
-    { text: 'A player is blocking a road with their car. What do you do?', options: [
-      { id: 'Ask them to move, then take action if they do not', label: 'Ask + act', score: 7, correct: true },
+    { text: 'A player is blocking a road with their car. What you do, hey?', options: [
+      { id: 'Ask them to move, then take action if they don\'t', label: 'Ask + act', score: 7, correct: true },
       { id: 'Tow immediately', label: 'Tow immediately', score: 3 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Ram their car out of the way', label: 'Ram', score: 0 },
     ]},
-    { text: 'You find evidence of a crime at a meet. What do you do?', options: [
-      { id: 'Secure the scene, report to leadership', label: 'Secure + report', score: 7, correct: true },
+    { text: 'You find evidence of a crime at a meet. What you do, hey?', options: [
+      { id: 'Secure the scene, report to leadership, hey', label: 'Secure + report', score: 7, correct: true },
       { id: 'Investigate alone', label: 'Investigate alone', score: 3 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Tell everyone about it', label: 'Tell everyone', score: 1 },
     ]},
-    { text: 'A new officer does not know the radio codes. What do you do?', options: [
+    { text: 'A new officer doesn\'t know the radio codes. What do you do?', options: [
       { id: 'Teach them the codes', label: 'Teach them', score: 7, correct: true },
       { id: 'Ignore them', label: 'Ignore', score: 0 },
       { id: 'Report them as untrained', label: 'Report', score: 3 },
-      { id: 'Tell them to figure it out', label: 'Figure it out', score: 0 },
+      { id: 'Tell them to figure it out, hey', label: 'Figure it out', score: 0 },
     ]},
-    { text: 'You are on a traffic stop and backup is far away. What do you do?', options: [
-      { id: 'Stay alert, follow protocol, wait for backup', label: 'Stay alert + wait', score: 7, correct: true },
+    { text: 'You on a traffic stop and backup is far away. What you do, hey?', options: [
+      { id: 'Stay alert, follow protocol, wait for backup, always', label: 'Stay alert + wait', score: 7, correct: true },
       { id: 'Let them go', label: 'Let them go', score: 1 },
-      { id: 'Try to handle it alone', label: 'Handle alone', score: 3 },
+      { id: 'Try handle it alone', label: 'Handle alone', score: 3 },
       { id: 'Panic', label: 'Panic', score: 0 },
     ]},
-    { text: 'A player is livestreaming and disrupting the patrol. What do you do?', options: [
-      { id: 'Ask them to stop, report if they continue', label: 'Ask + report', score: 7, correct: true },
+    { text: 'A player is livestreaming and disrupting the patrol. What you do, hey?', options: [
+      { id: 'Ask them to stop, report if they carry on', label: 'Ask + report', score: 7, correct: true },
       { id: 'Ignore it', label: 'Ignore', score: 2 },
       { id: 'Arrest them', label: 'Arrest', score: 2 },
       { id: 'Play along', label: 'Play along', score: 0 },
     ]},
-    { text: 'You notice your partner is driving recklessly. What do you do?', options: [
-      { id: 'Tell them to stop, report if they do not', label: 'Tell + report', score: 7, correct: true },
+    { text: 'You notice your partner is driving recklessly. What you do, hey?', options: [
+      { id: 'Tell them to stop, report if they don\'t', label: 'Tell + report', score: 7, correct: true },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Report them immediately', label: 'Report immediately', score: 5 },
       { id: 'Join in', label: 'Join in', score: 0 },
     ]},
-    { text: 'A civilian asks for directions during a high-speed chase. What do you do?', options: [
-      { id: 'Tell them to wait — chase is priority', label: 'Chase is priority', score: 7, correct: true },
+    { text: 'A civilian asks for directions during a high-speed chase. What you do, hey?', options: [
+      { id: 'Tell them to wait, chase is priority', label: 'Chase is priority', score: 7, correct: true },
       { id: 'Stop and help them', label: 'Stop and help', score: 2 },
       { id: 'Ignore them', label: 'Ignore', score: 3 },
       { id: 'Yell at them', label: 'Yell', score: 0 },
     ]},
-    { text: 'You are assigned to traffic duty but an emergency call comes in. What do you do?', options: [
+    { text: 'You assigned to traffic duty but an emergency call comes in. What you do, hey?', options: [
       { id: 'Respond to the emergency', label: 'Respond to emergency', score: 7, correct: true },
       { id: 'Stay on traffic duty', label: 'Stay on duty', score: 3 },
       { id: 'Wait for someone else', label: 'Wait', score: 2 },
       { id: 'Ignore the call', label: 'Ignore', score: 0 },
     ]},
-    { text: 'A player says they have a weapon. What do you do?', options: [
-      { id: 'Call backup, approach with caution', label: 'Call backup + caution', score: 7, correct: true },
+    { text: 'A player says they have a weapon. What you do, hey?', options: [
+      { id: 'Call backup, approach with caution, hey', label: 'Call backup + caution', score: 7, correct: true },
       { id: 'Rush them', label: 'Rush them', score: 0 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Run away', label: 'Run away', score: 0 },
     ]},
-    { text: 'You are asked to do paperwork but want to patrol. What do you do?', options: [
-      { id: 'Do the paperwork — it is part of the job', label: 'Do paperwork', score: 7, correct: true },
+    { text: 'You asked to do paperwork but want to patrol. What you do, hey?', options: [
+      { id: 'Do the paperwork — it\'s part of the job', label: 'Do paperwork', score: 7, correct: true },
       { id: 'Skip it and patrol', label: 'Skip paperwork', score: 0 },
-      { id: 'Ask someone else to do it', label: 'Ask someone else', score: 2 },
+      { id: 'Ask someone else to do it, shame', label: 'Ask someone else', score: 2 },
       { id: 'Complain but do it', label: 'Complain but do it', score: 4 },
     ]},
-    { text: 'A fellow officer is sleeping on duty. What do you do?', options: [
-      { id: 'Wake them up, report to leadership', label: 'Wake + report', score: 7, correct: true },
+    { text: 'A fellow officer is sleeping on duty. What you do, hey?', options: [
+      { id: 'Wake them up, report to leadership, hey', label: 'Wake + report', score: 7, correct: true },
       { id: 'Wake them up quietly', label: 'Wake quietly', score: 5 },
       { id: 'Ignore it', label: 'Ignore', score: 1 },
       { id: 'Take a photo', label: 'Take photo', score: 0 },
     ]},
-    { text: 'You are chasing a suspect and they crash. What do you do?', options: [
-      { id: 'Stop, check on them, call for medical', label: 'Stop + check + medical', score: 7, correct: true },
+    { text: 'You chasing a suspect and they crash. What you do, hey?', options: [
+      { id: 'Stop, check on them, call for medical, hey', label: 'Stop + check + medical', score: 7, correct: true },
       { id: 'Arrest them immediately', label: 'Arrest immediately', score: 3 },
       { id: 'Keep chasing', label: 'Keep chasing', score: 0 },
       { id: 'Ignore the crash', label: 'Ignore', score: 0 },
     ]},
-    { text: 'A player is impersonating an officer. What do you do?', options: [
-      { id: 'Confront them, report to leadership', label: 'Confront + report', score: 7, correct: true },
+    { text: 'A player is impersonating an officer. What you do, hey?', options: [
+      { id: 'Confront them, report to leadership, hey', label: 'Confront + report', score: 7, correct: true },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Join them', label: 'Join them', score: 0 },
       { id: 'Arrest them', label: 'Arrest', score: 5 },
@@ -1985,506 +1985,506 @@ const KSSMS = {
   activity: SSRS.activity,
   age: SSRS.age,
   experience: [
-    { text: 'Have you managed security teams or coordinated operations in CPM?', options: [
+    { text: 'You managed security teams or coordinated operations in CPM, hey?', options: [
       { id: 'Yes — multiple teams', label: 'Multiple teams', score: 6 },
       { id: 'Yes — one team only', label: 'One team', score: 4 },
       { id: 'Yes — solo experience', label: 'Solo experience', score: 3 },
       { id: 'A little — casual play', label: 'Casual play', score: 2 },
       { id: 'A little — watched others', label: 'Watched others', score: 1 },
-      { id: 'No — but willing to learn', label: 'Willing to learn', score: 3 },
+      { id: 'No, but willing to learn, hey', label: 'Willing to learn', score: 3 },
       { id: 'No — completely new', label: 'Completely new', score: 1 },
     ]},
-    { text: 'How experienced are you with team management in CPM?', options: [
+    { text: 'How experienced you with team management in CPM, hey?', options: [
       { id: 'Very experienced', label: 'Very experienced', score: 7 },
       { id: 'Experienced', label: 'Experienced', score: 5 },
       { id: 'Some experience', label: 'Some', score: 3 },
       { id: 'Limited', label: 'Limited', score: 2 },
-      { id: 'None — but eager to learn', label: 'None', score: 2 },
+      { id: 'None, but eager to learn, hey', label: 'None', score: 2 },
     ]},
-    { text: 'Have you ever coordinated a security operation in CPM?', options: [
-      { id: 'Yes — I led the coordination', label: 'Led coordination', score: 7 },
-      { id: 'Yes — I was part of the team', label: 'Team member', score: 5 },
+    { text: 'You ever coordinated a security operation in CPM, hey?', options: [
+      { id: 'Yes, I led the coordination, lekke', label: 'Led coordination', score: 7 },
+      { id: 'Yes, I was part of the team, lekke', label: 'Team member', score: 5 },
       { id: 'Yes — I observed', label: 'Observed', score: 2 },
-      { id: 'No — but I want to', label: 'Want to', score: 3 },
+      { id: 'No, but I wanna', label: 'Want to', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'What management experience do you have in CPM?', options: [
+    { text: 'What management experience you got in CPM, hey?', options: [
       { id: 'Led multiple teams', label: 'Led teams', score: 7 },
       { id: 'Managed small groups', label: 'Managed groups', score: 5 },
       { id: 'Helped with organization', label: 'Helped organize', score: 4 },
       { id: 'Attended management events', label: 'Attended events', score: 3 },
       { id: 'No experience', label: 'No experience', score: 1 },
     ]},
-    { text: 'How many operations have you coordinated?', options: [
+    { text: 'How many operations you coordinated?', options: [
       { id: 'None', label: 'None', score: 1 },
       { id: '1-3', label: '1-3', score: 2 },
       { id: '4-10', label: '4-10', score: 4 },
       { id: '11-20', label: '11-20', score: 6 },
       { id: '20+', label: '20+', score: 7 },
     ]},
-    { text: 'Do you know how to manage a security team in CPM?', options: [
-      { id: 'Yes — I can lead a team', label: 'Lead team', score: 7 },
-      { id: 'Yes — I can follow protocols', label: 'Follow protocols', score: 5 },
+    { text: 'You know how to manage a security team in CPM, hey?', options: [
+      { id: 'Yes, I can lead a team, lekke', label: 'Lead team', score: 7 },
+      { id: 'Yes, I can follow protocols, hey', label: 'Follow protocols', score: 5 },
       { id: 'Somewhat — I understand basics', label: 'Basics', score: 3 },
-      { id: 'No — but I can learn', label: 'Can learn', score: 2 },
+      { id: 'No, but I can learn, hey', label: 'Can learn', score: 2 },
       { id: 'No — no idea', label: 'No idea', score: 1 },
     ]},
-    { text: 'Have you worked with management teams before?', options: [
+    { text: 'You worked with management teams before?', options: [
       { id: 'Yes — in multiple games', label: 'Multiple games', score: 7 },
       { id: 'Yes — in CPM only', label: 'CPM only', score: 5 },
-      { id: 'Yes — in other mobile games', label: 'Other games', score: 4 },
-      { id: 'No — this is my first time', label: 'First time', score: 1 },
+      { id: 'Yes, in other mobile games, shame', label: 'Other games', score: 4 },
+      { id: 'No, this my first time, hey', label: 'First time', score: 1 },
     ]},
-    { text: 'What role have you played in previous management crews?', options: [
+    { text: 'What role you played in previous management crews?', options: [
       { id: 'Manager / Director', label: 'Manager/Director', score: 7 },
       { id: 'Senior coordinator', label: 'Senior coordinator', score: 5 },
       { id: 'Regular coordinator', label: 'Regular', score: 3 },
       { id: 'New recruit', label: 'Recruit', score: 2 },
-      { id: 'Never been in a management crew', label: 'Never', score: 1 },
+      { id: 'Never been in a management crew, shame', label: 'Never', score: 1 },
     ]},
-    { text: 'How long have you been playing CPM?', options: [
+    { text: 'How long you been playing CPM?', options: [
       { id: 'Less than 6 months', label: '<6 months', score: 1 },
       { id: '6-12 months', label: '6-12 months', score: 3 },
       { id: '1-2 years', label: '1-2 years', score: 5 },
       { id: '2-3 years', label: '2-3 years', score: 6 },
       { id: '3+ years', label: '3+ years', score: 7 },
     ]},
-    { text: 'Have you ever organized a large CPM operation?', options: [
+    { text: 'You ever organized a large CPM operation?', options: [
       { id: 'Yes — multiple operations', label: 'Multiple ops', score: 7 },
       { id: 'Yes — one operation', label: 'One op', score: 5 },
       { id: 'No — but I helped', label: 'Helped', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'Do you understand CPM security management protocols?', options: [
-      { id: 'Yes — I know them well', label: 'Know well', score: 7 },
-      { id: 'Yes — I know the basics', label: 'Know basics', score: 4 },
-      { id: 'Somewhat — I have heard of them', label: 'Heard of them', score: 2 },
+    { text: 'You understand CPM security management protocols?', options: [
+      { id: 'Yes, I know them well, boet', label: 'Know well', score: 7 },
+      { id: 'Yes, I know the basics, hey', label: 'Know basics', score: 4 },
+      { id: 'Somewhat, I\'ve heard of them', label: 'Heard of them', score: 2 },
       { id: 'No — teach me', label: 'Teach me', score: 2 },
     ]},
-    { text: 'What CPM experience makes you suitable for KSSMS?', options: [
-      { id: 'I have led security management operations', label: 'Led operations', score: 7 },
-      { id: 'I have been in management crews before', label: 'Was in crews', score: 5 },
-      { id: 'I know the game well', label: 'Know the game', score: 3 },
-      { id: 'I am willing to learn everything', label: 'Willing to learn', score: 3 },
+    { text: 'What CPM experience makes you suitable for KSSMS, hey?', options: [
+      { id: 'I\'ve led security management operations', label: 'Led operations', score: 7 },
+      { id: 'I\'ve been in management crews before', label: 'Was in crews', score: 5 },
+      { id: 'I know the game well, boet', label: 'Know the game', score: 3 },
+      { id: 'I\'m willing to learn everything', label: 'Willing to learn', score: 3 },
     ]},
-    { text: 'How well do you know CPM security hierarchies?', options: [
-      { id: 'Perfectly — I know every role', label: 'Perfect', score: 7 },
+    { text: 'How well you know CPM security hierarchies?', options: [
+      { id: 'Perfectly, I know every role, boet', label: 'Perfect', score: 7 },
       { id: 'Very well — most roles', label: 'Very well', score: 5 },
       { id: 'Okay — main roles only', label: 'Main roles', score: 3 },
       { id: 'Not well — still learning', label: 'Learning', score: 2 },
     ]},
-    { text: 'Have you ever been a team coordinator?', options: [
+    { text: 'You ever been a team coordinator?', options: [
       { id: 'Yes — multiple times', label: 'Multiple times', score: 7 },
       { id: 'Yes — once or twice', label: 'Once or twice', score: 5 },
-      { id: 'No — but I was second in command', label: 'Second in command', score: 4 },
-      { id: 'No — I was a member', label: 'Was member', score: 3 },
+      { id: 'No, but I was second in command, hey', label: 'Second in command', score: 4 },
+      { id: 'No, I was a member', label: 'Was member', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'What management experience do you have?', options: [
+    { text: 'What management experience you got?', options: [
       { id: 'Professional IRL management', label: 'Professional IRL', score: 7 },
       { id: 'CPM management teams', label: 'CPM management', score: 5 },
       { id: 'Other game management', label: 'Other games', score: 3 },
       { id: 'None', label: 'None', score: 1 },
     ]},
-    { text: 'How many CPM management events have you attended?', options: [
+    { text: 'How many CPM management events you attended?', options: [
       { id: 'None', label: 'None', score: 1 },
       { id: '1-5', label: '1-5', score: 2 },
       { id: '6-15', label: '6-15', score: 4 },
       { id: '16-30', label: '16-30', score: 6 },
       { id: '30+', label: '30+', score: 7 },
     ]},
-    { text: 'Have you ever been removed from a management position?', options: [
+    { text: 'You ever been removed from a management position?', options: [
       { id: 'Yes — for bad behavior', label: 'Yes, bad behavior', score: 0 },
       { id: 'Yes — for inactivity', label: 'Yes, inactivity', score: 1 },
-      { id: 'No — always left on good terms', label: 'Good terms', score: 5 },
+      { id: 'No, always left on good terms', label: 'Good terms', score: 5 },
       { id: 'No — never held one', label: 'Never held', score: 2 },
     ]},
-    { text: 'Do you have experience with CPM team coordination?', options: [
+    { text: 'You have experience with CPM team coordination?', options: [
       { id: 'Yes — extensive', label: 'Extensive', score: 6 },
       { id: 'Yes — some', label: 'Some', score: 4 },
       { id: 'No — but interested', label: 'Interested', score: 3 },
       { id: 'No — not interested', label: 'Not interested', score: 1 },
     ]},
-    { text: 'How well do you handle CPM team disputes?', options: [
-      { id: 'Perfectly — I resolve conflicts quickly', label: 'Perfect', score: 7 },
-      { id: 'Very well — I can mediate', label: 'Very well', score: 5 },
+    { text: 'How well you handle CPM team disputes?', options: [
+      { id: 'Perfectly, I resolve conflicts quickly, boet', label: 'Perfect', score: 7 },
+      { id: 'Very well, I can mediate, hey', label: 'Very well', score: 5 },
       { id: 'Okay — sometimes I struggle', label: 'Okay', score: 3 },
       { id: 'Badly — I avoid conflicts', label: 'Badly', score: 1 },
     ]},
-    { text: 'Have you ever managed a large team in any game?', options: [
+    { text: 'You ever managed a large team in any game?', options: [
       { id: 'Yes — large teams (20+)', label: 'Large teams', score: 7 },
       { id: 'Yes — small teams (5-20)', label: 'Small teams', score: 5 },
       { id: 'Yes — very small teams (<5)', label: 'Very small', score: 3 },
-      { id: 'No — but I want to learn', label: 'Want to learn', score: 3 },
+      { id: 'No, but I wanna learn', label: 'Want to learn', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'What makes you different from other KSSMS applicants?', options: [
+    { text: 'What makes you different from other KSSMS applicants, hey?', options: [
       { id: 'My management experience', label: 'Management experience', score: 6 },
-      { id: 'I am dedicated and reliable', label: 'Dedicated', score: 5 },
-      { id: 'I am a fast learner', label: 'Fast learner', score: 4 },
+      { id: 'I\'m dedicated and reliable', label: 'Dedicated', score: 5 },
+      { id: 'I\'m a fast learner', label: 'Fast learner', score: 4 },
       { id: 'I bring positive energy', label: 'Positive energy', score: 3 },
-      { id: 'Nothing special — just want to join', label: 'Just want to join', score: 1 },
+      { id: 'Nothing special, I just wanna join, lekke', label: 'Just want to join', score: 1 },
     ]},
-    { text: 'Do you know any KSSMS members personally?', options: [
+    { text: 'You know any KSSMS members personally?', options: [
       { id: 'Yes — multiple', label: 'Multiple', score: 5 },
       { id: 'Yes — one or two', label: 'One or two', score: 3 },
-      { id: 'No — but I have seen them around', label: 'Seen them', score: 2 },
+      { id: 'No, but I\'ve seen them around', label: 'Seen them', score: 2 },
       { id: 'No — completely new', label: 'Completely new', score: 1 },
     ]},
-    { text: 'Have you ever held a leadership position in a management crew?', options: [
+    { text: 'You ever held a leadership position in a management crew?', options: [
       { id: 'Yes — founder/leader', label: 'Founder/leader', score: 7 },
       { id: 'Yes — co-leader/officer', label: 'Co-leader', score: 6 },
       { id: 'Yes — senior member', label: 'Senior', score: 4 },
-      { id: 'No — always a regular member', label: 'Regular', score: 2 },
+      { id: 'No, always a regular member', label: 'Regular', score: 2 },
     ]},
-    { text: 'How do you handle conflict in a management team?', options: [
-      { id: 'I mediate and find solutions', label: 'Mediate', score: 7 },
-      { id: 'I follow the chain of command', label: 'Chain of command', score: 5 },
-      { id: 'I stay out of it', label: 'Stay out', score: 2 },
-      { id: 'I confront the problem directly', label: 'Confront', score: 4 },
+    { text: 'How you handle conflict in a management team, hey?', options: [
+      { id: 'I mediate and find solutions, hey', label: 'Mediate', score: 7 },
+      { id: 'I follow the chain of command, always', label: 'Chain of command', score: 5 },
+      { id: 'I stay out of it, shame', label: 'Stay out', score: 2 },
+      { id: 'I confront the problem straight up, always', label: 'Confront', score: 4 },
     ]},
-    { text: 'What is your biggest strength for KSSMS?', options: [
+    { text: 'What\'s your biggest strength for KSSMS?', options: [
       { id: 'My organizational skills', label: 'Organizational skills', score: 7 },
       { id: 'My communication', label: 'Communication', score: 6 },
       { id: 'My reliability', label: 'Reliability', score: 7 },
       { id: 'My experience', label: 'Experience', score: 5 },
     ]},
-    { text: 'Why should we pick you over other KSSMS applicants?', options: [
-      { id: 'I have more management experience', label: 'More experience', score: 6 },
+    { text: 'Why must we pick you over the other KSSMS applicants, hey?', options: [
+      { id: 'I\'ve got more management experience', label: 'More experience', score: 6 },
       { id: 'I am more dedicated', label: 'More dedicated', score: 6 },
-      { id: 'I will be more active', label: 'More active', score: 5 },
-      { id: 'I am a better team player', label: 'Better team player', score: 6 },
-      { id: 'I do not know — you decide', label: 'You decide', score: 2 },
+      { id: 'I\'ll be more active', label: 'More active', score: 5 },
+      { id: 'I\'m a better team player', label: 'Better team player', score: 6 },
+      { id: 'I don\'t know — you decide', label: 'You decide', score: 2 },
     ]},
-    { text: 'Have you ever been promoted in a management crew?', options: [
+    { text: 'You ever been promoted in a management crew?', options: [
       { id: 'Yes — multiple times', label: 'Multiple times', score: 7 },
       { id: 'Yes — once', label: 'Once', score: 5 },
-      { id: 'No — but I deserved it', label: 'Deserved it', score: 3 },
+      { id: 'No, but I deserved it, shame', label: 'Deserved it', score: 3 },
       { id: 'No — never', label: 'Never', score: 1 },
     ]},
-    { text: 'How do you handle following orders you disagree with?', options: [
-      { id: 'Follow them — trust the chain', label: 'Follow them', score: 7 },
-      { id: 'Follow but ask questions later', label: 'Follow, ask later', score: 5 },
+    { text: 'How you handle following orders you disagree with?', options: [
+      { id: 'Follow them, trust the chain, always', label: 'Follow them', score: 7 },
+      { id: 'Follow but ask questions later, hey', label: 'Follow, ask later', score: 5 },
       { id: 'Question them first', label: 'Question first', score: 3 },
       { id: 'Refuse if I disagree', label: 'Refuse', score: 0 },
     ]},
   ],
   loyalty: [
-    { text: 'Will you put SS interests above all else?', options: [
+    { text: 'Will you put SS interests above all else, hey?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — but I have other commitments', label: 'Yes, but', score: 4 },
+      { id: 'Yes, but I\'ve other commitments', label: 'Yes, but', score: 4 },
       { id: 'Depends on the situation', label: 'Depends', score: 2 },
-      { id: 'No — I think for myself', label: 'Think for myself', score: 1 },
+      { id: 'No, I think for myself, hey', label: 'Think for myself', score: 1 },
     ]},
-    { text: 'If another crew offers you a better rank, what do you do?', options: [
-      { id: 'Stay with KSSMS — loyalty matters', label: 'Stay loyal', score: 7 },
-      { id: 'Consider it — but KSSMS is priority', label: 'Consider', score: 4 },
+    { text: 'If another crew offers you a better rank, what you do, hey?', options: [
+      { id: 'Stay with KSSMS, loyalty matters, always', label: 'Stay loyal', score: 7 },
+      { id: 'Consider it, but KSSMS is priority', label: 'Consider', score: 4 },
       { id: 'Take the better offer', label: 'Take offer', score: 0 },
-      { id: 'Depends on what they offer', label: 'Depends', score: 2 },
+      { id: 'Depends what they offer', label: 'Depends', score: 2 },
     ]},
-    { text: 'How long do you plan to stay in KSSMS?', options: [
-      { id: 'Forever — this is my crew', label: 'Forever', score: 7 },
-      { id: 'As long as I am having fun', label: 'Having fun', score: 5 },
-      { id: 'Until something better comes along', label: 'Until better', score: 0 },
-      { id: 'I do not know yet', label: 'Do not know', score: 2 },
+    { text: 'How long you plan to stay in KSSMS?', options: [
+      { id: 'Forever, this is my crew, lekke', label: 'Forever', score: 7 },
+      { id: 'As long as I\'m having fun', label: 'Having fun', score: 5 },
+      { id: 'Until something better comes along, shame', label: 'Until better', score: 0 },
+      { id: 'I don\'t know yet', label: 'Do not know', score: 2 },
     ]},
-    { text: 'Would you leave KSSMS if your friend started another crew?', options: [
-      { id: 'No — KSSMS is my crew', label: 'No', score: 7 },
-      { id: 'Maybe — depends on the crew', label: 'Maybe', score: 3 },
+    { text: 'Would you leave KSSMS if your friend started another crew, hey?', options: [
+      { id: 'No, KSSMS is my crew, always', label: 'No', score: 7 },
+      { id: 'Maybe, depends on the crew', label: 'Maybe', score: 3 },
       { id: 'Yes — friends come first', label: 'Yes', score: 0 },
     ]},
-    { text: 'What does loyalty mean to you in KSSMS?', options: [
+    { text: 'What loyalty mean to you in KSSMS?', options: [
       { id: 'Staying no matter what', label: 'Stay no matter what', score: 7 },
       { id: 'Being active and reliable', label: 'Active and reliable', score: 6 },
       { id: 'Following orders without question', label: 'Follow orders', score: 5 },
-      { id: 'Having friends in the crew', label: 'Having friends', score: 3 },
+      { id: 'Having friends in the crew, shame', label: 'Having friends', score: 3 },
       { id: 'Getting rewards and ranks', label: 'Rewards', score: 0 },
     ]},
-    { text: 'If KSSMS is losing members, what do you do?', options: [
-      { id: 'Recruit new members to help', label: 'Recruit', score: 7 },
-      { id: 'Stay and support the crew', label: 'Stay and support', score: 6 },
+    { text: 'If KSSMS is losing members, what you do, hey?', options: [
+      { id: 'Recruit new members to help, lekke', label: 'Recruit', score: 7 },
+      { id: 'Stay and support the crew, always', label: 'Stay and support', score: 6 },
       { id: 'Consider leaving', label: 'Consider leaving', score: 1 },
       { id: 'Leave before it collapses', label: 'Leave', score: 0 },
     ]},
-    { text: 'Would you defend KSSMS if someone talks badly about it?', options: [
-      { id: 'Yes — always defend my crew', label: 'Always defend', score: 7 },
-      { id: 'Yes — but only if it is serious', label: 'If serious', score: 5 },
-      { id: 'Ignore it — do not engage', label: 'Ignore', score: 3 },
+    { text: 'Would you defend KSSMS if someone talks badly about it, hey?', options: [
+      { id: 'Yes, always defend my crew', label: 'Always defend', score: 7 },
+      { id: 'Yes — but only if it\'s serious', label: 'If serious', score: 5 },
+      { id: 'Ignore it — don\'t engage', label: 'Ignore', score: 3 },
       { id: 'No — not my problem', label: 'Not my problem', score: 0 },
     ]},
-    { text: 'How important is crew loyalty to you?', options: [
+    { text: 'How important crew loyalty to you, hey?', options: [
       { id: 'The most important thing', label: 'Most important', score: 7 },
       { id: 'Very important', label: 'Very important', score: 6 },
       { id: 'Somewhat important', label: 'Somewhat', score: 3 },
       { id: 'Not that important', label: 'Not important', score: 0 },
     ]},
-    { text: 'If |SS| KAMI asks you to do something you do not want to, what do you do?', options: [
+    { text: 'If |SS| KAMI asks you to do something you don\'t want to, what do you do?', options: [
       { id: 'Do it without question', label: 'Do it', score: 7 },
-      { id: 'Do it but ask why later', label: 'Do it, ask later', score: 5 },
+      { id: 'Do it but ask why later, hey', label: 'Do it, ask later', score: 5 },
       { id: 'Ask why first', label: 'Ask why', score: 4 },
-      { id: 'Refuse if I do not agree', label: 'Refuse', score: 0 },
+      { id: 'Refuse if I don\'t agree', label: 'Refuse', score: 0 },
     ]},
-    { text: 'Would you stay in KSSMS even if you are not getting promoted?', options: [
-      { id: 'Yes — I am here for the crew', label: 'Yes', score: 7 },
-      { id: 'Maybe — depends on how long', label: 'Maybe', score: 4 },
-      { id: 'No — I want to progress', label: 'No', score: 2 },
+    { text: 'Would you stay in KSSMS even if you aren\'t getting promoted?', options: [
+      { id: 'Yes — I\'m here for the crew', label: 'Yes', score: 7 },
+      { id: 'Maybe, depends on how long', label: 'Maybe', score: 4 },
+      { id: 'No, I wanna progress', label: 'No', score: 2 },
     ]},
-    { text: 'What happens if KSSMS has internal drama?', options: [
-      { id: 'I stay neutral and focused', label: 'Stay neutral', score: 7 },
+    { text: 'What happens if KSSMS got internal drama?', options: [
+      { id: 'I stay neutral and focused, always', label: 'Stay neutral', score: 7 },
       { id: 'I support my side', label: 'Support side', score: 3 },
-      { id: 'I leave to avoid drama', label: 'Leave', score: 0 },
+      { id: 'I leave to avoid drama, shame', label: 'Leave', score: 0 },
       { id: 'I try to mediate', label: 'Mediate', score: 6 },
     ]},
-    { text: 'Do you put crew goals above personal goals?', options: [
+    { text: 'You put crew goals above your own goals, hey?', options: [
       { id: 'Always — crew comes first', label: 'Always', score: 7 },
       { id: 'Usually — but sometimes personal', label: 'Usually', score: 5 },
       { id: 'It depends', label: 'Depends', score: 3 },
       { id: 'No — personal comes first', label: 'Personal first', score: 0 },
     ]},
-    { text: 'Would you report a friend breaking crew rules?', options: [
+    { text: 'Would you report a friend breaking crew rules, hey?', options: [
       { id: 'Yes — rules are rules', label: 'Yes', score: 7 },
-      { id: 'Yes — but talk to them first', label: 'Talk first', score: 6 },
-      { id: 'Maybe — depends on the rule', label: 'Maybe', score: 3 },
+      { id: 'Yes, but talk to them first', label: 'Talk first', score: 6 },
+      { id: 'Maybe, depends on the rule', label: 'Maybe', score: 3 },
       { id: 'No — friends first', label: 'No', score: 0 },
     ]},
-    { text: 'How do you show loyalty to your crew?', options: [
+    { text: 'How you show loyalty to your crew, hey?', options: [
       { id: 'Being active every day', label: 'Daily activity', score: 6 },
       { id: 'Attending every event', label: 'Attend events', score: 6 },
       { id: 'Defending the crew publicly', label: 'Defend publicly', score: 7 },
       { id: 'Following all orders', label: 'Follow orders', score: 5 },
     ]},
-    { text: 'If KSSMS has a bad reputation, do you stay?', options: [
-      { id: 'Yes — I help fix it', label: 'Help fix', score: 7 },
+    { text: 'If KSSMS has a bad reputation, you stay?', options: [
+      { id: 'Yes, I help fix it, hey', label: 'Help fix', score: 7 },
       { id: 'Yes — I stay loyal', label: 'Stay loyal', score: 6 },
-      { id: 'Depends on why it is bad', label: 'Depends', score: 3 },
-      { id: 'No — I protect my image', label: 'No', score: 0 },
+      { id: 'Depends on why it\'s bad', label: 'Depends', score: 3 },
+      { id: 'No, I protect my image, shame', label: 'No', score: 0 },
     ]},
-    { text: 'What would make you leave KSSMS?', options: [
+    { text: 'What would make you leave KSSMS, hey?', options: [
       { id: 'Nothing — I am committed', label: 'Nothing', score: 7 },
-      { id: 'If they kick me out', label: 'If kicked', score: 5 },
-      { id: 'If there is too much drama', label: 'Too much drama', score: 2 },
-      { id: 'If a better crew comes along', label: 'Better crew', score: 0 },
+      { id: 'If they kick me out, shame', label: 'If kicked', score: 5 },
+      { id: 'If there\'s too much drama', label: 'Too much drama', score: 2 },
+      { id: 'If a better crew comes along, hey', label: 'Better crew', score: 0 },
     ]},
-    { text: 'Do you talk to other crews while in KSSMS?', options: [
+    { text: 'You talk to other crews while in KSSMS?', options: [
       { id: 'No — KSSMS only', label: 'KSSMS only', score: 7 },
-      { id: 'Yes — but only as friends', label: 'Friends only', score: 4 },
-      { id: 'Yes — I keep my options open', label: 'Keep options', score: 1 },
+      { id: 'Yes, but only as friends', label: 'Friends only', score: 4 },
+      { id: 'Yes, I keep my options open, hey', label: 'Keep options', score: 1 },
     ]},
-    { text: 'Would you sacrifice your free time for a KSSMS event?', options: [
+    { text: 'Would you give up your free time for a KSSMS event?', options: [
       { id: 'Yes — always', label: 'Always', score: 7 },
-      { id: 'Yes — if it is important', label: 'If important', score: 5 },
-      { id: 'Maybe — depends on my schedule', label: 'Maybe', score: 3 },
-      { id: 'No — my time is mine', label: 'No', score: 0 },
+      { id: 'Yes — if it\'s important', label: 'If important', score: 5 },
+      { id: 'Maybe, depends on my schedule', label: 'Maybe', score: 3 },
+      { id: 'No, my time is mine, shame', label: 'No', score: 0 },
     ]},
-    { text: 'How do you feel about crew hierarchy?', options: [
+    { text: 'How you feel about crew hierarchy?', options: [
       { id: 'I respect it fully', label: 'Respect fully', score: 7 },
       { id: 'I understand it', label: 'Understand', score: 5 },
-      { id: 'I think it is unnecessary', label: 'Unnecessary', score: 1 },
-      { id: 'I want to be at the top', label: 'Want top', score: 2 },
+      { id: 'I think it\'s unnecessary', label: 'Unnecessary', score: 1 },
+      { id: 'I wanna be at the top, hey', label: 'Want top', score: 2 },
     ]},
-    { text: 'Would you recruit for KSSMS on your own time?', options: [
+    { text: 'Would you recruit for KSSMS on your own time, hey?', options: [
       { id: 'Yes — actively', label: 'Actively', score: 7 },
-      { id: 'Yes — if I find good people', label: 'If find good', score: 5 },
+      { id: 'Yes, if I find good people, lekke', label: 'If find good', score: 5 },
       { id: 'Maybe — if asked', label: 'If asked', score: 3 },
       { id: 'No — not my job', label: 'No', score: 1 },
     ]},
-    { text: 'What does being a KSSMS member mean to you?', options: [
+    { text: 'What being a KSSMS member mean to you?', options: [
       { id: 'Family and brotherhood', label: 'Family/brotherhood', score: 7 },
-      { id: 'Being part of something big', label: 'Something big', score: 6 },
+      { id: 'Being part of something big, lekke', label: 'Something big', score: 6 },
       { id: 'Having status and respect', label: 'Status/respect', score: 3 },
       { id: 'Getting rewards and ranks', label: 'Rewards', score: 0 },
     ]},
-    { text: 'If KSSMS is at war with another crew, what do you do?', options: [
+    { text: 'If KSSMS is at war with another crew, what you do, hey?', options: [
       { id: 'Fight for KSSMS', label: 'Fight', score: 7 },
       { id: 'Support from behind', label: 'Support', score: 5 },
       { id: 'Stay out of it', label: 'Stay out', score: 1 },
       { id: 'Leave to avoid conflict', label: 'Leave', score: 0 },
     ]},
-    { text: 'Do you follow KSSMS social media accounts?', options: [
+    { text: 'You follow KSSMS social media accounts?', options: [
       { id: 'Yes — all of them', label: 'All', score: 6 },
       { id: 'Yes — some of them', label: 'Some', score: 4 },
       { id: 'No — but I will', label: 'Will follow', score: 3 },
       { id: 'No — not interested', label: 'Not interested', score: 0 },
     ]},
-    { text: 'Would you wait weeks for a promotion?', options: [
+    { text: 'Would you wait weeks for a promotion, hey?', options: [
       { id: 'Yes — I am patient', label: 'Yes', score: 7 },
-      { id: 'Yes — but I would ask about it', label: 'Yes, ask', score: 5 },
-      { id: 'No — I expect quick progress', label: 'No', score: 2 },
+      { id: 'Yes, but I\'d ask about it', label: 'Yes, ask', score: 5 },
+      { id: 'No, I expect quick progress, hey', label: 'No', score: 2 },
     ]},
-    { text: 'How do you handle being demoted?', options: [
-      { id: 'Accept it and work harder', label: 'Work harder', score: 7 },
-      { id: 'Accept it but feel disappointed', label: 'Disappointed', score: 4 },
+    { text: 'How you handle being demoted?', options: [
+      { id: 'Accept it and work harder, hey', label: 'Work harder', score: 7 },
+      { id: 'Accept it but feel disappointed, shame', label: 'Disappointed', score: 4 },
       { id: 'Ask why and argue', label: 'Argue', score: 1 },
       { id: 'Leave the crew', label: 'Leave', score: 0 },
     ]},
-    { text: 'Would you attend a KSSMS event at 6am?', options: [
+    { text: 'Would you attend a KSSMS event at 6am, hey?', options: [
       { id: 'Yes — no matter what', label: 'Yes', score: 7 },
-      { id: 'Yes — if it is important', label: 'If important', score: 5 },
-      { id: 'Maybe — depends on my schedule', label: 'Maybe', score: 3 },
-      { id: 'No — that is too early', label: 'No', score: 0 },
+      { id: 'Yes — if it\'s important', label: 'If important', score: 5 },
+      { id: 'Maybe, depends on my schedule', label: 'Maybe', score: 3 },
+      { id: 'No — that\'s too early', label: 'No', score: 0 },
     ]},
-    { text: 'What is more important: rank or loyalty?', options: [
+    { text: 'What matters more, rank or loyalty?', options: [
       { id: 'Loyalty — always', label: 'Loyalty', score: 7 },
       { id: 'Both equally', label: 'Both', score: 5 },
-      { id: 'Rank — I want to progress', label: 'Rank', score: 2 },
+      { id: 'Rank, I wanna progress', label: 'Rank', score: 2 },
     ]},
   ],
   communication: SSRS.communication,
   scenario: [
-    { text: 'Two security team members are conflicting during an operation. How do you handle it?', options: [
-      { id: 'Mediate calmly, remind both of the mission goal', label: 'Mediate + refocus', score: 7, correct: true },
-      { id: 'Listen to both sides then decide', label: 'Listen then decide', score: 5 },
+    { text: 'Two security team members are conflicting during an operation. How you handle it, hey?', options: [
+      { id: 'Mediate calmly, remind both the mission goal', label: 'Mediate + refocus', score: 7, correct: true },
+      { id: 'Listen to both sides, then decide, hey', label: 'Listen then decide', score: 5 },
       { id: 'Take sides with the senior member', label: 'Side with senior', score: 2 },
       { id: 'Punish both immediately', label: 'Punish both', score: 1 },
-      { id: 'Report it to higher-ups and wait', label: 'Report it', score: 3 },
-      { id: 'Do nothing — let them sort it out', label: 'Do nothing', score: 0 },
+      { id: 'Report it to the higher-ups and wait', label: 'Report it', score: 3 },
+      { id: 'Do nothing, let them sort it out', label: 'Do nothing', score: 0 },
     ]},
-    { text: 'You are leading an operation and a team member goes AWOL. What do you do?', options: [
-      { id: 'Cover their position, report to leadership', label: 'Cover + report', score: 7, correct: true },
+    { text: 'You leading an operation and a team member goes AWOL. What you do, hey?', options: [
+      { id: 'Cover their position, report to leadership, hey', label: 'Cover + report', score: 7, correct: true },
       { id: 'Continue without them', label: 'Continue', score: 4 },
       { id: 'Stop the operation', label: 'Stop operation', score: 2 },
       { id: 'Go find them', label: 'Find them', score: 3 },
     ]},
-    { text: 'A team member is not following your orders. What do you do?', options: [
-      { id: 'Pull them aside, explain why the order matters', label: 'Explain privately', score: 7, correct: true },
+    { text: 'A team member isn\'t following your orders. What do you do?', options: [
+      { id: 'Pull them aside, explain why the order matters, hey', label: 'Explain privately', score: 7, correct: true },
       { id: 'Punish them publicly', label: 'Punish publicly', score: 0 },
       { id: 'Ignore it', label: 'Ignore', score: 1 },
       { id: 'Remove them from the team', label: 'Remove', score: 3 },
     ]},
-    { text: 'You notice a gap in the security plan. What do you do?', options: [
-      { id: 'Address it immediately, inform the team', label: 'Address + inform', score: 7, correct: true },
+    { text: 'You notice a gap in the security plan. What you do, hey?', options: [
+      { id: 'Address it immediately, tell the team', label: 'Address + inform', score: 7, correct: true },
       { id: 'Hope nobody exploits it', label: 'Hope', score: 0 },
       { id: 'Report to leadership', label: 'Report', score: 5 },
       { id: 'Leave it', label: 'Leave it', score: 0 },
     ]},
-    { text: 'A new team member is struggling. What do you do?', options: [
-      { id: 'Pair them with a mentor', label: 'Pair with mentor', score: 7, correct: true },
-      { id: 'Tell them to figure it out', label: 'Figure it out', score: 0 },
+    { text: 'A new team member is struggling. What you do, hey?', options: [
+      { id: 'Pair them with a mentor, hey', label: 'Pair with mentor', score: 7, correct: true },
+      { id: 'Tell them to figure it out, hey', label: 'Figure it out', score: 0 },
       { id: 'Remove them from the team', label: 'Remove', score: 1 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
     ]},
-    { text: 'You are given a team with low morale. What do you do?', options: [
-      { id: 'Talk to them, understand their concerns', label: 'Talk + understand', score: 7, correct: true },
+    { text: 'You given a team with low morale. What you do, hey?', options: [
+      { id: 'Talk to them, hear them out', label: 'Talk + understand', score: 7, correct: true },
       { id: 'Force them to work harder', label: 'Force harder', score: 0 },
       { id: 'Replace the team', label: 'Replace team', score: 2 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
     ]},
-    { text: 'An operation is failing. What do you do?', options: [
-      { id: 'Adapt the plan, communicate changes', label: 'Adapt + communicate', score: 7, correct: true },
+    { text: 'An operation is failing. What you do, hey?', options: [
+      { id: 'Adapt the plan, tell the team', label: 'Adapt + communicate', score: 7, correct: true },
       { id: 'Give up', label: 'Give up', score: 0 },
       { id: 'Blame the team', label: 'Blame team', score: 0 },
       { id: 'Do the same thing harder', label: 'Do same harder', score: 0 },
     ]},
-    { text: 'A team member wants to resign. What do you do?', options: [
-      { id: 'Try to understand why, see if it is fixable', label: 'Understand + fix', score: 7, correct: true },
+    { text: 'A team member wants to resign. What you do, hey?', options: [
+      { id: 'Try to understand why, see if it\'s fixable', label: 'Understand + fix', score: 7, correct: true },
       { id: 'Let them go immediately', label: 'Let them go', score: 3 },
       { id: 'Guilt trip them to stay', label: 'Guilt trip', score: 0 },
       { id: 'Ignore it', label: 'Ignore', score: 1 },
     ]},
-    { text: 'You have to deliver bad news to the team. What do you do?', options: [
+    { text: 'You gotta deliver bad news to the team. What you do, hey?', options: [
       { id: 'Be honest and transparent', label: 'Honest + transparent', score: 7, correct: true },
       { id: 'Sugarcoat it', label: 'Sugarcoat', score: 3 },
       { id: 'Hide it', label: 'Hide it', score: 0 },
-      { id: 'Let someone else do it', label: 'Let someone else', score: 2 },
+      { id: 'Let someone else do it, shame', label: 'Let someone else', score: 2 },
     ]},
-    { text: 'Two teams are competing for the same resource. What do you do?', options: [
-      { id: 'Coordinate, find a fair solution', label: 'Coordinate', score: 7, correct: true },
+    { text: 'Two teams are competing for the same resource. What you do, hey?', options: [
+      { id: 'Coordinate, find a fair solution, lekke', label: 'Coordinate', score: 7, correct: true },
       { id: 'Give it to your team', label: 'Give to mine', score: 2 },
       { id: 'Let them fight it out', label: 'Let them fight', score: 0 },
       { id: 'Report to leadership', label: 'Report', score: 5 },
     ]},
-    { text: 'You are asked to train multiple new members. What do you do?', options: [
-      { id: 'Create a training plan, assign mentors', label: 'Plan + mentors', score: 7, correct: true },
+    { text: 'You asked to train multiple new members. What you do, hey?', options: [
+      { id: 'Create a training plan, assign mentors, lekke', label: 'Plan + mentors', score: 7, correct: true },
       { id: 'Throw them in the deep end', label: 'Deep end', score: 1 },
       { id: 'Ignore the request', label: 'Ignore', score: 0 },
       { id: 'Train them all yourself', label: 'Train all yourself', score: 4 },
     ]},
-    { text: 'A team member is spreading rumors. What do you do?', options: [
-      { id: 'Confront them privately, stop the rumors', label: 'Confront + stop', score: 7, correct: true },
+    { text: 'A team member is spreading rumors. What you do, hey?', options: [
+      { id: 'Confront them privately, stop the rumors, shame', label: 'Confront + stop', score: 7, correct: true },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Punish them publicly', label: 'Punish publicly', score: 0 },
       { id: 'Spread your own rumors', label: 'Spread rumors', score: 0 },
     ]},
-    { text: 'You notice the team is overworked. What do you do?', options: [
-      { id: 'Redistribute tasks, get more help', label: 'Redistribute + help', score: 7, correct: true },
+    { text: 'You notice the team is overworked. What you do, hey?', options: [
+      { id: 'Redistribute tasks, get more hands', label: 'Redistribute + help', score: 7, correct: true },
       { id: 'Push them harder', label: 'Push harder', score: 0 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Do everything yourself', label: 'Do all yourself', score: 3 },
     ]},
-    { text: 'A team member takes credit for your work. What do you do?', options: [
-      { id: 'Address it privately, document for future', label: 'Address + document', score: 7, correct: true },
+    { text: 'A team member takes credit for your work. What you do, hey?', options: [
+      { id: 'Address it privately, document it for later', label: 'Address + document', score: 7, correct: true },
       { id: 'Call them out publicly', label: 'Call out', score: 2 },
       { id: 'Ignore it', label: 'Ignore', score: 1 },
       { id: 'Do the same to them', label: 'Do same', score: 0 },
     ]},
-    { text: 'You are leading an operation in a new area. What do you do?', options: [
-      { id: 'Scout first, plan carefully, brief the team', label: 'Scout + plan + brief', score: 7, correct: true },
+    { text: 'You leading an operation in a new area. What you do, hey?', options: [
+      { id: 'Scout first, plan properly, brief the team', label: 'Scout + plan + brief', score: 7, correct: true },
       { id: 'Wing it', label: 'Wing it', score: 0 },
       { id: 'Send the team in first', label: 'Send team first', score: 1 },
       { id: 'Cancel the operation', label: 'Cancel', score: 2 },
     ]},
-    { text: 'A team member is being toxic to other teams. What do you do?', options: [
-      { id: 'Talk to them, set boundaries', label: 'Talk + boundaries', score: 7, correct: true },
+    { text: 'A team member is being toxic to other teams. What you do, hey?', options: [
+      { id: 'Talk to them, set boundaries, hey', label: 'Talk + boundaries', score: 7, correct: true },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Kick them', label: 'Kick', score: 3 },
       { id: 'Join in', label: 'Join in', score: 0 },
     ]},
-    { text: 'You notice the team is not communicating well. What do you do?', options: [
-      { id: 'Set up better communication channels', label: 'Better channels', score: 7, correct: true },
+    { text: 'You notice the team isn\'t communicating well. What do you do?', options: [
+      { id: 'Set up better comms channels', label: 'Better channels', score: 7, correct: true },
       { id: 'Yell at them to communicate', label: 'Yell', score: 0 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
-      { id: 'Do all the communication yourself', label: 'Do all yourself', score: 3 },
+      { id: 'Do all the comms yourself', label: 'Do all yourself', score: 3 },
     ]},
-    { text: 'An operation needs more people but you have none. What do you do?', options: [
-      { id: 'Recruit quickly, or adapt the plan', label: 'Recruit or adapt', score: 7, correct: true },
+    { text: 'An operation needs more people but you have none. What you do, hey?', options: [
+      { id: 'Recruit quick, or adapt the plan', label: 'Recruit or adapt', score: 7, correct: true },
       { id: 'Cancel the operation', label: 'Cancel', score: 2 },
       { id: 'Force the existing team to do double', label: 'Force double', score: 0 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
     ]},
-    { text: 'You are given a team with mixed skill levels. What do you do?', options: [
-      { id: 'Pair skilled with unskilled, create mentorship', label: 'Pair + mentor', score: 7, correct: true },
+    { text: 'You given a team with mixed skill levels. What you do, hey?', options: [
+      { id: 'Pair skilled with unskilled, build mentorship', label: 'Pair + mentor', score: 7, correct: true },
       { id: 'Only use the skilled ones', label: 'Skilled only', score: 2 },
       { id: 'Ignore the unskilled', label: 'Ignore unskilled', score: 0 },
       { id: 'Replace them all', label: 'Replace all', score: 0 },
     ]},
-    { text: 'A team member is always late. What do you do?', options: [
-      { id: 'Talk to them, understand why, set expectations', label: 'Talk + set expectations', score: 7, correct: true },
+    { text: 'A team member is always late. What you do, hey?', options: [
+      { id: 'Talk to them, hear why, set expectations, hey', label: 'Talk + set expectations', score: 7, correct: true },
       { id: 'Punish them', label: 'Punish', score: 2 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Remove them', label: 'Remove', score: 1 },
     ]},
-    { text: 'You have to choose between two qualified candidates. What do you do?', options: [
-      { id: 'Assess fit, talk to both, make a fair decision', label: 'Assess + decide', score: 7, correct: true },
+    { text: 'You gotta choose between two qualified candidates. What you do, hey?', options: [
+      { id: 'Assess fit, talk to both, make a fair decision, hey', label: 'Assess + decide', score: 7, correct: true },
       { id: 'Pick the first one', label: 'Pick first', score: 3 },
       { id: 'Pick the one with more experience', label: 'More experience', score: 5 },
       { id: 'Let someone else decide', label: 'Let someone decide', score: 2 },
     ]},
-    { text: 'The team is not meeting targets. What do you do?', options: [
-      { id: 'Analyze why, adjust plan, motivate', label: 'Analyze + adjust', score: 7, correct: true },
+    { text: 'The team isn\'t meeting targets. What do you do?', options: [
+      { id: 'Check why, adjust the plan, motivate', label: 'Analyze + adjust', score: 7, correct: true },
       { id: 'Yell at them', label: 'Yell', score: 0 },
       { id: 'Lower the targets', label: 'Lower targets', score: 2 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
     ]},
-    { text: 'A team member wants a role they are not ready for. What do you do?', options: [
-      { id: 'Explain what they need to work on', label: 'Explain + roadmap', score: 7, correct: true },
-      { id: 'Give it to them anyway', label: 'Give it anyway', score: 2 },
-      { id: 'Say no and forget about it', label: 'Say no', score: 3 },
+    { text: 'A team member wants a role they aren\'t ready for. What do you do?', options: [
+      { id: 'Explain what they need to work on, hey', label: 'Explain + roadmap', score: 7, correct: true },
+      { id: 'Give it to them anyway, hey', label: 'Give it anyway', score: 2 },
+      { id: 'Say no and forget about it, shame', label: 'Say no', score: 3 },
       { id: 'Ignore them', label: 'Ignore', score: 0 },
     ]},
-    { text: 'You are leading a joint operation with another team. What do you do?', options: [
-      { id: 'Coordinate closely, share info, stay aligned', label: 'Coordinate + share', score: 7, correct: true },
+    { text: 'You leading a joint operation with another team. What you do, hey?', options: [
+      { id: 'Coordinate closely, share info, stay aligned, hey', label: 'Coordinate + share', score: 7, correct: true },
       { id: 'Do your own thing', label: 'Do own thing', score: 1 },
       { id: 'Let them do all the work', label: 'Let them work', score: 0 },
       { id: 'Take over', label: 'Take over', score: 2 },
     ]},
-    { text: 'A team member is burning out. What do you do?', options: [
-      { id: 'Give them a break, redistribute their work', label: 'Break + redistribute', score: 7, correct: true },
+    { text: 'A team member is burning out. What you do, hey?', options: [
+      { id: 'Give them a break, split their work', label: 'Break + redistribute', score: 7, correct: true },
       { id: 'Push them harder', label: 'Push harder', score: 0 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Replace them', label: 'Replace', score: 1 },
     ]},
-    { text: 'You notice the team is becoming too dependent on you. What do you do?', options: [
-      { id: 'Delegate more, build team independence', label: 'Delegate + build', score: 7, correct: true },
+    { text: 'You notice the team is becoming too dependent on you. What you do, hey?', options: [
+      { id: 'Delegate more, build the team up', label: 'Delegate + build', score: 7, correct: true },
       { id: 'Keep doing everything yourself', label: 'Do all yourself', score: 2 },
       { id: 'Ignore it', label: 'Ignore', score: 0 },
       { id: 'Quit', label: 'Quit', score: 0 },

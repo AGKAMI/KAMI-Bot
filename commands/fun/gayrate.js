@@ -5,7 +5,7 @@ module.exports = {
   reactions: { received: '🌈', done: '💯' },
   aliases: ['gay'],
   category: 'fun',
-  description: 'Playful gay percentage. Reply or mention a user.',
+  description: 'Playful percentage check. Reply or mention someone.',
   usage: '.gayrate (reply or @user)',
   
   async execute(sock, msg, args, extra) {
@@ -25,7 +25,7 @@ module.exports = {
 
       const messages = [
         `${targetTag} is ${percent}% fabulous 🌈`,
-        `💖 Compatibility with rainbows: ${percent}% for ${targetTag}`,
+        `💖 Rainbow compatibility: ${percent}% for ${targetTag}`,
         `${targetTag} score: ${percent}% pure glitter ✨`
       ];
 

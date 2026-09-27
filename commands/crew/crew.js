@@ -66,7 +66,7 @@ module.exports = {
         if (!inCrewGroup) {
           extra.fail();
           return extra.reply(
-            `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
+            `❌ ERROR\n\nThis only works in Slammed Society groups\n\n` +
             `Your group: ${extra.from.split(':')[0].split('@')[0]}`
           );
         }
@@ -88,9 +88,9 @@ module.exports = {
         } else {
           extra.fail();
           return extra.reply(
-            `❌ ERROR\n\nUnknown team or command: ${sub}\n\n` +
-            `Use ${prefix}crew teams to see available abbreviations\n` +
-            `Use ${prefix}crew help for commands`
+            `❌ ERROR\n\nDon't know that team or command: ${sub}\n\n` +
+            `Use ${prefix}crew teams for the list of abbreviations\n` +
+            `Use ${prefix}crew help for the commands`
           );
         }
       } else {
@@ -119,7 +119,7 @@ module.exports = {
           if (handler && handler.ownerOnly && !isOwner) {
             extra.fail();
             return extra.reply(
-              `❌ ERROR\n\nThis command is owner-only`
+              `❌ ERROR\n\nOwner-only, nobody else`
             );
           }
 
@@ -128,7 +128,7 @@ module.exports = {
             if (!isOwner && !isApproved && !isTeamAdmin) {
               extra.fail();
               return extra.reply(
-                `❌ ERROR\n\nOnly SS team admins or the owner can accept/deny applications from DMs`
+                `❌ ERROR\n\nOnly SS team admins or the owner can accept or deny applications in DMs`
               );
             }
             // allowed — route to handler below
@@ -138,15 +138,15 @@ module.exports = {
               if (isTeamAdmin) {
                 extra.fail();
                 return extra.reply(
-                  `❌ ERROR\n\nAs a team admin you're only allowed to accept or deny pending applications from DMs`
+                  `❌ ERROR\n\nAi — as a team admin you only accept or deny pending applications in DMs`
                 );
               }
               extra.fail();
               return extra.reply(
-                `❌ ERROR\n\nFrom DMs, you must specify a team\n\n` +
+                `❌ ERROR\n\nIn DMs you gotta name a team\n\n` +
                 `Usage: ${prefix}crew <team> ${sub} [args]\n` +
                 `Example: ${prefix}crew ssrs ${sub}\n\n` +
-                `Use ${prefix}crew teams to see abbreviations`
+                `Use ${prefix}crew teams for the abbreviations`
               );
             }
             // owner/approved in DM can run anything — continue
@@ -157,7 +157,7 @@ module.exports = {
             if (!inCrewGroup && !isOwner) {
               extra.fail();
               return extra.reply(
-                `❌ ERROR\n\nThis command only works in Slammed Society groups\n\n` +
+                `❌ ERROR\n\nThis only works in Slammed Society groups\n\n` +
             `Your group: ${extra.from.split(':')[0].split('@')[0]}`
           );
         }
@@ -169,7 +169,7 @@ module.exports = {
       if (!actualSub) {
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nSpecify a command after the team abbreviation\n\n` +
+          `❌ ERROR\n\nGive a command after the team abbreviation\n\n` +
           `Example: ${prefix}crew ${sub} roster`
         );
       }
@@ -180,11 +180,11 @@ module.exports = {
         // Check sub-handler permission flags
         if (handler.adminOnly && !extra.isAdmin && !isOwner) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nThis command requires admin privileges`);
+          return extra.reply(`❌ ERROR\n\nYou need admin for this one, hey`);
         }
         if (handler.groupOnly && isDM) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nThis command can only be used in groups`);
+          return extra.reply(`❌ ERROR\n\nGroups only, this one`);
         }
         // Inject resolved group JID into extra
         const patchedExtra = { ...extra, from: targetJid };
@@ -197,11 +197,11 @@ module.exports = {
         const aliasedHandler = subHandlers[aliased];
         if (aliasedHandler.adminOnly && !extra.isAdmin && !isOwner) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nThis command requires admin privileges`);
+          return extra.reply(`❌ ERROR\n\nYou need admin for this one, hey`);
         }
         if (aliasedHandler.groupOnly && isDM) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nThis command can only be used in groups`);
+          return extra.reply(`❌ ERROR\n\nGroups only, this one`);
         }
         const patchedExtra = { ...extra, from: targetJid };
         return aliasedHandler.execute(sock, msg, actualArgs, patchedExtra);
@@ -210,7 +210,7 @@ module.exports = {
       extra.fail();
       return extra.reply(
         `❌ ERROR\n\nUnknown command: ${actualSub}\n\n` +
-        `Use ${prefix}crew help for available commands`
+        `Use ${prefix}crew help for what's available`
       );
 
     } catch (error) {
@@ -229,8 +229,8 @@ async function setTeam(sock, msg, args, extra) {
     extra.fail();
     return extra.reply(
       `❌ ERROR\n\nUsage: ${prefix}crew setteam <abbrev> [team name]\n\n` +
-      `Example: ${prefix}crew setteam SSRS Royal Security\n\n` +
-      `Run this IN the group you want to map.`
+      `Eg: ${prefix}crew setteam SSRS Royal Security\n\n` +
+      `Run this IN the group you're mapping.`
     );
   }
 
@@ -241,7 +241,7 @@ async function setTeam(sock, msg, args, extra) {
           `Abbreviation: ${bold(abbrev)}\n` +
           `Team: ${bold(teamName)}\n` +
           `Group: ${extra.from.split(':')[0].split('@')[0]}\n\n` +
-          `Now you can use: ${prefix}crew ${abbrev.toLowerCase()} <command>`
+          `Now you can run: ${prefix}crew ${abbrev.toLowerCase()} <command>`
   }, { quoted: msg });
 }
 
@@ -254,7 +254,7 @@ async function showTeams(sock, msg, extra) {
 
   if (teams.length === 0) {
     text += `\n_No teams configured yet_\n`;
-    text += `\nRun ${prefix}crew setteam <abbrev> in each group to map them`;
+    text += `\nRun ${prefix}crew setteam <abbrev> in every group to map them`;
   } else {
     for (const [abbrev, data] of teams) {
       text += `\n• ${bold(abbrev)} — ${data.name}`;
@@ -285,15 +285,15 @@ async function showHelp(sock, msg, extra) {
     `• ${prefix}crew result <event-id> <winner>`,
     ``,
     `📋 *RECRUITMENT*`,
-    `• ${prefix}crew apply <team> — get the application form in DMs`,
-    `• ${prefix}crew applicants — view pending apps (with IDs)`,
-    `• ${prefix}crew accept <appUid> — accept an applicant`,
-    `• ${prefix}crew deny <appUid> <reason> — reject an applicant`,
+    `• ${prefix}crew apply <team> — the form lands in your DMs`,
+    `• ${prefix}crew applicants — see pending apps with IDs`,
+    `• ${prefix}crew accept <appUid> — take the applicant in`,
+    `• ${prefix}crew deny <appUid> <reason> — turn them down`,
     ``,
     `🏷️ *TEAMS*`,
-    `• ${prefix}crew teams — list all abbreviations`,
-    `• ${prefix}crew setteam <abbrev> — map group to abbreviation`,
-    `• ${prefix}crew <abbrev> <command> — run command on specific team`,
+    `• ${prefix}crew teams — every abbreviation`,
+    `• ${prefix}crew setteam <abbrev> — map a group to an abbreviation`,
+    `• ${prefix}crew <abbrev> <command> — run it for a specific team`,
     ``,
     `💡 _Example: ${prefix}crew ssrs add @user_`,
     ``,

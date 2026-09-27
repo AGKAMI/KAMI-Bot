@@ -218,6 +218,45 @@ Use `\n\n` to separate logical sections. Use `\n` for lines within a section.
 
 Always italic. Always pick from the SLANG arrays in `utils/format.js`.
 
+### NATURAL SLANG RULE (non-negotiable)
+
+Slang must be **woven into the sentence**, never bolted on as a placeholder.
+Real tsotsitaal/Iscamtho speakers mix English, Zulu, Sotho and Afrikaans
+mid-sentence — a sentence reads like speech, not like a template with a
+random word stapled to the end.
+
+**Position facts (corpus-grounded — see `utils/slang.js`):**
+- Clause-INITIAL particles: *Eish, Ag no man, Hayibo, Awu, Yoh, Tjo, Sho, Ja-nee* — they OPEN a line, never end one
+- Sentence-FINAL tags: *hey, shame, man, mos, ne, boet, chommie, ek sê, yazi* — they CLOSE a line, never open one
+- *mxm* is non-initial (never starts a line)
+- *ek sê* sits at the start OR the end of a statement
+
+**Use the `voice.*` helpers** (`utils/slang.js`) — they return position-correct, natural chunks:
+```js
+const { voice } = require('../../utils/format');
+voice.tag('neutral')   // sentence-final tag: hey, man, ne, boet, yazi
+voice.tag('affirm')    // sentence-final: lekke, kiff, kwaai, mos
+voice.openErr()        // clause-initial opener: Eish, Ag no man, Hayibo
+voice.mate()           // age/gender-neutral address: my bru, chommie, china
+voice.line('err', 'body')  // composed natural line, body stays byte-identical
+```
+
+**Wrong** (placeholder-style — FORBIDDEN):
+```
+❌ ERROR
+
+_Couldn't add them, yoh_        ← random word stapled on
+_Antitag turned ON moegoe_      ← slang dropped where it doesn't fit
+```
+
+**Right** (woven):
+```
+❌ ERROR
+
+Eish — couldn't add them, hey
+_Let you through to apply, my bru — sharp sharp_
+```
+
 ### Core arrays
 
 | Context | SLANG Key | Example |

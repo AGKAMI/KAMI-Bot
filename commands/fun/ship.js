@@ -5,7 +5,7 @@ module.exports = {
   reactions: { received: '💑', done: '💞' },
   aliases: ['shipit','match'],
   category: 'fun',
-  description: 'Ship two users randomly or mention/reply to specific users.',
+  description: 'Ship two users — mention or reply to pick them yourself.',
   usage: '.ship (random) OR .ship @user1 @user2 OR reply with .ship',
   groupOnly: true,
   
@@ -61,8 +61,8 @@ module.exports = {
       const hearts = ['💖','💕','💘','💞','💓'];
       const heart = hearts[Math.floor(Math.random() * hearts.length)];
       const phrases = [
-        `${nameOf(a)} + ${nameOf(b)} = ${love}% ${heart}\nLooks promising!`,
-        `${nameOf(a)} x ${nameOf(b)} = ${love}%\nNot bad, keep flirting 😉`,
+        `${nameOf(a)} + ${nameOf(b)} = ${love}% ${heart}\nLooks promising, shame!`,
+        `${nameOf(a)} x ${nameOf(b)} = ${love}%\nNot bad — keep flirting 😉`,
         `${nameOf(a)} & ${nameOf(b)} Compatibility: ${love}%\n${love > 75 ? 'A strong match ❤️' : love > 40 ? 'Could work 🤝' : 'Mostly chaos 😂'}`
       ];
 

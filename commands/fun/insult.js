@@ -5,7 +5,7 @@ module.exports = {
   reactions: { received: '🤬', done: '💢' },
   aliases: ['insultme','burn'],
   category: 'fun',
-  description: 'Give a silly insult to a user. Reply or mention to target someone.',
+  description: 'Drop a silly insult on someone. Reply or mention to pick them.',
   usage: '.insult (reply or @user)',
   
   async execute(sock, msg, args, extra) {

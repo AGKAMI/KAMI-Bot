@@ -1,5 +1,5 @@
 /**
- * Anti-Call Command - Enable or disable anti-call system
+ * Anti-Call Command - Turn the anti-call system on or off
  */
 
 const config = require('../../config');
@@ -10,7 +10,7 @@ module.exports = {
   reactions: { received: '📵', done: '🛡️' },
   category: 'owner',
   ownerOnly: true,
-  description: 'Enable or disable anti-call system',
+  description: 'Turn the anti-call system on or off',
   usage: '.anticall on/off',
 
   async execute(sock, msg, args, extra) {
@@ -52,8 +52,8 @@ module.exports = {
       
       await extra.reply(
         enabled
-          ? `*✅ ANTICALL ON*\n\n✅ ${voice.lead('affirm')}, calls will be auto-rejected & blocked`
-          : `*❌ ANTICALL OFF*\n\n❌ ${voice.openErr()}, anti-call is now disabled`
+          ? `*✅ ANTICALL ON*\n\n✅ ${voice.lead('affirm')}, calls get auto-rejected & blocked`
+          : `*❌ ANTICALL OFF*\n\n❌ ${voice.openErr()}, anti-call is off now`
       );
     } catch (err) {
       console.error('[anticall cmd] error:', err);

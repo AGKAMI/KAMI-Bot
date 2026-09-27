@@ -1,5 +1,5 @@
 /**
- * Translate Command - Translate text to different languages
+ * Translate Command - Translate text into other languages
  */
 
 const axios = require('axios');
@@ -11,7 +11,7 @@ module.exports = {
   reactions: { received: '🗣️', generating: '🔤', done: '📝' },
   aliases: ['trt', 'tr'],
   category: 'utility',
-  description: 'Translate text to different languages',
+  description: 'Translate text into other languages',
   usage: '.translate <text> <lang> or .translate <lang> (reply to message)',
   
   async execute(sock, msg, args, extra) {
@@ -63,14 +63,14 @@ module.exports = {
       if (!textToTranslate) {
         extra.fail();
         return await sock.sendMessage(chatId, { 
-          text: `❌ _${voice.openErr()}, no text to translate — reply to a message or add text_`
+          text: `❌ _${voice.openErr()}, nothing to translate — reply to a message or add text_`
         }, { quoted: msg });
       }
       
       if (!lang) {
         extra.fail();
         return await sock.sendMessage(chatId, { 
-          text: `❌ _${voice.openErr()}, specify a language code_\n\n_Example:_ ${prefix}translate hello fr`
+          text: `❌ _${voice.openErr()}, give me a language code_\n\n_Example:_ ${prefix}translate hello fr`
         }, { quoted: msg });
       }
       

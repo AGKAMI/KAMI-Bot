@@ -28,7 +28,7 @@ module.exports = {
   name: 'demote',
   reactions: { received: '📉', done: '⬇️' },
   category: 'admin',
-  description: 'Demote admin to regular member',
+  description: 'Demote an admin to a regular member',
   usage: '.demote @user',
   groupOnly: true,
   adminOnly: true,
@@ -55,7 +55,7 @@ module.exports = {
         extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +
-          `Tag or reply to someone\n\n` +
+          `Tag or reply to somebody\n\n` +
           `Usage:\n` +
           `• .demote @user\n` +
           `• Reply with .demote`
@@ -69,7 +69,7 @@ module.exports = {
           p => (p.id === extra.sender || p.lid === extra.sender) && (p.admin === 'admin' || p.admin === 'superadmin')
         );
         if (!demoterIsAdmin) {
-          return extra.reply(`🛡️ *ADMIN ONLY*\n\nOnly group admins can demote members.`);
+          return extra.reply(`🛡️ *ADMIN ONLY*\n\nOnly group admins can demote members, shame.`);
         }
       }
 
@@ -86,8 +86,8 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ ERROR\n\n` +
-            `${mention(target)} is not an admin\n\n` +
-            `Can't demote someone who isn't an admin`
+            `${mention(target)} isn't an admin\n\n` +
+            `Can't demote someone who isn't an admin, hey`
           );
         }
       }
@@ -98,8 +98,8 @@ module.exports = {
         await sock.sendMessage(extra.from, {
           text:
             `🚫 *YOH THE AUDACITY* 💀\n\n` +
-            `@${demoterNum} — you really just tried to demote KAMI??\n\n` +
-            `No way you tryna demote the owner bru 😭\n` +
+            `@${demoterNum} — you really tried to demote KAMI?? yoh\n\n` +
+            `No way you tryna demote the owner, bru 😭\n` +
             `Don't act like a laaitie man, ${voice.tag('neutral')}`,
           mentions: [extra.sender],
         });
@@ -114,8 +114,8 @@ module.exports = {
         await sock.sendMessage(extra.from, {
           text:
             `🚫 *YOH THE AUDACITY* 💀\n\n` +
-            `@${demoterNum} — you really just tried to demote KAMI??\n\n` +
-            `No way you tryna demote the owner bru 😭\n` +
+            `@${demoterNum} — you really tried to demote KAMI?? yoh\n\n` +
+            `No way you tryna demote the owner, bru 😭\n` +
             `Don't act like a laaitie man, ${voice.tag('neutral')}`,
           mentions: [extra.sender],
         });
@@ -160,8 +160,8 @@ module.exports = {
                 text:
                   `🛡️ *YOU GOOD* 💪\n\n` +
                   `@${demoterNum} tried demoting you hey 💀\n` +
-                  `Blocked — you're still the admin\n\n` +
-                  `KAMI put you there, nobody else decides 👑`,
+                  `Blocked — you're still the admin, ne\n\n` +
+                  `KAMI put you there — nobody else decides 👑`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
@@ -171,7 +171,7 @@ module.exports = {
               await sock.sendMessage(extra.sender, {
                 text:
                   `🚫 *OOF* 💀\n\n` +
-                  `You really just tried demoting someone KAMI promoted??\n\n` +
+                  `You really tried demoting someone KAMI promoted?? cheeky\n\n` +
                   `Yoh the audacity bru 😭\n` +
                   `One more time and you're losing your admin too hey`,
               });
@@ -222,8 +222,8 @@ module.exports = {
                 `🚨 *CAUGHT IN 4K* 📸\n\n` +
                 `@${demoterNum} got demoted 💀\n` +
                 (ownerNum
-                  ? `Kept trying to touch @${ownerNum}'s admin\n\n`
-                  : `Kept trying to touch KAMI's admin\n\n`) +
+                  ? `Kept trying to touch @${ownerNum}'s admin, bru\n\n`
+                  : `Kept trying to touch KAMI's admin, bru\n\n`) +
                 `@${targetNum} back where they belong\n\n` +
                 `_KAMI-Bot doesn't play_ 👑`,
               mentions: ownerNum
@@ -249,7 +249,7 @@ module.exports = {
               await sock.sendMessage(extra.sender, {
                 text:
                   `🚨 *YOU GOT DEMOTED* 💀\n\n` +
-                  `Kept trying to demote KAMI's admin\n` +
+                  `Kept trying to demote KAMI's admin, bru\n` +
                   `Now you're regular\n\n` +
                   `Yoh you really didn't listen the first time tho 😭\n` +
                   `_Should've left it alone_`,
@@ -295,7 +295,7 @@ module.exports = {
         text:
           `✅ SUCCESS\n\n` +
           `⬇️ DEMOTED\n\n` +
-          `${mention(target)} is no longer a group admin${demoteNote}\n\n` +
+          `${mention(target)} is no longer a group admin, shame${demoteNote}\n\n` +
           `_${voice.react('ok')}_`,
         mentions: [target],
         footer: 'Admin Actions',
@@ -329,7 +329,7 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
       const clickerIsOwner = (config.ownerNumber || []).some(n => sender.includes(n));
       if (!clickerIsAdmin && !clickerIsOwner) {
         return await sock.sendMessage(from, {
-          text: `❌ *ADMIN ONLY*\n\nOnly group admins can promote members.`,
+          text: `❌ *ADMIN ONLY*\n\nOnly group admins can promote members, shame.`,
           mentions: [sender],
         });
       }
@@ -345,8 +345,8 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
     return await sock.sendMessage(from, {
       text:
         `🚫 *PROMOTE BLOCKED*\n\n` +
-        `${mention(target)} was demoted by the owner\n\n` +
-        `Only the owner can promote them again`,
+        `${mention(target)} got demoted by the owner\n\n` +
+        `Only the owner can promote them again, hey`,
       mentions: [target],
     });
   }
@@ -362,7 +362,7 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
         return await sock.sendMessage(from, {
           text:
             `❌ ERROR\n\n` +
-            `${mention(target)} is already an admin`,
+            `${mention(target)} is already an admin, ne`,
           mentions: [target],
         });
       }
@@ -382,7 +382,7 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
       text:
         `✅ SUCCESS\n\n` +
         `⬆️ PROMOTED\n\n` +
-        `${mention(target)} is now a group admin${protectionNote}\n\n` +
+        `${mention(target)} is now a group admin, lekke${protectionNote}\n\n` +
         `_${voice.react('ok')}_`,
       mentions: [target],
     });

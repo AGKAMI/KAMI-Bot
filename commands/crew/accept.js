@@ -28,7 +28,7 @@ module.exports = {
   name: null,
   aliases: ['hire'],
   category: 'crew',
-  description: 'Accept an applicant by App ID',
+  description: 'Accept an applicant with their App ID',
   usage: '.crew accept <UID> [role]',
   groupOnly: false,
   ownerOnly: false,
@@ -40,7 +40,7 @@ module.exports = {
       const uid = (args[0] || '').toUpperCase();
       if (!uid) {
         return extra.reply(
-          `❌ ERROR\n\nProvide the applicant's App ID\n\nUsage: \`${prefix}crew accept SS-XXXXX [role]\``
+          `❌ ERROR\n\nNo App ID given\n\nUsage: \`${prefix}crew accept SS-XXXXX [role]\``
         );
       }
 
@@ -52,18 +52,18 @@ module.exports = {
           const time = new Date(processed.processedAt).toLocaleString('en-ZA');
           if (processed.action === 'accepted') {
             return extra.reply(
-              `❌ ERROR\n\nApplication *${uid}* was already *accepted* by ${mention(processed.admin)} on ${time}` +
+              `❌ ERROR\n\nEish — *${uid}* was already accepted by ${mention(processed.admin)} on ${time}` +
               (processed.role ? `\n🏷️ Role given: ${processed.role}` : '')
             );
           } else {
             return extra.reply(
-              `❌ ERROR\n\nApplication *${uid}* was already *denied* by ${mention(processed.admin)} on ${time}` +
+              `❌ ERROR\n\nEish — *${uid}* was already denied by ${mention(processed.admin)} on ${time}` +
               (processed.reason ? `\n📝 Reason: ${processed.reason}` : '')
             );
           }
         }
         return extra.reply(
-          `❌ ERROR\n\nNo application found for *${uid}*\nCheck the App ID and try again`
+          `❌ ERROR\n\nNothing with that ID: *${uid}*\nCheck the App ID and try again`
         );
       }
 
@@ -136,7 +136,7 @@ module.exports = {
         if (validRoles.includes(lower)) {
           role = lower;
         } else if (arg.toLowerCase() !== role) {
-          roleWarn = `\n⚠️ _"${arg}" isn't a valid role. Available roles: ${validRoles.join(', ')}. Using *${role}* instead._`;
+          roleWarn = `\n⚠️ _"${arg}" isn't a valid role. Roles: ${validRoles.join(', ')} — using *${role}* instead._`;
         }
       }
 
@@ -280,7 +280,7 @@ module.exports = {
           roleWarn + '\n' +
           (ownerVIP
             ? '_The owner himself has accepted this member. Welcome to the squad._ 👑'
-            : '_Hired message + group pic + invite sent to them_' + ' ' + voice.tag('neutral')),
+            : '_Hired message, group pic and invite all sent to them_' + ' ' + voice.tag('neutral')),
         mentions: applicantJid ? [applicantJid] : [],
       }, { quoted: msg });
 

@@ -9,7 +9,7 @@ module.exports = {
     reactions: { received: '💘', done: '💓' },
     aliases: ['pickup', 'pickupline'],
     category: 'fun',
-    description: 'Get a random flirty pickup line',
+    description: 'Get a random pickup line, flirt',
     usage: 'flirt [@user]',
     execute: async (sock, msg, args, extra) => {
       try {

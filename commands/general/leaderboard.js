@@ -61,7 +61,7 @@ module.exports = {
     reactions: { received: '🏆', done: '🥇' },
     aliases: ['lb', 'top', 'ranking'],
     category: 'general',
-    description: 'Show the most active members in the group',
+    description: 'Show who\'s most active in the group',
     usage: '.leaderboard [week|month|all|top <number>]',
     groupOnly: true,
 

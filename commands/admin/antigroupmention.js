@@ -38,7 +38,7 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antigroupmention) {
-          return extra.reply(`✅ SUCCESS\n\nAntigroupmention is already on, ${voice.tag('neutral')}`);
+          return extra.reply(`✅ SUCCESS\n\nAntigroupmention was already on, ${voice.tag('neutral')}`);
         }
         database.updateGroupSettings(extra.from, { antigroupmention: true });
         return extra.reply(`✅ SUCCESS\n\nAntigroupmention turned ON, ${voice.tag('affirm')}`);
@@ -52,13 +52,13 @@ module.exports = {
       if (opt === 'set') {
         if (args.length < 2) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nSpecify an action: ${prefix}antigroupmention set delete | kick | warn`);
+          return extra.reply(`❌ ERROR\n\nGive an action: ${prefix}antigroupmention set delete | kick | warn`);
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick', 'warn'].includes(setAction)) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nInvalid action — choose delete, kick, or warn`);
+          return extra.reply(`❌ ERROR\n\nNo good: action — choose delete, kick, or warn`);
         }
         
         database.updateGroupSettings(extra.from, { 
@@ -76,7 +76,7 @@ module.exports = {
       }
       
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nUse ${prefix}antigroupmention for usage`);
+      return extra.reply(`❌ ERROR\n\nUse ${prefix}antigroupmention to see how it works`);
       
     } catch (error) {
       extra.fail();

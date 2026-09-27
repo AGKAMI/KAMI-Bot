@@ -17,7 +17,7 @@ module.exports = {
     reactions: { received: '🔊', done: '🔇' },
     aliases: ['open', 'opengroup'],
     category: 'admin',
-    description: 'Open group (all members can send messages)',
+    description: 'Open the group up (all members can send)',
     usage: '.unmute',
     groupOnly: true,
     adminOnly: true,
@@ -29,15 +29,15 @@ module.exports = {
         if (database.isOwnerMuted(extra.from) && !extra.isOwner) {
           return extra.reply(
             `🚫 *UNMUTE BLOCKED*\n\n` +
-            `The owner muted this group\n\n` +
-            `Only the owner can unmute it`
+            `The owner muted this group, hey\n\n` +
+            `Only the owner can unmute it, shame`
           );
         }
 
         await sock.groupSettingUpdate(extra.from, 'not_announcement');
         database.clearOwnerMuted(extra.from);
         await sendButtons(sock, extra.from, {
-          text: `🔓 UNMUTED\n\nGroup opened, ${voice.tag('neutral')}\nEveryone can talk now`,
+          text: `🔓 UNMUTED\n\nGroup is open, ${voice.tag('neutral')}\nEveryone can talk now, lekke`,
           footer: 'Unmute Management',
           buttons: [
             { id: 'admin:mute', text: '🔒 Mute' },
@@ -56,7 +56,7 @@ onButton('admin:mute', async (sock, msg, from, sender, btnId) => {
   try {
     await sock.groupSettingUpdate(from, 'announcement');
     await sock.sendMessage(from, {
-      text: `🔒 MUTED\n\nGroup closed — only admins can talk now`,
+      text: `🔒 MUTED\n\nGroup is closed — only admins talk now`,
     });
   } catch (e) {
     console.error('[MUTE BTN] Error:', e.message);
@@ -68,13 +68,13 @@ onButton('admin:unmute', async (sock, msg, from, sender, btnId) => {
   try {
     if (database.isOwnerMuted(from) && !isOwner(sender)) {
       return await sock.sendMessage(from, {
-        text: `🚫 *UNMUTE BLOCKED*\n\nThe owner muted this group — only they can unmute`,
+        text: `🚫 *UNMUTE BLOCKED*\n\nThe owner muted this group, hey — only they can unmute`,
       });
     }
     await sock.groupSettingUpdate(from, 'not_announcement');
     database.clearOwnerMuted(from);
     await sock.sendMessage(from, {
-      text: `🔓 UNMUTED\n\nGroup opened — everyone can talk now`,
+      text: `🔓 UNMUTED\n\nGroup is open — everyone can talk`,
     });
   } catch (e) {
     console.error('[UNMUTE BTN] Error:', e.message);

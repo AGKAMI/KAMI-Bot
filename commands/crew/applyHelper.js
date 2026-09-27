@@ -24,8 +24,8 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
   // 1. Already in the crew DB for this team?
   if (database.getCrewMember(teamGroupJid, applicantJid)) {
     const msg = applyingForSomeone
-      ? `❌ ERROR\n\n${mention(applicantJid)} is already part of ${TEAMS[teamKey].label}`
-      : `❌ ERROR\n\nYou're already part of ${TEAMS[teamKey].label}`;
+      ? `❌ ERROR\n\n${mention(applicantJid)} is already part of ${TEAMS[teamKey].label}, hey`
+      : `❌ ERROR\n\nYou're already part of ${TEAMS[teamKey].label}, boet`;
     if (replyFn) await replyFn(msg);
     return { ok: false, error: 'already_in_crew' };
   }
@@ -41,8 +41,8 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
       if (alreadyIn) {
         const teamName = getTeamDisplayName(teamKey);
         const msg = applyingForSomeone
-          ? `❌ ERROR\n\n${mention(applicantJid)} is already in the ${teamName} group 🤨`
-          : `❌ ERROR\n\nYou're already in the ${teamName} group 🤨`;
+          ? `❌ ERROR\n\n${mention(applicantJid)} is already chilling in the ${teamName} group 🤨`
+          : `❌ ERROR\n\nYou're already in the ${teamName} group, ne 🤨`;
         if (replyFn) await replyFn(msg);
         return { ok: false, error: 'already_in_group' };
       }
@@ -62,8 +62,8 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
     } else {
       const teamName = getTeamDisplayName(teamKey);
       const msg = applyingForSomeone
-        ? `❌ ERROR\n\n${mention(applicantJid)} already has a pending ${teamName} application\nApp ID: *${dup.appUid}*`
-        : `❌ ERROR\n\nYou already have a pending ${teamName} application\nApp ID: *${dup.appUid}*`;
+        ? `❌ ERROR\n\n${mention(applicantJid)} already has a ${teamName} application waiting\nApp ID: *${dup.appUid}*`
+        : `❌ ERROR\n\nYou've already got a ${teamName} application in\nApp ID: *${dup.appUid}*`;
       if (replyFn) await replyFn(msg);
       return { ok: false, error: 'duplicate_pending' };
     }
@@ -103,13 +103,13 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
     console.error('[CREW APPLY] form DM failed:', dmErr.message);
     database.removeApplicant(teamGroupJid, app.appUid);
     const msg = applyingForSomeone
-      ? `❌ ERROR\n\nCouldn't DM ${mention(applicantJid)} the application form\n\n` +
-        `They may have the bot blocked or their privacy settings are blocking DMs.\n\n` +
+      ? `❌ ERROR\n\nCouldn't DM ${mention(applicantJid)} the form, shame\n\n` +
+        `They've probably blocked the bot, or their privacy settings are stopping DMs.\n\n` +
         `💡 *What to do:*\n` +
-        `• Ask them to message the bot first (${config.prefix || '.'}start)\n` +
-        `• Or have them unblock the bot and try again\n` +
-        `• Or use ${config.prefix || '.'}crew apply ${teamKey} (let them apply themselves)`
-      : `❌ ERROR\n\nCouldn't DM you the application form\nCheck if you have DMs open from this bot`;
+        `• Get them to message the bot first (${config.prefix || '.'}start)\n` +
+        `• Or let them unblock the bot and try again\n` +
+        `• Or use ${config.prefix || '.'}crew apply ${teamKey} so they apply themselves`
+      : `❌ ERROR\n\nCouldn't DM you the form\nCheck if DMs are open from this bot, hey`;
     if (replyFn) await replyFn(msg);
     return { ok: false, error: 'dm_failed' };
   }

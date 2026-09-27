@@ -11,7 +11,7 @@ module.exports = {
   reactions: { received: '🧽', done: '⭕' },
   aliases: ['resetwarning', 'clearwarn', 'unwarn', 'delwarn'],
   category: 'admin',
-  description: 'Reset all warnings for a user',
+  description: 'Reset every warning on a user',
   usage: '.resetwarn @user',
   groupOnly: true,
   adminOnly: true,
@@ -30,13 +30,13 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
-        return extra.reply(`*✅ RESET WARN*\n\n_Tag or reply to the person you wanna reset_\n\n_Example: ${prefix}resetwarn @user_`);
+        return extra.reply(`*✅ RESET WARN*\n\n_Tag or reply to the person you want reset_\n\n_Example: ${prefix}resetwarn @user_`);
       }
 
       const currentWarnings = database.getWarnings(extra.from, target);
 
       if (currentWarnings.count === 0) {
-        return extra.reply(`*✅ NO WARNINGS*\n\n${mention(target)} _has no warnings to reset_`, { mentions: [target] });
+        return extra.reply(`*✅ NO WARNINGS*\n\n${mention(target)} _has no warnings to reset, shame_`, { mentions: [target] });
       }
 
       database.clearWarnings(extra.from, target);

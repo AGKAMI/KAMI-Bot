@@ -29,7 +29,7 @@ module.exports = {
   reactions: { received: '🖼️', generating: '🎨', done: '⭐' },
   aliases: ['setteamimg'],
   category: 'owner',
-  description: 'Set a team card image (reply to an image)',
+  description: 'Set the team card image (reply to an image)',
   usage: '.setteamimage <team>',
   ownerOnly: true,
 
@@ -39,7 +39,7 @@ module.exports = {
       if (!teamKey || !config.crewTeams[teamKey]) {
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nProvide a valid team\n\n` +
+          `❌ ERROR\n\nGive a valid team\n\n` +
           `Teams: ${Object.keys(config.crewTeams).filter(k => k !== 'SSGENERAL').join(', ')}`
         );
       }
@@ -108,7 +108,7 @@ module.exports = {
       return true;
     } catch (err) {
       console.error('[SETTEAMIMAGE] Save failed:', err.message);
-      await sock.sendMessage(from, { text: `❌ Failed to save image: ${err.message}` });
+      await sock.sendMessage(from, { text: `❌ Couldn't save the image: ${err.message}` });
       return true;
     }
   },

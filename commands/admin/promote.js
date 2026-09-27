@@ -12,7 +12,7 @@ module.exports = {
   name: 'promote',
   reactions: { received: '📈', done: '⬆️' },
   category: 'admin',
-  description: 'Promote member to group admin',
+  description: 'Promote a member to group admin',
   usage: '.promote @user',
   groupOnly: true,
   adminOnly: true,
@@ -38,7 +38,7 @@ module.exports = {
         extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +
-          `Tag or reply to someone\n\n` +
+          `Tag or reply to somebody\n\n` +
           `Usage:\n` +
           `• ${prefix}promote @user\n` +
           `• Reply with ${prefix}promote`
@@ -49,8 +49,8 @@ module.exports = {
       if (!extra.isOwner && database.isOwnerDemoted(extra.from, target)) {
         return extra.reply(
           `🚫 *PROMOTE BLOCKED*\n\n` +
-          `${mention(target)} was demoted by the owner\n\n` +
-          `Only the owner can promote them again`,
+          `${mention(target)} got demoted by the owner\n\n` +
+          `Only the owner can promote them again, hey`,
           { mentions: [target] }
         );
       }
@@ -65,8 +65,8 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ ERROR\n\n` +
-            `${mention(target)} is already an admin\n\n` +
-            `No need to promote them again`
+            `${mention(target)} is already an admin, ne\n\n` +
+            `No need to promote them again, shame`
           );
         }
       }
@@ -86,7 +86,7 @@ module.exports = {
         text:
           `✅ SUCCESS\n\n` +
           `⬆️ PROMOTED\n\n` +
-          `${mention(target)} is now a group admin${protectionNote}\n\n` +
+          `${mention(target)} is now a group admin, lekke${protectionNote}\n\n` +
           `_${voice.react('ok')}_`,
         mentions: [target],
         footer: 'Admin Actions',

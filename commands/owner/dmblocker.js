@@ -11,7 +11,7 @@ module.exports = {
   reactions: { received: '📭', done: '🚫' },
   aliases: ['dmblock', 'private', 'selfmode'],
   category: 'owner',
-  description: 'Toggle DM blocker and manage approved numbers',
+  description: 'Flip the DM blocker and manage approved numbers',
   usage: '.dmblocker on/off/status/approve <number>/disapprove <number>/list',
   ownerOnly: true,
 
@@ -49,8 +49,8 @@ module.exports = {
         return await sock.sendMessage(chatId, {
           text: `*✅ DM BLOCKER ON*\n\n` +
                `_${voice.lead('affirm')}, dm blocker is now on_\n\n` +
-               `Only approved numbers can use this bot.\n` +
-               `Use ${prefix}dmblocker approve <number> to add someone.`
+               `Only approved numbers can use this bot, shame.\n` +
+               `Use ${prefix}dmblocker approve <number> to let someone in.`
         }, { quoted: msg });
       }
 
@@ -64,7 +64,7 @@ module.exports = {
         return await sock.sendMessage(chatId, {
           text: `*✅ DM BLOCKER OFF*\n\n` +
                `_${voice.lead('affirm')}, dm blocker is now off_\n\n` +
-               `Anyone can now use this bot.`
+               `Anyone can use this bot now.`
         }, { quoted: msg });
       }
 
@@ -105,10 +105,10 @@ module.exports = {
         try {
           await sock.sendMessage(targetJid, {
             text: `🎉 *WELCOME TO KAMI BOT* 🤖\n\n` +
-                  `✅ You have been *approved* by KAMI\n` +
-                  `🔓 You can now message this bot directly\n\n` +
-                  `Send *${prefix}menu* to see all available commands\n` +
-                  `Type *${prefix}help* if you need assistance\n\n` +
+                  `✅ You're *approved* by KAMI\n` +
+                  `🔓 You can message this bot directly now\n\n` +
+                  `Send *${prefix}menu* for everything I can do\n` +
+                  `Type *${prefix}help* if you get stuck\n\n` +
                   `_Lekke, enjoy the bot!_ 💀`
           });
         } catch (e) {}
@@ -119,10 +119,10 @@ module.exports = {
           : `*⚠️ ALREADY APPROVED*\n\n_${digits} is already approved._`;
 
         if (wasBlocked) {
-          reply += `\n\n🔓 *UNBLOCKED* — removed from WhatsApp block list`;
+          reply += `\n\n🔓 *UNBLOCKED* — off the WhatsApp block list`;
         }
         if (wasBanned) {
-          reply += `\n\n🔨 *BAN LIFTED* — removed from bot ban list`;
+          reply += `\n\n🔨 *BAN LIFTED* — off the bot ban list`;
         }
 
         return await sock.sendMessage(chatId, { text: reply }, { quoted: msg });
@@ -138,8 +138,8 @@ module.exports = {
         const removed = database.removeApprovedNumber(number);
         return await sock.sendMessage(chatId, {
           text: removed
-            ? `*❌ REMOVED*\n\n_${number} can no longer use the bot._`
-            : `*⚠️ NOT FOUND*\n\n_${number} wasn't in the approved list._`
+            ? `*❌ REMOVED*\n\n_${number} can't use the bot anymore._`
+            : `*⚠️ NOT FOUND*\n\n_${number} wasn't on the approved list._`
         }, { quoted: msg });
       }
 

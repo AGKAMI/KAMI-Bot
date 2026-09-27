@@ -40,7 +40,7 @@ module.exports = {
   name: 'crop',
   reactions: { received: '✂️', generating: '🔲', done: '🖼️' },
   aliases: ['square', 'cropper'],
-  description: 'Crop sticker/image/video to a perfect square sticker (animated for videos)',
+  description: 'Crop a sticker/image/video into a square sticker (animated for videos)',
   usage: '.crop (reply to sticker/image/video)',
   category: 'general',
   
@@ -75,14 +75,14 @@ module.exports = {
       const mediaInfo = resolveMedia(targetMessage);
       
       if (!mediaInfo) {
-        return extra.reply(`⚠️ *WARNING*\n💡 Reply to a sticker, image, or video you wanna crop`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Reply to the sticker, image or video you want cropped`);
       }
 
       const { type, media } = mediaInfo;
       const mediaMessage = media;
 
       if (!mediaMessage) {
-        return extra.reply(`⚠️ *WARNING*\n💡 Reply to an image/video/sticker with ${prefix}crop, or send media with ${prefix}crop as caption`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Reply to media with ${prefix}crop, or send it with ${prefix}crop as the caption`);
       }
 
       // Download media
@@ -95,13 +95,13 @@ module.exports = {
 
       if (!mediaBuffer) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't download that, try again`);
+        return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't grab that — try again`);
       }
 
       // Check file size
       if (mediaBuffer.length > MAX_FILE_SIZE) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+        return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — that file is too big: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
       }
 
       // Write media to temp file
@@ -201,7 +201,7 @@ module.exports = {
     } catch (error) {
       console.error('Crop command error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't crop the sticker, try with an image or video`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't crop the sticker — try an image or video`);
     } finally {
       // Always cleanup temp files
       tempFiles.forEach(file => deleteTempFile(file));

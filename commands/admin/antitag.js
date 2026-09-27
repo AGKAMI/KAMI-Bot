@@ -39,7 +39,7 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antitag) {
-          return extra.reply(`✅ SUCCESS\n\nAntitag is already on, ${voice.tag('neutral')}`);
+          return extra.reply(`✅ SUCCESS\n\nAntitag was already on, ${voice.tag('neutral')}`);
         }
         database.updateGroupSettings(extra.from, { antitag: true });
         return extra.reply(`✅ SUCCESS\n\nAntitag turned ON, ${voice.tag('affirm')}`);
@@ -53,13 +53,13 @@ module.exports = {
       if (opt === 'set') {
         if (args.length < 2) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nSpecify an action: ${prefix}antitag set delete | kick`);
+          return extra.reply(`❌ ERROR\n\nGive an action: ${prefix}antitag set delete | kick`);
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick'].includes(setAction)) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nInvalid action — choose delete or kick`);
+          return extra.reply(`❌ ERROR\n\nNo good: action — choose delete or kick`);
         }
         
         database.updateGroupSettings(extra.from, { 
@@ -77,7 +77,7 @@ module.exports = {
       }
       
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nUse ${prefix}antitag for usage`);
+      return extra.reply(`❌ ERROR\n\nUse ${prefix}antitag to see how it works`);
       
     } catch (error) {
       extra.fail();

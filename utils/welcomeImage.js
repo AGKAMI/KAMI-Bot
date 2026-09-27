@@ -251,7 +251,7 @@ async function createGoodbyeImage(options) {
 
   ctx.fillStyle = '#888888';
   ctx.font = '14px sans-serif';
-  ctx.fillText('Catch ya when we do 👋', avatarX, 370);
+  ctx.fillText('Catch ya when we do, lekke 👋', avatarX, 370);
 
   return cvs.toBuffer('image/png');
 }

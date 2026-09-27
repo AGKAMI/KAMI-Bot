@@ -1,56 +1,55 @@
 # HANDOFF
 
 ## Goal
-"Full SA voice everywhere" for KAMI Bot — research South African slang/tsotsitaal, build a position-aware phrase library, and migrate every `pick(SLANG.*)` call site so bot output reads like natural South African speech (pan-SA mix: Joburg kasi + Cape Town kaaps + Durban), while links, numbers and @mentions stay byte-exact.
+"Full SA voice everywhere" for KAMI Bot — pan-SA mix (Joburg kasi + Cape Town kaaps + Durban) across **every** user-visible string, not just the slang slots. Three phases: (1) reaction system ✅, (2) position-aware `voice.*` library + migrate all `pick(SLANG.*)` ✅, (3) rewrite every hardcoded English literal — including crew/game question content — in full-strength kasi/kaaps register (in progress, this session).
 
 ## Current State
-- **Applied and locally verified. NOT committed, NOT pushed.** Remote is still `cea1d92`; working tree has 181 modified files + 2 new files (`utils/slang.js`, `utils/slang-lex.js`).
-- **Migration result: 535 `pick(SLANG.*)` sites → 533 edited lines → 180 files. 0 sites left.** Classification: `raw` 468 (no punctuation injected), `tag` 67 (comma inserted).
-- Emitted call mix: `voice.openErr` 221 · `voice.tag` 149 · `voice.lead` 128 · `voice.react` 13 · `voice.say` 10 · `voice.greetOpen` 7 · `voice.open` 5 · `voice.mate` 2.
-- **`utils/slang-lex.js`** (new, untracked) — researched lexicon: `LEX` (~70 entries with `{w, pos, reg, mean, ex}`), `AVOID` (17 banned items with reasons), `byPos()`, `byReg()`.
-- **`utils/slang.js`** (new, untracked) — banks `OPEN_ERR/OPEN_INFO/OPEN_WARN/OPEN_GREET`, `TAG_AFFIRM/NEUTRAL/ERR/HYPE/SOFTEN`, `LEAD_AFFIRM/NEUTRAL/HYPE`, `REACT_OK/FAIL/DUNNO`, `ADDR`/`ADDR_SAFE`, `SAY` (17 speech acts), plus `voice.{openErr,open,openWarn,greetOpen,tag,lead,react,addr,mate,say,line,hi,bye,ok,bad,wait,hype,act}` and the legacy `SLANG` dict (kept for compat — now zero consumers).
-- **`utils/format.js`** — inline SLANG dict removed; now `const { voice, SLANG, pick } = require('./slang')`; `status` defaults SA-ised; `templates.welcome/goodbye/errorMsg/permDenied/groupOnly/adminOnly` rewritten; exports `voice`.
-- **`commands/games/tictactoe.js:70`** hand-fixed: tag moved out of the middle of the clause (`🎉 @user wins with ⭕! ${voice.tag('affirm')}`).
+- **Pushed**: `cea1d92` (progressive ✅/❌ reactions, 159 files) → `cc823af` (voice library + 535 SLANG call sites, 180 files). `git ls-remote origin main` == `cc823af`, no concurrent push since.
+- **NOT committed**: phase-2 hard-coded-prose rewrite — **194 modified files** in the working tree.
+- **Phase-2 ledger**: `%TEMP%\opencode\patched-ids.txt` = **1806 string ids rewritten** (dump `all-strings.ndjson` currently holds 1743 strings; 176 remaining = 145 non-pool metadata/facts/logs + 31 deliberately-blunt wrong answers in `questionPools.js`).
+- **`questionPools.js`**: 929 dumped strings → all rewritten except 30 blunt "bad answer" options (intentional). Reads as kasi speech: `How you handle conflict in a team?`, `You ever been a convoy leader?`, `What you do, hey?`, contractions, `— ` → `, `, `hey/shame/lekke/boet` sprinkled. 680 questions load; **0 option `id`s contain `:`** (callback token safety).
+- **Verification green**: `checkall.js` → 230 files, 0 failed; `runtime-smoke.js` → **4/4 ×8 runs**, 0 errors; `render-voice.js` OK.
 
-### Verification (all green)
-- `node --check` on every `.js` in the repo → `ALL SYNTAX OK`.
-- `%TEMP%\opencode\check-voice-import.js` → 181 files declare `voice`, 0 missing.
-- `%TEMP%\opencode\eval-voice.js` → 15 unique `voice.*` call shapes × 200 iterations → `ALL EVAL OK`.
-- `%TEMP%\opencode\runtime-smoke.js` → actually **executes** `ping`, `antiflood` (usage), `calc` (usage), `dice` (bad input) with stub sock/extra → no `ReferenceError`, SA text in the output.
-- `%TEMP%\opencode\render-voice.js` → welcome/goodbye/errorMsg/permDenied/groupOnly/adminOnly/status + all 17 legacy `SLANG` keys render.
-- Repo-wide artifact scan (`double-comma`, `comma-dot`, `comma-bang`) → 22 hits, all false positives (spread operators `...x`).
-- `grep SLANG\.` across the repo → **0 hits**; the 194 remaining bare `SLANG` references are all import/export statements.
+### Phase-2 tooling (all in `%TEMP%\opencode\`)
+- `dump-strings.js` — NDJSON `{id,file,line,raw,q}`; `--min/--grep/--file/--out`. Delimiter-gated quote scan, whole-file template scan, `CODE`/`NOISE`/`SKIP_FILES` filters.
+- `apply-phase2.js` — accepts `{id,new}` (resolves `old`+`q` from dump) or `{file,old,new}`; `esc()` delimiter escaping, `matchStyle()` newline convention, trailing-backslash guard, length-desc sort, `(file,old)` dedupe, appends ids to `patched-ids.txt`.
+- `apply-rules.js` — rules file → patches; `--rules/--out/--file/--dry`; tries each find in both real-newline and literal-`\n` spelling.
+- Rule files: `phase2-rules{,2,3,4,5}.js` (non-pool, 175/153/113/105/37 rules) and `phase2-pool-rules{,2,3,4}.js` + `pool-fix.js` (pool).
+- Verify: `checkall.js`, `runtime-smoke.js`, `render-voice.js`, `ngrams.js`, `dupcheck.js`, `peek.js`.
 
 ## What Was Tried That Failed
-- **Comma insertion produced `joined! , tag` / `on , tag`.** Cause: the edit started at `${` without swallowing the whitespace (or a stray `.!?`) already before it. Fix: walk `start` back over `\s` and one `.!?`, then prepend `', '`.
-- **`actOf` classified `✅ SUCCESS\n\nAntilink is already on` as `err`** because soft word `already`/`No ` was tested before the ✅ marker. Fix: tiered `actOf` — hard err (`❌|ERROR|couldn't|failed`) → state (`already` → neutral) → hard ok (`✅|SUCCESS|turned ON|activated`) → soft err → soft ok. Also added `\b` boundaries so `undone` no longer matched `done`, `unlocked` no longer matched `locked`.
-- **Footer/sign-off sites (`_${pick(SLANG.vibe)}_` alone on their own line) got `voice.react('dunno')`** ("Bathong, where did that come from") under `✅ SUCCESS` banners — the banner lives 3 lines above. Fix: step 1 now reads `lines[i-4..i]` as context; `mixed` (both ❌ and ✅ in context) forces neutral, ok → `voice.react('ok')`, err → `voice.react('fail')`, else → `voice.lead('neutral')` (preserves the original `_Sho_` shape).
-- **String-concat operands had no separator**: `'_Hired..._' + pick(SLANG.vibe)` → `'_Hired..._Sho'`. Fix: when `sp` ends with `+` but `st` does *not* start with `+`, emit `' ' + voice.tag(...)` (valid both inside and outside a template literal). Two sites: `crew/accept.js:283`, `crew/deny.js:135`.
-- **CRITICAL near-miss: the codemod inserted `voice.*()` into 180 files that only imported `{ bold, pick, SLANG }` from `utils/format`.** `node --check` cannot catch it — it would have been `ReferenceError: voice is not defined` on every single command. Fixed with `%TEMP%\opencode\patch-voice-import.js` (adds `voice` to each file's existing `utils/format` destructure). **Never add a `voice.*` call without confirming the import.**
-- **Inline `node -e "..."` one-liners keep breaking** under PowerShell (quote/`$`/regex mangling). Every check now lives in `%TEMP%\opencode\*.js`.
-- `loadCommands()` still hangs past 120s → always `process.exit()`.
+- **Rules with `\n` silently never matched** — source spells newlines as two chars `\` `n` inside templates. Fix: `apply-rules.js` tries `{f,r}` and the literal-`\\n` spelling of both.
+- **Stale dump = `NOT FOUND` spam** — patches computed against an old `all-strings.ndjson` no longer match the source. **Re-dump after every apply** before running the next rules round; apply one patch file per dump generation.
+- **Apostrophe in a single-quoted literal** broke `node --check` (config.js:131) → reverted 9 files, re-applied with `esc()`.
+- **Real newline introduced into a one-line template** (handler.js:629) → `matchStyle()` keeps the source's `\n` convention.
+- **` will be ` → `'ll be ` produced `I 'll`** → replaced with subject-specific forms.
+- **`sharp` used as a closer 75× in questionPools** — project ban (`AVOID`). Fixed: `, sharp` → `, hey` (52 unique replacements). Never reintroduce.
+- **Rewrites that drop a literal below 5 words vanish from the dump** (e.g. `Maybe — depends on the day` → 4 words). They still get patched, they just leave the inventory — the count drops (929 → 879 → …) and is not a bug.
+- **Option `id` is embedded in `cwiz:a:${team}:${uid}:${q.num}:${o.id}` and split on `:`** — never introduce a colon into an option id (verified 0 today). `q.label` = category (`SCENARIO`), option display text = `o.label`.
+- **Smoke test looked "flaky" (3/4)** — the `SA` regex was missing valid picks (`Aweh`, `Ai`, `Jissie`, `Howzit`). Regex extended; now stable 4/4.
+- Inline `node -e "..."` breaks under PowerShell quoting → write scripts to `%TEMP%\opencode\`. `loadCommands()` hangs → always `process.exit()`.
 
 ## Active Files
-- `utils/slang.js`, `utils/slang-lex.js` — the new library (untracked, must be added to any commit).
-- `utils/format.js` — re-exports `voice`, owns the SA-ised `status` + `templates`.
-- `commands/**` (180 files) + `handler.js` + `utils/autoProgression.js` — migrated call sites + `voice` import.
-- `%TEMP%\opencode\migrate-slang.js` — the codemod (`[repo] [--apply] [--report <file>]`); classification steps 1-9; re-runnable but now idempotent-zero (0 remaining sites).
-- `%TEMP%\opencode\patch-voice-import.js`, `check-voice-import.js`, `check-report.js`, `show.js`, `show2.js`, `eval-voice.js`, `runtime-smoke.js`, `render-voice.js`, `load-test.js`, `migrate-report.txt` — the verification suite. Re-run them after any further string edits.
+- `%TEMP%\opencode\dump-strings.js`, `apply-phase2.js`, `apply-rules.js` — the phase-2 pipeline.
+- `%TEMP%\opencode\phase2-rules*.js`, `phase2-pool-rules*.js`, `pool-fix.js` — literal find/replace rules (extensible; longest-first, specific-before-catch-all).
+- `%TEMP%\opencode\all-strings.ndjson`, `patched-ids.txt` — inventory + ledger (always re-dump first).
+- `commands/crew/questionPools.js` — 680 questions rewritten; 30 blunt bad-answers intentionally untouched.
+- `HANDOFF.md` — this file.
 
 ## Known Gotchas
-- **`voice` must be destructured** from `../../utils/format` (or `./utils/format` / `../utils/format`) in any file that calls it — 180 files were patched by hand script, not by the codemod.
-- **Position rules are corpus-derived, not decoration**: `eish/yho/tjo/sho/hayi/hau` are clause-initial only; `mxm` never sentence-initial; `shame` = warmth/solidarity (never sarcasm); `hey` = the SAE softener/agreement tag; `ek sê` start-or-end; `mos` after adjectives = really / after verbs = only.
-- **Banned**: `mampara`, `naai`, `sharp` (as closer), `gashu`, plus `voetsek`, `sybau`, `moer/bliksem/donner`, `doos`, `poes`, slurs, `goffel`, `moffie`, `bergie` — see `AVOID` in `slang-lex.js`.
-- **CRLF + regex `^`** — never trust `(\s+)` after a `^` anchor here; `LF will be replaced by CRLF` warnings are expected and harmless.
-- **Concurrent committer**: another session (author `Kermes <kermes@oracle.local>`) pushes the same repo — always `git ls-remote origin main` before pushing.
+- **`voice` must be destructured** from `../../utils/format` in any file calling it.
+- **Banned** (`AVOID` in `slang-lex.js`): `mampara`, `naai`, `sharp` (closer), `gashu`, `voetsek`, `sybau`, `moer/bliksem/donner`, `doos`, `poes`, slurs, `goffel`, `moffie`, `bergie`.
+- **Position rules**: `eish/yho/tjo/sho/hayi/hau` clause-initial; `mxm` never sentence-initial; `shame` = warmth only; `hey` = SAE softener; `ek sê` start-or-end; `mos` after adjectives/verbs.
+- **Only apply one patch file per dump generation** — regenerate `all-strings.ndjson` after each apply.
 - **Never commit**: `__pycache__/`, `app.json`, `check.js`, `check_disk.py`, `kami_session/`, `upload_code.py`, `upload_images.py`, `upload_sftp.py`.
-- The codemod only touched **slang dictionary slots**. Menus, help text, button labels and most confirmation strings are still plain English.
+- Concurrent committer (author `Kermes <kermes@oracle.local>`) → `git ls-remote origin main` before pushing.
+- Deploy: push to `main` → restart from bot-hosting panel (GitHub auto-pull). SFTP fallback `fi9.bot-hosting.cloud:2022`.
 
 ## Next Steps
-1. Review `%TEMP%\opencode\migrate-report.txt` one last time if desired (533 OLD/NEW triples), then commit on request: `feat: south african voice — position-aware slang library + migrate 535 SLANG call sites` (stage `utils/slang.js`, `utils/slang-lex.js` explicitly).
-2. Smoke-test on WhatsApp (no test suite): `.ping`, `.dice 1` (failure), `.antiflood set` (usage), `.calc` (usage), a media download, and a `✅ SUCCESS` confirmation — confirm each reads naturally and nothing throws.
-3. **Phase 2 decision**: "full SA voice" also means the hardcoded English in `menu.js` / `help.js` / button labels / generic confirmations. That is a separate, larger pass — ask before starting.
-4. Deploy when ready: `git push origin main` → restart from the bot-hosting panel (GitHub auto-pull).
+1. Optionally close the last **31 pool** strings (blunt wrong answers) and the **145 non-pool** leftovers (`description:` metadata, twotruthsonelie/8ball facts, console/system strings) — decide deliberately, most are intentionally literal.
+2. Spot-check real output on WhatsApp: crew application questions, `.menu`, a ✅ confirmation, a ❌ failure.
+3. Commit on request: `feat: south african voice everywhere — 1806 hardcoded strings rewritten incl. crew question pools` (stage the 194 modified files only; never the junk untracked set).
+4. Deploy: `git push origin main` → restart from panel.
 
 ## Memory Keys
-mcp__claude-flow__memory_search { query: "KAMI-Bot slang voice SA migrate codemod voice import position tag lead openErr", namespace: "project" }
+mcp__claude-flow__memory_search { query: "KAMI-Bot phase 2 prose rewrite dump rules apply sharp ban option id colon", namespace: "project" }

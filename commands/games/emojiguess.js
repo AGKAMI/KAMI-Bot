@@ -28,7 +28,7 @@ function startRound(sock, from, quoted) {
 module.exports = {
   name: 'emojiguess',
   reactions: { received: '🧩', done: '😀' },
-  description: 'Guess the phrase from emojis',
+  description: 'Guess the phrase from the emojis',
   category: 'games',
   aliases: ['emoji', 'eg'],
   execute: async (sock, msg, args, ctx) => {

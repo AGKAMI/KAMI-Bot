@@ -1,5 +1,5 @@
 /**
- * Truth - Get a random truth question from @bochilteam/scraper (translated to English)
+ * Truth - Get a random truth question, lekke from @bochilteam/scraper (translated to English)
  */
 
 const { truth } = require('@bochilteam/scraper');
@@ -11,7 +11,7 @@ module.exports = {
     reactions: { received: '🤥', done: '🤞' },
     aliases: [],
     category: 'fun',
-    description: 'Get a random truth question',
+    description: 'Get a random truth question, lekke',
     usage: 'truth',
     execute: async (sock, msg, args, extra) => {
       try {

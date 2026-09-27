@@ -5,7 +5,7 @@ const config = require('../../config');
 module.exports = {
   subName: 'event',
   name: null,
-  description: 'Schedule a new crew event',
+  description: 'Line up a new crew event',
   usage: '.crew event <name> <time>',
   adminOnly: true,
   groupOnly: true,
@@ -18,7 +18,7 @@ module.exports = {
 
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nUsage: \`${prefix}crew event <name> <time>\`\nExample: \`${prefix}crew event Friday Drift 20:30\`\n\nGive us the event name and the time.`
+        text: `❌ *ERROR*\n\nUsage: \`${prefix}crew event <name> <time>\`\nExample: \`${prefix}crew event Friday Drift 20:30\`\n\nDrop the event name and the time.`
       });
     }
 
@@ -27,7 +27,7 @@ module.exports = {
 
     if (!/^\d{1,2}:\d{2}$/.test(time)) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nTime must be in *HH:MM* format\nExample: *20:30*\n\nYou sent: *${time}*`
+        text: `❌ *ERROR*\n\nTime must be *HH:MM*\nExample: *20:30*\n\nYou sent: *${time}*`
       });
     }
 

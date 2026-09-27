@@ -21,7 +21,7 @@ module.exports = {
   name: null,
   aliases: ['up'],
   category: 'crew',
-  description: 'Promote member to higher role',
+  description: 'Promote a member to a higher role',
   usage: '.crew promote @user|number <role>',
   groupOnly: false,
   adminOnly: true,
@@ -36,7 +36,7 @@ module.exports = {
 
       if (!resolved.jid) {
         return extra.reply(
-          `❌ ERROR\n\nTag or add a number\n\nUsage: \`${prefix}crew promote @user|number <role>\``
+          `❌ ERROR\n\nTag someone or drop a number\n\nUsage: \`${prefix}crew promote @user|number <role>\``
         );
       }
 
@@ -44,7 +44,7 @@ module.exports = {
 
       const member = database.getCrewMember(extra.from, target);
       if (!member) {
-        return extra.reply(`❌ ERROR\n\n${mention(target)} is not in this crew`);
+        return extra.reply(`❌ ERROR\n\n${mention(target)} isn't in this crew, hey`);
       }
 
       // Get custom roles for this group
@@ -61,7 +61,7 @@ module.exports = {
       }
       if (!newRole) {
         return extra.reply(
-          `❌ ERROR\n\nProvide a valid role\n\n` +
+          `❌ ERROR\n\nGive a valid role\n\n` +
           `Valid roles:\n${validRoles.map(r => `• ${r}`).join('\n')}`
         );
       }
@@ -85,7 +85,7 @@ module.exports = {
 
       // Prevent promoting past the top rank
       if (newIdx === validRoles.length - 1 && oldIdx === validRoles.length - 1) {
-        return extra.reply(`❌ ERROR\n\n${mention(target)} is already at the *highest rank*`);
+        return extra.reply(`❌ ERROR\n\n${mention(target)} is already at the *highest rank*, ne`);
       }
 
       database.addCrewMember(extra.from, target, { ...member, role: newRole });
@@ -99,7 +99,7 @@ module.exports = {
             : `⬆️ PROMOTED\n\n`) +
           `${mention(target)}\n\n` +
           `${getRoleEmoji(oldRole, validRoles)} ${oldRole} → ${getRoleEmoji(newRole, validRoles)} ${bold(newRole)}` +
-          (ownerVIP ? `\n\n_The owner himself has promoted this member._ 👑` : ''),
+          (ownerVIP ? `\n\n_The owner personally promoted this one._ 👑` : ''),
         mentions: [target],
       }, { quoted: msg });
 

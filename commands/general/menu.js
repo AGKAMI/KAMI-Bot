@@ -123,7 +123,7 @@ module.exports = {
         const summary = [
           `*KAMI BOT* ${voice.greetOpen()}! 👋`,
           ``,
-          `🤖 Tap a button to see that section's commands 👇`,
+          `🤖 Hit a button and I'll show you that section 👇`,
           ``,
           `📖 Full list: *${prefix}menu all*`,
         ].join('\n');
@@ -186,7 +186,7 @@ module.exports = {
 // Category detail views = plain text, no buttons
 
 const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
-const mainText = `*KAMI BOT* ${voice.greetOpen()}! 👋\n\n🤖 Tap a button to see that section's commands 👇\n\n📖 Full list: *${config.prefix || '.'}menu all*`;
+const mainText = `*KAMI BOT* ${voice.greetOpen()}! 👋\n\n🤖 Hit a button for that section's commands 👇\n\n📖 Everything: *${config.prefix || '.'}menu all*`;
 const mainBtns = [
   { id: 'menu:admin',   text: '🛡️ Admin' },
   { id: 'menu:crew',    text: '🔰 Crew' },

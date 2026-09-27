@@ -9,7 +9,7 @@ module.exports = {
   reactions: { received: '🧹', done: '✨' },
   aliases: ['purge', 'clear'],
   category: 'admin',
-  description: 'Clean messages (all or from specific user if replied)',
+  description: 'Clean messages (all, or one user if you reply)',
   usage: '.clean <number>',
   groupOnly: true,
   adminOnly: true,
@@ -20,7 +20,7 @@ module.exports = {
       const count = parseInt(args[0]);
       if (!count || count < 1 || count > 100) {
         extra.fail();
-        return extra.reply(`❌ ERROR\n\nEnter a number between 1 and 100`);
+        return extra.reply(`❌ ERROR\n\nGive a number between 1 and 100`);
       }
 
       const jid = extra.from;
@@ -33,7 +33,7 @@ module.exports = {
       const msgs = store.messages.get(jid);
       if (!msgs || msgs.size === 0) {
         extra.fail();
-        return extra.reply(`❌ ERROR\n\nNo stored messages found, ${voice.tag('err')}`);
+        return extra.reply(`❌ ERROR\n\nNothing stored, ${voice.tag('err')}`);
       }
 
       let messagesToDelete = [];

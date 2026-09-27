@@ -21,7 +21,7 @@ module.exports = {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       
       if (!ctx?.stanzaId || !ctx?.participant) {
-        return extra.reply(`🗑️ DELETE\n\nReply to the message you wanna delete, ${voice.tag('neutral')}`);
+        return extra.reply(`🗑️ DELETE\n\nReply to the message you want gone, ${voice.tag('neutral')}`);
       }
       
       const deleteKey = { 

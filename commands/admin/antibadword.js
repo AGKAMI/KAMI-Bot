@@ -55,7 +55,7 @@ module.exports = {
         database.updateGroupSettings(extra.from, { antibadword: true, badwords: seeded });
         return extra.reply(
           `✅ *ANTIBADWORD ON*\n\n` +
-          `_Bad word filter activated with ${seeded.length} patterns, ${voice.tag('affirm')}!_`
+          `_Bad word filter switched on with ${seeded.length} patterns, ${voice.tag('affirm')}!_`
         );
       }
 
@@ -74,7 +74,7 @@ module.exports = {
           return extra.reply(
             `❌ *ERROR*\n\n` +
             `${bold('Usage:')} ${prefix}antibadword set <warn|delete|kick>, ${voice.tag('neutral')}\n\n` +
-            `• _warn_ — warn the user but don't delete\n` +
+            `• _warn_ — warn them but don't delete\n` +
             `• _delete_ — delete the bad message\n` +
             `• _kick_ — delete + kick the user`
           );
@@ -103,7 +103,7 @@ module.exports = {
         if (exempt.includes(exemptJid)) {
           return extra.reply(
             `⚠️ *ALREADY EXEMPT*\n\n` +
-            `${mention(exemptJid)} _is already exempt from bad word filter_`
+            `${mention(exemptJid)} _is already exempt from the bad word filter_`
           );
         }
 
@@ -190,7 +190,7 @@ onButton('admin:antibadword:on', async (sock, msg, from) => {
   for (const w of defaults) { if (!seeded.includes(w)) seeded.push(w); }
   database.updateGroupSettings(from, { antibadword: true, badwords: seeded });
   await sock.sendMessage(from, {
-    text: `✅ *ANTIBADWORD ON*\n\n_Bad word filter activated with ${seeded.length} patterns_`,
+    text: `✅ *ANTIBADWORD ON*\n\n_Bad word filter switched on with ${seeded.length} patterns_`,
   });
 });
 

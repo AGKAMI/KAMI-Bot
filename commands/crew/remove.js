@@ -19,7 +19,7 @@ module.exports = {
   name: null,
   aliases: ['leave', 'fire'],
   category: 'crew',
-  description: 'Remove member from crew roster',
+  description: 'Remove a member from the crew roster',
   usage: '.crew remove @user|number',
   groupOnly: true,
   ownerOnly: false,
@@ -35,7 +35,7 @@ module.exports = {
       if (!resolved.jid) {
         return extra.reply(
           `❌ ERROR\n\n` +
-          `Tag or add a number\n\n` +
+          `Tag someone or drop a number\n\n` +
           `Usage:\n` +
           `• ${prefix}crew remove @user\n` +
           `• ${prefix}crew remove 0833882383`
@@ -48,7 +48,7 @@ module.exports = {
       if (!member) {
         return extra.reply(
           `❌ ERROR\n\n` +
-          `${mention(target)} is not in this crew`
+          `${mention(target)} isn't in this crew, hey`
         );
       }
 
@@ -85,15 +85,15 @@ module.exports = {
           `${mention(target)} has been removed\n\n` +
           `🏷️ Was: ${member.role}\n` +
           (kickedFromGroup
-            ? `✅ Removed from the WhatsApp group`
-            : `⚠️ Removed from crew DB but couldn't kick from group`) +
-          (ownerVIP ? `\n\n_The owner himself has removed this member. It's done._ 👑` : ''),
+            ? `✅ Kicked out of the WhatsApp group`
+            : `⚠️ Off the crew DB, but couldn't kick them from the group`) +
+          (ownerVIP ? `\n\n_The owner personally removed this one. It's done._ 👑` : ''),
         mentions: [target],
       }, { quoted: msg });
 
     } catch (error) {
       console.error('Crew remove error:', error);
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't remove member`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't get them out, shame`);
     }
   },
 };

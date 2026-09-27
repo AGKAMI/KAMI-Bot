@@ -78,7 +78,7 @@ module.exports = {
 
       extra.fail();
       return extra.reply(
-        `❌ ERROR\n\nUnknown command: ${sub}\n\nUse ${prefix}db help for available commands`
+        `❌ ERROR\n\nDon't know that command: ${sub}\n\nUse ${prefix}db help for what's available`
       );
 
     } catch (error) {
@@ -94,8 +94,8 @@ async function showHelp(sock, msg, extra) {
     `🗄️ *DATABASE MANAGER*`,
     ``,
     `📊 *INFO*`,
-    `• ${prefix}db stats — overview of all tables`,
-    `• ${prefix}db view <table> — view table contents`,
+    `• ${prefix}db stats — the full table rundown`,
+    `• ${prefix}db view <table> — show what's in a table`,
     ``,
     `🔍 *SEARCH*`,
     `• ${prefix}db search <table> <query> — search table`,
@@ -105,7 +105,7 @@ async function showHelp(sock, msg, extra) {
     `• ${prefix}db delete <table> <key> — delete entry`,
     ``,
     `⚠️ *DANGER*`,
-    `• ${prefix}db reset <table> — clear entire table`,
+    `• ${prefix}db reset <table> — wipe the whole table`,
     `• ${prefix}db backup — backup database`,
     ``,
     `📋 *Tables:* ${Object.keys(TABLES).join(', ')}`,
@@ -122,14 +122,14 @@ async function viewTable(sock, msg, args, extra) {
   if (!tableName || !TABLES[tableName]) {
     extra.fail();
     return extra.reply(
-      `❌ ERROR\n\nSpecify a table: ${Object.keys(TABLES).join(', ')}`
+      `❌ ERROR\n\nName a table: ${Object.keys(TABLES).join(', ')}`
     );
   }
 
   const filePath = path.join(DB_PATH, TABLES[tableName].file);
   if (!fs.existsSync(filePath)) {
     extra.fail();
-    return extra.reply(`❌ ERROR\n\nTable "${tableName}" doesn't exist yet`);
+    return extra.reply(`❌ ERROR\n\nTable "${tableName}" doesn't exist yet, shame`);
   }
 
   const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
@@ -254,7 +254,7 @@ async function backupDb(sock, msg, extra) {
   }
 
   await sock.sendMessage(extra.from, {
-    text: `✅ SUCCESS\n\n🗄️ BACKUP COMPLETE\n\n📁 ${backedUp} tables backed up\n📂 Location: database/backups/\n⏰ ${new Date().toLocaleString('en-ZA')}`
+    text: `✅ SUCCESS\n\n🗄️ BACKUP COMPLETE\n\n📁 ${backedUp} tables are backed up\n📂 Location: database/backups/\n⏰ ${new Date().toLocaleString('en-ZA')}`
   }, { quoted: msg });
 }
 
@@ -264,15 +264,15 @@ async function resetTable(sock, msg, args, extra) {
   if (!tableName || !TABLES[tableName]) {
     extra.fail();
     return extra.reply(
-      `❌ ERROR\n\nSpecify a table: ${Object.keys(TABLES).join(', ')}`
+      `❌ ERROR\n\nName a table: ${Object.keys(TABLES).join(', ')}`
     );
   }
 
   // Safety check
   if (args[1] !== 'confirm') {
     return extra.reply(
-      `⚠️ WARNING\n\nThis will CLEAR all data in "${tableName}"\n\n` +
-      `Type ${prefix}db reset ${tableName} confirm to proceed\n\n` +
+      `⚠️ WARNING\n\nThis clears ALL data in "${tableName}"\n\n` +
+      `Type ${prefix}db reset ${tableName} confirm to go ahead\n\n` +
       `_This cannot be undone, ${voice.tag('neutral')}_`
     );
   }
@@ -290,7 +290,7 @@ async function resetTable(sock, msg, args, extra) {
   fs.writeFileSync(filePath, JSON.stringify(defaults[tableName] || {}, null, 2));
 
   await sock.sendMessage(extra.from, {
-    text: `✅ SUCCESS\n\n🗑️ TABLE RESET\n\n📋 *${tableName}* has been cleared`
+    text: `✅ SUCCESS\n\n🗑️ TABLE RESET\n\n📋 *${tableName}* is cleared`
   }, { quoted: msg });
 }
 
@@ -300,7 +300,7 @@ async function searchDb(sock, msg, args, extra) {
 
   if (!tableName || !TABLES[tableName]) {
     extra.fail();
-    return extra.reply(`❌ ERROR\n\nSpecify a table: ${Object.keys(TABLES).join(', ')}`);
+    return extra.reply(`❌ ERROR\n\nName a table: ${Object.keys(TABLES).join(', ')}`);
   }
 
   if (!query) {
@@ -325,7 +325,7 @@ async function searchDb(sock, msg, args, extra) {
   }
 
   if (results.length === 0) {
-    return extra.reply(`🔍 SEARCH\n\nNo results for "${query}" in ${tableName}`);
+    return extra.reply(`🔍 SEARCH\n\nNothing for "${query}" in ${tableName}`);
   }
 
   let text = `🔍 *SEARCH RESULTS*\n`;
@@ -349,7 +349,7 @@ async function editEntry(sock, msg, args, extra) {
     extra.fail();
     return extra.reply(
       `❌ ERROR\n\nUsage: ${prefix}db edit <table> <key> <field> <value>\n\n` +
-      `Example: ${prefix}db edit crew 27833882383@s.whatsapp.net role leader`
+      `Eg: ${prefix}db edit crew 27833882383@s.whatsapp.net role leader`
     );
   }
 
@@ -368,7 +368,7 @@ async function editEntry(sock, msg, args, extra) {
 
   if (!data[key]) {
     extra.fail();
-    return extra.reply(`❌ ERROR\n\nKey "${key}" not found in ${tableName}`);
+    return extra.reply(`❌ ERROR\n\nNo key "${key}" in ${tableName}`);
   }
 
   // Parse value
@@ -382,7 +382,7 @@ async function editEntry(sock, msg, args, extra) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 
   await sock.sendMessage(extra.from, {
-    text: `✅ SUCCESS\n\n✏️ ENTRY EDITED\n\n📋 Table: ${tableName}\n🔑 Key: ${key}\n📝 ${field}: ${oldValue} → ${parsed}`
+    text: `✅ SUCCESS\n\n✏️ ENTRY CHANGED\n\n📋 Table: ${tableName}\n🔑 Key: ${key}\n📝 ${field}: ${oldValue} → ${parsed}`
   }, { quoted: msg });
 }
 
@@ -412,13 +412,13 @@ async function deleteEntry(sock, msg, args, extra) {
 
   if (!data[key]) {
     extra.fail();
-    return extra.reply(`❌ ERROR\n\nKey "${key}" not found in ${tableName}`);
+    return extra.reply(`❌ ERROR\n\nNo key "${key}" in ${tableName}`);
   }
 
   delete data[key];
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 
   await sock.sendMessage(extra.from, {
-    text: `✅ SUCCESS\n\n🗑️ ENTRY DELETED\n\n📋 Table: ${tableName}\n🔑 Key: ${key}`
+    text: `✅ SUCCESS\n\n🗑️ ENTRY GONE\n\n📋 Table: ${tableName}\n🔑 Key: ${key}`
   }, { quoted: msg });
 }

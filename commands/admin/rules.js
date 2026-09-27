@@ -14,7 +14,7 @@ module.exports = {
   reactions: { received: '📜', done: '📖' },
   aliases: ['grouprules', 'grouprule'],
   category: 'admin',
-  description: 'View, set, or clear group rules',
+  description: 'View, set or clear the group rules',
   usage: '.rules | .setrules <text> | .clearrules',
   groupOnly: true,
   adminOnly: false,
@@ -55,8 +55,8 @@ module.exports = {
         `📜 *GROUP RULES*\n\n` +
         `_No rules set yet, ${voice.tag('err')}_\n\n` +
         `*How to set rules:*\n` +
-        `Admins use: ${prefix}setrules No spam; Be respectful; Have fun\n` +
-        `_Use semicolons or new lines to separate rules_`
+        `Admins, use: ${prefix}setrules No spam; Be respectful; Have fun\n` +
+        `_Use semicolons or new lines between rules_`
       );
     }
 
@@ -113,7 +113,7 @@ module.exports = {
         `_Provide the rules text, ${voice.tag('neutral')}_\n\n` +
         `*Example:*\n` +
         `${prefix}setrules No spam; Be respectful; Have fun\n\n` +
-        `_Use ; or new lines to separate rules_`
+        `_Use ; or new lines between rules_`
       );
     }
 
@@ -146,7 +146,7 @@ module.exports = {
 
     return extra.reply(
       `✅ *RULES CLEARED*\n\n` +
-      `_Rules wiped, ${voice.tag('neutral')}, group has no rules now_`
+      `_Rules wiped, ${voice.tag('neutral')}, this group has no rules now_`
     );
   }
 };

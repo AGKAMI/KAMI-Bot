@@ -21,7 +21,7 @@ module.exports = {
       
       if (!text) {
         return await sock.sendMessage(chatId, { 
-          text: `_${voice.lead('neutral')}, give me text to generate_\n\n_Example:_ .1917 Nick` 
+          text: `_${voice.lead('neutral')}, give me text to work with_\n\n_Example:_ .1917 Nick` 
         }, { quoted: msg });
       }
       

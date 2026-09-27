@@ -46,7 +46,7 @@ module.exports = {
     if (activeDownloads >= MAX_CONCURRENT) {
       const pos = downloadQueue.length + 1;
       extra.fail();
-      return extra.reply(`❌ _video queue full (${activeDownloads} active) — try again in ~30s_`);
+      return extra.reply(`❌ _video queue is full (${activeDownloads} running) — try again in ~30s_`);
     }
 
     const doDownload = async () => {
@@ -109,7 +109,7 @@ module.exports = {
         } catch (dlErr) {
           if (dlErr.message?.includes('maxContentLength') || dlErr.message?.includes('exceeded')) {
             extra.fail();
-            return await extra.edit(sent.key, `❌ _this video is too large — try a shorter video or one under 20MB_`);
+            return await extra.edit(sent.key, `❌ _that video is too big — try a shorter one or under 20MB_`);
           }
           extra.fail();
           return await extra.edit(sent.key, `❌ _download failed hey — ${dlErr.message}_`);
@@ -118,7 +118,7 @@ module.exports = {
         const sizeMB = videoBuffer.length / (1024 * 1024);
         if (sizeMB > MAX_SIZE_MB) {
           extra.fail();
-          return await extra.edit(sent.key, `❌ _video too large (${sizeMB.toFixed(1)}MB) — WhatsApp limit is 16MB_`);
+          return await extra.edit(sent.key, `❌ _video too large (${sizeMB.toFixed(1)}MB) — WhatsApp limit's 16MB_`);
         }
 
         let sendBuffer = videoBuffer;

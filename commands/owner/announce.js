@@ -147,7 +147,7 @@ module.exports = {
   reactions: { received: '📢', generating: '📣', done: '✅' },
   aliases: ['blast', 'shout'],
   category: 'owner',
-  description: 'Forward a replied message to CPM groups with newsletter branding',
+  description: 'Push a replied message to CPM groups with newsletter branding',
   usage: '.announce [all|ss]',
   ownerOnly: false,
 
@@ -159,7 +159,7 @@ module.exports = {
       if (!extra.isOwner && !database.isTeamAdmin(extra.sender)) {
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nOnly the owner or team admins can use this command`
+          `❌ ERROR\n\nOnly the owner or team admins can use this, hey`
         );
       }
 
@@ -169,7 +169,7 @@ module.exports = {
       if (!quoted) {
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nReply to a message to announce it\n\n` +
+          `❌ ERROR\n\nReply to a message if you want it announced\n\n` +
           `Usage:\n` +
           `• \`${prefix}announce\` — community + SS crew group + newsletter\n` +
           `• \`${prefix}announce ss\` — community + all SS crew + newsletter\n` +
@@ -197,8 +197,8 @@ module.exports = {
       if (!type) {
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nUnsupported message type, ${voice.tag('err')}\n` +
-          `I can announce: text, photo, video, document, audio, sticker`
+          `❌ ERROR\n\nThat message type won't work, ${voice.tag('err')}\n` +
+          `I can push: text, photo, video, document, audio, sticker`
         );
       }
 
@@ -216,7 +216,7 @@ module.exports = {
           if (type !== 'sticker') {
             extra.fail();
             return extra.reply(
-              `❌ ERROR\n\nCouldn't download the media, ${voice.tag('err')}\nTry a different message`
+              `❌ ERROR\n\nCouldn't grab the media, ${voice.tag('err')}\nTry a different message`
             );
           }
         }

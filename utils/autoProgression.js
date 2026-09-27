@@ -145,7 +145,7 @@ const checkGroup = async (sock, groupJid, teamKey) => {
           text:
             `⬆️ *AUTO-PROGRESSION*\n\n` +
             `@${memberNum} promoted to *${nextRank}*\n\n` +
-            `📊 Activity: ${data.totalMessages} msgs, ${data.daysActive} days\n` +
+            `📊 Activity: ${data.totalMessages} msgs over ${data.daysActive} days\n` +
             `📈 Met threshold for ${nextRank}\n\n` +
             `_Consistency pays off, ${voice.tag('neutral')}_ 👑`,
           mentions: [memberJid],
@@ -157,8 +157,8 @@ const checkGroup = async (sock, groupJid, teamKey) => {
             text:
               `⬆️ *YOU GOT PROMOTED* 🎉\n\n` +
               `You're now *${nextRank}* in ${teamKey}\n\n` +
-              `📊 Your activity: ${data.totalMessages} msgs, ${data.daysActive} days\n` +
-              `📈 You met the threshold — keep it up!\n\n` +
+              `📊 Your activity: ${data.totalMessages} msgs over ${data.daysActive} days\n` +
+              `📈 You made the cut — keep that energy up!\n\n` +
               `_KAMI sees the effort, ${voice.tag('affirm')}_ 👑`,
           });
         } catch (e) {}
@@ -414,7 +414,7 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, ownerDigits, 
         await sock.sendMessage(groupJid, {
           text:
             `🗑️ *AUTO-KICK*\n\n` +
-            `@${_digits(targetId)} — warned ${when}, still inactive after 14 days\n` +
+            `@${_digits(targetId)} — got warned ${when}, still quiet after 14 days\n` +
             `Removed from *${teamName}*`,
           mentions: [targetId],
         }).catch(() => {});

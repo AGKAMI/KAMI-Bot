@@ -11,7 +11,7 @@ module.exports = {
   reactions: { received: '🤬', done: '🚫' },
   aliases: ['addword', 'banword'],
   category: 'admin',
-  description: 'Add pattern to bad word blacklist',
+  description: 'Add a pattern to the bad word blacklist',
   usage: '.addbadword <pattern>',
   groupOnly: true,
   adminOnly: true,
@@ -44,7 +44,7 @@ module.exports = {
       if (badwords.includes(normalized)) {
         return extra.reply(
           `⚠️ *ALREADY EXISTS*\n\n` +
-          `_${normalized} is already in the blacklist, ${voice.tag('neutral')}_`
+          `_${normalized} is already blacklisted, ${voice.tag('neutral')}_`
         );
       }
 

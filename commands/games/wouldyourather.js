@@ -14,7 +14,7 @@ const questions = [
 module.exports = {
   name: 'wouldyourather',
   reactions: { received: '❓', done: '🅰️' },
-  description: 'Would you rather — pick between two options',
+  description: 'Would you rather — pick one of two',
   category: 'games',
   aliases: ['wyr'],
   execute: async (sock, msg, args, ctx) => {

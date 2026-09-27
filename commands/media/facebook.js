@@ -210,7 +210,7 @@ module.exports = {
       if (!sendSuccess) {
         extra.fail();
         return await extra.reply(
-          `❌ _${voice.openErr()} — could not download the video_\n\n_The file might be too large for WhatsApp (>100MB)._\n_Try:_\n• _A shorter video_\n• _Using browser to download manually_`
+          `❌ _${voice.openErr()} — couldn't download the video_\n\n_The file might be too large for WhatsApp (>100MB)._\n_Try:_\n• _A shorter video_\n• _Using browser to download manually_`
         );
       }
     } catch (error) {

@@ -714,7 +714,7 @@ async function startBot() {
         try {
           await sock.groupSettingUpdate(jid, 'announcement');
           await sock.sendMessage(jid, {
-            text: `🚫 *NICE TRY* 💀\n\n@${actorNum} tried unmuting the group\nOwner only — re-muted`,
+            text: `🚫 *NICE TRY HEH* 💀\n\n@${actorNum} tried to unmute the group\nOwner-only move, boet — I put it straight back\nYou really thought hey 😭`,
             mentions: [actor],
           });
         } catch (e) {
@@ -722,7 +722,7 @@ async function startBot() {
         }
       } else {
         await sock.sendMessage(jid, {
-          text: `⚠️ *GROUP UNMUTED*\n\n@${actorNum} unmuted the group outside the bot\n_Owner muted protection bypassed — bot is not admin_`,
+          text: `⚠️ *GROUP OPENED UP*\n\n@${actorNum} unmuted the group outside the bot\n_So the mute protection got bypassed — I'm not admin here_\n_Get KAMI to make me admin again hey_`,
           mentions: [actor],
         });
       }

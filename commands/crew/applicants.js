@@ -33,7 +33,7 @@ module.exports = {
       if (!extra.isOwner && !isGroupAdmin && !database.isTeamAdmin(extra.sender)) {
         return extra.reply(
           `❌ ERROR\n\n` +
-          `Only admins can view applications`
+          `Eish, only admins can check applications`
         );
       }
 
@@ -93,7 +93,7 @@ module.exports = {
             try {
               await sock.sendMessage(app.jid, {
                 text: `⏰ *APPLICATION EXPIRED*\n\n` +
-                      `Your *${app.team}* application (ID: *${app.appUid}*) has expired after 7 days with no review.\n\n` +
+                      `Your *${app.team}* application (ID: *${app.appUid}*) expired after 7 days with nobody reviewing it.\n\n` +
                       `🔄 You can reapply anytime: \`${prefix}crew apply ${app.team}\``
               });
             } catch (e) {
@@ -109,7 +109,7 @@ module.exports = {
       if (entries.length === 0) {
         return extra.reply(
           `📋 PENDING APPLICATIONS\n\n` +
-          `No pending applications for ${teamLabel || 'this team'}, ${voice.tag('err')}\n` +
+          `Nothing pending for ${teamLabel || 'this team'}, ${voice.tag('err')}\n` +
           `Recruits can use \`${prefix}crew apply <team>\` to apply`
         );
       }

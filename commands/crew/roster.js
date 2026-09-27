@@ -12,7 +12,7 @@ module.exports = {
   name: 'roster',
   reactions: { received: '📋', done: '👥' },
   aliases: ['members'],
-  description: 'Show all crew members with activity stats',
+  description: 'Show every crew member with activity stats',
   usage: '.crew roster',
   isCrew: true,
 
@@ -22,7 +22,7 @@ module.exports = {
 
     if (!isGroup) {
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nThis command works in groups only`);
+      return extra.reply(`❌ ERROR\n\nGroups only, this one`);
     }
 
     // Check config.crewTeams for team JIDs
@@ -41,7 +41,7 @@ module.exports = {
         return extra.reply(`📋 ROSTER\n\nTeam: ${dbKey}\n\n_No members yet_`);
       }
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nThis group isn't a crew team`);
+      return extra.reply(`❌ ERROR\n\nThis group isn't a crew team, shame`);
     }
 
     const allActivity = database.getGroupMemberActivity(from);
@@ -53,7 +53,7 @@ module.exports = {
     if (memberList.length === 0) {
       return extra.reply(
         `📋 ROSTER\n\n` +
-        `No members in ${teamName} yet`
+        `No members in ${teamName} yet, shame`
       );
     }
 

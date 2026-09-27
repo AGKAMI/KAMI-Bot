@@ -46,8 +46,8 @@ async function getSessionOrExpired(sock, jid) {
           `━━━━━━━━━━━━━━━━\n` +
           `⏰ *SESSION EXPIRED*\n` +
           `━━━━━━━━━━━━━━━━\n\n` +
-          `Your application session has expired (30 min limit)\n\n` +
-          `_Start a new application with ${config.prefix || '.'}crew apply_`,
+          `Your application session timed out (30 min limit)\n\n` +
+          `_Run ${config.prefix || '.'}crew apply to start a fresh one_`,
       });
     } catch (e) {}
     return null;
@@ -312,9 +312,9 @@ async function submitApplication(sock, session) {
     `🏢 Team: *${session.teamKey}* — ${team?.label || session.teamKey}\n` +
     `🆔 App ID: *${session.appUid}*\n\n` +
     (adminMsg === false
-      ? `⚠️ _Couldn't notify the team admins automatically — but your application is stored._\n\n`
-      : `📲 _Your application has been sent to all ${session.teamKey} admins, ${voice.tag('affirm')}_\n\n`) +
-    `⏳ Keep this App ID — an admin will accept or reject you.\n\n` +
+      ? `⚠️ _Couldn't ping the team admins automatically — but your application is safe._\n\n`
+      : `📲 _Your application went out to all ${session.teamKey} admins, ${voice.tag('affirm')}_\n\n`) +
+    `⏳ Keep this App ID — an admin will accept or reject you, hey.\n\n` +
     `_${voice.greetOpen()}, good luck!_`;
 
   await sock.sendMessage(session.jid, { text: confirm });
@@ -346,7 +346,7 @@ onButton('cwiz:a:', async (sock, msg, from, sender, btnId) => {
     // Stale button tap — send feedback
     try {
       await sock.sendMessage(from, {
-        text: `⚠️ That question already moved on — tap the latest buttons hey`
+        text: `⚠️ That question already moved on — tap the latest buttons, shame`
       }, { quoted: msg });
     } catch {}
     return;
@@ -393,7 +393,7 @@ onButton('cwiz:submit:', async (sock, msg, from, sender, btnId) => {
       `━━━━━━━━━━━━━━━━\n` +
       `*HOW SHOULD WE REVIEW?*\n` +
       `━━━━━━━━━━━━━━━━\n\n` +
-      `Choose how your application gets reviewed:`,
+      `Choose how your application gets reviewed, boet:`,
     footer: `${getTeamDisplayName(teamKey)} Application`,
     buttons: [
       { id: `cwiz:adminreview:${teamKey}:${appUid}`, text: '📋 Send to Admins' },
@@ -480,7 +480,7 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
         `🤖 *BOT REVIEW*\n` +
         `━━━━━━━━━━━━━━━━\n\n` +
         `⚠️ You skipped ${skippedCount} questions\n\n` +
-        `_Sending to admins for manual review instead._`,
+        `_Sending it to the admins for a manual look instead._`,
     });
     session.stage = 'done';
     await submitApplication(sock, session);
@@ -498,7 +498,7 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
         `Score: *${totalScore}/${maxScore}* (${percentage}%)\n\n` +
         `Issues:\n` +
         issues.map(i => `• ${i}`).join('\n') +
-        `\n\n_Try improving your answers or send to admins for manual review._`,
+        `\n\n_Try sharpening your answers, or send it to the admins for a manual look._`,
       footer: `${getTeamDisplayName(teamKey)} Application`,
       buttons: [
         { id: `cwiz:pick:${teamKey}:${appUid}`, text: '✏️ Improve Answers' },
@@ -563,7 +563,7 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
         `👤 ${mention(session.applicantJid)}\n` +
         `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
         `🆔 App ID: *${appUid}*\n\n` +
-        `_Answers passed quality checks. Use ${config.prefix || '.'}crew accept ${appUid} to finalize._`;
+        `_Answers passed the checks. Use ${config.prefix || '.'}crew accept ${appUid} to finalise._`;
 
       const targets = admins.length > 0 ? admins : [teamGroupJid];
       for (const target of targets) {
@@ -582,10 +582,10 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
     `━━━━━━━━━━━━━━━━\n` +
     `✅ *APPLICATION APPROVED*\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
-    `🤖 _Bot reviewed your answers and you passed!_\n\n` +
+    `🤖 _I read your answers and you passed!_\n\n` +
     `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
     `🆔 App ID: *${appUid}*\n\n` +
-    `_An admin will add you to the group shortly, ${voice.tag('affirm')}_\n\n` +
+    `_An admin will pull you into the group now-now, ${voice.tag('affirm')}_\n\n` +
     `_${voice.greetOpen()}, welcome to the squad!_`;
 
   await sock.sendMessage(from, { text: confirm });
@@ -620,8 +620,8 @@ onButton('cwiz:cancel:', async (sock, msg, from, sender, btnId) => {
       `━━━━━━━━━━━━━━━━\n` +
       `🚫 *APPLICATION CANCELLED*\n` +
       `━━━━━━━━━━━━━━━━\n\n` +
-      `Your *${getTeamDisplayName(teamKey)}* application has been removed.\n\n` +
-      `💡 You can apply again anytime with ${config.prefix || '.'}crew apply ${teamKey}`
+      `Your *${getTeamDisplayName(teamKey)}* application is gone.\n\n` +
+      `💡 Apply again whenever with ${config.prefix || '.'}crew apply ${teamKey}`
   });
 });
 
@@ -715,7 +715,7 @@ async function sendProgressiveResponse(sock, jid, state) {
           `━━━━━━━━━━━━━━━━\n` +
           `⏳ *APPLICATION STATUS*\n` +
           `━━━━━━━━━━━━━━━━\n\n` +
-          `Your *${teamName}* application is being reviewed by an admin.\n\n` +
+          `Your *${teamName}* application is with an admin right now.\n\n` +
           `🆔 App ID: *${state.appUid}*\n\n` +
           `💡 *What you can do:*\n` +
           `• \`${prefix}crew applicants ${state.teamKey}\` — check status\n` +
@@ -729,7 +729,7 @@ async function sendProgressiveResponse(sock, jid, state) {
           `━━━━━━━━━━━━━━━━\n` +
           `📋 *APPLICATION INCOMPLETE*\n` +
           `━━━━━━━━━━━━━━━━\n\n` +
-          `You started a *${teamName}* application but didn't finish answering.\n\n` +
+          `You started a *${teamName}* form but never finished answering.\n\n` +
           `🆔 App ID: *${state.appUid}*\n\n` +
           `💡 *Start fresh:*\n` +
           `\`${prefix}crew apply ${state.teamKey}\``
@@ -742,9 +742,9 @@ async function sendProgressiveResponse(sock, jid, state) {
           `━━━━━━━━━━━━━━━━\n` +
           `🤖 *APPLICATION AUTO-APPROVED*\n` +
           `━━━━━━━━━━━━━━━━\n\n` +
-          `Your *${state.teamKey}* — ${teamLabel} application passed the bot review!\n\n` +
+          `Your *${state.teamKey}* — ${teamLabel} application passed my review!\n\n` +
           `🆔 App ID: *${state.appUid}*\n\n` +
-          `⏳ An admin will add you to the group shortly.`
+          `⏳ An admin will add you to the group now-now.`
       });
       break;
   }

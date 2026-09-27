@@ -8,7 +8,7 @@ module.exports = {
     reactions: { received: '🏃', done: '📈' },
     aliases: ['mystats', 'mymsgs', 'rank'],
     category: 'general',
-    description: 'Check your activity stats for today',
+    description: 'Check today\'s activity stats',
     usage: '.myactivity',
     groupOnly: true,
 
@@ -19,7 +19,7 @@ module.exports = {
             const stats = getStats(from);
 
             if (!stats || !stats.users || !stats.users[sender]) {
-                return extra.reply(`⚠️ *WARNING*\n💡 You haven't sent any messages today yet`);
+                return extra.reply(`⚠️ *WARNING*\n💡 You haven't sent a message today yet`);
             }
 
             const userCount = stats.users[sender];
@@ -51,7 +51,7 @@ module.exports = {
         } catch (err) {
             console.error('[myactivity cmd] error:', err);
             extra.fail();
-            extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()}, couldn't load your activity`);
+            extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()}, couldn't pull the your activity`);
         }
     }
 };

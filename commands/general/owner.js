@@ -11,7 +11,7 @@ module.exports = {
     reactions: { received: '👑', done: '🏠' },
     aliases: ['creator', 'dev', 'botowner'],
     category: 'general',
-    description: 'Show bot owner contact information',
+    description: 'Show the bot owner\'s contact details',
     usage: '.owner',
     ownerOnly: false,
 

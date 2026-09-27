@@ -25,7 +25,7 @@ module.exports = {
       if (!args.length) {
         const groupSettings = db.getGroupSettings(groupId);
         return await sock.sendMessage(groupId, {
-          text: `📝 *CURRENT WELCOME MESSAGE*\n\n${groupSettings.welcomeMessage}\n\n*Usage:* ${prefix}setwelcome <message>\n\n*Tip:* Use @user to mention the new member`
+          text: `📝 *CURRENT WELCOME MESSAGE*\n\n${groupSettings.welcomeMessage}\n\n*Usage:* ${prefix}setwelcome <message>\n\n*Tip:* Use @user to tag the new member`
         }, { quoted: msg });
       }
       
@@ -34,7 +34,7 @@ module.exports = {
       if (welcomeMessage.length > 500) {
         extra.fail();
         return await sock.sendMessage(groupId, {
-          text: `❌ _${voice.openErr()}, welcome message is too long, max 500 characters_`
+          text: `❌ _${voice.openErr()}, welcome message is too long — 500 max_`
         }, { quoted: msg });
       }
       

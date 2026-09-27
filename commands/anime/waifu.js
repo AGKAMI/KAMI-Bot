@@ -15,7 +15,7 @@ module.exports = {
   reactions: { received: '👘', generating: '⬇️', done: '🌸' },
   aliases: ['waifusfw'],
   category: 'anime',
-  description: 'Get random waifu SFW anime images',
+  description: 'Get a random waifu SFW anime images',
   usage: 'waifu',
   execute: async (sock, msg, args, extra) => {
     try {
@@ -113,16 +113,16 @@ module.exports = {
       // Handle specific error cases
       if (error.response?.status === 404) {
         extra.fail();
-        await extra.reply('❌ image not found — try again');
+        await extra.reply('❌ no image there — try again');
       } else if (error.response?.status === 429) {
         extra.fail();
-        await extra.reply('❌ rate limit — try again later');
+        await extra.reply('❌ rate limit — try again later, hey');
       } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         extra.fail();
         await extra.reply('❌ timed out — try again');
       } else {
         extra.fail();
-        await extra.reply(`❌ Failed to fetch waifu image: ${error.message}`);
+        await extra.reply(`❌ Couldn't grab the waifu image: ${error.message}`);
       }
     }
   }

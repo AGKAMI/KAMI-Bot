@@ -13,7 +13,7 @@ module.exports = {
   subName: 'cancel',
   name: null,
   category: 'crew',
-  description: 'Cancel any pending application (owner only)',
+  description: 'Cancel any pending application (owner only, nobody else)',
   usage: '.crew cancel <UID> [reason]',
   groupOnly: false,
   ownerOnly: true,
@@ -25,7 +25,7 @@ module.exports = {
       const uid = (args[0] || '').toUpperCase();
       if (!uid) {
         return extra.reply(
-          `❌ ERROR\n\nProvide the App ID\n\nUsage: \`${prefix}crew cancel SS-XXXXX [reason]\``
+          `❌ ERROR\n\nGive me the App ID\n\nUsage: \`${prefix}crew cancel SS-XXXXX [reason]\``
         );
       }
 
@@ -39,7 +39,7 @@ module.exports = {
           );
         }
         return extra.reply(
-          `❌ ERROR\n\nNo application found for *${uid}*`
+          `❌ ERROR\n\nNothing with that ID: *${uid}*`
         );
       }
 
@@ -74,7 +74,7 @@ module.exports = {
       try {
         await sock.sendMessage(applicantJid, {
           text: `🚫 *APPLICATION CANCELLED*\n\n` +
-                `Your *${getTeamDisplayName(teamKey)}* application (ID: *${uid}*) has been cancelled by the owner.` +
+                `Your *${getTeamDisplayName(teamKey)}* application (ID: *${uid}*) got cancelled by the owner.` +
                 (reason ? `\n\n💬 *Reason:* ${reason}` : '') +
                 `\n\n🔄 You can reapply anytime: \`${prefix}crew apply ${teamKey}\``
         });
@@ -93,7 +93,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew cancel error:', error);
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't cancel application`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't cancel it, shame`);
     }
   },
 };

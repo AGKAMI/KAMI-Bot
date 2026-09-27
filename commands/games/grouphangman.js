@@ -8,7 +8,7 @@ const games = new Map();
 module.exports = {
   name: 'grouphangman',
   reactions: { received: '🧱', done: '🪢' },
-  description: 'Play hangman with the whole group',
+  description: 'Play hangman with the whole group, lekke, lekke',
   category: 'games',
   aliases: ['ghang'],
   groupOnly: true,
@@ -23,11 +23,11 @@ module.exports = {
       const word = WORDS[Math.floor(Math.random() * WORDS.length)];
       games.set(ctx.from, { word, guessed: new Set(), wrong: 0 });
       const m = mask(word, new Set());
-      return ctx.reply(`📝 group hangman!\n\n${m}\nLength: ${word.length}\nGuesses: 6/6\nUse ${config.prefix}ghang <letter>`);
+      return ctx.reply(`📝 group hangman, boet!\n\n${m}\nLength: ${word.length}\nGuesses: 6/6\nUse ${config.prefix}ghang <letter>`);
     }
     // No args and game active — show current state
     if (!sub) {
-      return ctx.reply(`📝 group hangman active!\n\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6\nUse ${config.prefix}ghang <letter>`);
+      return ctx.reply(`📝 group hangman still going!\n\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6\nUse ${config.prefix}ghang <letter>`);
     }
     if (sub.length === 1 && /^[a-z]$/.test(sub)) {
       if (g.guessed.has(sub)) return ctx.reply(`already guessed that, ${voice.tag('neutral')}`);
@@ -36,18 +36,18 @@ module.exports = {
         const m = mask(g.word, g.guessed);
         if (!m.includes('_')) {
           games.delete(ctx.from);
-          return ctx.reply(`🎉 ${voice.lead('affirm')}, group won! word: ${g.word}`);
+          return ctx.reply(`🎉 ${voice.lead('affirm')}, the group won! the word was: ${g.word}`);
         }
-        return ctx.reply(`✅ ${sub} is in the word!\n${m}\nWrong: ${g.wrong}/6`);
+        return ctx.reply(`✅ ${sub} is in the word, lekke!\n${m}\nWrong: ${g.wrong}/6`);
       }
       g.wrong++;
       if (g.wrong >= 6) {
         games.delete(ctx.from);
-        return ctx.reply(`💀 ${voice.openErr()}, game over! word: ${g.word}`);
+        return ctx.reply(`💀 ${voice.openErr()}, game over! the word was: ${g.word}`);
       }
       ctx.fail();
-      return ctx.reply(`❌ ${sub} not in word!\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6`);
+      return ctx.reply(`❌ ${sub} ain't in the word!\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6`);
     }
-    return ctx.reply(`Use ${config.prefix}ghang <letter> or ${config.prefix}ghang stop`);
+    return ctx.reply(`Use ${config.prefix}ghang <letter>, or ${config.prefix}ghang stop to end it`);
   }
 };

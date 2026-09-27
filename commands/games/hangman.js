@@ -8,7 +8,7 @@ const games = new Map();
 module.exports = {
   name: 'hangman',
   reactions: { received: '🔤', done: '🪢' },
-  description: 'Play hangman — guess the word letter by letter',
+  description: 'Play hangman — guess the word letter by letter, lekke',
   category: 'games',
   aliases: ['hang'],
   execute: async (sock, msg, args, ctx) => {
@@ -23,14 +23,14 @@ module.exports = {
       const word = WORDS[Math.floor(Math.random() * WORDS.length)];
       games.set(ctx.from, { word, guessed: new Set(), wrong: 0 });
       const m = mask(word, new Set());
-      return ctx.reply(`📝 hangman started!\n\n${m}\nLength: ${word.length}\nGuesses: 6/6\nUse ${prefix}hangman <letter>`);
+      return ctx.reply(`📝 hangman is on!\n\n${m}\nLength: ${word.length}\nGuesses: 6/6\nUse ${prefix}hangman <letter>`);
     }
     // No args and game active — show current state
     if (!sub) {
-      return ctx.reply(`📝 hangman active!\n\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6\nUse ${prefix}hangman <letter>`);
+      return ctx.reply(`📝 hangman still going!\n\n${mask(g.word, g.guessed)}\nWrong: ${g.wrong}/6\nUse ${prefix}hangman <letter>`);
     }
     if (sub.length === 1 && /^[a-z]$/.test(sub)) {
-      if (g.guessed.has(sub)) return ctx.reply(`already guessed that letter, ${voice.tag('neutral')}`);
+      if (g.guessed.has(sub)) return ctx.reply(`already tried that letter, ${voice.tag('neutral')}`);
       g.guessed.add(sub);
       if (g.word.includes(sub)) {
         const m = mask(g.word, g.guessed);
@@ -56,6 +56,6 @@ module.exports = {
       games.delete(ctx.from);
       return ctx.reply(`💀 ${voice.openErr()}, wrong word! it was: ${g.word}`);
     }
-    return ctx.reply(`Use ${prefix}hangman <letter> or ${prefix}hangman stop`);
+    return ctx.reply(`Use ${prefix}hangman <letter>, or ${prefix}hangman stop to end it`);
   }
 };

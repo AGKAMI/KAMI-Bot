@@ -86,7 +86,7 @@ module.exports = {
           const status = error.response.status;
           if (status === 400) {
             extra.fail();
-            return await extra.reply(`❌ _${voice.openErr()}, invalid pinterest link — check it hey_`);
+            return await extra.reply(`❌ _${voice.openErr()}, that Pinterest link is off — check it hey_`);
           } else if (status === 429) {
             extra.fail();
             return await extra.reply(`❌ _${voice.openErr()}, rate limit — try again later_`);
@@ -96,12 +96,12 @@ module.exports = {
           }
         }
         extra.fail();
-        return await extra.reply(`❌ _${voice.openErr()}, couldn't fetch pinterest content — try again_`);
+        return await extra.reply(`❌ _${voice.openErr()}, couldn't pull the Pinterest content — try again_`);
       }
       
       if (!response.data || !response.data.status || !response.data.result) {
         extra.fail();
-        return await extra.reply(`❌ _${voice.openErr()}, invalid response — pin might not exist or be private_`);
+        return await extra.reply(`❌ _${voice.openErr()}, bad response — the pin might not exist or be private_`);
       }
       
       const pinData = response.data.result;
@@ -129,7 +129,7 @@ module.exports = {
       if (!imageUrl) {
         console.error('Pinterest API response structure:', JSON.stringify(pinData, null, 2));
         extra.fail();
-        return await extra.reply(`❌ _${voice.openErr()}, no media URL found — might be a video or different format_`);
+        return await extra.reply(`❌ _${voice.openErr()}, no media URL — it might be a video or another format_`);
       }
       
       // Build caption
@@ -175,7 +175,7 @@ module.exports = {
         } catch (videoError) {
           console.error('Video download/send error:', videoError.message);
           extra.fail();
-          return await extra.reply(`❌ _${voice.openErr()}, couldn't download video — might be expired or need auth_`);
+          return await extra.reply(`❌ _${voice.openErr()}, couldn't grab the video — it might be expired or need auth_`);
         }
       } else {
         // For images, use the main image URL (not thumbnail)

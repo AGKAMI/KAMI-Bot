@@ -37,7 +37,7 @@ module.exports = {
     reactions: { received: '💤', done: '🔙' },
     aliases: ['away', 'brb'],
     category: 'general',
-    description: 'Set your AFK status — auto-replies when someone mentions you',
+    description: 'Set your AFK status — I reply when someone mentions you',
     usage: '.afk [reason] | .afk list',
 
     checkAfk,

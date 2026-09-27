@@ -15,7 +15,7 @@ module.exports = {
   reactions: { received: '💽', done: '📏' },
   aliases: ['diskusage', 'storage'],
   category: 'owner',
-  description: 'Show server disk usage breakdown',
+  description: 'Show the server disk usage breakdown',
   usage: '.disk',
   ownerOnly: true,
 
@@ -60,8 +60,8 @@ module.exports = {
       }
 
       const gcLine = gcNote
-        ? `\n\n🧹 Git pruned — .git is now *${gcNote}* (was in the list above)`
-        : gcNote === null ? `\n\n⚠️ Git prune failed — check the logs` : '';
+        ? `\n\n🧹 Git pruned — .git's now *${gcNote}* (was in the list above)`
+        : gcNote === null ? `\n\n⚠️ Git prune failed — check the logs, shame` : '';
 
       await sock.sendMessage(extra.from, {
         text:

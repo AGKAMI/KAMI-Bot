@@ -26,7 +26,7 @@ module.exports = {
       const uid = (args[0] || '').toUpperCase();
       if (!uid) {
         return extra.reply(
-          `❌ ERROR\n\nProvide your App ID\n\nUsage: \`${prefix}crew withdraw SS-XXXXX\``
+          `❌ ERROR\n\nGive me your App ID\n\nUsage: \`${prefix}crew withdraw SS-XXXXX\``
         );
       }
 
@@ -36,15 +36,15 @@ module.exports = {
         const processed = database.getProcessedApp(uid);
         if (processed) {
           if (processed.action === 'accepted') {
-            return extra.reply(`❌ ERROR\n\nApplication *${uid}* was already accepted. You're in the crew.`);
+            return extra.reply(`❌ ERROR\n\n*${uid}* was already accepted — you're in the crew.`);
           } else if (processed.action === 'denied') {
-            return extra.reply(`❌ ERROR\n\nApplication *${uid}* was already denied.`);
+            return extra.reply(`❌ ERROR\n\n*${uid}* was already denied.`);
           } else {
-            return extra.reply(`❌ ERROR\n\nApplication *${uid}* expired and was auto-removed.`);
+            return extra.reply(`❌ ERROR\n\n*${uid}* expired and got auto-removed.`);
           }
         }
         return extra.reply(
-          `❌ ERROR\n\nNo application found for *${uid}*\nCheck the App ID and try again`
+          `❌ ERROR\n\nNothing with that ID: *${uid}*\nCheck the App ID and try again`
         );
       }
 
@@ -56,7 +56,7 @@ module.exports = {
 
       if (!extra.isOwner && !isSamePerson) {
         return extra.reply(
-          `❌ ERROR\n\nOnly the applicant can withdraw their own application`
+          `❌ ERROR\n\nOnly the applicant can withdraw their own application, hey`
         );
       }
 
@@ -83,7 +83,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew withdraw error:', error);
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't withdraw application`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't withdraw it, shame`);
     }
   },
 };

@@ -12,7 +12,7 @@ module.exports = {
   reactions: { received: '⚡', done: '✅' },
   aliases: ['autos', 'asticker'],
   category: 'admin',
-  description: 'Enable or disable auto-sticker conversion (images/videos automatically become stickers)',
+  description: 'Turn auto-stickers on or off (images and videos become stickers by themselves)',
   usage: '.autosticker <on/off>',
   groupOnly: true,
   adminOnly: true,
@@ -27,7 +27,7 @@ module.exports = {
         const status = isOn ? 'ON' : 'OFF';
         const statusText = `📌 AUTOSTICKER STATUS\n\n` +
           `*Status*: ${status}\n\n` +
-          `When enabled, all images and videos go straight to sticker, ${voice.tag('affirm')}\n\n` +
+          `On, every image and video goes straight to sticker, ${voice.tag('affirm')}\n\n` +
           `📱 *Usage*:\n` +
           `• ${prefix}autosticker on\n` +
           `• ${prefix}autosticker off`;
@@ -44,10 +44,10 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).autosticker) {
-          return extra.reply(`✅ SUCCESS\n\nAutosticker is already on, ${voice.tag('neutral')}`);
+          return extra.reply(`✅ SUCCESS\n\nAutosticker was already on, ${voice.tag('neutral')}`);
         }
         database.updateGroupSettings(extra.from, { autosticker: true });
-        return extra.reply(`✅ SUCCESS\n\nAutosticker turned ON, ${voice.tag('affirm')}\n\nEvery image and video goes straight to sticker now`);
+        return extra.reply(`✅ SUCCESS\n\nAutosticker turned ON, ${voice.tag('affirm')}\n\nNow every image and video goes straight to sticker`);
       }
       
       if (opt === 'off') {
@@ -59,11 +59,11 @@ module.exports = {
       }
       
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nInvalid option\nUsage: ${prefix}autosticker <on/off>`);
+      return extra.reply(`❌ ERROR\n\nNo good: option\nUsage: ${prefix}autosticker <on/off>`);
     } catch (error) {
       console.error('[AutoSticker Command Error]:', error);
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nCouldn't update autosticker setting`);
+      return extra.reply(`❌ ERROR\n\nCouldn't update the autosticker setting`);
     }
   }
 };
@@ -73,7 +73,7 @@ onButton('admin:autosticker:on', async (sock, msg, from) => {
   const database = require('../../database');
   database.updateGroupSettings(from, { autosticker: true });
   await sock.sendMessage(from, {
-    text: `✅ AUTOSTICKER ON\n\n_Autosticker turned ON — every image and video goes straight to sticker_`,
+    text: `✅ AUTOSTICKER ON\n\n_Autosticker turned ON — every image and video becomes a sticker_`,
   });
 });
 

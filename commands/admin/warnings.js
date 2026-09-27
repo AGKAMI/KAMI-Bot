@@ -35,7 +35,7 @@ module.exports = {
         extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +
-          `Tag or reply to someone\n\n` +
+          `Tag or reply to somebody\n\n` +
           `Usage:\n` +
           `• ${prefix}warnings @user`
         );
@@ -126,7 +126,7 @@ onButton('admin:clearwarnings', async (sock, msg, from, sender, btnId) => {
       text:
         `✅ SUCCESS\n\n` +
         `🗑️ WARNINGS CLEARED\n\n` +
-        `${mention(target)} has been cleared of all warnings\n\n` +
+        `${mention(target)} is cleared of all warnings\n\n` +
         `_${voice.react('ok')}_`,
       mentions: [target],
     });

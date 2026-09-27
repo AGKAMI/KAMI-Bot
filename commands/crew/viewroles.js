@@ -40,7 +40,7 @@ module.exports = {
     } catch (error) {
       console.error('Crew viewroles error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't fetch roles`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't fetch the roles`);
     }
   },
 };

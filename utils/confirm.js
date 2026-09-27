@@ -6,7 +6,7 @@
 async function confirm(sock, chatId, msg, text, onConfirm, onCancel) {
   // WhatsApp deprecated buttons - use reactions + reply instead
   await sock.sendMessage(chatId, {
-    text: `⚠️ *Confirmation Required*\n\n${text}\n\nReact with ✅ to confirm or ❌ to cancel.`,
+    text: `⚠️ *ARE YOU SURE?*\n\n${text}\n\nReact with ✅ to confirm or ❌ to back out.`,
     mentions: [msg.key.participant || msg.key.remoteJid]
   }, { quoted: msg });
 

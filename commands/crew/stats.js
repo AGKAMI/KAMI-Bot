@@ -12,7 +12,7 @@ module.exports = {
   name: 'stats',
   reactions: { received: '📊', done: '⭐' },
   aliases: ['memberstats', 'mystats'],
-  description: 'View member activity stats and role progression',
+  description: 'See member activity stats and role progression',
   usage: '.crew stats [@user]',
   isCrew: true,
 
@@ -22,7 +22,7 @@ module.exports = {
 
     if (!isGroup) {
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nThis command works in groups only`);
+      return extra.reply(`❌ ERROR\n\nGroups only, this one`);
     }
 
     // Check config.crewTeams for team JIDs
@@ -33,7 +33,7 @@ module.exports = {
 
     if (!teamKey) {
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nThis group isn't a crew team`);
+      return extra.reply(`❌ ERROR\n\nThis group isn't a crew team, shame`);
     }
 
     // Get target user
@@ -58,7 +58,7 @@ module.exports = {
 
     if (!member) {
       return extra.reply(
-        `❌ ERROR\n\n${mention(targetJid)} isn't a member of ${teamName}`,
+        `❌ ERROR\n\n${mention(targetJid)} isn't part of ${teamName}`,
         { mentions: [targetJid] }
       );
     }
@@ -123,12 +123,12 @@ module.exports = {
         `📅 Days active: ${activity.daysActive}/${DAYS_FOR_PROMOTE} (${daysProgress}%)\n\n`;
 
       if (progress >= 100 && daysProgress >= 100) {
-        text += `✅ _Ready for promotion! Ask an admin to promote you, ${voice.tag('affirm')}_\n`;
+        text += `✅ _You're ready for promotion — ask an admin, ${voice.tag('affirm')}_\n`;
       } else {
         text += `⏳ _Keep active, ${voice.tag('neutral')}_\n`;
       }
     } else {
-      text += `_You've reached the highest role, ${voice.tag('affirm')} 👑_\n`;
+      text += `_Top of the ladder, that's the highest role, ${voice.tag('affirm')} 👑_\n`;
     }
 
     return extra.reply(text, { mentions: [targetJid] });

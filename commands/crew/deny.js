@@ -16,7 +16,7 @@ module.exports = {
   name: null,
   aliases: ['reject'],
   category: 'crew',
-  description: 'Deny an applicant by App ID',
+  description: 'Turn down an applicant by App ID',
   usage: '.crew deny <UID> <reason>',
   groupOnly: false,
   ownerOnly: false,
@@ -28,7 +28,7 @@ module.exports = {
       const uid = (args[0] || '').toUpperCase();
       if (!uid) {
         return extra.reply(
-          `❌ ERROR\n\nProvide the applicant's App ID\n\nUsage: \`${prefix}crew deny SS-XXXXX <reason>\``
+          `❌ ERROR\n\nGive me the applicant's App ID\n\nUsage: \`${prefix}crew deny SS-XXXXX <reason>\``
         );
       }
 
@@ -40,18 +40,18 @@ module.exports = {
           const time = new Date(processed.processedAt).toLocaleString('en-ZA');
           if (processed.action === 'accepted') {
             return extra.reply(
-              `❌ ERROR\n\nApplication *${uid}* was already *accepted* by ${mention(processed.admin)} on ${time}` +
+              `❌ ERROR\n\nEish — *${uid}* was already accepted by ${mention(processed.admin)} on ${time}` +
               (processed.role ? `\n🏷️ Role given: ${processed.role}` : '')
             );
           } else {
             return extra.reply(
-              `❌ ERROR\n\nApplication *${uid}* was already *denied* by ${mention(processed.admin)} on ${time}` +
+              `❌ ERROR\n\nEish — *${uid}* was already denied by ${mention(processed.admin)} on ${time}` +
               (processed.reason ? `\n📝 Reason: ${processed.reason}` : '')
             );
           }
         }
         return extra.reply(
-          `❌ ERROR\n\nNo application found for *${uid}*\nCheck the App ID and try again`
+          `❌ ERROR\n\nNothing with that ID: *${uid}*\nCheck the App ID and try again`
         );
       }
 

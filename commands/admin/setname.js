@@ -40,14 +40,14 @@ module.exports = {
 
       if (newName.length > 100) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n\nName too long — max 100 characters`);
+        return extra.reply(`❌ *ERROR*\n\nName too long — 100 characters max`);
       }
 
       const settings = database.getGroupSettings(from);
       if (settings.lockName) {
         return extra.reply(
           `🔒 *NAME LOCKED*\n\n` +
-          `_${voice.openErr()}, the group name is locked by an admin_\n` +
+          `_${voice.openErr()}, an admin locked the group name_\n` +
           `Current name: *${extra.groupMetadata?.subject || 'Unknown'}*`
         );
       }
@@ -65,7 +65,7 @@ module.exports = {
 
       if (resolved.length > 100) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n\nResolved name too long after variables — max 100 characters`);
+        return extra.reply(`❌ *ERROR*\n\nName still too long after variables — 100 max`);
       }
 
       await sock.groupUpdateSubject(from, resolved);

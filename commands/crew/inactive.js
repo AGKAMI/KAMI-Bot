@@ -12,7 +12,7 @@ module.exports = {
   name: 'inactive',
   reactions: { received: '😴', done: '🚪' },
   aliases: [],
-  description: 'Show inactive members (no messages in X days)',
+  description: 'Show members who went quiet (no messages in X days)',
   usage: '.crew inactive [days]',
   isCrew: true,
 
@@ -22,7 +22,7 @@ module.exports = {
 
     if (!isGroup) {
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nThis command works in groups only`);
+      return extra.reply(`❌ ERROR\n\nGroups only, this one`);
     }
 
     // Check config.crewTeams for team JIDs
@@ -33,7 +33,7 @@ module.exports = {
 
     if (!teamKey) {
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nThis group isn't a crew team`);
+      return extra.reply(`❌ ERROR\n\nThis group isn't a crew team, shame`);
     }
 
     // Parse days (default 30)
@@ -43,7 +43,7 @@ module.exports = {
 
     if (days < 1 || days > 365) {
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nDays must be between 1 and 365`);
+      return extra.reply(`❌ ERROR\n\nDays must be 1 to 365, hey`);
     }
 
     const inactive = database.getInactiveMembers(from, days);
@@ -55,7 +55,7 @@ module.exports = {
     if (inactiveList.length === 0) {
       return extra.reply(
         `✅ *ALL GOOD*\n\n` +
-        `No inactive members in the last ${days} days\n` +
+        `Nobody went quiet in the last ${days} days\n` +
         `_Everyone's been active, ${voice.tag('affirm')}_`
       );
     }

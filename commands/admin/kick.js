@@ -26,7 +26,7 @@ module.exports = {
   reactions: { received: '🦶', done: '👋' },
   aliases: ['remove'],
   category: 'admin',
-  description: 'Kick mentioned/replied members from the group',
+  description: 'Kick the tagged or replied members out',
   usage: '.kick @user',
   groupOnly: true,
   adminOnly: true,
@@ -49,7 +49,7 @@ module.exports = {
         extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +
-          `Tag or reply to the person you wanna kick`
+          `Tag or reply to the person you want gone`
         );
       }
 
@@ -64,8 +64,8 @@ module.exports = {
             extra.fail();
             return extra.reply(
               `❌ ERROR\n\n` +
-              `${mention(target)} is not in this group\n\n` +
-              `Can't kick someone who's not here`
+              `${mention(target)} isn't in this group\n\n` +
+              `Can't kick someone who isn't here, hey`
             );
           }
         }
@@ -101,8 +101,8 @@ module.exports = {
             await sock.sendMessage(chatId, {
               text:
                 `🚫 *YOH THE AUDACITY* 💀\n\n` +
-                `${mention(extra.sender)} — you really just tried to kick KAMI??\n\n` +
-                `No way you tryna kick the owner bru 😭\n` +
+                `${mention(extra.sender)} — you really tried to kick KAMI?? yoh\n\n` +
+                `No way you tryna kick the owner, bru 😭\n` +
                 `Don't act like a laaitie man, ${voice.tag('neutral')}`,
               mentions: [extra.sender],
             });
@@ -139,7 +139,7 @@ module.exports = {
                 text:
                   `🚨 *CAUGHT IN 4K* 📸\n\n` +
                   `${mention(extra.sender)} got demoted 💀\n` +
-                  `Kept trying to kick ${mention(target)}\n\n` +
+                  `Kept trying to kick ${mention(target)}, bru\n\n` +
                   `_KAMI-Bot doesn't play_ 👑`,
                 mentions: ownerJid
                   ? [target, extra.sender, ownerJid]
@@ -164,7 +164,7 @@ module.exports = {
                 await sock.sendMessage(extra.sender, {
                   text:
                     `🚨 *YOU GOT DEMOTED* 💀\n\n` +
-                    `Kept trying to kick KAMI's person\n` +
+                    `Kept trying to kick KAMI's person, bru\n` +
                     `Now you're regular\n\n` +
                     `Yoh you really didn't listen the first time tho 😭\n` +
                     `_Should've left it alone_`,
@@ -179,7 +179,7 @@ module.exports = {
                   await sock.sendMessage(oJid, {
                     text:
                       `🛡️ *KICK PROTECTION* 💀\n\n` +
-                      `${mention(extra.sender)} tried kicking ${mention(target)} twice\n` +
+                      `${mention(extra.sender)} tried kicking ${mention(target)} twice, bru\n` +
                       `They got demoted for it\n\n` +
                       `${voice.say('protected')}`,
                     mentions: [target, extra.sender],
@@ -195,11 +195,11 @@ module.exports = {
             await sock.sendMessage(chatId, {
               text:
                 `🚫 *NAH BRU* 💀\n\n` +
-                `${mention(extra.sender)} — you really thought you could kick ${mention(target)}??\n\n` +
+                `${mention(extra.sender)} — you really thought you could kick ${mention(target)}?? yoh\n\n` +
                 (ownerJid
                   ? `That's ${mention(ownerJid)}'s person wena 💀\n`
                   : `That's KAMI's person wena 💀\n`) +
-                `Only KAMI-Bot decides who stays and who goes\n\n` +
+                `Only KAMI-Bot decides who stays and who goes, boet\n\n` +
                 `${voice.say('tease')}`,
               mentions: ownerJid
                 ? [target, extra.sender, ownerJid]
@@ -212,7 +212,7 @@ module.exports = {
                 text:
                   `🛡️ *YOU GOOD* 💪\n\n` +
                   `${mention(extra.sender)} tried kicking you hey 💀\n` +
-                  `Sorted — you're not going anywhere\n\n` +
+                  `Sorted — you ain't going anywhere\n\n` +
                   `${voice.say('protected')}`,
                 mentions: [extra.sender],
               });
@@ -223,7 +223,7 @@ module.exports = {
               await sock.sendMessage(extra.sender, {
                 text:
                   `🚫 *OOF* 💀\n\n` +
-                  `You really just tried kicking someone KAMI added??\n\n` +
+                  `You really tried kicking someone KAMI added?? cheeky\n\n` +
                   `Yoh the audacity bru 😭\n` +
                   `Don't try that again hey, ${voice.tag('neutral')}`,
               });
@@ -309,7 +309,7 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
       const clickerIsOwner = (config.ownerNumber || []).some(n => sender.includes(n));
       if (!clickerIsAdmin && !clickerIsOwner) {
         return await sock.sendMessage(from, {
-          text: `❌ *ADMIN ONLY*\n\nOnly group admins can re-add members.`,
+          text: `❌ *ADMIN ONLY*\n\nOnly group admins can re-add members, shame.`,
           mentions: [sender],
         });
       }
@@ -331,7 +331,7 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
         return await sock.sendMessage(from, {
           text:
             `❌ ERROR\n\n` +
-            `${mention(target)} is already in the group`,
+            `${mention(target)} is already in the group, ne, ne`,
           mentions: [target],
         });
       }
@@ -378,7 +378,7 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
       text:
         `✅ SUCCESS\n\n` +
         `🔄 RE-ADDED\n\n` +
-        `${mention(target)} has been re-added to the group\n\n` +
+        `${mention(target)} is back in the group\n\n` +
         `_${voice.react('ok')}_`,
       mentions: [target],
     });

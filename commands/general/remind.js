@@ -15,7 +15,7 @@ module.exports = {
     reactions: { received: '⏰', done: '🔔' },
     aliases: ['reminder', 'remindme'],
     category: 'general',
-    description: 'Set a reminder, list active ones, or cancel a reminder',
+    description: 'Set a reminder, list them, or cancel one',
     usage: '.remind <time><unit> <message> | .remind list | .remind cancel <number>',
     groupOnly: true,
 
@@ -71,7 +71,7 @@ module.exports = {
                     extra.fail();
                     return extra.reply(
                         `❌ *ERROR*\n\n` +
-                        `💡 Invalid reminder number. Use *${prefix}remind list* to see active reminders, ${voice.tag('neutral')}`
+                        `💡 No good: reminder number. Use *${prefix}remind list* to see active reminders, ${voice.tag('neutral')}`
                     );
                 }
 
@@ -106,7 +106,7 @@ module.exports = {
                 extra.fail();
                 return extra.reply(
                     `❌ *ERROR*\n\n` +
-                    `📋 Max ${MAX_REMINDERS} active reminders per group.\n` +
+                    `📋 Max ${MAX_REMINDERS} active reminders per group, hey.\n` +
                     `Use *${prefix}remind list* or *${prefix}remind cancel <number>*, ${voice.tag('neutral')}`
                 );
             }
@@ -148,7 +148,7 @@ module.exports = {
 
             if (ms > 7 * 24 * 60 * 60 * 1000) {
                 extra.fail();
-                return extra.reply(`❌ *ERROR*\n\n💡 Max reminder is 7 days, ${voice.tag('err')}`);
+                return extra.reply(`❌ *ERROR*\n\n💡 Furthest reminder is 7 days, ${voice.tag('err')}`);
             }
 
             const messageText = args.slice(1).join(' ');
@@ -281,7 +281,7 @@ onButton('remind:again:', async (sock, msg, from, sender, btnId) => {
   setTimeout(() => firedReminders.delete(newId), Math.max(fired.ms, 60000) + 60 * 60 * 1000);
 
   await sock.sendMessage(from, {
-    text: `⏰ *SNOOZED*\n\n${mention(sender)} re-set the reminder for ${fired.amount} ${fired.fullUnit} from now`,
+    text: `⏰ *SNOOZED*\n\n${mention(sender)} pushed the reminder to ${fired.amount} ${fired.fullUnit} from now`,
     mentions: [sender],
   }, { quoted: msg });
 });

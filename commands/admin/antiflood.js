@@ -82,7 +82,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Invalid limit — must be a number > 0_`
+            `_Bad limit — must be a number > 0_`
           );
         }
 
@@ -98,7 +98,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Invalid action — choose warn, delete, or kick_`
+            `_No good: action — choose warn, delete, or kick_`
           );
         }
 
@@ -133,7 +133,7 @@ module.exports = {
         if (exempt.includes(exemptJid)) {
           return extra.reply(
             `⚠️ *ALREADY EXEMPT*\n\n` +
-            `${mention(exemptJid)} _is already exempt from flood detection_`
+            `${mention(exemptJid)} _is already out of flood detection_`
           );
         }
 
@@ -165,7 +165,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *NOT EXEMPT*\n\n` +
-            `${mention(exemptJid)} _is not in the exemption list_`
+            `${mention(exemptJid)} _isn't in the exemption list_`
           );
         }
 

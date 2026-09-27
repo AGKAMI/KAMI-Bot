@@ -19,7 +19,7 @@ module.exports = {
 
     if (!allEvents || Object.keys(allEvents).length === 0) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nNo upcoming events right now, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
+        text: `❌ *ERROR*\n\nNo events coming up, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
       });
     }
 
@@ -33,7 +33,7 @@ module.exports = {
 
     if (upcomingEvents.length === 0) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nNo upcoming events right now, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
+        text: `❌ *ERROR*\n\nNo events coming up, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
       });
     }
 
@@ -50,7 +50,7 @@ module.exports = {
       }
     });
 
-    response += `\nRSVP to an event with: \`${prefix}crew attend <event-id>\``;
+    response += `\nRSVP with: \`${prefix}crew attend <event-id>\``;
 
     return sock.sendMessage(jid, { text: response });
   }

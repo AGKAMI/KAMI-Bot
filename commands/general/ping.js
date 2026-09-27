@@ -33,7 +33,7 @@ module.exports = {
           `⚡ *Response:* ${responseTime}ms`,
           `📊 *Quality:* ${quality}`,
           ``,
-          `⏱️ _Tested just now, ${voice.tag('neutral')}_`
+          `⏱️ _Tested just now, lekke — all sweet on my side_`
         ].join('\n');
         
         await sock.sendMessage(extra.from, {

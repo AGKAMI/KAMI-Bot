@@ -43,7 +43,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *NO DELETED MESSAGES*\n\n` +
-            `_No deleted messages stored for this group, ${voice.tag('err')}_\n\n` +
+            `_Nothing deleted stored for this group, ${voice.tag('err')}_\n\n` +
             `_Make sure antidelete is active_`
           );
         }
@@ -69,7 +69,7 @@ module.exports = {
       extra.fail();
       return extra.reply(
         `❌ *NO DELETED MESSAGES*\n\n` +
-        `_No deleted messages stored for this group, ${voice.tag('err')}_`
+        `_Nothing deleted stored for this group, ${voice.tag('err')}_`
       );
     }
 

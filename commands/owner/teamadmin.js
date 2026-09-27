@@ -38,7 +38,7 @@ module.exports = {
         const admins = database.getTeamAdmins();
         const list = admins.length ? admins.map(n => `  • ${n}`).join('\n') : '  _None_';
         return sock.sendMessage(msg.key.remoteJid, {
-          text: `👥 *TEAM ADMINS*\n\n_These can accept/deny applications from DMs:_\n${list}\n\n*Usage:*\n  ${prefix}teamadmin approve <number>\n  ${prefix}teamadmin remove <number>\n  ${prefix}teamadmin list`
+          text: `👥 *TEAM ADMINS*\n\n_These ones can accept or deny applications in DMs:_\n${list}\n\n*Usage:*\n  ${prefix}teamadmin approve <number>\n  ${prefix}teamadmin remove <number>\n  ${prefix}teamadmin list`
         }, { quoted: msg });
       }
 
@@ -66,7 +66,7 @@ module.exports = {
           const added = database.addTeamAdmin(digits);
           await sock.sendMessage(msg.key.remoteJid, {
             text: added
-              ? `✅ *TEAM ADMIN ADDED*\n\n_${digits} can now accept/deny applications from DMs._`
+              ? `✅ *TEAM ADMIN ADDED*\n\n_${digits} can accept or deny applications in DMs now._`
               : `⚠️ *ALREADY A TEAM ADMIN*\n\n_${digits} is already approved._`
           }, { quoted: msg });
         } else {
@@ -82,7 +82,7 @@ module.exports = {
 
       extra.fail();
       return sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ *ERROR*\n\n_Invalid option_\n\n*Usage:*\n  ${prefix}teamadmin approve <number>\n  ${prefix}teamadmin remove <number>\n  ${prefix}teamadmin list`
+        text: `❌ *ERROR*\n\n_No good: option_\n\n*Usage:*\n  ${prefix}teamadmin approve <number>\n  ${prefix}teamadmin remove <number>\n  ${prefix}teamadmin list`
       }, { quoted: msg });
 
     } catch (error) {

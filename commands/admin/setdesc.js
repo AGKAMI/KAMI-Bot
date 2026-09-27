@@ -40,14 +40,14 @@ module.exports = {
 
       if (newDesc.length > 250) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n\nDescription too long — max 250 characters`);
+        return extra.reply(`❌ *ERROR*\n\nDescription too long — 250 characters max`);
       }
 
       const settings = database.getGroupSettings(from);
       if (settings.lockDesc) {
         return extra.reply(
           `🔒 *DESCRIPTION LOCKED*\n\n` +
-          `_${voice.openErr()}, the group description is locked by an admin_\n` +
+          `_${voice.openErr()}, an admin locked the group description_\n` +
           `Current desc: *${extra.groupMetadata?.desc || 'None'}*`
         );
       }
@@ -65,7 +65,7 @@ module.exports = {
 
       if (resolved.length > 250) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n\nResolved description too long after variables — max 250 characters`);
+        return extra.reply(`❌ *ERROR*\n\nDescription still too long after variables — 250 max`);
       }
 
       await sock.groupUpdateDescription(from, resolved);

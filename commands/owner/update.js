@@ -145,7 +145,7 @@ module.exports = {
   reactions: { received: '⬇️', generating: '📦', done: '🆙' },
   aliases: ['upgrade'],
   category: 'owner',
-  description: 'Update bot from configured ZIP URL (Owner Only)',
+  description: 'Update the bot from a configured ZIP URL (owner only)',
   usage: '.update [optional_zip_url]',
   ownerOnly: true,
 
@@ -154,17 +154,17 @@ module.exports = {
     const zipUrl = (args[0] || config.updateZipUrl || process.env.UPDATE_ZIP_URL || '').trim();
 
     if (!zipUrl) {
-      return extra.reply(`*❌ ERROR* — no update url set\n\n💡 Configure in config or pass a url`);
+      return extra.reply(`*❌ ERROR* — no update url set, hey\n\n💡 Set it in config or pass a url`);
     }
 
     try {
-      await extra.reply(`*🔄 UPDATING*\n\n🔄 ${voice.lead('neutral')}, updating the bot, wait a sec...`);
+      await extra.reply(`*🔄 UPDATING*\n\n🔄 ${voice.lead('neutral')}, updating the bot, give me a mo...`);
 
       const { copiedFiles } = await updateViaZip(zipUrl);
 
       const summary = copiedFiles.length
-        ? `*✅ UPDATE COMPLETE*\n\n✅ ${voice.lead('affirm')}, ${copiedFiles.length} files updated`
-        : `*✅ UPDATE COMPLETE*\n\n✅ ${voice.lead('affirm')}, no files needed updating`;
+        ? `*✅ UPDATE COMPLETE*\n\n✅ ${voice.lead('affirm')}, ${copiedFiles.length} files are updated`
+        : `*✅ UPDATE COMPLETE*\n\n✅ ${voice.lead('affirm')}, nothing needed updating`;
 
       await sock.sendMessage(chatId, { text: `${summary}\n\n🔁 Restarting…` }, { quoted: msg });
 

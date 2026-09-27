@@ -11,7 +11,7 @@ module.exports = {
   reactions: { received: '🌍', generating: '🔤', done: '💬' },
   aliases: ['tr', 'trans'],
   category: 'general',
-  description: 'Translate text to another language',
+  description: 'Translate text into another language',
   usage: '.translate <lang code> <text>',
   
   async execute(sock, msg, args, extra) {

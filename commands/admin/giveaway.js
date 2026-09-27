@@ -58,7 +58,7 @@ module.exports = {
   reactions: { received: '🎁', generating: '🎟️', done: '🎉' },
   aliases: ['gw', 'give'],
   category: 'admin',
-  description: 'Run a giveaway — react with 🎁 to enter. Reply to media to use as visual.',
+  description: 'Run a giveaway — react with 🎁 to enter. Reply to media to use as the visual.',
   usage: '.giveaway <prize> | <time> | <winners>n | min <number>\n.giveaway reroll',
   groupOnly: true,
   adminOnly: true,
@@ -75,11 +75,11 @@ module.exports = {
         const last = lastGiveaway.get(from);
         if (!last || last.winners.length === 0) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n\nNo previous giveaway to reroll, ${voice.tag('err')}`);
+          return extra.reply(`❌ *ERROR*\n\nNo previous giveaway to reroll, shame`);
         }
         if (last.entries.length === 0) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n\nPrevious giveaway had no entries, ${voice.tag('err')}`);
+          return extra.reply(`❌ *ERROR*\n\nPrevious giveaway had nobody in it, ${voice.tag('err')}`);
         }
 
         const shuffled = [...last.entries].sort(() => Math.random() - 0.5);
@@ -126,7 +126,7 @@ module.exports = {
       // ── Check for active giveaway ───────────────────────
       if (activeGiveaways.has(from)) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n\nA giveaway is already running`);
+        return extra.reply(`❌ *ERROR*\n\nA giveaway is already running, shame`);
       }
 
       if (!fullArgs.trim()) {
@@ -216,7 +216,7 @@ module.exports = {
       // ── Validate ────────────────────────────────────────
       if (durationMs < 1000 || durationMs > 3 * 60 * 60 * 1000) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n\nDuration must be 1 second to 3 hours, ${voice.tag('err')}`);
+        return extra.reply(`❌ *ERROR*\n\nDuration must be 1 second to 3 hours, shame`);
       }
       if (numWinners < 1 || numWinners > 20) {
         extra.fail();

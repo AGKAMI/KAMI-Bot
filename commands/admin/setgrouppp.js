@@ -12,7 +12,7 @@ module.exports = {
   reactions: { received: '📸', generating: '📐', done: '🖼️' },
   aliases: ['setgrouppic', 'grouppp', 'setpp'],
   category: 'admin',
-  description: 'Set group profile picture (reply to an image)',
+  description: 'Set the group profile pic (reply to an image)',
   usage: '.setgrouppp (reply to an image)',
   groupOnly: true,
   adminOnly: true,
@@ -29,8 +29,8 @@ module.exports = {
         const text = [
           `❌ *ERROR*`,
           '',
-          `💡 Reply to an image with ${prefix}setgrouppp`,
-          `_Make sure the replied message is a photo, ${voice.tag('neutral')}_`
+          `💡 Reply to an image with ${prefix}setgrouppp, hey`,
+          `_Make sure the reply is a photo, ${voice.tag('neutral')}_`
         ].join('\n');
         return await extra.reply(text);
       }
@@ -38,7 +38,7 @@ module.exports = {
       const quotedMsg = ctxInfo.quotedMessage;
       if (!quotedMsg.imageMessage) {
         extra.fail();
-        return await extra.reply(`❌ *ERROR*\n\nYou need to reply to a *photo* — not that type of message`);
+        return await extra.reply(`❌ *ERROR*\n\nYou gotta reply to a *photo* — not that type of message`);
       }
 
       const settings = database.getGroupSettings(from);
@@ -47,7 +47,7 @@ module.exports = {
           `🔒 *GROUP LOCKED*`,
           '',
           `- This group is locked, ${voice.tag('err')}`,
-          `- Only admins can unlock it with .unlock`
+          `- Only admins can open it with .unlock`
         ].join('\n');
         return await extra.reply(text);
       }
@@ -72,7 +72,7 @@ module.exports = {
 
       if (!mediaBuffer) {
         extra.fail();
-        return await extra.reply(`❌ *ERROR*\n\n${voice.openErr()} — couldn't download the image, try again`);
+        return await extra.reply(`❌ *ERROR*\n\n${voice.openErr()} — couldn't grab the image — try again`);
       }
 
       await sock.updateProfilePicture(from, mediaBuffer);

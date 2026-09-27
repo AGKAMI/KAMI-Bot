@@ -11,7 +11,7 @@ module.exports = {
     if (sub === 'start' || sub === 'new') {
       const target = Math.floor(Math.random() * 100) + 1;
       games.set(ctx.from, { target, attempts: 0 });
-      return ctx.reply(`🎯 New game!\nI picked a number between 1 and 100.\nUse .nguess <number>`);
+      return ctx.reply(`🎯 New game!\nI'm thinking of a number between 1 and 100.\nUse .nguess <number>`);
     }
     if (sub === 'stop' || sub === 'end') {
       games.delete(ctx.from);
@@ -24,7 +24,7 @@ module.exports = {
     g.attempts++;
     if (n === g.target) {
       games.delete(ctx.from);
-      return ctx.reply(`🎉 ${voice.lead('affirm')}, correct! ${n} in ${g.attempts} tries.`);
+      return ctx.reply(`🎉 ${voice.lead('affirm')}, correct! ${n} in ${g.attempts} tries, lekke.`);
     }
     if (n < g.target) return ctx.reply('📈 Higher!');
     return ctx.reply('📉 Lower!');

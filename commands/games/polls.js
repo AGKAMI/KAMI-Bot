@@ -2,7 +2,7 @@ const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 module.exports = {
   name: 'poll',
   reactions: { received: '📊', done: '🗳️' },
-  description: 'Create a yes/no or custom poll',
+  description: 'Make a yes/no or custom poll',
   category: 'games',
   aliases: ['vote'],
   groupOnly: true,

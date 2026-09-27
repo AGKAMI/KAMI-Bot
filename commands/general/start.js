@@ -66,8 +66,8 @@ async function sendTeamCards(sock, from, applicantJid) {
         `\u{1F4CB} *SECURITY TEAMS*\n\n` +
         (userTeam
           ? `You're already part of *${config.crewTeams[userTeam].name}*\n\n` +
-            `Contact an admin if you want to switch teams.`
-          : `You already have a pending application.\n\nWait for review or contact an admin.`),
+            `Just hit up an admin if you want to move teams.`
+          : `You've already got one in the pipeline.\n\nLet it get reviewed, or chat to an admin.`),
     });
     return;
   }
@@ -146,7 +146,7 @@ module.exports = {
   reactions: { received: '🚀', done: '🎬' },
   aliases: [],
   category: 'general',
-  description: 'Start menu - apply for security teams, view commands',
+  description: 'Start here — apply for a security team, check the commands',
   usage: '.start',
 
   async execute(sock, msg, args, extra) {
@@ -157,8 +157,8 @@ module.exports = {
       const summary =
         `\u{1F916} *KAMI BOT*\n` +
         `----------\n\n` +
-        `Welcome to the Slammed Society, ${voice.mate()}\n\n` +
-        `Tap a button to get started \u2B05\uFE0F`;
+        `Aweh — welcome to the Slammed Society, ${voice.mate()}\n\n` +
+        `Hit a button to get going \u2B05\uFE0F`;
 
       await sendButtons(sock, extra.from, {
         text: summary,
@@ -189,7 +189,7 @@ onButton('start:menu', async (sock, msg, from) => {
   const summary =
     `\u{1F916} *KAMI BOT*\n` +
     `----------\n\n` +
-    `\u{1F44B} Tap a button to see that section's commands \u2B05\uFE0F\n\n` +
+    `\u{1F44B} Hit a button for that section \u2B05\uFE0F\n\n` +
     `_Full list: ${prefix}menu all_`;
 
   await sendButtons(sock, from, {
@@ -218,12 +218,29 @@ onButton('start:apply', async (sock, msg, from, sender) => {
   if (isGroup) {
     // In group: tell user to check DMs (no @mention needed — bot is sending TO them)
     await sock.sendMessage(from, {
-      text: `\u{1F4AC} _check your DMs for the application form._`,
+      text: `💬 _DM'd you the form, ${voice.mate()} — check your DMs hey_`,
     });
   }
   
-  // Send team cards to user's DM
+  // Unblock so DMs land + mark them temp-allowed (orders/apply only)
   const dmJid = toDmJid(sender);
+  try { await sock.updateBlockStatus(dmJid, 'unblock'); } catch (e) {}
+  const { allowTempDm } = require('../../handler');
+  allowTempDm(dmJid);
+  allowTempDm(sender);
+
+  // The unblock message — BEFORE the team cards
+  await sendButtons(sock, dmJid, {
+    text:
+      `🔓 *UNBLOCKED — FOR NOW*\n\n` +
+      `I've let you through to apply for security ${voice.tag('neutral')}\n\n` +
+      `⚠️ *Until your application is done, your number can only:*\n` +
+      `• Apply for security\n` +
+      `• Make orders\n\n` +
+      `DM me for anything else and you're blocked again — sharp sharp`,
+    footer: config.botName || 'KAMI Bot',
+  });
+
   console.log('[APPLY BTN] sender:', sender, '→ dmJid:', dmJid);
   await sendTeamCards(sock, dmJid, sender);
 });
@@ -233,12 +250,28 @@ onButton('start:order', async (sock, msg, from, sender) => {
   const isGroup = from.endsWith('@g.us');
   if (isGroup) {
     await sock.sendMessage(from, {
-      text: `\u{1F4AC} _check your DMs to browse the catalog._`,
+      text: `💬 _DM'd you the catalog, ${voice.mate()} — go have a look hey_`,
     });
   }
   const dmJid = toDmJid(sender);
-  // Unblock so DMs land (same as crew application)
+  // Unblock so DMs land + mark them temp-allowed (orders/apply only)
   try { await sock.updateBlockStatus(dmJid, 'unblock'); } catch (e) {}
+  const { allowTempDm } = require('../../handler');
+  allowTempDm(dmJid);
+  allowTempDm(sender);
+
+  // The unblock message — BEFORE the order menu
+  await sendButtons(sock, dmJid, {
+    text:
+      `🔓 *UNBLOCKED — FOR NOW*\n\n` +
+      `I've let you through so you can browse the catalog and make your order ${voice.tag('neutral')}\n\n` +
+      `⚠️ *Until your order is done, your number can only:*\n` +
+      `• Make orders\n` +
+      `• Apply for security\n\n` +
+      `DM me for anything else and you're blocked again — sharp sharp`,
+    footer: config.botName || 'KAMI Bot',
+  });
+
   await sendOrderMenu(sock, dmJid, msg);
 });
 
@@ -277,7 +310,7 @@ onButton('start:confirm:', async (sock, msg, from, sender, btnId) => {
         `\u2705 *APPLICATION STARTED*\n\n` +
         `\u{1F6E1}\uFE0F *Team:* ${teamKey} \u2014 ${config.crewTeams[teamKey].name}\n` +
         `\u{1F4CB} *App ID:* ${result.app.appUid}\n\n` +
-        `\u{1F4AC} I've DM'd you the application form.\n\n` +
+        `\u{1F4AC} I dropped the form in your DMs.\n\n` +
         `_${voice.greetOpen()}, good luck!_`,
     });
   }

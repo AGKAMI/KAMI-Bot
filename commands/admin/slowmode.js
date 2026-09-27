@@ -1,5 +1,5 @@
 /**
- * Slowmode Command - Set message cooldown per user with bypass system
+ * Slowmode Command - Set a per-user message cooldown with bypass system
  */
 
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
@@ -14,7 +14,7 @@ module.exports = {
   reactions: { received: '🐢', done: '⏱️' },
   aliases: ['sm', 'cooldown'],
   category: 'admin',
-  description: 'Set message cooldown per user',
+  description: 'Set a per-user message cooldown',
   usage: '.slowmode <on/off/status/bypass/unbypass>',
   groupOnly: true,
   adminOnly: true,
@@ -48,7 +48,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *ERROR*\n\n` +
-            `_Set a time first, e.g. ${prefix}slowmode 10s_`
+            `_Set a time first, eg ${prefix}slowmode 10s_`
           );
         }
         return extra.reply(
@@ -117,7 +117,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ *NOT BYPASSED*\n\n` +
-            `${mention(bypassJid)} _is not in the bypass list_`
+            `${mention(bypassJid)} _isn't in the bypass list_`
           );
         }
 
@@ -182,7 +182,7 @@ module.exports = {
         `🐢 *SLOWMODE ENABLED*\n\n` +
         `⏱️ *Cooldown:* ${cooldownLabel}\n` +
         `👤 *Set by:* ${mention(sender)}\n` +
-        `⚠️ *Rule:* Members must wait ${cooldownLabel} between messages\n` +
+        `⚠️ *Rule:* Members wait ${cooldownLabel} between messages\n` +
         `👑 *Admins:* Always bypass\n\n` +
         `_${voice.lead('affirm')}, keeping the chat clean!_`,
         [sender]

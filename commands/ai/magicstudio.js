@@ -14,7 +14,7 @@ module.exports = {
   reactions: { received: '🪄', generating: '💡', done: '🖼️' },
   aliases: ['magic', 'magicai', 'generate'],
   category: 'ai',
-  description: 'Generate AI art from text prompt',
+  description: 'Generate AI art from a text prompt',
   usage: 'magicstudio <prompt>',
   execute: async (sock, msg, args, extra) => {
     const prefix = config.prefix || '.';

@@ -442,7 +442,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
 
     const urlMatch = text.match(/https?:\/\/\S+/);
     if (!urlMatch) {
-      return extra.reply(`📝 _${voice.lead('neutral')}, send me an instagram post or reel link_\n\n_Usage:_\n.igs <url>\n.igsc <url>`);
+      return extra.reply(`📝 _${voice.lead('neutral')}, send me an Instagram post or reel link_\n\n_Usage:_\n.igs <url>\n.igsc <url>`);
     }
 
     const downloadData = await igdl(urlMatch[0]).catch(() => null);
@@ -584,7 +584,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
   } catch (err) {
     console.error('Error in igsc command:', err);
     extra.fail();
-    await extra.reply(`❌ _${voice.openErr()}, couldn't make a sticker from that link_`);
+    await extra.reply(`❌ _${voice.openErr()}, couldn't turn that link into a sticker_`);
   }
 }
 
@@ -592,7 +592,7 @@ module.exports = {
   name: 'igsc',
   reactions: { received: '🎞️', generating: '⬇️', done: '🎬' },
   aliases: ['igstickercrop'],
-  description: 'Convert Instagram post/reel to cropped square sticker',
+  description: 'Turn an Instagram post/reel into a cropped square sticker',
   usage: '.igsc <Instagram URL>',
   category: 'media',
 

@@ -11,7 +11,7 @@ module.exports = {
   name: 'hidetag',
   reactions: { received: '🔖', generating: '📨', done: '✅' },
   aliases: ['tag'],
-  description: 'Silently tag all members in the group',
+  description: 'Tag every member silently',
   usage: '.tag <message> (or reply to media)',
   category: 'admin',
   groupOnly: true,

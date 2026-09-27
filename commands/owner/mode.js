@@ -1,6 +1,6 @@
 /**
  * Mode Command
- * Toggle bot between private and public mode
+ * Flip the bot between private and public
  */
 
 const config = require('../../config');
@@ -12,7 +12,7 @@ module.exports = {
   name: 'mode',
   reactions: { received: '🔘', done: '🎛️' },
   aliases: ['botmode', 'privatemode', 'publicmode'],
-  description: 'Toggle bot between private and public mode',
+  description: 'Flip the bot between private and public',
   usage: '.mode <private/public>',
   category: 'owner',
   ownerOnly: true,
@@ -32,8 +32,8 @@ module.exports = {
           `📋 *Current Mode:* *${currentMode.toUpperCase()}*\n` +
           `📝 *Status:* ${description}\n\n` +
           `*Usage:*\n` +
-          `  ${prefix}mode private — Only owner can use\n` +
-          `  ${prefix}mode public — Everyone can use`
+          `  ${prefix}mode private — owner only\n` +
+          `  ${prefix}mode public — anyone can use`
         );
       }
       
@@ -41,22 +41,22 @@ module.exports = {
       
       if (mode === 'private' || mode === 'priv') {
         if (config.selfMode) {
-          return extra.reply(`*🔒 PRIVATE MODE*\n\n⚠️ Bot already private, ${voice.tag('neutral')}`);
+          return extra.reply(`*🔒 PRIVATE MODE*\n\n⚠️ Bot is already private, ${voice.tag('neutral')}`);
         }
         
         updateConfig('selfMode', true);
         config.selfMode = true;
-        return extra.reply(`*🔒 PRIVATE MODE*\n\n✅ ${voice.lead('affirm')}, bot is now private — only owner can use commands`);
+        return extra.reply(`*🔒 PRIVATE MODE*\n\n✅ ${voice.lead('affirm')}, bot is private now — owner only`);
       }
       
       if (mode === 'public' || mode === 'pub') {
         if (!config.selfMode) {
-          return extra.reply(`*🌐 PUBLIC MODE*\n\n⚠️ Bot already public, ${voice.tag('neutral')}`);
+          return extra.reply(`*🌐 PUBLIC MODE*\n\n⚠️ Bot is already public, ${voice.tag('neutral')}`);
         }
         
         updateConfig('selfMode', false);
         config.selfMode = false;
-        return extra.reply(`*🌐 PUBLIC MODE*\n\n✅ ${voice.lead('affirm')}, bot is now public — everyone can use commands`);
+        return extra.reply(`*🌐 PUBLIC MODE*\n\n✅ ${voice.lead('affirm')}, bot is public now — everyone is in`);
       }
       
       return extra.reply(`*❌ ERROR* — invalid mode\n💡 Usage: ${prefix}mode <private/public>`);

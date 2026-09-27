@@ -32,7 +32,7 @@ module.exports = {
   name: null,
   aliases: ['join'],
   category: 'crew',
-  description: 'Add member to crew roster + WhatsApp group',
+  description: 'Add a member to the crew roster and the WhatsApp group',
   usage: '.crew add @user|number [role]',
   groupOnly: false,
   ownerOnly: true,
@@ -71,14 +71,14 @@ module.exports = {
         const fullPhone = phoneParts.join(' ');
         target = phoneToJid(fullPhone);
         if (!target) {
-          return extra.reply(`❌ ERROR\n\nInvalid phone number: ${fullPhone}`);
+          return extra.reply(`❌ ERROR\n\nThat phone number looks proper off: ${fullPhone}`);
         }
         args = args.slice(roleIdx);
       }
 
       if (!target) {
         return extra.reply(
-          `❌ ERROR\n\nTag or add a number\n\n` +
+          `❌ ERROR\n\nTag someone or drop a number\n\n` +
           `Usage:\n` +
           `\`${prefix}crew add @user <role>\`\n` +
           `\`${prefix}crew add 0833882383 <role>\``
@@ -91,7 +91,7 @@ module.exports = {
       const existing = database.getCrewMember(extra.from, target);
       if (existing) {
         return extra.reply(
-          `❌ ERROR\n\n${mention(target)} is already in the crew\n` +
+          `❌ ERROR\n\n${mention(target)} is already in the crew, hey\n` +
           `Role: ${getRoleEmoji(existing.role, validRoles)} ${existing.role}`
         );
       }
@@ -160,16 +160,16 @@ module.exports = {
           `🏷️ Role: ${bold(role)}\n` +
           `📅 Joined: ${new Date().toLocaleDateString('en-ZA')}\n\n` +
           (ownerVIP
-            ? `_The owner himself has added this member. Show respect._ 👑`
+            ? `_The owner personally added this one. Show respect._ 👑`
             : groupAddFailed
-              ? `_Added to crew roster — couldn't add to WhatsApp group (privacy settings or bot not admin)_`
+              ? `_On the crew roster now — couldn't get them into the WhatsApp group (privacy settings, or I'm not admin)_`
             : `_Added to group + crew roster_`),
         mentions: [target],
       }, { quoted: msg });
 
     } catch (error) {
       console.error('Crew add error:', error);
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't add member`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't get them in, shame`);
     }
   },
 };

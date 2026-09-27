@@ -5,7 +5,7 @@ const config = require('../../config');
 module.exports = {
   subName: 'attend',
   name: null,
-  description: 'RSVP to a crew event',
+  description: 'RSVP to a crew event, lekke',
   usage: '.crew attend <event-id> or .crew attend',
   adminOnly: false,
   groupOnly: true,
@@ -24,7 +24,7 @@ module.exports = {
       const allEvents = database.getCrewEvents(jid);
       if (!allEvents || Object.keys(allEvents).length === 0) {
         return sock.sendMessage(jid, {
-          text: `❌ *ERROR*\n\nNo upcoming events right now, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
+          text: `❌ *ERROR*\n\nNo events coming up, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
         });
       }
 
@@ -38,7 +38,7 @@ module.exports = {
 
       if (upcoming.length === 0) {
         return sock.sendMessage(jid, {
-          text: `❌ *ERROR*\n\nNo upcoming events right now, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
+          text: `❌ *ERROR*\n\nNo events coming up, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
         });
       }
 
@@ -48,7 +48,7 @@ module.exports = {
     const team = database.getTeam(jid);
     if (!team || !team.events || !team.events[eventId]) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nThat event: *${eventId}* doesn't exist.\nSee all events with: \`${prefix}crew events\``
+        text: `❌ *ERROR*\n\nNo event with that ID: *${eventId}*\nSee all events with: \`${prefix}crew events\``
       });
     }
 
@@ -56,7 +56,7 @@ module.exports = {
 
     if (event.status !== 'upcoming') {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nThat event is done or already finished.\nSee all events with: \`${prefix}crew events\``
+        text: `❌ *ERROR*\n\nThat one is done and dusted.\nSee all events with: \`${prefix}crew events\``
       });
     }
 
@@ -74,7 +74,7 @@ module.exports = {
       const name = member ? member.name : sender.split(':')[0].split('@')[0];
 
       return sock.sendMessage(jid, {
-        text: `✅ *SUCCESS*\n\n*${name}* unregistered from the event\n\n🏎️ *Event:* ${event.name}\n⏰ *Time:* ${event.time}\n👥 *Attending:* ${event.attendees.length}`
+        text: `✅ *SUCCESS*\n\n*${name}* is out of the event\n\n🏎️ *Event:* ${event.name}\n⏰ *Time:* ${event.time}\n👥 *Attending:* ${event.attendees.length}`
       });
     } else {
       event.attendees.push(sender);
@@ -84,7 +84,7 @@ module.exports = {
       const name = member ? member.name : sender.split(':')[0].split('@')[0];
 
       return sock.sendMessage(jid, {
-        text: `✅ *SUCCESS*\n\n*${name}* is in for this one!\n\n🏎️ *Event:* ${event.name}\n⏰ *Time:* ${event.time}\n👥 *Attending:* ${event.attendees.length}`
+        text: `✅ *SUCCESS*\n\n*${name}* is locked in!\n\n🏎️ *Event:* ${event.name}\n⏰ *Time:* ${event.time}\n👥 *Attending:* ${event.attendees.length}`
       });
     }
   }

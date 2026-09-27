@@ -14,7 +14,7 @@ module.exports = {
   name: 'list',
   reactions: { received: '📃', done: '📚' },
   aliases: [],
-  description: 'List all commands with descriptions',
+  description: 'Every command with a short description',
   usage: '.list',
   category: 'general',
   

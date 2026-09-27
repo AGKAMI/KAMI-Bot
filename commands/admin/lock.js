@@ -12,7 +12,7 @@ module.exports = {
   reactions: { received: '🔒', done: '✅' },
   aliases: ['unlock', 'lockstatus'],
   category: 'admin',
-  description: 'Lock/unlock group settings (name, desc, profile pic)',
+  description: 'Lock or unlock group settings (name, desc, profile pic)',
   usage: '.lock [name/desc/pp] [off]',
   groupOnly: true,
   adminOnly: true,
@@ -99,7 +99,7 @@ module.exports = {
 
           return extra.reply(
             `🔓 *${sub.toUpperCase()} UNLOCKED*\n\n` +
-            `✅ *${sub.charAt(0).toUpperCase() + sub.slice(1)} can now be changed by anyone*\n\n` +
+            `✅ *${sub.charAt(0).toUpperCase() + sub.slice(1)} can be changed by anyone now*\n\n` +
             `👤 *By:* ${mention(extra.sender)}`,
             [extra.sender]
           );
@@ -109,7 +109,7 @@ module.exports = {
 
         return extra.reply(
           `🔒 *${sub.toUpperCase()} LOCKED*\n\n` +
-          `✅ *${sub.charAt(0).toUpperCase() + sub.slice(1)} can only be changed by admins*\n\n` +
+          `✅ *${sub.charAt(0).toUpperCase() + sub.slice(1)} is for admins only*\n\n` +
           `👤 *By:* ${mention(extra.sender)}`,
           [extra.sender]
         );
@@ -150,7 +150,7 @@ function buildStatus(settings, prefix) {
     `• _${prefix}lock_ — lock all\n` +
     `• _${prefix}unlock_ — unlock all\n` +
     `• _${prefix}lock name / desc / pp_ — lock individual\n` +
-    `• _${prefix}lock name off / desc off / pp off_ — unlock individual`
+    `• _${prefix}lock name off / desc off / pp off_ — open just that one`
   );
 }
 

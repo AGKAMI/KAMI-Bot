@@ -11,7 +11,7 @@ module.exports = {
   reactions: { received: '🌤️', generating: '🌦️', done: '🌡️' },
   aliases: ['w', 'clima'],
   category: 'utility',
-  description: 'Get weather for a city',
+  description: 'Get the weather for a city',
   usage: '.weather <city>',
   
   async execute(sock, msg, args, extra) {

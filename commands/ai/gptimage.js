@@ -1,6 +1,6 @@
 /**
  * GPT Image Command
- * Edit image using GPT Vision with prompt
+ * Edit an image with GPT Vision and a prompt
  */
 
 const axios = require('axios');
@@ -15,7 +15,7 @@ module.exports = {
   reactions: { received: '🖌️', generating: '🎨', done: '🖼️' },
   aliases: ['gptimg', 'editimage', 'aiimage', 'vision','gi'],
   category: 'ai',
-  description: 'Edit image using GPT Vision with prompt',
+  description: 'Edit an image with GPT Vision and a prompt',
   usage: '.gptimage <prompt> (reply to image/sticker)',
   
   async execute(sock, msg, args, extra) {
@@ -59,7 +59,7 @@ module.exports = {
       
       if (!isImage && !isSticker) {
         extra.fail();
-        return await extra.reply(`❌ _${voice.openErr()} — reply to an image or sticker_`);
+        return await extra.reply(`❌ _${voice.openErr()} — reply with an image or sticker_`);
       }
       
       // Download media
@@ -83,7 +83,7 @@ module.exports = {
         
         if (isAnimated) {
           extra.fail();
-          return await extra.reply(`❌ _${voice.openErr()} — animated stickers don't work — use a static image_`);
+          return await extra.reply(`❌ _${voice.openErr()} — animated stickers won't work — use a static image_`);
         }
         
         // Convert webp sticker to PNG
@@ -92,7 +92,7 @@ module.exports = {
         } catch (error) {
           console.error('Error converting sticker to PNG:', error);
           extra.fail();
-          return await extra.reply(`❌ _${voice.openErr()} — couldn't convert sticker — try with a regular image_`);
+          return await extra.reply(`❌ _${voice.openErr()} — couldn't convert the sticker — try a normal image_`);
         }
       }
       
@@ -139,7 +139,7 @@ module.exports = {
       
       if (!response.data) {
         extra.fail();
-        return await extra.edit(sent.key, `\u274C _${voice.openErr()} - no image came back - try again_`);
+        return await extra.edit(sent.key, `\u274C _${voice.openErr()} - no image came back — try again_`);
       }
       
       const resultImageBuffer = Buffer.from(response.data);
@@ -188,10 +188,10 @@ module.exports = {
         const status = error.response.status;
         if (status === 400) {
           extra.fail();
-          return await extra.reply(`❌ _${voice.openErr()} — bad request — check your prompt and image_`);
+          return await extra.reply(`❌ _${voice.openErr()} — bad request — check your prompt and image, hey_`);
         } else if (status === 429) {
           extra.fail();
-          return await extra.reply(`❌ _${voice.openErr()} — rate limit hit — try again later_`);
+          return await extra.reply(`❌ _${voice.openErr()} — rate limit hit — try again later, hey_`);
         } else if (status === 500) {
           extra.fail();
           return await extra.reply(`❌ _${voice.openErr()} — server error — try again later_`);

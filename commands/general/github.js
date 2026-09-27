@@ -11,7 +11,7 @@ module.exports = {
     reactions: { received: '🐙', generating: '⬇️', done: '📦' },
     aliases: ['repo', 'git', 'source', 'sc', 'script'],
     category: 'general',
-    description: 'Show bot GitHub repository and statistics',
+    description: 'Show the bot\'s GitHub repo and stats',
     usage: '.github',
     ownerOnly: false,
 
@@ -72,8 +72,8 @@ module.exports = {
                 fallbackMessage += `🔗 *Repository:* KAMI-Bot\n`;
                 fallbackMessage += `👨‍💻 *Owner:* AGKAMI\n`;
                 fallbackMessage += `🌐 *URL:* ${repoUrl}\n\n`;
-                fallbackMessage += `⚠️ *Note:* Unable to fetch real-time statistics.\n`;
-                fallbackMessage += `💡 Please visit the repository directly for latest stats.\n\n`;
+                fallbackMessage += `⚠️ *Note:* Couldn't grab live stats.\n`;
+                fallbackMessage += `💡 Visit the repo directly for the latest stats.\n\n`;
                 fallbackMessage += `> _ᴘᴏᴡᴇʀᴇᴅ ʙʏ ${config.botName}_`;
                 
                 await sock.sendMessage(chatId, {

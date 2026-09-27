@@ -233,6 +233,39 @@ const _botDemoted = new Set();
 // Track bot-initiated kicks to skip protection handler
 const _botKicked = new Set();
 
+// Temporarily-allowed DMs — users unblocked via a Make Order / Apply button.
+// While in this window they pass ONLY button taps and .crew apply commands;
+// plain-text DMs for anything else get blocked again. TTL 2h.
+const _tempAllowed = new Map(); // jid → ts
+const TEMP_ALLOW_TTL = 2 * 60 * 60 * 1000;
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [jid, ts] of _tempAllowed) {
+    if (now - ts > TEMP_ALLOW_TTL) _tempAllowed.delete(jid);
+  }
+}, 60 * 60 * 1000);
+
+// Mark a user as temporarily allowed (called from start.js button handlers)
+const allowTempDm = (jid) => {
+  if (!jid) return;
+  _tempAllowed.set(String(jid), Date.now());
+};
+
+// Check if a jid is temp-allowed (jid or any variant)
+const isTempAllowed = (jid) => {
+  if (!jid) return false;
+  const j = String(jid);
+  if (_tempAllowed.has(j)) return true;
+  const num = j.split(':')[0].split('@')[0].replace(/\D/g, '');
+  if (!num) return false;
+  for (const t of _tempAllowed) {
+    const tNum = String(t).split(':')[0].split('@')[0].replace(/\D/g, '');
+    if (tNum && tNum === num) return true;
+  }
+  return false;
+};
+
 // Helper to normalize JID to just the number part
 const normalizeJid = (jid) => {
   if (!jid) return null;
@@ -626,9 +659,9 @@ const handleMessage = async (sock, msg) => {
                   try {
                     await sock.sendMessage(from, {
                       text: `🚫 *NO PENDING APPLICATIONS*\n\n` +
-                            `There are no pending applications for your teams.\n` +
-                            `You'll be unblocked when an application arrives.\n\n` +
-                            `⚠️ *Your number will be BLOCKED after this message* ⛔🔒`
+                            `Eish, there's nothing waiting on your teams.\n` +
+                            `I'll free you up the moment somebody applies.\n\n` +
+                            `⚠️ *One more message and your number is BLOCKED* ⛔🔒`
                     });
                   } catch (warnErr) {
                     console.error('[DMBLOCKER] admin warning send failed:', warnErr.message);
@@ -649,13 +682,13 @@ const handleMessage = async (sock, msg) => {
                   const state = getApplicantState(dmSender);
                   if (state.state === 'wizard') {
                     await sock.sendMessage(from, {
-                      text: `🔘 You're on question ${state.currentQ} of your ${state.teamKey} application — tap the answer buttons above ☝️`
+                      text: `🔘 Question ${state.currentQ} of your ${state.teamKey} form — hit the answer buttons above ☝️`
                     });
                     return;
                   }
                   if (state.state === 'review') {
                     await sock.sendMessage(from, {
-                      text: `✅ You're reviewing your answers — tap Confirm & Send or Change Answer above ☝️`
+                      text: `✅ Checking your answers — either Confirm & Send or Change Answer above ☝️`
                     });
                     return;
                   }
@@ -667,24 +700,48 @@ const handleMessage = async (sock, msg) => {
                 const state = getApplicantState(dmSender);
                 if (state.state === 'wizard') {
                   await sock.sendMessage(from, {
-                    text: `🔘 You're on question ${state.currentQ} of your ${state.teamKey} application — tap the answer buttons above ☝️`
+                    text: `🔘 Question ${state.currentQ} of your ${state.teamKey} form — hit the answer buttons above ☝️`
                   });
                   return;
                 }
                 if (state.state === 'review') {
                   await sock.sendMessage(from, {
-                    text: `✅ You're reviewing your answers — tap Confirm & Send or Change Answer above ☝️`
+                    text: `✅ Checking your answers — either Confirm & Send or Change Answer above ☝️`
                   });
                   return;
                 }
+              }
+              // Temp-allowed (unblocked via Make Order / Apply button) —
+              // button taps and .crew apply pass; plain-text DMs get blocked again
+              else if (isTempAllowed(dmSender) || isTempAllowed(from)) {
+                const isButtonTap = !!(msg.message?.templateButtonReplyMessage || msg.message?.buttonsResponseMessage || msg.message?.interactiveResponseMessage);
+                if (!isButtonTap && !isApplyCmd) {
+                  try {
+                    await sock.sendMessage(from, {
+                      text: `🔓 *TIME'S UP* — you're blocked again\n\n` +
+                            `Your number was only allowed to make orders or apply for security\n` +
+                            `DM me for anything else and this is what happens, ${voice.tag('neutral')}\n\n` +
+                            `⚠️ *Your number is BLOCKED after this message* ⛔🔒`
+                    });
+                  } catch (warnErr) {
+                    console.error('[DMBLOCKER] temp block warning failed:', warnErr.message);
+                  }
+                  try {
+                    await sock.updateBlockStatus(dmSender, 'block');
+                  } catch (blockErr) {
+                    console.error('[DMBLOCKER] temp block failed:', blockErr.message);
+                  }
+                  return;
+                }
+                // Button tap or apply command — let through
               }
               // Regular user — block
               else {
                 try {
                   await sock.sendMessage(from, {
-                    text: `🚫 *DO NOT TEXT THIS NUMBER* — this is a *bot* account 🤖\n` +
+                    text: `🚫 *DON'T TEXT THIS NUMBER* — it's a *bot*, nobody's here 🤖\n` +
                           `📲 *Message me on:* 084 082 0712\n` +
-                          `⚠️ *Your number will be BLOCKED after this message* ⛔🔒`
+                          `⚠️ *One more message and your number is BLOCKED* ⛔🔒`
                   });
                 } catch (warnErr) {
                   console.error('[DMBLOCKER] warning send failed:', warnErr.message);
@@ -988,7 +1045,7 @@ const handleMessage = async (sock, msg) => {
                     }
                     const usernames = [`@${sender.split('@')[0]}`];
                     await sock.sendMessage(from, {
-                      text: `🚫 *KAMI SECURITY*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: mass tagging all members_\n\n_Violations won't be tolerated._`,
+                      text: `🚫 *KAMI SECURITY*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: you were tagging everyone in the group_\n\n_That's a warning — push it and you're gone._`,
                       mentions: [sender],
                     }, { quoted: msg });
                   }
@@ -1160,7 +1217,7 @@ const handleMessage = async (sock, msg) => {
                   await sock.sendMessage(from, {
                     text: action === 'warn'
                       ? `⚠️ *BAD WORD*\n\n@${sender.split('@')[0]} _that word's not allowed here, ${voice.tag('err')}_`
-                      : `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _your message was deleted — bad word detected_`,
+                      : `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _message deleted — that word's not allowed here_\n\n_Mxm, watch your mouth shame_`,
                     mentions: [sender]
                   });
                 } else if (action === 'kick') {
@@ -1246,7 +1303,7 @@ const handleMessage = async (sock, msg) => {
                     ? sender.split('@')[0] + '@s.whatsapp.net'
                     : sender;
                   await sock.sendMessage(targetJid, {
-                    text: `⚠️ *FLOOD WARNING*\n\nHey — slow down. You\'re spamming too fast in the group.\n\n_One more burst and you\'re getting kicked, ${voice.tag('neutral')}_`
+                    text: `⚠️ *FLOOD WARNING*\n\nSho — slow down, you\'re spamming this group like there\'s no tomorrow.\n\n_One more burst and I\'m kicking you out, ${voice.tag('neutral')}_`
                   });
                 } catch (e) {}
               }
@@ -1310,9 +1367,9 @@ const handleMessage = async (sock, msg) => {
       // Send warning then block (owner can never reach here due to isOwner check above)
       try {
         await sock.sendMessage(from, {
-          text: `🚫 *DO NOT TEXT THIS NUMBER* — this is a *bot* account 🤖\n` +
+          text: `🚫 *DON'T TEXT THIS NUMBER* — it's a *bot*, nobody's here 🤖\n` +
                 `📲 *Message me on:* 084 082 0712\n` +
-                `⚠️ *Your number will be BLOCKED after this message* ⛔🔒`
+                `⚠️ *One more message and your number is BLOCKED* ⛔🔒`
         });
         await sock.updateBlockStatus(sender, 'block');
       } catch (e) {
@@ -1332,11 +1389,11 @@ const handleMessage = async (sock, msg) => {
       if (!isAllowedCmd) {
         return sock.sendMessage(from, {
           text: `❌ ERROR\n\n` +
-                `As a team admin you're only allowed to accept or deny pending applications from DMs\n\n` +
+                `Ai — as a team admin you only accept or deny pending applications in DMs\n\n` +
                 `✅ Accept: \`${prefix}crew accept <App ID>\`\n` +
                 `❌ Deny: \`${prefix}crew deny <App ID> <reason>\`\n` +
                 `📋 View pending: \`${prefix}crew applicants <team>\`\n\n` +
-                `_You need to be approved by KAMI to use other commands_`,
+                `_You need KAMI's say-so before you can use the other commands_`,
         }, { quoted: msg });
       }
     }
@@ -1356,9 +1413,9 @@ const handleMessage = async (sock, msg) => {
           case 'pending_submitted':
             restrictionMsg =
               `⏳ *APPLICATION PENDING*\n\n` +
-              `Your *${state.teamKey}* application is being reviewed by an admin.\n` +
-              `Wait for an admin to accept or deny your application.\n\n` +
-              `❌ You cannot use other commands while your application is being reviewed.\n\n` +
+              `Your *${state.teamKey}* form is sitting with an admin right now.\n` +
+              `Chill — an admin will accept or deny you shortly.\n\n` +
+              `❌ No other commands until this application is sorted, shame.\n\n` +
               `💡 *Crew commands you can use:*\n` +
               `\`${prefix}crew apply <team>\` — apply to another team\n` +
               `\`${prefix}crew withdraw ${state.appUid}\` — withdraw your application\n` +
@@ -1367,8 +1424,8 @@ const handleMessage = async (sock, msg) => {
           case 'pending_incomplete':
             restrictionMsg =
               `📋 *APPLICATION INCOMPLETE*\n\n` +
-              `You started a *${state.teamKey}* application but didn't finish answering.\n\n` +
-              `❌ You cannot use other commands until you complete or cancel your application.\n\n` +
+              `You started a *${state.teamKey}* form but never finished answering, boet.\n\n` +
+              `❌ Finish it or cancel it — until then you're stuck here.\n\n` +
               `💡 *What to do:*\n` +
               `\`${prefix}crew apply ${state.teamKey}\` — start a fresh application\n` +
               `\`${prefix}crew withdraw ${state.appUid}\` — cancel the incomplete one`;
@@ -1376,15 +1433,15 @@ const handleMessage = async (sock, msg) => {
           case 'pending_approved':
             restrictionMsg =
               `🤖 *APPLICATION AUTO-APPROVED*\n\n` +
-              `Your *${state.teamKey}* application passed the bot review!\n\n` +
-              `⏳ An admin will add you to the group shortly.\n\n` +
-              `❌ You cannot use other commands while waiting for admin finalization.`;
+              `Your *${state.teamKey}* form made it past the bot review!\n\n` +
+              `⏳ An admin will pull you into the group now-now.\n\n` +
+              `❌ Sit tight — nothing else works until an admin finalises you.`;
             break;
           default:
             restrictionMsg =
               `⏳ *APPLICATION PENDING*\n\n` +
-              `You have a pending application being reviewed by an admin.\n\n` +
-              `❌ You cannot use other commands while your application is being reviewed.\n\n` +
+              `There's an application of yours an admin is reading.\n\n` +
+              `❌ No other commands until this application is sorted, shame.\n\n` +
               `💡 *Crew commands you can use:*\n` +
               `\`${prefix}crew apply <team>\` — apply to another team\n` +
               `\`${prefix}crew withdraw <UID>\` — withdraw your application\n` +
@@ -1400,7 +1457,7 @@ const handleMessage = async (sock, msg) => {
     }
     
     if (command.modOnly && !isMod(sender) && !isOwner(sender)) {
-      return sock.sendMessage(from, { text: `${bold('Moderators only')} — this one's for the mods` }, { quoted: msg });
+      return sock.sendMessage(from, { text: `${bold('Moderators only')} — this one's strictly for the mods, boet` }, { quoted: msg });
     }
     
     if (command.groupOnly && !isGroup) {
@@ -1612,7 +1669,7 @@ const handleGroupUpdate = async (sock, update) => {
                   text:
                     `👑 *WELCOME BACK*\n\n` +
                     `You're the admin again\n` +
-                    `_KAMI-Bot doesn't forget who put you there_`,
+                    `_Yoh, KAMI-Bot never forgets who put you there 💀_`,
                 });
               } catch (e) {
                 console.error(`[MEMBER PROTECTION] Failed to auto-promote ${jid.split('@')[0]}:`, e.message);
@@ -1733,7 +1790,7 @@ const handleGroupUpdate = async (sock, update) => {
                   await sock.sendMessage(jid, {
                     text:
                       `🛡️ *YOU GOOD* 💪\n\n` +
-                      `Someone kicked you from a crew group 💀\n` +
+                      `Somebody kicked you out of a crew group 💀\n` +
                       `KAMI-Bot brought you back\n\n` +
                       `${voice.say('protected')}`,
                   });
@@ -1748,11 +1805,11 @@ const handleGroupUpdate = async (sock, update) => {
                   await sock.sendMessage(jid, {
                     text:
                       `🛡️ *YOU GOOD* 💪\n\n` +
-                      `Someone kicked you from a crew group 💀\n` +
-                      `KAMI-Bot tried bringing you back but couldn't\n\n` +
+                      `Somebody kicked you out of a crew group 💀\n` +
+                      `KAMI-Bot tried to pull you back but couldn't, shame\n\n` +
                       (inviteLink
-                        ? `🔗 *Jump back in:*\n${inviteLink}\n\nWhen you're back, you'll be admin again`
-                        : `Hit up KAMI to get back in hey`),
+                        ? `🔗 *Jump back in here:*\n${inviteLink}\n\nOnce you're back you're admin again`
+                        : `Or just hit up KAMI to get back in, hey`),
                   });
                 }
               } catch (e) {}
@@ -1765,10 +1822,10 @@ const handleGroupUpdate = async (sock, update) => {
                   await sock.sendMessage(ownerJid, {
                     text:
                       `🛡️ *PROTECTION* 💀\n\n` +
-                      `@${memberNum} got kicked from a crew group\n\n` +
+                      `@${memberNum} got kicked out of a crew group\n\n` +
                       (reAdded
                         ? `KAMI-Bot brought them back, ${voice.tag('neutral')}`
-                        : `Couldn't re-add — sent them the invite link\nThey'll be admin again when they join`) +
+                        : `Couldn't add them back — I sent the link instead\nThey'll be admin the moment they join`) +
                       `\nCheck who did it, ${voice.tag('neutral')}`,
                     mentions: [jid],
                   });
@@ -1789,7 +1846,7 @@ const handleGroupUpdate = async (sock, update) => {
                     text:
                       `👋 *MEMBER LEFT*\n\n` +
                       `@${memberNum} left a crew group\n\n` +
-                      `_If they should stay, get KAMI to add them back_`,
+                      `_If they must stay, get KAMI to add them back hey_`,
                     mentions: [jid],
                   });
                 } catch (e) {}
@@ -1882,10 +1939,10 @@ const handleGroupUpdate = async (sock, update) => {
                           await sock.sendMessage(ownerJid, {
                             text:
                               `🛡️ *ADMIN PROTECTION* 💀\n\n` +
-                              `@${number} was demoted in a crew group\n` +
-                              `They were promoted by you and are *protected*\n\n` +
-                              `✅ They have been automatically re-promoted\n` +
-                              `⚠️ If this keeps happening, check who is demoting admins\n\n` +
+                              `@${number} got demoted in a crew group\n` +
+                              `You promoted them, so they're *protected*\n\n` +
+                              `✅ KAMI-Bot put them straight back as admin\n` +
+                              `⚠️ If this keeps up, go check who's demoting admins\n\n` +
                               `${voice.say('tease')}`,
                             mentions: [jid],
                           });
@@ -2307,14 +2364,14 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
           setTimeout(() => _botKicked.delete(sender), 5000);
           await sock.groupParticipantsUpdate(from, [sender], 'remove');
           await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-LINK*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: 3 link violations_\n\n_This was your final warning._`,
+            text: `🚫 *ANTI-LINK, HEY*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: 3 links dropped, that's enough_\n\n_That was your last warning shame._`,
             mentions: [sender]
           });
           database.clearWarnings(from, sender);
         } else {
           const remaining = maxWarnings - warnCount;
           await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-LINK WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} — links are prohibited!\n\n_${remaining} more and you're out._`,
+            text: `🚫 *ANTI-LINK WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} — no links in this group!\n\n_${remaining} more and you're gone, shame._`,
             mentions: [sender]
           });
         }
@@ -2403,13 +2460,13 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
         setTimeout(() => _botKicked.delete(sender), 5000);
         await sock.groupParticipantsUpdate(from, [sender], 'remove');
         await sock.sendMessage(from, { 
-          text: `📌 Group mention detected. User removed.`,
+          text: `📌 Group tag spotted — user's gone.`,
           mentions: [sender]
         });
       } catch (e) {
         console.error('Failed to kick for antigroupmention:', e);
         await sock.sendMessage(from, { 
-          text: `⚠️ Failed to delete mention message: ${e.message}`,
+          text: `⚠️ Couldn't delete that tag message: ${e.message}`,
           mentions: [sender]
         });
       }
@@ -2429,21 +2486,21 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
           setTimeout(() => _botKicked.delete(sender), 5000);
           await sock.groupParticipantsUpdate(from, [sender], 'remove');
           await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-GROUP MENTION*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: 3 group mention violations_\n\n_This was your final warning._`,
+            text: `🚫 *ANTI-GROUP TAG*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: you tagged the whole group 3 times_\n\n_That was your last warning, shame._`,
             mentions: [sender]
           });
           database.clearWarnings(from, sender);
         } else {
           const remaining = maxWarnings - warnCount;
           await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-GROUP MENTION WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} — group mentions are prohibited!\n\n_${remaining} more and you're out._`,
+            text: `🚫 *ANTI-GROUP TAG WARNING ${warnCount}/${maxWarnings}*\n\n@${sender.split('@')[0]} — stop tagging the whole group!\n\n_${remaining} more and you're out, boet._`,
             mentions: [sender]
           });
         }
       } catch (e) {
         console.error('Failed to warn/delete for antigroupmention:', e);
         await sock.sendMessage(from, { 
-          text: `⚠️ Anti-group mention triggered but delete failed: ${e.message}`,
+          text: `⚠️ Anti-tag fired but the delete failed: ${e.message}`,
           mentions: [sender]
         });
       }
@@ -2454,7 +2511,7 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
       } catch (e) {
         console.error('Failed to delete message for antigroupmention:', e);
         await sock.sendMessage(from, { 
-          text: `⚠️ Failed to delete mention message: ${e.message}`,
+          text: `⚠️ Couldn't delete that tag message: ${e.message}`,
           mentions: [sender]
         });
       }
@@ -2485,7 +2542,7 @@ const initializeAntiCall = (sock, isOwner) => {
         // Send message first (before block so it delivers)
         try {
           await sock.sendMessage(caller, {
-            text: `🚫 _Sorry, calls aren't allowed here. Send a message instead._`
+            text: `🚫 _Eish, no calls in here — send a message instead shame._`
           });
         } catch (e) {
           console.error('[ANTICALL] message failed:', e.message);
@@ -2518,4 +2575,6 @@ module.exports = {
   findParticipant,
   _botDemoted,
   _botKicked,
+  allowTempDm,
+  isTempAllowed,
 };

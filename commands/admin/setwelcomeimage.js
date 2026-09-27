@@ -12,7 +12,7 @@ module.exports = {
   reactions: { received: '📸', generating: '🖼️', done: '🎊' },
   aliases: ['setwelcomeimg'],
   category: 'admin',
-  description: 'Set custom welcome image (reply to image/sticker)',
+  description: 'Set a custom welcome image (reply to an image/sticker)',
   usage: '.setwelcomeimage (reply to image)',
   groupOnly: true,
   ownerOnly: true, adminOnly: false,
@@ -21,12 +21,12 @@ module.exports = {
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       if (!ctx?.quotedMessage) {
-        return extra.reply(`*SET WELCOME IMAGE*\n\n_Reply to an image or sticker to set as welcome image_`);
+        return extra.reply(`*SET WELCOME IMAGE*\n\n_Reply to an image or sticker to use as the welcome image_`);
       }
 
       const quotedMsg = ctx.quotedMessage;
       if (!quotedMsg.imageMessage && !quotedMsg.stickerMessage) {
-        return extra.reply(`_${voice.openErr()} — need an image or sticker in the reply_`);
+        return extra.reply(`_${voice.openErr()} — reply with an image or sticker_`);
       }
 
       const targetMessage = {
@@ -59,7 +59,7 @@ module.exports = {
       const imagePath = path.join(imagesDir, `${groupJid}.jpg`);
       fs.writeFileSync(imagePath, finalBuffer);
 
-      await extra.reply(`*✅ WELCOME IMAGE UPDATED*\n\n_${voice.lead('affirm')}, new members will see this image_`);
+      await extra.reply(`*✅ WELCOME IMAGE UPDATED*\n\n_${voice.lead('affirm')}, new members see this image_`);
     } catch (error) {
       console.error('SetWelcomeImage error:', error);
       await extra.reply(`_${voice.openErr()} — ${error.message}_`);

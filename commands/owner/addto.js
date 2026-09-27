@@ -101,7 +101,7 @@ module.exports = {
         target = phoneToJid(fullPhone);
         if (!target) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nInvalid phone number: ${fullPhone}`);
+          return extra.reply(`❌ ERROR\n\nThat phone number looks off: ${fullPhone}`);
         }
         args = args.slice(specIdx);
       }
@@ -109,7 +109,7 @@ module.exports = {
       if (!target) {
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nProvide a number, mention, or reply to a message\n\n` +
+          `❌ ERROR\n\nGive a number, mention someone, or reply to a message\n\n` +
           `Usage:\n` +
           `\`${prefix}addto <number> <group>\`\n` +
           `\`${prefix}addto SSRS\` (while replying to a message)\n\n` +
@@ -126,7 +126,7 @@ module.exports = {
           .join('\n');
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nMultiple groups match "${groupSpec}":\n\n${list}\n\n` +
+          `❌ ERROR\n\nMore than one group matches "${groupSpec}":\n\n${list}\n\n` +
           `Be more specific`
         );
       }
@@ -152,7 +152,7 @@ module.exports = {
           if (alreadyIn) {
             extra.fail();
             return extra.reply(
-              `❌ ERROR\n\n${mention(target)} is already in ${groupName}`
+              `❌ ERROR\n\n${mention(target)} is already in ${groupName}, shame`
             );
           }
         }
@@ -188,8 +188,8 @@ module.exports = {
         console.error('[ADDTO] WhatsApp add failed:', reason);
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nCouldn't add to ${groupName}\n\n` +
-          `Make sure the bot is admin there and the number is on WhatsApp\n\n` +
+          `❌ ERROR\n\nCouldn't get them into ${groupName}\n\n` +
+          `Make sure I'm admin there and the number is on WhatsApp\n\n` +
           `_${reason}_`
         );
       }
@@ -202,7 +202,7 @@ module.exports = {
       await sock.sendMessage(extra.from, {
         text:
           `✅ SUCCESS\n\n➕ ADDED TO ${groupName.toUpperCase()}\n\n` +
-          `${mention(target)} has been added to ${groupName}\n\n` +
+          `${mention(target)} is in ${groupName} now\n\n` +
           `_${voice.react('ok')}_`,
         mentions: [target],
       }, { quoted: msg });
@@ -210,7 +210,7 @@ module.exports = {
     } catch (error) {
       console.error('AddTo error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't add them`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't get them in, shame`);
     }
   },
 };

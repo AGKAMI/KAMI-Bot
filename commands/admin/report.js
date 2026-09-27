@@ -13,7 +13,7 @@ module.exports = {
     reactions: { received: '🚨', done: '📢' },
     aliases: ['flag', 'complain'],
     category: 'admin',
-    description: 'Report a message to admins via DM',
+    description: 'Report a message to the admins by DM',
     usage: '.report <reason> | .report anon | .report queue | .report dismiss <number>',
     groupOnly: true,
 
@@ -79,7 +79,7 @@ module.exports = {
 
                 if (!isGroupAdmin) {
                     extra.fail();
-                    return extra.reply(`❌ ERROR\n\nOnly admins can dismiss reports`);
+                    return extra.reply(`❌ ERROR\n\nOnly admins can dismiss reports, shame, shame`);
                 }
 
                 const number = parseInt(args[1]);
@@ -88,19 +88,19 @@ module.exports = {
                 if (!report) {
                     extra.fail();
                     return extra.reply(
-                        `❌ ERROR\n\nReport #${number} not found\nUse ${prefix}report queue to see pending reports`
+                        `❌ ERROR\n\nReport #${number} not found\nUse ${prefix}report queue to see what's pending`
                     );
                 }
 
                 if (report.status === 'dismissed') {
                     extra.fail();
-                    return extra.reply(`❌ ERROR\n\nReport #${number} is already dismissed`);
+                    return extra.reply(`❌ ERROR\n\nReport #${number} is already dismissed, ne, ne`);
                 }
 
                 report.status = 'dismissed';
 
                 return extra.reply(
-                    `✅ SUCCESS\n\n🗑️ Report #${number} Dismissed\n📝 Reason: ${report.reason}`
+                    `✅ SUCCESS\n\n🗑️ Report #${number} is dismissed\n📝 Reason: ${report.reason}`
                 );
             }
 
@@ -110,7 +110,7 @@ module.exports = {
             if (!quotedMsg) {
                 extra.fail();
                 return extra.reply(
-                    `❌ ERROR\n\nReply to a message to report it\n\n` +
+                    `❌ ERROR\n\nReply to a message if you want it reported\n\n` +
                     `📝 Usage:\n` +
                     `• Reply → ${prefix}report <reason>\n` +
                     `• Reply → ${prefix}report anon <reason>\n` +
@@ -150,13 +150,13 @@ module.exports = {
                     );
                     extra.fail();
                     return sock.sendMessage(from, {
-                        text: `❌ ERROR\n\nYou can't report admins\n\nIf you have an issue with an admin's conduct, DM the owner`,
+                        text: `❌ ERROR\n\nNo reporting admins, hey\n\nIf an admin is out of line, DM the owner`,
                         mentions: [ownerJid]
                     }, { quoted: msg });
                 } else {
                     extra.fail();
                     return extra.reply(
-                        `❌ ERROR\n\nYou can't report admins\n\nIf you have an issue with an admin's conduct, DM the owner at *084 082 0712*`
+                        `❌ ERROR\n\nNo reporting admins, hey\n\nIf an admin is out of line, DM the owner at *084 082 0712*`
                     );
                 }
             }
@@ -175,7 +175,7 @@ module.exports = {
 
             if (admins.length === 0) {
                 extra.fail();
-                return extra.reply(`❌ ERROR\n\nNo admins found in this group`);
+                return extra.reply(`❌ ERROR\n\nNo admins in this group, shame`);
             }
 
             const reportNum = reportCounters.get(from) + 1;
@@ -225,7 +225,7 @@ module.exports = {
                 `${reportedText.substring(0, 500)}${reportedText.length > 500 ? '...' : ''}`,
                 `----------`,
                 ``,
-                `_Use ${prefix}report dismiss ${reportNum} in the group to acknowledge_`
+                `_Use ${prefix}report dismiss ${reportNum} in the group to acknowledge it_`
             ].join('\n');
 
             // DM each admin
@@ -244,8 +244,8 @@ module.exports = {
 
             // Confirm to reporter
             const reporterMsg = isAnonymous
-                ? `✅ SUCCESS\n\n🚨 Anonymous report #${reportNum} sent to ${dmed} admin(s)`
-                : `✅ SUCCESS\n\n🚨 Report #${reportNum} sent to ${dmed} admin(s)`;
+                ? `✅ SUCCESS\n\n🚨 Anonymous report #${reportNum} sent to ${dmed} admin(s), lekke, lekke`
+                : `✅ SUCCESS\n\n🚨 Report #${reportNum} sent to ${dmed} admin(s), lekke, lekke`;
 
             await extra.reply(reporterMsg);
 

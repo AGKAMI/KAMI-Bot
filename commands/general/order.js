@@ -274,7 +274,7 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
       const imgBuffer = fs.readFileSync(imgPath);
       await sendButtons(sock, chatId, {
         text,
-        buttonText: `\u{1F6CD}\u{FE0F} _Tap below to order from the catalog_`,
+        buttonText: `\u{1F6CD}\u{FE0F} _Tap below to order from the catalogue_`,
         buttons,
         image: imgBuffer,
       }, quoted);
@@ -345,7 +345,7 @@ module.exports = {
   reactions: { received: '🛒', done: '🧾' },
   aliases: ['makeorder', 'shop', 'buy'],
   category: 'general',
-  description: 'Browse and order CPM products',
+  description: 'Browse the catalogue and order CPM products',
   usage: '.order',
   sendMainMenu, // export for start.js to use
 
@@ -354,7 +354,7 @@ module.exports = {
       const isGroup = extra.from.endsWith('@g.us');
       if (isGroup) {
         await sock.sendMessage(extra.from, {
-          text: `\u{1F4AC} _check your DMs to browse the catalog._`,
+          text: `\u{1F4AC} _check your DMs for the catalogue._`,
         });
         const dmJid = toDmJid(extra.sender);
         if (!dmJid) return;

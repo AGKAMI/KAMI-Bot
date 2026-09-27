@@ -18,7 +18,7 @@ module.exports = {
 
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nUsage: \`${prefix}crew result <event-id> <winner>\`\nExample: \`${prefix}crew result evt_1234567890 Mfowethu\`\n\nLog the results of the event.`
+        text: `❌ *ERROR*\n\nUsage: \`${prefix}crew result <event-id> <winner>\`\nExample: \`${prefix}crew result evt_1234567890 Mfowethu\`\n\nLog what happened at the event.`
       });
     }
 
@@ -28,7 +28,7 @@ module.exports = {
     const team = database.getTeam(jid);
     if (!team || !team.events || !team.events[eventId]) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nThat event: *${eventId}* doesn't exist.\nSee all events with: \`${prefix}crew events\``
+        text: `❌ *ERROR*\n\nNo event with that ID: *${eventId}*\nSee all events with: \`${prefix}crew events\``
       });
     }
 
@@ -36,7 +36,7 @@ module.exports = {
 
     if (event.status === 'completed') {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nThat event is already done. Results are already logged.\n\n🏆 *Winner:* ${event.winner}`
+        text: `❌ *ERROR*\n\nThat one's already done — results are logged.\n\n🏆 *Winner:* ${event.winner}`
       });
     }
 

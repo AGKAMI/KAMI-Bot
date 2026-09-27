@@ -1,5 +1,5 @@
 /**
- * Newsletter Command - Get newsletter information from WhatsApp channel link
+ * Newsletter Command - Get newsletter info from a WhatsApp channel link
  */
 
 const config = require('../../config');
@@ -62,7 +62,7 @@ module.exports = {
   reactions: { received: '📰', done: '📨' },
   aliases: ['channel', 'channelinfo', 'nl'],
   category: 'owner',
-  description: 'Get newsletter information from WhatsApp channel link',
+  description: 'Get newsletter info from a WhatsApp channel link',
   usage: '.newsletter <channel link>',
   ownerOnly: true,
   async execute(sock, msg, args, extra) {
@@ -145,11 +145,11 @@ module.exports = {
         if (error.message.includes('Invalid channel link')) {
           await extra.reply(`*❌ ERROR* — invalid channel link format\n\n💡 Please provide a valid WhatsApp channel link:\n   https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
         } else if (error.message.includes('Newsletter not found')) {
-          await extra.reply(`*❌ ERROR* — newsletter not found, ${voice.tag('err')}\n\n💡 The channel link might be invalid or the newsletter might not exist.`);
+          await extra.reply(`*❌ ERROR* — no newsletter there, ${voice.tag('err')}\n\n💡 The channel link might be wrong, or the newsletter is not there.`);
         } else if (error.message.includes('newsletterMetadata')) {
-          await extra.reply(`*❌ ERROR* — newsletter feature not available\n\n💡 Make sure you are using Baileys v7.0.0-rc or higher.`);
+          await extra.reply(`*❌ ERROR* — the newsletter feature is not available\n\n💡 You need Baileys v7.0.0-rc or higher.`);
         } else {
-          await extra.reply(`*❌ ERROR* — couldn't get newsletter info: ${error.message}`);
+          await extra.reply(`*❌ ERROR* — couldn't get the newsletter info: ${error.message}`);
         }
       }
       

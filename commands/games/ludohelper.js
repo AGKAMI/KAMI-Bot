@@ -3,14 +3,14 @@ const state = new Map();
 module.exports = {
   name: 'ludo',
   reactions: { received: '🎯', done: '🏆' },
-  description: 'Ludo dice roller and score tracker',
+  description: 'Ludo dice roller and score tracker, lekke, lekke',
   category: 'games',
   aliases: ['ludodice'],
   execute: async (sock, msg, args, ctx) => {
     const sub = (args[0] || '').toLowerCase();
     if (sub === 'start') {
       state.set(ctx.from, { players: [], turn: 0 });
-      return ctx.reply(`🎲 ludo helper started!\n.ludo join | .ludo turn | .ludo score | .ludo stop`);
+      return ctx.reply(`🎲 ludo helper is on!\n.ludo join | .ludo turn | .ludo score | .ludo stop`);
     }
     if (sub === 'join') {
       const g = state.get(ctx.from);

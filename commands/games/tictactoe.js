@@ -7,7 +7,7 @@ const tttGames = new Map();
 module.exports = {
   name: 'tictactoe',
   reactions: { received: '⭕', done: '🏁' },
-  description: 'Play tic tac toe in a group',
+  description: 'Play tic tac toe in a group, boet, boet',
   aliases: ['ttt', 'xo'],
   category: 'games',
   groupOnly: true,
@@ -24,12 +24,12 @@ module.exports = {
         players: { X: null, O: null },
       });
       ctx.fail();
-      return ctx.reply(`❌ ${voice.openErr()} — tic tac toe!\nFirst person to play is X.\nUse ${prefix}ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`);
+      return ctx.reply(`❌ ${voice.openErr()} — tic tac toe!\nWhoever plays first is X.\nUse ${prefix}ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`);
     }
 
     if (['stop', 'end'].includes(sub)) {
       tttGames.delete(boardKey);
-      return ctx.reply(`${voice.lead('neutral')}, tic tac toe stopped!`);
+      return ctx.reply(`${voice.lead('neutral')}, tic tac toe is closed!`);
     }
 
     if (!/^\d$/.test(sub)) {
@@ -51,7 +51,7 @@ module.exports = {
     if (!expectedPlayer) {
       g.players[token] = sender;
     } else if (expectedPlayer !== sender) {
-      return ctx.reply('not your turn — waiting for ' + mention(expectedPlayer));
+      return ctx.reply('not your turn — waiting on ' + mention(expectedPlayer));
     }
 
     g.board[pos] = token;
@@ -104,7 +104,7 @@ onButton('ttt:rematch', async (sock, msg, from) => {
     players: { X: null, O: null },
   });
   await sock.sendMessage(from, {
-    text: `🔄 *REMATCH!*\n\nFresh board — first person to play is X.\nUse ${prefix}ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`,
+    text: `🔄 *REMATCH!*\n\nFresh board — whoever plays first is X.\nUse ${prefix}ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`,
   }, { quoted: msg });
 });
 

@@ -21,7 +21,7 @@ module.exports = {
   name: 'sticker',
   reactions: { received: '🎨', generating: '🪄', done: '🩵' },
   aliases: ['s', 'stiker', 'stc'],
-  description: 'Convert image or video to sticker (auto compression)',
+  description: 'Turn an image or video into a sticker (auto compressed)',
   usage: '.sticker (reply to media)',
   category: 'general',
   
@@ -49,7 +49,7 @@ module.exports = {
       targetMessage.message?.documentMessage;
     
     if (!mediaMessage) {
-      return extra.reply(`⚠️ *WARNING*\n💡 Reply to an image or video with ${prefix}sticker, or send media with ${prefix}sticker as caption`);
+      return extra.reply(`⚠️ *WARNING*\n💡 Reply to an image or video with ${prefix}sticker, or send it with ${prefix}sticker as the caption`);
     }
     
     const tempDir = getTempDir();
@@ -70,14 +70,14 @@ module.exports = {
       
       if (!mediaBuffer) {
         extra.fail();
-        await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't download that, try again`);
+        await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't grab that — try again`);
         return;
       }
       
       // Check file size
       if (mediaBuffer.length > MAX_FILE_SIZE) {
         extra.fail();
-        await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — file too large: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+        await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — that file is too big: ${(mediaBuffer.length / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
         return;
       }
       
@@ -145,7 +145,7 @@ module.exports = {
     } catch (error) {
       console.error('Sticker command error:', error);
       extra.fail();
-      await extra.reply(`\u274C *ERROR*\n\u{1F4A1} ${voice.openErr()} - couldn't make the sticker, check if the media is valid`);
+      await extra.reply(`\u274C *ERROR*\n\u{1F4A1} ${voice.openErr()} - couldn't make the sticker — check the media is valid`);
     } finally {
       // Always cleanup temp files
       tempFiles.forEach(file => deleteTempFile(file));

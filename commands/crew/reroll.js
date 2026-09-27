@@ -14,7 +14,7 @@ module.exports = {
   subName: 'reroll',
   name: null,
   category: 'crew',
-  description: 'Reset a denied app so applicant can reapply (owner only)',
+  description: 'Reset a denied app so they can reapply (owner only)',
   usage: '.crew reroll <UID>',
   groupOnly: false,
   ownerOnly: true,
@@ -26,7 +26,7 @@ module.exports = {
       const uid = (args[0] || '').toUpperCase();
       if (!uid) {
         return extra.reply(
-          `❌ ERROR\n\nProvide the App ID\n\nUsage: \`${prefix}crew reroll SS-XXXXX\``
+          `❌ ERROR\n\nGive me the App ID\n\nUsage: \`${prefix}crew reroll SS-XXXXX\``
         );
       }
 
@@ -34,7 +34,7 @@ module.exports = {
       const pendingApp = database.getApplicantByUid(uid);
       if (pendingApp) {
         return extra.reply(
-          `❌ ERROR\n\nApplication *${uid}* is still *pending* — no need to reroll\n` +
+          `❌ ERROR\n\n*${uid}* is still *pending* — no need to reroll\n` +
           `Accept it with: \`${prefix}crew accept ${uid}\` or deny with: \`${prefix}crew deny ${uid} <reason>\``
         );
       }
@@ -43,14 +43,14 @@ module.exports = {
       const processed = database.getProcessedApp(uid);
       if (!processed) {
         return extra.reply(
-          `❌ ERROR\n\nNo application found for *${uid}* — pending or processed`
+          `❌ ERROR\n\nNothing with that ID: *${uid}* — pending or processed`
         );
       }
 
       if (processed.action === 'accepted') {
         return extra.reply(
-          `❌ ERROR\n\nApplication *${uid}* was *accepted* — this person is already in the crew\n` +
-          `If you want to remove them, use: \`${prefix}crew remove @user\``
+          `❌ ERROR\n\n*${uid}* was *accepted* — they're already in the crew\n` +
+          `To get rid of them, use: \`${prefix}crew remove @user\``
         );
       }
 
@@ -78,7 +78,7 @@ module.exports = {
       try {
         await sock.sendMessage(applicantJid, {
           text: `🔄 *APPLICATION RESET*\n\n` +
-                `Your *${getTeamDisplayName(teamKey)}* application (ID: *${uid}*) has been reset by the owner.\n\n` +
+                `Your *${getTeamDisplayName(teamKey)}* application (ID: *${uid}*) was reset by the owner.\n\n` +
                 `You can reapply fresh: \`${prefix}crew apply ${teamKey}\`\n` +
                 `_Your old answers have been cleared._`
         });
@@ -97,7 +97,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew reroll error:', error);
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't reroll application`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't reroll it, shame`);
     }
   },
 };

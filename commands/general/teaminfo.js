@@ -76,7 +76,7 @@ module.exports = {
   reactions: { received: '🏟️', done: '📊' },
   aliases: ['team', 'teams'],
   category: 'general',
-  description: 'View team details and apply',
+  description: 'See team details and apply',
   usage: '.teaminfo <team> or .teaminfo (all teams)',
 
   async execute(sock, msg, args, extra) {
@@ -176,11 +176,11 @@ module.exports = {
 onButton('start:team:', async (sock, msg, from, sender, btnId) => {
   if (btnId === 'start:team:you') {
     await sock.sendMessage(from, {
-      text: `✅ You're already part of this team!`,
+      text: `✅ You're already part of this team, ne!`,
     });
   } else if (btnId === 'start:team:pending') {
     await sock.sendMessage(from, {
-      text: `⏳ Your application is pending review. Contact an admin for updates.`,
+      text: `⏳ Your application is waiting on review. Hit up an admin for an update.`,
     });
   }
 });

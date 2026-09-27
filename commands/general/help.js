@@ -13,7 +13,7 @@ module.exports = {
   reactions: { received: '❓', done: '📖' },
   aliases: ['cmd', 'command'],
   category: 'general',
-  description: 'Get detailed info about a command',
+  description: 'Get the full story on any command',
   usage: '.help <command>',
 
   async execute(sock, msg, args, extra) {
@@ -26,7 +26,7 @@ module.exports = {
           `📖 *COMMAND HELP*\n\n` +
           `💡 *Usage:* ${prefix}help <command>\n` +
           `📝 *Example:* ${prefix}help song\n\n` +
-          ` Type ${prefix}menu to see all commands.`
+          ` Check ${prefix}menu for the full list.`
         );
       }
 
@@ -35,7 +35,7 @@ module.exports = {
 
       if (!cmd) {
         extra.fail();
-        return extra.reply(`❌ *ERROR*\n command "${cmdName}" not found.\n💡 Type ${prefix}menu to see all commands.`);
+        return extra.reply(`âŒ *NOT FOUND*\n No command called "${cmdName}"\n💡 Try ${prefix}menu for the whole list.`);
       }
 
       const aliases = cmd.aliases && cmd.aliases.length > 0
@@ -63,7 +63,7 @@ module.exports = {
         `🔗 *Aliases:* ${aliases}`,
         `📖 *Usage:* ${(cmd.usage || `${prefix}${cmd.name}`).replace(/^\./, prefix)}`,
         ``,
-        `💡 _Tip: Use ${prefix}menu to browse all commands._`
+        `💡 _Tip: ${prefix}menu has everything, check it shame._`
       ].join('\n');
 
       await extra.reply(text);

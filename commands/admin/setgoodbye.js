@@ -25,7 +25,7 @@ module.exports = {
       if (!args.length) {
         const groupSettings = db.getGroupSettings(groupId);
         return await sock.sendMessage(groupId, {
-          text: `📝 *CURRENT GOODBYE MESSAGE*\n\n${groupSettings.goodbyeMessage}\n\n*Usage:* ${prefix}setgoodbye <message>\n\n*Tip:* Use @user to mention the member who left`
+          text: `📝 *CURRENT GOODBYE MESSAGE*\n\n${groupSettings.goodbyeMessage}\n\n*Usage:* ${prefix}setgoodbye <message>\n\n*Tip:* Use @user to tag the member who left`
         }, { quoted: msg });
       }
       
@@ -34,7 +34,7 @@ module.exports = {
       if (goodbyeMessage.length > 500) {
         extra.fail();
         return await sock.sendMessage(groupId, {
-          text: `❌ _${voice.openErr()}, goodbye message is too long, max 500 characters_`
+          text: `❌ _${voice.openErr()}, goodbye message is too long — 500 max_`
         }, { quoted: msg });
       }
       

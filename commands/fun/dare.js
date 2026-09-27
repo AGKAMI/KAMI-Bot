@@ -1,5 +1,5 @@
 /**
- * Dare - Get a random dare challenge
+ * Dare - Get a random dare, lekke
  */
 
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
@@ -9,7 +9,7 @@ module.exports = {
     reactions: { received: '😈', done: '💥' },
     aliases: [],
     category: 'fun',
-    description: 'Get a random dare challenge',
+    description: 'Get a random dare, lekke',
     usage: 'dare',
     execute: async (sock, msg, args, extra) => {
       try {

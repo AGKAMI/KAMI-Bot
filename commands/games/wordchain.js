@@ -3,7 +3,7 @@ const chains = new Map();
 module.exports = {
   name: 'wordchain',
   reactions: { received: '🧵', done: '📝' },
-  description: 'Word chain — each word starts with the last letter',
+  description: 'Word chain — each word starts on the last letter',
   category: 'games',
   aliases: ['chain', 'word'],
   groupOnly: true,
@@ -11,7 +11,7 @@ module.exports = {
     const sub = (args[0] || '').toLowerCase();
     if (sub === 'start' || sub === 'new') {
       chains.set(ctx.from, { last: null, count: 0 });
-      return ctx.reply(`🔁 word chain started!\n.word <word> to play. Last letter = next first letter.`);
+      return ctx.reply(`🔁 word chain is on!\n.word <word> to play. Last letter starts the next word.`);
     }
     if (sub === 'stop') {
       chains.delete(ctx.from);
@@ -32,6 +32,6 @@ module.exports = {
     }
     g.last = word.toLowerCase().slice(-1);
     g.count++;
-    return ctx.reply(`✅ ${word}\nNext word must start with "${g.last}"`);
+    return ctx.reply(`✅ ${word}\nNext word must start with the letter "${g.last}", hey`);
   }
 };

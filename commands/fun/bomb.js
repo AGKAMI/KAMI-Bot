@@ -14,7 +14,7 @@ module.exports = {
   reactions: { received: '💣', done: '🎯' },
   aliases: ['bom'],
   category: 'fun',
-  description: 'Play bomb game - pick numbers 1-9, avoid the bomb!',
+  description: 'Play bomb — pick numbers 1-9 and dodge the bomb!',
   usage: '.bomb',
   
   async execute(sock, msg, args, extra) {
@@ -33,7 +33,7 @@ module.exports = {
         
         if (text.toLowerCase().trim() === 'suren' || text.toLowerCase().trim() === 'surrender') {
           const bombBox = game.array.find(v => v.emot === '💥');
-          await extra.reply(`*_${voice.openErr()}, you surrendered_ * 💣\n\n_the bomb was in box ${bombBox.number}_`, { quoted: game.msg });
+          await extra.reply(`*_${voice.openErr()}, you surrendered_ * 💣\n\n_the bomb was in box ${bombBox.number}, shame_`, { quoted: game.msg });
           clearTimeout(game.timeoutId);
           gameState.delete(sender);
           return;
@@ -79,7 +79,7 @@ module.exports = {
         if (openedSafeBoxes.length === safeBoxes.length) {
           // Win! All safe boxes opened
           let teks = `🎉 *YOU WIN!*\n\n`;
-          teks += `Congratulations! You successfully opened all safe boxes!\n\n`;
+          teks += `Yoh — you opened every safe box, no bomb! 🎉\n\n`;
           teks += `*Final Result:*\n`;
           for (let i = 0; i < game.array.length; i += 3) {
             teks += game.array.slice(i, i + 3).map(v => v.emot).join('') + '\n';
@@ -94,8 +94,8 @@ module.exports = {
         
         // Update game board
         let teks = `乂  *B O M B*\n\n`;
-        teks += `Box number ${selectedBox.number} opened: ${selectedBox.emot}\n\n`;
-        teks += `Send number *1* - *9* to open a box:\n\n`;
+        teks += `Box ${selectedBox.number} is open: ${selectedBox.emot}\n\n`;
+        teks += `Send a number *1* - *9* to open a box:\n\n`;
         for (let i = 0; i < game.array.length; i += 3) {
           teks += game.array.slice(i, i + 3).map(v => v.state ? v.emot : v.number).join('') + '\n';
         }
@@ -117,12 +117,12 @@ module.exports = {
       }));
       
       let teks = `乂  *B O M B*\n\n`;
-      teks += `Send number *1* - *9* to open the *9* boxes below:\n\n`;
+      teks += `Send a number *1* - *9* to open one of the *9* boxes below:\n\n`;
       for (let i = 0; i < array.length; i += 3) {
         teks += array.slice(i, i + 3).map(v => v.state ? v.emot : v.number).join('') + '\n';
       }
       teks += `\nTimeout : [ *${((timeout / 1000) / 60)} minutes* ]\n`;
-      teks += `If you get the box with the bomb, points will be deducted. Type *suren* to surrender.`;
+      teks += `Land on the bomb and you lose points. Type *suren* to surrender.`;
       
       const gameMsg = await sock.sendMessage(extra.from, {
         text: teks,
@@ -144,7 +144,7 @@ module.exports = {
           const game = gameState.get(sender);
           const bombBox = game.array.find(v => v.emot === '💥');
           sock.sendMessage(extra.from, {
-            text: `*Time's up!* ⏰\n\nthe bomb was in box ${bombBox.number}`
+            text: `*Time's up!* ⏰\n\nthe bomb was in box ${bombBox.number}, shame`
           }, { quoted: game.msg });
           gameState.delete(sender);
         }

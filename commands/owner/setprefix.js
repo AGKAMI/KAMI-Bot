@@ -44,7 +44,7 @@ module.exports = {
         `*✅ PREFIX UPDATED*\n\n` +
         `${voice.lead('affirm')}, prefix is now: *${newPrefix}*\n\n` +
         `🔄 New command format: ${newPrefix}command\n` +
-        `💾 Saved to database — survives restarts`
+        `💾 Saved to the database — survives restarts`
       );
 
     } catch (error) {

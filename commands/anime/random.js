@@ -120,16 +120,16 @@ module.exports = {
       
       if (error.response?.status === 404) {
         extra.fail();
-        await extra.reply('❌ anime data not found — try again');
+        await extra.reply('❌ no anime data — try again');
       } else if (error.response?.status === 429) {
         extra.fail();
-        await extra.reply('❌ rate limit — try again later');
+        await extra.reply('❌ rate limit — try again later, hey');
       } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         extra.fail();
         await extra.reply('❌ timed out — try again');
       } else {
         extra.fail();
-        await extra.reply(`❌ Failed to fetch anime data: ${error.message}`);
+        await extra.reply(`❌ Couldn't grab the anime data: ${error.message}`);
       }
     }
   }

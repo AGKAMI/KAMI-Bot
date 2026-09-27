@@ -11,7 +11,7 @@ module.exports = {
   reactions: { received: '🗑️', done: '🚫' },
   aliases: ['delword', 'removebadword', 'unbanword'],
   category: 'admin',
-  description: 'Remove pattern from bad word blacklist',
+  description: 'Remove a pattern from the bad word blacklist',
   usage: '.delbadword <pattern>',
   groupOnly: true,
   adminOnly: true,
@@ -41,7 +41,7 @@ module.exports = {
         return extra.reply(
           `❌ *NOT FOUND*\n\n` +
           `_${normalized} isn't in the blacklist, ${voice.tag('err')}_\n\n` +
-          `_Use ${prefix}antibadword status to see all patterns_`
+          `_Use ${prefix}antibadword status for the full list_`
         );
       }
 

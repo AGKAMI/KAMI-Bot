@@ -20,7 +20,7 @@ module.exports = {
   reactions: { received: '🔨', done: '⛓️' },
   aliases: [],
   category: 'admin',
-  description: 'Ban a user from the bot',
+  description: 'Ban a user off the bot',
   usage: '.ban @user/reply/number',
   adminOnly: true,
 
@@ -46,7 +46,7 @@ module.exports = {
           if (!target) { extra.fail(); return extra.reply(`❌ ERROR\n\n_Invalid number_`); }
         } else {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Example: ${prefix}ban 27833882383_`);
+          return extra.reply(`❌ ERROR\n\n_Tag, reply, or drop a number_\n\n_Example: ${prefix}ban 27833882383_`);
         }
       }
 
@@ -65,8 +65,8 @@ module.exports = {
       await sock.sendMessage(from, {
         text:
           `🚫 BANNED FROM KAMI BOT\n\n` +
-          `${mention(target)} has been permanently banned from this bot\n\n` +
-          `_For ban appeals, contact the bot owner directly._`,
+          `${mention(target)} is permanently banned from this bot, done\n\n` +
+          `_If you want it lifted, contact the bot owner directly._`,
         mentions: [target]
       });
 
@@ -114,7 +114,7 @@ onButton('admin:unban', async (sock, msg, from, sender, btnId) => {
       const clickerIsOwner = (config.ownerNumber || []).some(n => sender.includes(n));
       if (!clickerIsAdmin && !clickerIsOwner) {
         return await sock.sendMessage(from, {
-          text: `❌ *ADMIN ONLY*\n\nOnly group admins can unban members.`,
+          text: `❌ *ADMIN ONLY*\n\nOnly group admins can unban members, shame.`,
           mentions: [sender],
         });
       }

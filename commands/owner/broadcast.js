@@ -10,7 +10,7 @@ module.exports = {
     reactions: { received: '📻', done: '📡' },
     aliases: ['bc'],
     category: 'owner',
-    description: 'Broadcast message to all chats',
+    description: 'Broadcast a message to every chat',
     usage: '.broadcast <message>',
     ownerOnly: true,
     
@@ -33,7 +33,7 @@ module.exports = {
         for (const group of groups) {
           try {
             await sock.sendMessage(group.id, {
-              text: `*📢 BROADCAST*\n\n${message}\n\n📢 ${voice.lead('neutral')}, this is a broadcast from bot owner`
+              text: `*📢 BROADCAST*\n\n${message}\n\n📢 ${voice.lead('neutral')}, this is a broadcast from the bot owner`
             });
             success++;
           } catch (e) {
@@ -41,7 +41,7 @@ module.exports = {
           }
         }
         
-        await extra.reply(`*✅ BROADCAST DONE*\n\n✅ ${voice.openErr()}, sent to all groups\n\n📊 *Success:* ${success}\n❌ *Failed:* ${failed}`);
+        await extra.reply(`*✅ BROADCAST DONE*\n\n✅ ${voice.openErr()}, out to every group\n\n📊 *Success:* ${success}\n❌ *Failed:* ${failed}`);
         
       } catch (error) {
         await extra.reply(`*❌ ERROR* — ${error.message}`);

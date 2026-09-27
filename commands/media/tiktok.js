@@ -225,7 +225,7 @@ module.exports = {
 
       if (!success) {
         extra.fail();
-        return extra.reply(`❌ _${voice.openErr()} — could not download the video, try a different link_`);
+        return extra.reply(`❌ _${voice.openErr()} — couldn't download the video, try a different link_`);
       }
     } catch (error) {
       console.error('[TT] command error:', error);

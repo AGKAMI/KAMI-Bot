@@ -6,8 +6,8 @@ module.exports = {
   reactions: { received: '📸', generating: '⬇️', done: '🖼️' },
   aliases: ['gp', 'getpic'],
   category: 'general',
-  description: 'Get profile picture of a user',
-  usage: '.getpp (reply to message or tag user)',
+  description: 'Get a user\'s profile picture',
+  usage: '.getpp (reply to a message or tag someone)',
   
   async execute(sock, msg, args, extra) {
     try {
@@ -30,7 +30,7 @@ module.exports = {
       }
       
       if (!targetUser) {
-        return extra.reply(`⚠️ *WARNING*\n💡 Who are you looking for? Reply to a message or tag someone`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Who are you after? Reply to a message or tag them`);
       }
       
       try {
@@ -39,7 +39,7 @@ module.exports = {
         
         if (!ppUrl) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic found for this oke`);
+          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic on this oke`);
         }
         
         // Download the profile picture
@@ -60,21 +60,21 @@ module.exports = {
             profileError.output?.statusCode === 500 ||
             profileError.message?.includes('not found')) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic found for this oke`);
+          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic on this oke`);
         } else if (profileError.output?.statusCode === 401 || 
                    profileError.message?.includes('forbidden') || 
                    profileError.message?.includes('unauthorized')) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — profile pic is private or not available`);
+          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — that profile pic is private or gone`);
         } else {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic found for this oke`);
+          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic on this oke`);
         }
       }
       
     } catch (error) {
       extra.fail();
-      extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic found for this oke`);
+      extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic on this oke`);
     }
   }
 };

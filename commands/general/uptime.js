@@ -43,7 +43,7 @@ module.exports = {
   reactions: { received: '⏱️', done: '🟢' },
   aliases: ['runtime', 'botuptime', 'alive'],
   category: 'general',
-  description: 'Show how long the bot has been running',
+  description: 'Show how long the bot has been up',
   usage: '.uptime',
   
   async execute(sock, msg, args, extra) {
@@ -67,7 +67,7 @@ const botVersion = 'V1.0.2';
     } catch (error) {
       console.error('Error in uptime command:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()}, couldn't get uptime info — try again later`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()}, couldn't get uptime info — try again later, hey`);
     }
   }
 };

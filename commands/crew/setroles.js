@@ -25,8 +25,8 @@ module.exports = {
       if (args.length < 2) {
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nProvide at least 2 roles\n\n` +
-          `Usage: ${prefix}crew setroles soldier officer general\n\n` +
+          `❌ ERROR\n\nGive me at least 2 roles\n\n` +
+          `Try: ${prefix}crew setroles soldier officer general\n\n` +
           `_Last role = highest rank (for promote/demote)_`
         );
       }
@@ -36,7 +36,7 @@ module.exports = {
 
       if (unique.length !== roles.length) {
         extra.fail();
-        return extra.reply(`❌ ERROR\n\nNo duplicate roles allowed`);
+        return extra.reply(`❌ ERROR\n\nNo duplicate roles, hey`);
       }
 
       database.setCustomRoles(extra.from, unique);
@@ -58,7 +58,7 @@ module.exports = {
     } catch (error) {
       console.error('Crew setroles error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't set roles`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't set the roles`);
     }
   },
 };

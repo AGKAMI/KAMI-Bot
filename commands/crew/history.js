@@ -23,7 +23,7 @@ module.exports = {
   name: null,
   aliases: ['processed', 'log'],
   category: 'crew',
-  description: 'View processed applications history (owner only)',
+  description: 'See processed applications history (owner only)',
   usage: '.crew history [team]',
   groupOnly: false,
   ownerOnly: true,
@@ -35,7 +35,7 @@ module.exports = {
       const filterTeam = (args[0] || '').toUpperCase() || null;
       if (filterTeam && !TEAMS[filterTeam] && !config.crewTeams[filterTeam]) {
         return extra.reply(
-          `❌ ERROR\n\nUnknown team: *${filterTeam}*\n\nTeams: ${Object.keys(TEAMS).join(', ')}`
+          `❌ ERROR\n\nDon't know that team: *${filterTeam}*\n\nTeams: ${Object.keys(TEAMS).join(', ')}`
         );
       }
 
@@ -101,7 +101,7 @@ module.exports = {
 
     } catch (error) {
       console.error('Crew history error:', error);
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't load application history`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't pull the history, shame`);
     }
   },
 };

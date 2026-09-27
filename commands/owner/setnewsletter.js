@@ -13,7 +13,7 @@ module.exports = {
   reactions: { received: '📰', done: '✏️' },
   aliases: ['setnl', 'setchannel'],
   category: 'owner',
-  description: 'Set or change the newsletter JID for menu forwarding (owner only)',
+  description: 'Set the newsletter JID the menu forwards from (owner only)',
   usage: '.setnewsletter <newsletter JID>',
   ownerOnly: true,
   adminOnly: false,
@@ -57,7 +57,7 @@ module.exports = {
         
         // If we still don't have a newsletter JID, show error
         if (!newsletterJid) {
-          return extra.reply(`*❌ ERROR* — that's not a newsletter message\n\n💡 Reply to a newsletter message or provide a newsletter jid`);
+          return extra.reply(`*❌ ERROR* — that's not a newsletter message, shame\n\n💡 Reply to a newsletter message or give me the newsletter jid`);
         }
       } else if (args[0]) {
         // Get JID from command arguments
@@ -78,7 +78,7 @@ module.exports = {
       
       // Validate JID format (should end with @newsletter)
       if (!newsletterJid.endsWith('@newsletter')) {
-        return extra.reply(`*❌ ERROR* — invalid newsletter jid format\n\n💡 Newsletter jid must end with @newsletter\n📝 Example: 120363161513685998@newsletter`);
+        return extra.reply(`*❌ ERROR* — that newsletter jid is the wrong format\n\n💡 The jid must end with @newsletter\n📝 Example: 120363161513685998@newsletter`);
       }
       
       // Update config.js
@@ -111,12 +111,12 @@ module.exports = {
         `✅ ${voice.lead('affirm')}, jid has been updated!\n\n` +
         `📋 *JID:* \`${newsletterJid}\`\n` +
         `📝 *Name:* ${config.botName}\n\n` +
-        `🔄 The menu will now forward from this newsletter.`
+        `🔄 The menu now forwards from this newsletter.`
       );
       
     } catch (error) {
       console.error('SetNewsletter command error:', error);
-      await extra.reply(`*❌ ERROR* — couldn't set newsletter jid: ${error.message}`);
+      await extra.reply(`*❌ ERROR* — couldn't set the newsletter jid: ${error.message}`);
     }
   }
 };

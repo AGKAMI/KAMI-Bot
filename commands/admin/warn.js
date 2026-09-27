@@ -32,7 +32,7 @@ module.exports = {
         extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +
-          `Tag, reply, or add a number\n\n` +
+          `Tag, reply, or drop a number\n\n` +
           `Usage:\n` +
           `• ${prefix}warn @user breaking rules\n` +
           `• Reply with ${prefix}warn <reason>`
@@ -49,7 +49,7 @@ module.exports = {
           extra.fail();
           return extra.reply(
             `❌ ERROR\n\n` +
-            `${mention(target)} is not in this group`
+            `${mention(target)} isn't in this group`
           );
         }
       }
@@ -78,7 +78,7 @@ module.exports = {
 
       if (warnings.count >= config.maxWarnings) {
         text += `❌ *MAX WARNINGS HIT*\n\n`;
-        text += `${mention(target)} is being removed from the group`;
+        text += `${mention(target)} is getting removed from the group`;
 
         await sock.sendMessage(extra.from, {
           text,
@@ -97,7 +97,7 @@ module.exports = {
               text:
                 `✅ SUCCESS\n\n` +
                 `🔨 KICKED\n\n` +
-                `${mention(target)} has been removed for exceeding max warnings\n\n` +
+                `${mention(target)} is out — too many warnings\n\n` +
                 `_${voice.react('ok')}_`,
               mentions: [target]
             });
@@ -105,7 +105,7 @@ module.exports = {
             extra.fail();
             await extra.reply(
               `❌ ERROR\n\n` +
-              `Couldn't remove the user — check if I'm admin`
+              `Couldn't remove them — check if I'm admin`
             );
           }
           database.clearWarnings(extra.from, target);
@@ -146,7 +146,7 @@ onButton('admin:undowarn', async (sock, msg, from, sender, btnId) => {
       text:
         `✅ SUCCESS\n\n` +
         `↩️ WARNING REMOVED\n\n` +
-        `${mention(target)} has been cleared of their last warning\n\n` +
+        `${mention(target)} is cleared of their last warning\n\n` +
         `_${voice.react('ok')}_`,
       mentions: [target],
     });
@@ -175,7 +175,7 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
         return await sock.sendMessage(from, {
           text:
             `❌ ERROR\n\n` +
-            `${mention(target)} is not in this group`,
+            `${mention(target)} isn't in this group`,
           mentions: [target],
         });
       }
@@ -191,7 +191,7 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
       text:
         `✅ SUCCESS\n\n` +
         `🔨 KICKED\n\n` +
-        `${mention(target)} has been removed from the group\n\n` +
+        `${mention(target)} is out of the group now\n\n` +
         `_${voice.react('ok')}_`,
       mentions: [target],
     });

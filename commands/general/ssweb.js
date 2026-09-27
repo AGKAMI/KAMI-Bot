@@ -10,7 +10,7 @@ module.exports = {
   reactions: { received: '🌐', generating: '📷', done: '🖥️' },
   aliases: ['screenshot', 'ss', 'webss'],
   category: 'general',
-  description: 'Take a screenshot of a website',
+  description: 'Grab a screenshot of a website',
   usage: '.ssweb <url>',
   
   async execute(sock, msg, args, extra) {

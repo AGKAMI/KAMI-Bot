@@ -49,7 +49,7 @@ module.exports = {
           target = ctx.participant;
         } else {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\n_Tag, reply, or add a number_\n\n_Example: ${prefix}block 27833882383_`);
+          return extra.reply(`❌ ERROR\n\n_Tag, reply, or drop a number_\n\n_Example: ${prefix}block 27833882383_`);
         }
       }
       

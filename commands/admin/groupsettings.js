@@ -31,9 +31,9 @@ function buildDashboardText(settings) {
   return (
     `⚙️ *GROUP SETTINGS*\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
-    `Tap a button to flip it:\n\n` +
+    `Hit a button to flip it:\n\n` +
     (actions.length > 0 ? `🔧 *Active actions:*\n${actions.map(a => `  • ${a}`).join('\n')}\n\n` : '') +
-    `_Show extra actions with the individual commands (${config.prefix || '.'}antiflood set <action> etc.)_`
+    `_See the extra actions with the individual commands (${config.prefix || '.'}antiflood set <action> etc.)_`
   );
 }
 
@@ -56,7 +56,7 @@ module.exports = {
   reactions: { received: '⚙️', done: '🧰' },
   aliases: ['groupsettings', 'toggles'],
   category: 'admin',
-  description: 'One-message dashboard: toggle every group setting',
+  description: 'One-message dashboard — flip every group setting',
   usage: '.settings',
   groupOnly: true,
   adminOnly: true,

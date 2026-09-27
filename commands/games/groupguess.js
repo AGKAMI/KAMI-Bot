@@ -3,7 +3,7 @@ const games = new Map();
 module.exports = {
   name: 'groupguess',
   reactions: { received: '👥', done: '🎯' },
-  description: 'Group number guessing game — closest wins',
+  description: 'Group number guessing — closest wins',
   category: 'games',
   aliases: ['gguess'],
   execute: async (sock, msg, args, ctx) => {
@@ -11,7 +11,7 @@ module.exports = {
     if (sub === 'start' || sub === 'new') {
       const target = Math.floor(Math.random() * 100) + 1;
       games.set(ctx.from, { target, attempts: 0 });
-      return ctx.reply(`🎯 Group Number Guess!\nI picked 1-100.\nUse .gguess <number> to play. Closest wins!`);
+      return ctx.reply(`🎯 Group Number Guess!\nI'm thinking of 1-100.\nUse .gguess <number> to play. Closest wins, hey!`);
     }
     if (sub === 'stop') {
       games.delete(ctx.from);

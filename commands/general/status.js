@@ -1,5 +1,5 @@
 /**
- * Status - Show bot status and statistics
+ * Status - Show the bot\'s status and stats
  */
 
 const config = require('../../config');
@@ -12,7 +12,7 @@ module.exports = {
   reactions: { received: '💚', done: '📈' },
   aliases: ['botstats', 'stats'],
   category: 'general',
-  description: 'Show bot status and statistics',
+  description: 'Show the bot\'s status and stats',
   usage: '.status',
 
   async execute(sock, msg, args, extra) {

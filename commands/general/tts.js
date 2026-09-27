@@ -10,7 +10,7 @@ module.exports = {
   reactions: { received: '🗣️', generating: '🔊', done: '🎧' },
   aliases: ['speak', 'say'],
   category: 'general',
-  description: 'Convert text to speech using TTS-Nova',
+  description: 'Turn text into speech with TTS-Nova',
   usage: '.tts <text>',
   
   async execute(sock, msg, args, extra) {
@@ -21,7 +21,7 @@ module.exports = {
       const text = args.join(' ');
 
       if (!text) {
-        return extra.reply(`⚠️ *WARNING*\n💡 Give me text to convert to speech\n📝 *Example:* *${prefix}tts hi how are you*`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Give me text to turn into speech\n📝 *Example:* *${prefix}tts hi how are you*`);
       }
 
       const audioUrl = await APIs.textToSpeech(text);
@@ -45,7 +45,7 @@ const config = require('../../config');
     } catch (error) {
       console.error('TTS command error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't generate speech: ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't make the speech: ${error.message}`);
     }
   }
 };

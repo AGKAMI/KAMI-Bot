@@ -70,7 +70,7 @@ module.exports = {
                    args.join(' ');
       
       if (!text) {
-        return extra.reply(`📝 _${voice.lead('neutral')}, send me an instagram link for the video_`);
+        return extra.reply(`📝 _${voice.lead('neutral')}, send me an Instagram link for the video_`);
       }
       
       // Check for various Instagram URL formats
@@ -86,7 +86,7 @@ module.exports = {
       
       if (!isValidUrl) {
         extra.fail();
-        return extra.reply(`❌ _${voice.openErr()}, that's not a valid instagram link — need a post, reel, or video link_`);
+        return extra.reply(`❌ _${voice.openErr()}, that's not a valid Instagram link — I need a post, reel or video link_`);
       }
       
       const downloadData = await igdl(text);

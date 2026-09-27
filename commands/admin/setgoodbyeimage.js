@@ -12,7 +12,7 @@ module.exports = {
   reactions: { received: '🖼️', generating: '🎨', done: '🌙' },
   aliases: ['setgoodbyeimg'],
   category: 'admin',
-  description: 'Set custom goodbye image (reply to image/sticker)',
+  description: 'Set a custom goodbye image (reply to an image/sticker)',
   usage: '.setgoodbyeimage (reply to image)',
   groupOnly: true,
   ownerOnly: true, adminOnly: false,
@@ -21,12 +21,12 @@ module.exports = {
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       if (!ctx?.quotedMessage) {
-        return extra.reply(`*SET GOODBYE IMAGE*\n\n_Reply to an image or sticker to set as goodbye image_`);
+        return extra.reply(`*SET GOODBYE IMAGE*\n\n_Reply to an image or sticker to use as the goodbye image_`);
       }
 
       const quotedMsg = ctx.quotedMessage;
       if (!quotedMsg.imageMessage && !quotedMsg.stickerMessage) {
-        return extra.reply(`_${voice.openErr()} — need an image or sticker in the reply_`);
+        return extra.reply(`_${voice.openErr()} — reply with an image or sticker_`);
       }
 
       const targetMessage = {
@@ -59,7 +59,7 @@ module.exports = {
       const imagePath = path.join(imagesDir, `${groupJid}.jpg`);
       fs.writeFileSync(imagePath, finalBuffer);
 
-      await extra.reply(`*✅ GOODBYE IMAGE UPDATED*\n\n_${voice.lead('affirm')}, departing members will see this image_`);
+      await extra.reply(`*✅ GOODBYE IMAGE UPDATED*\n\n_${voice.lead('affirm')}, members who leave will see this image_`);
     } catch (error) {
       console.error('SetGoodbyeImage error:', error);
       await extra.reply(`_${voice.openErr()} — ${error.message}_`);

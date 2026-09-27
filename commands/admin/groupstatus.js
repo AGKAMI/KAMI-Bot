@@ -16,7 +16,7 @@ module.exports = {
   name: 'groupstatus',
   reactions: { received: '📤', generating: '🖼️', done: '📲' },
   aliases: ['togstatus', 'swgc', 'gs', 'gstatus'],
-  description: 'Post replied media or text as a WhatsApp group status (new Group Status feature).',
+  description: 'Post a replied media or text as a WhatsApp group status (the new Group Status feature).',
   usage: '.groupstatus [caption]  (reply to image/video/audio) OR .groupstatus your text',
   category: 'admin',
   groupOnly: true,
@@ -46,9 +46,9 @@ module.exports = {
             `📱 GROUP STATUS USAGE\n\n` +
             `• Reply to image/video/audio with:\n` +
             `  \`${prefix}groupstatus [optional caption]\`\n` +
-            `• Or send text status only:\n` +
+            `• Or send text only:\n` +
             `  \`${prefix}groupstatus Your text here\`\n\n` +
-            `💡 Text statuses use a purple background by default`
+            `💡 Text statuses get a purple background by default`
           );
         }
 
@@ -63,7 +63,7 @@ module.exports = {
         } catch (e) {
           console.error('groupstatus text error:', e);
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nCouldn't post status: ${e.message || e}`);
+          return extra.reply(`❌ ERROR\n\nCouldn't post the status: ${e.message || e}`);
         }
       }
 
@@ -90,7 +90,7 @@ module.exports = {
 
       // IMAGE (also handles stickers)
       if (/image|sticker/i.test(mtype)) {
-        await extra.reply(`⏳ POSTING\n\nPosting image status, ${voice.tag('neutral')}...`);
+        await extra.reply(`⏳ POSTING\n\nPosting the image status, ${voice.tag('neutral')}...`);
         let buf;
         try {
           buf = await downloadBuf();
@@ -105,17 +105,17 @@ module.exports = {
             image: buf,
             caption: caption || '',
           });
-          return extra.reply(`✅ SUCCESS\n\nImage status posted, ${voice.tag('affirm')}`);
+          return extra.reply(`✅ SUCCESS\n\nImage status is up, ${voice.tag('affirm')}`);
         } catch (e) {
           console.error('groupstatus image error:', e);
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nCouldn't post image status: ${e.message || e}`);
+          return extra.reply(`❌ ERROR\n\nCouldn't post the image status: ${e.message || e}`);
         }
       }
 
       // VIDEO
       if (/video/i.test(mtype)) {
-        await extra.reply(`⏳ POSTING\n\nPosting video status, ${voice.tag('neutral')}...`);
+        await extra.reply(`⏳ POSTING\n\nPosting the video status, ${voice.tag('neutral')}...`);
         let buf;
         try {
           buf = await downloadBuf();
@@ -130,17 +130,17 @@ module.exports = {
             video: buf,
             caption: caption || '',
           });
-          return extra.reply(`✅ SUCCESS\n\nVideo status posted, ${voice.tag('affirm')}`);
+          return extra.reply(`✅ SUCCESS\n\nVideo status is up, ${voice.tag('affirm')}`);
         } catch (e) {
           console.error('groupstatus video error:', e);
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nCouldn't post video status: ${e.message || e}`);
+          return extra.reply(`❌ ERROR\n\nCouldn't post the video status: ${e.message || e}`);
         }
       }
 
       // AUDIO (voice-style group status)
       if (/audio/i.test(mtype)) {
-        await extra.reply(`⏳ POSTING\n\nPosting audio status, ${voice.tag('neutral')}...`);
+        await extra.reply(`⏳ POSTING\n\nPosting the audio status, ${voice.tag('neutral')}...`);
         let buf;
         try {
           buf = await downloadBuf();
@@ -171,11 +171,11 @@ module.exports = {
             ptt: true,
             waveform,
           });
-          return extra.reply(`✅ SUCCESS\n\nAudio status posted, ${voice.tag('affirm')}`);
+          return extra.reply(`✅ SUCCESS\n\nAudio status is up, ${voice.tag('affirm')}`);
         } catch (e) {
           console.error('groupstatus audio error:', e);
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nCouldn't post audio status: ${e.message || e}`);
+          return extra.reply(`❌ ERROR\n\nCouldn't post the audio status: ${e.message || e}`);
         }
       }
     } catch (e) {

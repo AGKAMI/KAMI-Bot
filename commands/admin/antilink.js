@@ -36,7 +36,7 @@ module.exports = {
       
       if (opt === 'on') {
         if (database.getGroupSettings(extra.from).antilink) {
-          return extra.reply(`✅ SUCCESS\n\nAntilink is already on, ${voice.tag('neutral')}`);
+          return extra.reply(`✅ SUCCESS\n\nAntilink was already on, ${voice.tag('neutral')}`);
         }
         database.updateGroupSettings(extra.from, { antilink: true });
         return extra.reply(`✅ SUCCESS\n\nAntilink turned ON, ${voice.tag('affirm')}`);
@@ -50,13 +50,13 @@ module.exports = {
       if (opt === 'set') {
         if (args.length < 2) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nSpecify an action: .antilink set delete | kick | warn`);
+          return extra.reply(`❌ ERROR\n\nGive an action: .antilink set delete | kick | warn`);
         }
         
         const setAction = args[1].toLowerCase();
         if (!['delete', 'kick', 'warn'].includes(setAction)) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nInvalid action — choose delete, kick, or warn`);
+          return extra.reply(`❌ ERROR\n\nNo good: action — choose delete, kick, or warn`);
         }
         
         database.updateGroupSettings(extra.from, { 

@@ -1,5 +1,5 @@
 /**
- * Pies Command - Get random pies images by country
+ * Pies Command - Get a random pies images by country
  */
 
 const axios = require('axios');
@@ -13,7 +13,7 @@ module.exports = {
   reactions: { received: '🥧', generating: '🍳', done: '😋' },
   aliases: ['pie', 'india', 'malaysia', 'thailand', 'china', 'indonesia', 'japan', 'korea', 'vietnam'],
   category: 'fun',
-  description: 'Get random pies images by country',
+  description: 'Get a random pies images by country',
   usage: 'pies <country>',
   execute: async (sock, msg, args, extra) => {
     try {

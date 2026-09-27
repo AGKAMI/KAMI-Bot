@@ -9,7 +9,7 @@ const answers = [
 module.exports = {
   name: '8ball',
   reactions: { received: '🔮', done: '🎱' },
-  description: 'Ask the magic 8-ball a yes/no question',
+  description: 'Ask the magic 8-ball a yes-or-no question',
   category: 'games',
   aliases: ['magic8ball', 'eightball'],
   execute: async (sock, msg, args, ctx) => {

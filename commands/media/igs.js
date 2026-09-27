@@ -442,7 +442,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
     
     const urlMatch = text.match(/https?:\/\/\S+/);
     if (!urlMatch) {
-      return extra.reply(`📝 _${voice.lead('neutral')}, send me an instagram post or reel link_\n\n_Usage:_\n.igs <url>\n.igsc <url>`);
+      return extra.reply(`📝 _${voice.lead('neutral')}, send me an Instagram post or reel link_\n\n_Usage:_\n.igs <url>\n.igsc <url>`);
     }
 
     const downloadData = await igdl(urlMatch[0]).catch(() => null);
@@ -576,7 +576,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
   } catch (err) {
     console.error('Error in igs command:', err);
     extra.fail();
-    await extra.reply("❌ couldn't make a sticker from that link");
+    await extra.reply("❌ couldn't turn that link into a sticker");
   }
 }
 
@@ -584,7 +584,7 @@ module.exports = {
   name: 'igs',
   reactions: { received: '📷', generating: '⬇️', done: '🖼️' },
   aliases: ['igsticker'],
-  description: 'Convert Instagram post/reel to sticker (maintains aspect ratio with padding)',
+  description: 'Turn an Instagram post/reel into a sticker (keeps the aspect ratio with padding)',
   usage: '.igs <Instagram URL>',
   category: 'media',
   

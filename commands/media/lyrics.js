@@ -13,7 +13,7 @@ module.exports = {
   reactions: { received: '🎤', generating: '📜', done: '🎼' },
   aliases: ['lyric', 'lirik'],
   category: 'media',
-  description: 'Get lyrics of a song',
+  description: 'Get the lyrics for a song',
   usage: '.lyrics <song name>',
 
   async execute(sock, msg, args, extra) {
