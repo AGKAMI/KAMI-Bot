@@ -9,10 +9,112 @@
  * Sends all targets in parallel — no delays.
  */
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const config = require('../../config');
 const database = require('../../database');
 const { pick, SLANG, voice } = require('../../utils/format');
-const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const { downloadMediaMessage, generateThumbnail } = require('@whiskeysockets/baileys');
+
+const SEND_GAP_MS = 400;
+const MEDIA_LIMITS_MB = { image: 60, video: 150, document: 150, audio: 40, sticker: 10 };
+
+function toBytes(v) {
+  if (v == null) return 0;
+  if (typeof v === 'number') return v;
+  if (typeof v === 'bigint') return Number(v);
+  if (typeof v.toNumber === 'function') {
+    try { return v.toNumber(); } catch (e) { /* Long overflow */ }
+  }
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function getFileLength(quoted, type) {
+  return toBytes(quoted[`${type}Message`]?.fileLength);
+}
+
+// Build the thumbnail ONCE and hand it to every send — otherwise Baileys
+// re-decodes the media per target (sharp/ffmpeg × N) and eats the container.
+async function buildMediaProps(mediaBuffer, type) {
+  if (!mediaBuffer) return {};
+  try {
+    if (type === 'image') {
+      const { thumbnail, originalImageDimensions } = await generateThumbnail(mediaBuffer, 'image', {});
+      const props = {};
+      if (thumbnail) props.jpegThumbnail = thumbnail;
+      if (originalImageDimensions?.width) {
+        props.width = originalImageDimensions.width;
+        props.height = originalImageDimensions.height;
+      }
+      return props;
+    }
+    if (type === 'video') {
+      const tmp = path.join(os.tmpdir(), `kami-announce-${Date.now()}.vid`);
+      await fs.promises.writeFile(tmp, mediaBuffer);
+      try {
+        const { thumbnail } = await generateThumbnail(tmp, 'video', {});
+        return thumbnail ? { jpegThumbnail: thumbnail } : {};
+      } finally {
+        await fs.promises.unlink(tmp).catch(() => {});
+      }
+    }
+  } catch (e) {
+    console.error('[ANNOUNCE] thumb precompute skipped:', e.message);
+  }
+  return {};
+}
+
+// WhatsApp HD photos/videos are dual uploads: the visible SD parent plus a
+// companion HD child linked by MessageAssociation (HD_IMAGE_DUAL_UPLOAD = 10,
+// HD_VIDEO_DUAL_UPLOAD = 5). The child lands in the live message store — find
+// it so we forward the HD rendition instead of the SD one.
+const SD_PARENT = { image: 3, video: 1 }; // SD_IMAGE_PARENT / SD_VIDEO_PARENT
+
+function findHdChild(store, chatJid, parentId, type) {
+  const chatMsgs = store?.messages?.get(chatJid);
+  if (!chatMsgs) return null;
+  const want = type === 'image' ? 10 : 5;
+  for (const m of chatMsgs.values()) {
+    const assoc = m?.message?.messageAssociation;
+    if (
+      assoc &&
+      Number(assoc.associationType) === want &&
+      assoc.parentMessageKey?.id === parentId
+    ) {
+      return m;
+    }
+  }
+  return null;
+}
+
+// Pick what we actually download: the HD child when the quoted message is the
+// SD parent, otherwise the quoted message itself (never downgrades to SD).
+function resolveMediaRef(store, chatJid, ctx, quoted, type, fallbackKey) {
+  const base = { message: quoted, key: fallbackKey };
+  if (type !== 'image' && type !== 'video') {
+    return { ref: base, usingHd: false, paired: null };
+  }
+  const paired = quoted[`${type}Message`]?.contextInfo?.pairedMediaType ?? null;
+  const quotedId = ctx?.stanzaId;
+  if (quotedId && paired === SD_PARENT[type]) {
+    const child = findHdChild(store, chatJid, quotedId, type);
+    if (child?.message) {
+      return { ref: { message: child.message, key: child.key || fallbackKey }, usingHd: true, paired };
+    }
+  }
+  return { ref: base, usingHd: false, paired };
+}
+
+async function downloadOne(ref) {
+  try {
+    return await downloadMediaMessage(ref, 'buffer', {});
+  } catch (e) {
+    console.error('[ANNOUNCE] media download failed:', e.message);
+    return null;
+  }
+}
 
 // ── Group lists with human-readable names ────────────────────
 const GROUPS = {
@@ -86,7 +188,7 @@ function getCaption(quoted) {
 }
 
 // ── Send to a single target ─────────────────────────────────
-async function sendToTarget(sock, target, type, quoted, mediaBuffer) {
+async function sendToTarget(sock, target, type, quoted, mediaBuffer, mediaProps = {}) {
   const isNewsletter = target.endsWith('@newsletter');
   const nlCtx = isNewsletter ? {} : newsletterContext();
 
@@ -111,12 +213,14 @@ async function sendToTarget(sock, target, type, quoted, mediaBuffer) {
     await sock.sendMessage(target, withMentions({
       image: mediaBuffer,
       caption: getCaption(quoted),
+      ...mediaProps,
       ...nlCtx,
     }));
   } else if (type === 'video' && mediaBuffer) {
     await sock.sendMessage(target, withMentions({
       video: mediaBuffer,
       caption: getCaption(quoted),
+      ...mediaProps,
       ...nlCtx,
     }));
   } else if (type === 'document' && mediaBuffer) {
@@ -150,6 +254,7 @@ module.exports = {
   description: 'Push a replied message to CPM groups with newsletter branding',
   usage: '.announce [all|ss]',
   ownerOnly: false,
+  _internals: { findHdChild, resolveMediaRef, getFileLength },
 
   async execute(sock, msg, args, extra) {
 
@@ -202,30 +307,74 @@ module.exports = {
         );
       }
 
-      // ── Download media if needed ──────────────────────────
-      let mediaBuffer = null;
+      // ── HD pairing: forward the HD rendition when one exists ──
+      let store = null;
+      try {
+        ({ store } = require('../../index'));
+      } catch (e) {
+        console.error('[ANNOUNCE] store unavailable, staying on SD:', e.message);
+      }
+      const { ref: mediaRef, usingHd, paired } = resolveMediaRef(
+        store, msg.key.remoteJid, ctx, quoted, type, msg.key
+      );
+      if (type === 'image' || type === 'video') {
+        console.log(`[ANNOUNCE] pairedMediaType=${paired ?? 'n/a'} hd=${usingHd}`);
+      }
+
+      // ── Size guard — a huge download takes the whole box down ──
+      let mediaBytes = 0;
       if (type !== 'text') {
-        try {
-          mediaBuffer = await downloadMediaMessage(
-            { message: quoted, key: msg.key },
-            'buffer',
-            {}
+        mediaBytes = getFileLength(mediaRef.message, type);
+        const limitMb = MEDIA_LIMITS_MB[type];
+        const mediaMb = mediaBytes / (1024 * 1024);
+        if (limitMb && mediaMb > limitMb) {
+          extra.fail();
+          return extra.reply(
+            `❌ ERROR\n\nThat ${type} is ${mediaMb.toFixed(0)} MB — over my ${limitMb} MB announce limit, ${voice.tag('err')}\n` +
+            `Send it as a link instead`
           );
-        } catch (dlErr) {
-          console.error('[ANNOUNCE] Media download failed:', dlErr.message);
-          if (type !== 'sticker') {
-            extra.fail();
-            return extra.reply(
-              `❌ ERROR\n\nCouldn't grab the media, ${voice.tag('err')}\nTry a different message`
-            );
-          }
         }
       }
 
-      // ── Send ALL targets in parallel — no delays ──────────
-      const results = await Promise.allSettled(
-        targets.map(target => sendToTarget(sock, target, type, quoted, mediaBuffer))
+      console.log(
+        `[ANNOUNCE] mode=${mode || 'default'} type=${type} ` +
+        `size=${(mediaBytes / 1048576).toFixed(1)}MB targets=${targets.length}`
       );
+
+      // ── Download media if needed (HD first, SD fallback) ──────
+      let mediaBuffer = null;
+      if (type !== 'text') {
+        mediaBuffer = await downloadOne(mediaRef);
+        if (!mediaBuffer && usingHd) {
+          console.error('[ANNOUNCE] HD download failed, falling back to SD');
+          mediaBuffer = await downloadOne({ message: quoted, key: msg.key });
+        }
+        if (!mediaBuffer && type !== 'sticker') {
+          extra.fail();
+          return extra.reply(
+            `❌ ERROR\n\nCouldn't grab the media, ${voice.tag('err')}\nTry a different message`
+          );
+        }
+      }
+
+      // ── Precompute thumbnail once (skips Baileys per-send encode) ──
+      const mediaProps = await buildMediaProps(mediaBuffer, type);
+
+      // ── Send SEQUENTIALLY — one media encode at a time ─────
+      // Parallel sends each re-encoded the media and OOM'd the container (exit 137).
+      const results = [];
+      for (let i = 0; i < targets.length; i++) {
+        try {
+          await sendToTarget(sock, targets[i], type, quoted, mediaBuffer, mediaProps);
+          results.push({ status: 'fulfilled' });
+        } catch (err) {
+          results.push({ status: 'rejected', reason: err });
+        }
+        if (i < targets.length - 1) {
+          await new Promise(r => setTimeout(r, SEND_GAP_MS));
+        }
+      }
+      mediaBuffer = null;
 
       // ── Tally results ────────────────────────────────────
       let success = 0;

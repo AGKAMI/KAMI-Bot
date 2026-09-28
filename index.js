@@ -594,6 +594,15 @@ async function startBot() {
         continue;
       }
 
+      // HD/album companions — logs confirm WhatsApp's dual-upload model
+      const assocHolder = msg.message.ephemeralMessage?.message
+        || msg.message.viewOnceMessageV2?.message
+        || msg.message;
+      if (assocHolder?.messageAssociation) {
+        const a = assocHolder.messageAssociation;
+        console.log(`[ASSOC] type=${Number(a.associationType)} parent=${a.parentMessageKey?.id || '-'} chat=${from}`);
+      }
+
       // System message filter - ignore broadcast/status/newsletter messages
       if (isSystemJid(from)) {
         continue; // Silently ignore system messages
