@@ -13,6 +13,11 @@
  *   node scripts/patch-baileys-newsletter.js [path-to-baileys/lib]
  *
  * Idempotent: already-patched files are skipped, never double-patched.
+ *
+ * Also patches `libsignal` (node_modules/libsignal/src/session_record.js):
+ * it logs whole SessionEntry objects — private keys included — on every
+ * session open/close, which floods the panel console with secrets. See
+ * patchLibsignal() below.
  */
 
 const fs = require('fs');
@@ -164,6 +169,48 @@ const TRANSFORMS = [
 
 // Never exits non-zero: this runs in the host's `postinstall`, and a patch
 // failure must not take the bot's install down.
+
+// libsignal prints full SessionEntry objects (privKey, rootKey, chainKey) to
+// stdout on session churn. Drop those four statements entirely.
+const LIBSIGNAL_TAG = '/* kami: session dumps removed */';
+const LIBSIGNAL_DUMPS = [
+  'console.warn("Session already closed", session);',
+  'console.info("Closing session:", session);',
+  'console.info("Opening session:", session);',
+  'console.info("Removing old closed session:", oldestSession);',
+];
+
+function patchLibsignal() {
+  const file = path.join(__dirname, '..', 'node_modules', 'libsignal', 'src', 'session_record.js');
+  if (!fs.existsSync(file)) {
+    console.log('[libsignal-patch] skip: libsignal not installed');
+    return;
+  }
+  try {
+    let src = fs.readFileSync(file, 'utf8');
+    if (src.includes(LIBSIGNAL_TAG)) {
+      console.log('[libsignal-patch] already patched');
+      return;
+    }
+    let applied = 0;
+    for (const dump of LIBSIGNAL_DUMPS) {
+      if (src.includes(dump)) {
+        src = src.replace(dump, '');
+        applied++;
+      }
+    }
+    if (!applied) {
+      console.warn('[libsignal-patch] NOT APPLIED (libsignal layout changed?)');
+      return;
+    }
+    if (!src.includes(LIBSIGNAL_TAG)) src += `\n${LIBSIGNAL_TAG}\n`;
+    fs.writeFileSync(file, src, 'utf8');
+    console.log(`[libsignal-patch] removed ${applied}/${LIBSIGNAL_DUMPS.length} session dumps`);
+  } catch (e) {
+    console.warn('[libsignal-patch] error (non-fatal):', e && e.message);
+  }
+}
+
 try {
   let applied = 0;
   let already = 0;
@@ -209,3 +256,5 @@ try {
 } catch (e) {
   console.warn('[newsletter-patch] error (non-fatal):', e && e.message);
 }
+
+patchLibsignal();
