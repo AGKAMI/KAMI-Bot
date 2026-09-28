@@ -21,8 +21,12 @@ const SIZE_TARGET_BYTES = 50 * 1024 * 1024;
 // Session directory name (must NEVER be cleaned)
 const SESSION_DIR_NAME = config.sessionName || 'session';
 
-// Directories safe to nuke entirely
-const NUKEABLE_DIRS = ['.cache', '.npm', 'temp', 'tmp'];
+// Directories safe to nuke entirely.
+// NOTE: `temp` is deliberately NOT here — it is the live work dir. Nuking it
+// (or unlinking files younger than FILE_AGE_THRESHOLD_MS) deletes a temp file
+// the NEXT send is still uploading → "ENOENT ... unlink '<temp>/videoXXXX'"
+// mid-announce. Age-based sweep below handles temp instead.
+const NUKEABLE_DIRS = ['.cache', '.npm', 'tmp'];
 
 let cleanupInterval = null;
 let cacheNukeInterval = null;
@@ -104,7 +108,13 @@ function cleanupTempFiles() {
           continue;
         }
 
-        // Delete ALL files in temp — they're all disposable
+        // Only files older than FILE_AGE_THRESHOLD_MS — a younger file may
+        // still be mid-upload for the send that started 400ms after the last
+        // one finished (cleanup is scheduled 500ms after every media send).
+        if (now - stats.mtimeMs < FILE_AGE_THRESHOLD_MS) {
+          continue;
+        }
+
         const fileSize = stats.size;
         fs.unlinkSync(filePath);
         deletedCount++;
@@ -140,11 +150,14 @@ function cleanupBySize() {
     let totalBytes = 0;
     const fileStats = [];
 
+    const now = Date.now();
     for (const file of files) {
       const filePath = path.join(tempDir, file);
       try {
         const stats = fs.statSync(filePath);
-        if (stats.isFile() && file !== SESSION_DIR_NAME) {
+        // Age-gate here too: only reclaim files no send can still be using
+        if (stats.isFile() && file !== SESSION_DIR_NAME &&
+            now - stats.mtimeMs > FILE_AGE_THRESHOLD_MS) {
           totalBytes += stats.size;
           fileStats.push({ path: filePath, size: stats.size, mtime: stats.mtimeMs });
         }
