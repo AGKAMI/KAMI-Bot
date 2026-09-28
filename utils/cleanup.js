@@ -111,7 +111,9 @@ function cleanupTempFiles() {
         totalSizeFreed += fileSize;
       } catch (error) {
         if (!error.message.includes('ENOENT') && !error.message.includes('EBUSY')) {
-          // Silent — files in use during send are expected
+          // Never swallow this — a silent unlink failure fills the disk and
+          // blocks SFTP deploys with "Quota Exceeded"
+          console.error(`🧹 cleanup failed for ${file}: ${error.message}`);
         }
       }
     }
@@ -230,14 +232,10 @@ function stopCleanup() {
   console.log('🛑 Cleanup system stopped');
 }
 
-// Handle process termination gracefully — don't call process.exit(), let index.js handle DB flush
-process.on('SIGINT', () => {
-  stopCleanup();
-});
-
-process.on('SIGTERM', () => {
-  stopCleanup();
-});
+// Intervals are deliberately NOT cleared on SIGINT/SIGTERM: if the process
+// survives the signal (panel restart / soft shutdown), clearing them leaves a
+// live bot with no cleanup and temp files pile up until the disk is full.
+// The intervals die with the process anyway.
 
 module.exports = {
   cleanupTempFiles,
