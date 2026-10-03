@@ -254,7 +254,12 @@ module.exports = {
   description: 'Push a replied message to CPM groups with newsletter branding',
   usage: '.announce [all|ss]',
   ownerOnly: false,
-  _internals: { findHdChild, resolveMediaRef, getFileLength },
+  // Shared with adminpush.js — same download/thumbnail/limit pipeline
+  _internals: {
+    findHdChild, resolveMediaRef, getFileLength,
+    detectType, getText, getCaption, downloadOne, buildMediaProps,
+    MEDIA_LIMITS_MB, SEND_GAP_MS, newsletterContext,
+  },
 
   async execute(sock, msg, args, extra) {
 
