@@ -17,12 +17,18 @@ const { _internals: A } = require('./announce');
 
 const DELIVERIES = ['dm', 'group', 'both'];
 
+// Security teams only — SSGENERAL is the general crew group, not a
+// security team, so it is never part of this command (not even in `all`).
+const SECURITY_TEAMS = ['SSRS', 'KSSPS', 'KSSMP', 'KSSMS'];
+
 function getTeamGroups() {
-  return Object.entries(config.crewTeams || {}).map(([abbrev, t]) => ({
-    abbrev: abbrev.toUpperCase(),
-    jid: t.jid,
-    name: t.name,
-  }));
+  return Object.entries(config.crewTeams || {})
+    .filter(([abbrev]) => SECURITY_TEAMS.includes(String(abbrev).toUpperCase()))
+    .map(([abbrev, t]) => ({
+      abbrev: abbrev.toUpperCase(),
+      jid: t.jid,
+      name: t.name,
+    }));
 }
 
 function resolveTeam(spec) {
@@ -40,12 +46,18 @@ function resolveTeam(spec) {
   return null;
 }
 
+// Phone-number jid from any raw value ('2783…', '2783…@s.whatsapp.net').
+function toPnJid(raw) {
+  const digits = String(raw || '').replace(/\D/g, '');
+  return digits ? `${digits}@s.whatsapp.net` : null;
+}
+
 // DM jid for a group participant.
 // Prefer phoneNumber (real number even when the id is an @lid), then a
 // PN-shaped id, then the id itself as a last resort.
 function adminDmJid(p) {
-  const pn = String(p.phoneNumber || '').replace(/\D/g, '');
-  if (pn) return `${pn}@s.whatsapp.net`;
+  const pn = toPnJid(p.phoneNumber);
+  if (pn) return pn;
   const id = p.id || p.jid || p.participant || '';
   if (typeof id === 'string' && id.includes('@')) return id;
   return id ? `${id}@s.whatsapp.net` : null;
@@ -54,6 +66,46 @@ function adminDmJid(p) {
 function adminLabel(p) {
   const raw = p.name || p.notify || p.phoneNumber || p.id || '';
   return String(raw).split('@')[0];
+}
+
+// One person = one DM, even when they admin several groups and one group
+// exposes them as @lid while another gives their phone number.
+// Pass 1 builds a lid→phone map from EVERY participant in the target groups,
+// pass 2 dedupes admins on the phone form when we know it. Group mentions
+// keep the raw id — WhatsApp tags people by the id that group knows.
+function collectAdmins(groupData) {
+  const lidToPn = new Map();
+  for (const g of groupData) {
+    for (const p of g.participants || []) {
+      const pn = toPnJid(p.phoneNumber);
+      const id = p.id || p.jid || p.participant;
+      if (pn && typeof id === 'string' && id.includes('@')) lidToPn.set(id, pn);
+    }
+  }
+
+  const unique = new Map();
+  const mentionsByGroup = new Map();
+
+  for (const g of groupData) {
+    const mentions = [];
+    const admins = (g.participants || []).filter(
+      p => p.admin === 'admin' || p.admin === 'superadmin'
+    );
+    for (const p of admins) {
+      const raw = p.id || p.lid || p.phoneNumber;
+      if (raw) mentions.push(raw);
+
+      let jid = adminDmJid(p);
+      if (!jid) continue;
+      jid = lidToPn.get(jid) || jid;
+      const entry = unique.get(jid) || { jid, label: adminLabel(p), teams: new Set() };
+      entry.teams.add(g.abbrev);
+      unique.set(jid, entry);
+    }
+    mentionsByGroup.set(g.jid, mentions);
+  }
+
+  return { adminList: [...unique.values()], mentionsByGroup };
 }
 
 function buildContent(type, quoted, mediaBuffer, mediaProps, nlCtx) {
@@ -71,6 +123,7 @@ function buildContent(type, quoted, mediaBuffer, mediaProps, nlCtx) {
       document: mediaBuffer,
       fileName: quoted.documentMessage?.fileName || 'document',
       mimetype: quoted.documentMessage?.mimetype || 'application/octet-stream',
+      caption: quoted.documentMessage?.caption,
       ...nlCtx,
     };
   }
@@ -98,14 +151,14 @@ module.exports = {
   description: 'Push a replied message to the admins of the security teams',
   usage: '.adminpush <all|team> [dm|group|both]',
   ownerOnly: true,
-  _internals: { getTeamGroups, resolveTeam, adminDmJid, adminLabel, buildContent },
+  _internals: { getTeamGroups, resolveTeam, toPnJid, adminDmJid, adminLabel, collectAdmins, buildContent },
 
   async execute(sock, msg, args, extra) {
     const prefix = config.prefix || '.';
     const usage =
       `Reply to the message you want pushed\n\n` +
       `Usage:\n` +
-      `• \`${prefix}adminpush all\` — every admin, all 5 security teams\n` +
+      `• \`${prefix}adminpush all\` — every admin, all 4 security teams\n` +
       `• \`${prefix}adminpush SSRS\` — that team's admins only\n` +
       `• \`${prefix}adminpush all group\` — post in the groups, tag admins\n` +
       `• \`${prefix}adminpush SSRS both\` — DM the admins + group post`;
@@ -155,33 +208,20 @@ module.exports = {
       }
 
       // ── Collect admins from each target group ─────────────
-      const adminsByGroup = new Map();
-      const unique = new Map(); // dmJid -> { jid, label, teams:Set }
       const failed = [];
+      const groupData = [];
 
       for (const g of groups) {
         try {
           const meta = await sock.groupMetadata(g.jid);
-          const admins = (meta.participants || []).filter(
-            p => p.admin === 'admin' || p.admin === 'superadmin'
-          );
-          const dmJids = [];
-          for (const p of admins) {
-            const jid = adminDmJid(p);
-            if (!jid) continue;
-            dmJids.push(jid);
-            const entry = unique.get(jid) || { jid, label: adminLabel(p), teams: new Set() };
-            entry.teams.add(g.abbrev);
-            unique.set(jid, entry);
-          }
-          adminsByGroup.set(g.jid, dmJids);
+          groupData.push({ ...g, participants: meta.participants || [] });
         } catch (e) {
           failed.push(`${g.name}: ${e.message}`);
           console.error(`[ADMINPUSH] groupMetadata failed for ${g.name} (${g.jid}):`, e.message);
         }
       }
 
-      const adminList = [...unique.values()];
+      const { adminList, mentionsByGroup } = collectAdmins(groupData);
       if (!adminList.length) {
         extra.fail();
         return extra.reply(`❌ ERROR\n\nNo admins found in those groups, ${voice.tag('err')}`);
@@ -262,11 +302,11 @@ module.exports = {
       }
       if (delivery === 'group' || delivery === 'both') {
         for (const g of groups) {
-          if (!adminsByGroup.has(g.jid)) continue; // metadata failed → already tallied
+          if (!mentionsByGroup.has(g.jid)) continue; // metadata failed → already tallied
           jobs.push({
             jid: g.jid,
             label: g.name,
-            mentions: adminsByGroup.get(g.jid),
+            mentions: mentionsByGroup.get(g.jid),
             group: true,
           });
         }

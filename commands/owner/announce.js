@@ -228,6 +228,7 @@ async function sendToTarget(sock, target, type, quoted, mediaBuffer, mediaProps 
       document: mediaBuffer,
       fileName: quoted.documentMessage?.fileName || 'document',
       mimetype: quoted.documentMessage?.mimetype || 'application/octet-stream',
+      caption: quoted.documentMessage?.caption,
       ...nlCtx,
     }));
   } else if (type === 'audio' && mediaBuffer) {
