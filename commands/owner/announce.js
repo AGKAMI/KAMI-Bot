@@ -123,7 +123,6 @@ const GROUPS = {
   KSSMP:     { jid: '120363409819775730@g.us', name: 'KSSMP Private Security' },
   KSSMS:     { jid: '120363423238834158@g.us', name: 'Maganyeni Security' },
   GENERAL:   { jid: '120363417242897528@g.us', name: 'SS Crew General' },
-  TESTING:   { jid: '120363424309756901@g.us', name: 'Bot Testing' },
   GARAGE:    { jid: '120363404874858785@g.us', name: 'Exclusive Garage' },
   COMMUNITY: { jid: '120363418980604721@g.us', name: 'Community Announcements' },
   NEWSLETTER:{ jid: '120363399255608558@newsletter', name: 'Slammed Society Channel' },
@@ -136,7 +135,9 @@ for (const [, g] of Object.entries(GROUPS)) {
 }
 
 const SS_CREW = [GROUPS.SSRS.jid, GROUPS.KSSPS.jid, GROUPS.KSSMP.jid, GROUPS.KSSMS.jid];
-const EXTRAS  = [GROUPS.TESTING.jid, GROUPS.GARAGE.jid];
+// Bot Testing was never meant to be an announce target (item-not-found on
+// every run — the bot isn't in that group). `all` = 8 targets now.
+const EXTRAS  = [GROUPS.GARAGE.jid];
 const BASE    = [GROUPS.COMMUNITY.jid, GROUPS.GENERAL.jid, GROUPS.NEWSLETTER.jid];
 
 function getTargets(mode) {
