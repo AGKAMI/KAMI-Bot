@@ -34,20 +34,31 @@ function ffmpeg(buffer, args = [], ext = '', ext2 = '') {
       let tmp = path.join(tempDir, Date.now() + '.' + ext)
       let out = tmp + '.' + ext2
       await fs.promises.writeFile(tmp, buffer)
+      const cleanup = async () => {
+        // A failed convert used to leave the input behind — those piles of
+        // leftover temp files are what filled /temp and blocked deploys.
+        await fs.promises.unlink(tmp).catch(() => {})
+        await fs.promises.unlink(out).catch(() => {})
+      }
       spawn(ffmpegPath, [
         '-y',
         '-i', tmp,
         ...args,
         out
       ])
-        .on('error', reject)
+        .on('error', async (e) => { await cleanup(); reject(e) })
         .on('close', async (code) => {
           try {
-            await fs.promises.unlink(tmp)
-            if (code !== 0) return reject(code)
-            resolve(await fs.promises.readFile(out))
-            await fs.promises.unlink(out)
+            await fs.promises.unlink(tmp).catch(() => {})
+            if (code !== 0) {
+              await fs.promises.unlink(out).catch(() => {})
+              return reject(code)
+            }
+            const data = await fs.promises.readFile(out)
+            await fs.promises.unlink(out).catch(() => {})
+            resolve(data)
           } catch (e) {
+            await cleanup()
             reject(e)
           }
         })
@@ -89,8 +100,13 @@ function toPTT(buffer, ext) {
 
 /**
  * Convert Audio to Playable WhatsApp Video
+ *
+ * Tuned for the 1GB container: x264 `-preset slow` with unbounded resolution
+ * is what OOM-killed the bot (exit 137) on `.ytv`. ultrafast + one thread +
+ * a 720p ceiling keeps the encode inside the memory cap.
+ *
  * @param {Buffer} buffer Video Buffer
- * @param {String} ext File Extension 
+ * @param {String} ext File Extension
  */
 function toVideo(buffer, ext) {
   return ffmpeg(buffer, [
@@ -99,7 +115,10 @@ function toVideo(buffer, ext) {
     '-ab', '128k',
     '-ar', '44100',
     '-crf', '32',
-    '-preset', 'slow'
+    '-preset', 'ultrafast',
+    '-threads', '1',
+    '-vf', 'scale=-2:trunc(min(720\\,ih)/2)*2',
+    '-movflags', '+faststart'
   ], ext, 'mp4')
 }
 

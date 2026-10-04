@@ -19,6 +19,11 @@ const MAX_CONCURRENT = 1;
 let activeDownloads = 0;
 const downloadQueue = [];
 
+// ISO-BMFF container: bytes 4..7 == 'ftyp' (mp4/mov)
+function isMp4(buf) {
+  return !!buf && buf.length > 12 && buf.toString('latin1', 4, 8) === 'ftyp';
+}
+
 function processQueue() {
   if (downloadQueue.length === 0 || activeDownloads >= MAX_CONCURRENT) return;
   const next = downloadQueue.shift();
@@ -36,6 +41,7 @@ module.exports = {
   category: 'media',
   description: 'Download video from YouTube',
   usage: '.video <YouTube URL or search>',
+  _internals: { isMp4 },
 
   async execute(sock, msg, args, extra) {
 
@@ -121,12 +127,20 @@ module.exports = {
           return await extra.edit(sent.key, `❌ _video too large (${sizeMB.toFixed(1)}MB) — WhatsApp limit's 16MB_`);
         }
 
+        // YouTube downloads are already mp4. Re-encoding every download with
+        // x264 (child process counts against the container's memory cap) is
+        // what OOM-killed the bot (exit 137) — only convert when the bytes
+        // are NOT an mp4 container.
         let sendBuffer = videoBuffer;
-        try {
-          sendBuffer = await toVideo(videoBuffer, 'mp4');
-          console.log('[VIDEO] re-encoded successfully');
-        } catch (encErr) {
-          console.log('[VIDEO] encode skipped:', encErr?.message || encErr);
+        if (isMp4(videoBuffer)) {
+          console.log('[VIDEO] already mp4 — re-encode skipped');
+        } else {
+          try {
+            sendBuffer = await toVideo(videoBuffer, 'mp4');
+            console.log('[VIDEO] re-encoded successfully');
+          } catch (encErr) {
+            console.log('[VIDEO] encode skipped:', encErr?.message || encErr);
+          }
         }
 
         const caption = '*DOWNLOADED BY KAMI BOT*\n\n' + (videoData.title ? '📝 ' + videoData.title : '') + `\n_${voice.lead('affirm')}, enjoy_`;
