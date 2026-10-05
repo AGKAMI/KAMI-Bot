@@ -31,6 +31,9 @@ fs.readdirSync(handlersPath)
 // Valid subcommands (to detect if first arg is a team or a command)
 const SUBCOMMANDS = Object.keys(subHandlers);
 
+// Subcommands that read a team token from their own first arg — never strip it
+const TEAM_TOKEN_SUBS = new Set(['apply', 'applicants', 'history', 'pending']);
+
 module.exports = {
   name: 'crew',
   reactions: { received: '👥', done: '🎖️' },
@@ -46,6 +49,25 @@ module.exports = {
     try {
       const sub = (args[0] || '').toLowerCase();
       const subArgs = args.slice(1);
+
+      // Shared by both routing branches + the sub-handler dispatch below.
+      // These used to sit inside the else block only, so the routing code
+      // (adminOnly/groupOnly/aliasMap checks) blew up with
+      // "isDM is not defined" / "aliasMap is not defined".
+      const isDM = !extra.from.endsWith('@g.us');
+      const isTeamAdmin = database.isTeamAdmin(extra.sender);
+      const isOwner = !!extra.isOwner;
+
+      const aliasMap = {
+        'rm': 'remove',
+        'setrole': 'role',
+        'rsvp': 'attend',
+        'winner': 'result',
+        'join': 'apply',
+        'hire': 'accept',
+        'fire': 'deny',
+        'pending': 'applicants'
+      };
 
       // No args → show help
       if (!sub || sub === 'help') {
@@ -95,21 +117,6 @@ module.exports = {
         }
       } else {
         // Subcommand without team abbreviation
-        const isDM = !extra.from.endsWith('@g.us');
-        const isTeamAdmin = database.isTeamAdmin(extra.sender);
-        const isOwner = !!extra.isOwner;
-
-        const aliasMap = {
-          'rm': 'remove',
-          'setrole': 'role',
-          'rsvp': 'attend',
-          'winner': 'result',
-          'join': 'apply',
-          'hire': 'accept',
-          'fire': 'deny',
-          'pending': 'applicants'
-        };
-
         if (isDM) {
           // DM context — enforce team-admin access rules
           const isApproved = database.isApprovedNumber(extra.sender);
@@ -165,6 +172,17 @@ module.exports = {
         }
       }
 
+      // `.crew remove kssms <target>` — team token AFTER the subcommand.
+      // The canonical order `.crew kssms remove <target>` also still works;
+      // both end up operating on the team's group via patchedExtra.from.
+      if (actualArgs.length > 0 && !TEAM_TOKEN_SUBS.has(actualSub)) {
+        const tokenTeam = database.resolveTeamWithConfig(actualArgs[0]);
+        if (tokenTeam) {
+          targetJid = tokenTeam.jid;
+          actualArgs = actualArgs.slice(1);
+        }
+      }
+
       // No subcommand after team
       if (!actualSub) {
         extra.fail();
@@ -182,7 +200,9 @@ module.exports = {
           extra.fail();
           return extra.reply(`❌ ERROR\n\nYou need admin for this one, hey`);
         }
-        if (handler.groupOnly && isDM) {
+        // Groups only — but if a team group was resolved (team-first or team
+        // token), the target isn't the DM itself, so it's fine to continue.
+        if (handler.groupOnly && isDM && targetJid === extra.from) {
           extra.fail();
           return extra.reply(`❌ ERROR\n\nGroups only, this one`);
         }
@@ -199,7 +219,7 @@ module.exports = {
           extra.fail();
           return extra.reply(`❌ ERROR\n\nYou need admin for this one, hey`);
         }
-        if (aliasedHandler.groupOnly && isDM) {
+        if (aliasedHandler.groupOnly && isDM && targetJid === extra.from) {
           extra.fail();
           return extra.reply(`❌ ERROR\n\nGroups only, this one`);
         }
