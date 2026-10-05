@@ -1,6 +1,8 @@
 /**
  * Crew Apply Command — start a crew application.
- * Flow: .crew apply <team> (any SS group or DM)
+ * Owner shortcut: .apply <reply|@mention|number> (no team) — DMs that person
+ * the team selection, exactly like .start → "Apply for Security Team".
+ * Normal flow: .apply <team> [reply|@mention|number] (any SS group or DM)
  * → bot DMs the applicant the application form + assigns a UID.
  * → auto-starts the interactive button wizard.
  * Works from any Slammed Society group or a DM.
@@ -13,14 +15,15 @@ const { TEAMS } = require('./crewForms');
 const { resolveUser } = require('./crewHelpers');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { createApplication } = require('./applyHelper');
+const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
   subName: 'apply',
-  name: null,
+  name: 'apply',
   aliases: ['tryout'],
   category: 'crew',
-  description: 'Start a crew application (I\'ll DM you or them the form)',
-  usage: '.crew apply <team> [@mention|number]',
+  description: "Start a crew application — or (owner) DM someone the team selection",
+  usage: '.apply <team> [@mention|number]  ·  owner: .apply <reply|@mention|number>',
   groupOnly: false,
   ownerOnly: false,
 
@@ -28,28 +31,42 @@ module.exports = {
 
   const prefix = config.prefix || '.';
     try {
-      if (!args || args.length === 0) {
-        return extra.reply(
-          `❌ ERROR\n\nProvide a team\n\n` +
-          `Usage:\n` +
-          `• \`${prefix}crew apply <team>\` — apply for yourself\n` +
-          `• \`${prefix}crew apply <team> @user\` — apply for someone\n` +
-          `• \`${prefix}crew apply <team> 0833882383\` — apply on behalf of someone by number\n\n` +
-          `Teams: ${Object.keys(TEAMS).join(', ')}`
-        );
-      }
-
-      const teamKey = args[0].toUpperCase();
-      if (!TEAMS[teamKey] || !config.crewTeams[teamKey]) {
-        return extra.reply(
-          `❌ ERROR\n\nInvalid team, ${voice.tag('err')}\n\n` +
-          `Teams: ${Object.keys(TEAMS).join(', ')}`
-        );
-      }
-
-      // Resolve applicant — could be the sender or someone they're applying for
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
+      const first = (args && args[0]) || '';
+      const teamKey = first.toUpperCase();
+      const hasTeam = !!(first && TEAMS[teamKey] && config.crewTeams[teamKey]);
+
+      // No team arg → owner can push the team selection to someone's DMs
+      // (reply, @mention or number in any format), from anywhere.
+      if (!hasTeam) {
+        const target = resolveUser(args || [], mentioned, ctx);
+
+        if (target.jid) {
+          if (extra.isOwner) return sendTeamSelection(sock, msg, extra, target);
+          return extra.reply(
+            `❌ ERROR\n\nProvide a team — only KAMI can drop the team selection on its own\n\n` +
+            `Usage:\n` +
+            `• \`${prefix}apply <team> @user\` — apply for someone\n` +
+            `• \`${prefix}crew apply <team>\` — apply for yourself\n\n` +
+            `Teams: ${Object.keys(TEAMS).join(', ')}`
+          );
+        }
+
+        // Nothing to target — bare `.apply` (reply is picked up above)
+        if (!first) return extra.reply(applyUsage(prefix));
+
+        if (target.error === 'invalid_phone') {
+          return extra.reply(
+            `❌ ERROR\n\nThat number doesn't look valid hey\n\n` +
+            `Tip: any format works — \`${prefix}apply 083 388 2383\``
+          );
+        }
+
+        return extra.reply(applyUsage(prefix));
+      }
+
+      // Team given → normal application flow (self, reply, mention or number)
       const resolved = resolveUser(args.slice(1), mentioned, ctx);
 
       let applicantJid;
@@ -97,6 +114,47 @@ module.exports = {
     }
   },
 };
+
+function applyUsage(prefix) {
+  return (
+    `❌ ERROR\n\nProvide a team or a target\n\n` +
+    `Usage:\n` +
+    `• \`${prefix}apply <team>\` — apply for yourself\n` +
+    `• \`${prefix}apply <team> @user\` — apply for someone\n` +
+    `• \`${prefix}apply <team> 0833882383\` — apply by number\n` +
+    `• \`${prefix}apply @user\` / reply / number — *(owner)* send them the team selection\n\n` +
+    `Teams: ${Object.keys(TEAMS).join(', ')}`
+  );
+}
+
+// Owner: push the team selection to someone's DMs from anywhere — same flow
+// as .start → "Apply for Security Team" (unblock notice → team cards).
+// Their pick runs the normal start:join → start:confirm → form wizard.
+async function sendTeamSelection(sock, msg, extra, resolved) {
+  const { sendTeamCards, toDmJid, sendApplyDmNotice } = require('../general/start');
+  const { allowTempDm } = require('../../handler');
+
+  const targetJid = resolved.jid;
+  const dmJid = toDmJid(targetJid);
+
+  // Unblock so DMs land + mark them temp-allowed (orders/apply only)
+  try { await sock.updateBlockStatus(dmJid, 'unblock'); } catch (e) {}
+  try { allowTempDm(dmJid); allowTempDm(targetJid); } catch (e) {}
+
+  console.log('[APPLY-INVITE]', extra.sender, '→', targetJid, `(${resolved.method}) dm=${dmJid}`);
+
+  // Unblock notice FIRST, then the team cards — identical to .start flow
+  await sendApplyDmNotice(sock, dmJid);
+  await sendTeamCards(sock, dmJid, dmJid);
+
+  await sock.sendMessage(extra.from, {
+    text:
+      `📤 *TEAM SELECTION SENT*\n\n` +
+      `📲 Dropped the team cards in ${mention(targetJid)}'s DMs — they pick a team and the form starts ${voice.tag('neutral')}\n\n` +
+      `_Picked up by: ${resolved.method}_`,
+    mentions: [targetJid],
+  }, { quoted: msg });
+}
 
 // ── Button Handlers ──────────────────────────────────────────
 // Migrated from applied.js — accept/deny/cancel/pending for admin review

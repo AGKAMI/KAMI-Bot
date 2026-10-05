@@ -137,6 +137,20 @@ async function sendConfirmation(sock, from, teamKey) {
   });
 }
 
+// The unblock notice sent to the applicant's DM BEFORE the team cards
+async function sendApplyDmNotice(sock, dmJid) {
+  await sendButtons(sock, dmJid, {
+    text:
+      `🔓 *UNBLOCKED — FOR NOW*\n\n` +
+      `I've let you through to apply for security ${voice.tag('neutral')}\n\n` +
+      `⚠️ *Until your application is done, your number can only:*\n` +
+      `• Apply for security\n` +
+      `• Make orders\n\n` +
+      `DM me for anything else and you're blocked again`,
+    footer: config.botName || 'KAMI Bot',
+  });
+}
+
 // ============================================================
 // COMMAND
 // ============================================================
@@ -230,16 +244,7 @@ onButton('start:apply', async (sock, msg, from, sender) => {
   allowTempDm(sender);
 
   // The unblock message — BEFORE the team cards
-  await sendButtons(sock, dmJid, {
-    text:
-      `🔓 *UNBLOCKED — FOR NOW*\n\n` +
-      `I've let you through to apply for security ${voice.tag('neutral')}\n\n` +
-      `⚠️ *Until your application is done, your number can only:*\n` +
-      `• Apply for security\n` +
-      `• Make orders\n\n` +
-      `DM me for anything else and you're blocked again`,
-    footer: config.botName || 'KAMI Bot',
-  });
+  await sendApplyDmNotice(sock, dmJid);
 
   console.log('[APPLY BTN] sender:', sender, '→ dmJid:', dmJid);
   await sendTeamCards(sock, dmJid, sender);
@@ -321,3 +326,8 @@ onButton('start:back', async (sock, msg, from, sender) => {
   const dmJid = toDmJid(sender);
   await sendTeamCards(sock, dmJid, sender);
 });
+
+// Shared with .apply (owner can push the team selection to someone's DMs)
+module.exports.sendTeamCards = sendTeamCards;
+module.exports.toDmJid = toDmJid;
+module.exports.sendApplyDmNotice = sendApplyDmNotice;
