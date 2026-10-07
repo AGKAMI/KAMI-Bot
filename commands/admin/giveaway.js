@@ -6,7 +6,7 @@
  *   .giveaway <prize> <winners> <time>
  *   .giveaway reroll
  *
- * Time formats: 30s, 5m, 1h, 1h30m, 90m
+ * Time formats: 30s, 5m, 1h, 1h30m, 90m, 1.5h, "1 hour", "30 min"
  * Attach media: reply to an image/video with .giveaway <prize>
  */
 
@@ -18,25 +18,49 @@ const activeGiveaways = new Map();
 const lastGiveaway = new Map();
 
 // ── Parse time string → milliseconds ────────────────────────
+// Accepts: 30s, 5m, 1h, 1h30m, 90m, 1.5h, "1 hour", "30 min", "2 hours"
 function parseTime(str) {
   if (!str) return null;
-  str = str.trim().toLowerCase();
-
-  let totalMs = 0;
-  const hMatch = str.match(/(\d+)h/);
-  const mMatch = str.match(/(\d+)m/);
-  const sMatch = str.match(/(\d+)s/);
-
-  if (hMatch) totalMs += parseInt(hMatch[1]) * 60 * 60 * 1000;
-  if (mMatch) totalMs += parseInt(mMatch[1]) * 60 * 1000;
-  if (sMatch) totalMs += parseInt(sMatch[1]) * 1000;
+  let s = String(str).trim().toLowerCase().replace(/\s+/g, '');
+  // word forms → unit letters
+  s = s.replace(/hours?|hrs?/g, 'h').replace(/minutes?|mins?/g, 'm').replace(/seconds?|secs?/g, 's');
+  if (!s) return null;
 
   // Plain number = minutes (backwards compat)
-  if (totalMs === 0 && /^\d+$/.test(str)) {
-    totalMs = parseInt(str) * 60 * 1000;
+  if (/^\d+$/.test(s)) {
+    return parseInt(s, 10) * 60 * 1000;
   }
 
-  return totalMs > 0 ? totalMs : null;
+  // number (int or decimal) + unit, repeated — handles 1h30m and 1.5h
+  let totalMs = 0;
+  let matched = false;
+  const re = /(\d+(?:\.\d+)?)([hms])/g;
+  let m;
+  while ((m = re.exec(s))) {
+    matched = true;
+    const n = parseFloat(m[1]);
+    totalMs += m[2] === 'h' ? n * 60 * 60 * 1000 : m[2] === 'm' ? n * 60 * 1000 : n * 1000;
+  }
+
+  return matched && totalMs > 0 ? totalMs : null;
+}
+
+// Time tokens in a full arg string: compact (1h30m, 45m, 1.5h) and word
+// forms (1 hour, 30 min). Numbers glued to a keyword (winners 1 min, min 5)
+// are NOT durations — the caller skips those.
+const TIME_TOKEN_RE = /\b(?:\d+(?:\.\d+)?\s*(?:hours?|hrs?|minutes?|mins?|seconds?|secs?)|\d+(?:\.\d+)?[hms](?:\d+(?:\.\d+)?[hms])*)\b/gi;
+const KEYWORD_BEFORE_RE = /(?:^|\s)(?:min|wins?|winners?)\s+$/i;
+
+function extractTimeTokens(text) {
+  const tokens = [];
+  TIME_TOKEN_RE.lastIndex = 0;
+  let m;
+  while ((m = TIME_TOKEN_RE.exec(text))) {
+    const before = text.slice(0, m.index);
+    if (KEYWORD_BEFORE_RE.test(before)) continue; // e.g. "winners 1 min 5" → "1 min" belongs to keywords
+    tokens.push(m[0]);
+  }
+  return tokens;
 }
 
 // ── Format ms → human readable ──────────────────────────────
@@ -51,6 +75,27 @@ function formatDuration(ms) {
   if (m > 0) parts.push(`${m}m`);
   if (s > 0) parts.push(`${s}s`);
   return parts.join('') || '0m';
+}
+
+// ── Clock time for the "Ends:" line — always in the bot's
+//    configured timezone (SAST), never the container's UTC.
+function formatEndTime(ms) {
+  const tz = config.timezone || 'Africa/Johannesburg';
+  try {
+    const t = new Date(ms).toLocaleTimeString('en-ZA', {
+      timeZone: tz,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    return tz.includes('Johannesburg') ? `${t} SAST` : t;
+  } catch (e) {
+    // No ICU timezone support — SAST is UTC+2, no DST
+    const d = new Date(ms + 2 * 60 * 60 * 1000);
+    const hh = String(d.getUTCHours()).padStart(2, '0');
+    const mm = String(d.getUTCMinutes()).padStart(2, '0');
+    return tz.includes('Johannesburg') ? `${hh}:${mm} SAST` : `${hh}:${mm}`;
+  }
 }
 
 module.exports = {
@@ -136,7 +181,7 @@ module.exports = {
           `💡 *Usage:*\n` +
           `• \`${prefix}giveaway <prize> <time> winners <n>\`\n` +
           `• Reply to an image/video + \`${prefix}giveaway <prize>\`\n\n` +
-          `⏱️ *Time:* 30s, 5m, 1h, 1h30m\n` +
+          `⏱️ *Time:* 30s, 5m, 1h, 1h30m, 90m, "1 hour", "30 min"\n` +
           `🎯 *Winners:* winners 3 (default: 1)\n` +
           `📋 *Min entries:* min 5\n\n` +
           `*Examples:*\n` +
@@ -184,9 +229,11 @@ module.exports = {
         minEntries = parseInt(minMatch[1]);
       }
 
-      // Extract time: first token matching time pattern (h/m/s), not preceded by "min"
-      const timeTokens = cleaned.match(/\b(\d+[hms](?:\d+[hms])*)\b/gi);
-      if (timeTokens && timeTokens.length > 0) {
+      // Extract time: first token matching a time pattern (1h, 1h30m,
+      // "1 hour", "30 min" …). Numbers glued to keywords ("winners 1 min")
+      // are skipped by extractTimeTokens.
+      const timeTokens = extractTimeTokens(cleaned);
+      if (timeTokens.length > 0) {
         // Take the first valid time token
         for (const t of timeTokens) {
           const val = parseTime(t);
@@ -196,9 +243,10 @@ module.exports = {
           }
         }
       } else {
-        // Fallback: plain number at end = minutes
-        const plainNum = cleaned.match(/\b(\d+)\s*$/);
-        if (plainNum && !cleaned.match(/(?:winners?|win)\s+\d+$/i)) {
+        // Fallback: plain number at end = minutes — but NOT when it's
+        // glued to a letter (R50, PS5) or part of a keyword phrase
+        const plainNum = cleaned.match(/(?<![A-Za-z])\b(\d+)\s*$/);
+        if (plainNum && !cleaned.match(/(?:winners?|win)\s+\d+$/i) && !cleaned.match(/\bmin\s+\d+$/i)) {
           durationMs = parseInt(plainNum[1]) * 60 * 1000;
         }
       }
@@ -208,10 +256,12 @@ module.exports = {
         .replace(/\|/g, '')
         .replace(/(?:winners?|win)\s+\d+/gi, '')
         .replace(/\d+n\b/gi, '')
-        .replace(/\bmin\s+\d+/gi, '')
-        .replace(/\b\d+[hms](?:\d+[hms])*\b/gi, '')
-        .replace(/\s{2,}/g, ' ')
-        .trim() || fullArgs;
+        .replace(/\bmin\s+\d+/gi, '');
+      // strip every time token we found (including ones after the first)
+      for (const t of timeTokens) {
+        prize = prize.split(t).join(' ');
+      }
+      prize = prize.replace(/\s{2,}/g, ' ').trim() || fullArgs;
 
       // ── Validate ────────────────────────────────────────
       if (durationMs < 1000 || durationMs > 3 * 60 * 60 * 1000) {
@@ -257,7 +307,7 @@ module.exports = {
         ``,
         `🏆 *Prize:* ${prize}`,
         `⏱️ *Duration:* ${formatDuration(durationMs)}`,
-        `📅 *Ends:* ${new Date(endTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })}`,
+        `📅 *Ends:* ${formatEndTime(endTime)}`,
         `🎯 *Winners:* ${numWinners}`,
       ];
 
