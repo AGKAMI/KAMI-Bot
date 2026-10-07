@@ -2,6 +2,8 @@ const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton, isButtonModeOn } = require('../../utils/buttonHelper');
+const { normalizeJidWithLid } = require('../../utils/jidHelper');
+const { canonicalNumber } = require('../../database');
 const fs = require('fs');
 const path = require('path');
 
@@ -225,7 +227,25 @@ onButton('menu:games', (sock, msg, from) => {
 onButton('menu:utility', (sock, msg, from) => {
   sock.sendMessage(from, { text: buildCategoryText('utility') });
 });
-onButton('menu:owner', (sock, msg, from) => {
+
+// 👑 Owner button — only KAMI gets the owner command list; everyone else
+// gets told plainly. Handles: fromMe taps (owner's own device), PN jids,
+// LID participants (normalized), and config.ownerNumber stored as 083….
+const isOwnerClicker = (msg, sender) => {
+  if (msg && msg.key && msg.key.fromMe) return true;
+  const jid = normalizeJidWithLid(sender) || sender || '';
+  const digits = String(jid).split('@')[0].replace(/\D/g, '');
+  if (!digits) return false;
+  return (config.ownerNumber || []).some(o => canonicalNumber(o) === canonicalNumber(digits));
+};
+
+onButton('menu:owner', (sock, msg, from, sender) => {
+  const clicker = sender || (msg && msg.key && msg.key.participant) || from;
+  if (!isOwnerClicker(msg, clicker)) {
+    return sock.sendMessage(from, {
+      text: `👑 *KAMI ONLY*\n\n_Only KAMI has access to those commands._`
+    });
+  }
   sock.sendMessage(from, { text: buildCategoryText('owner') });
 });
 
