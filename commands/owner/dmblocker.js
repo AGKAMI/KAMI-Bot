@@ -5,6 +5,16 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, voice } = require('../../utils/format');
+const { updateBlockStatusSafe } = require('../../utils/jidHelper');
+
+// Any phone format → canonical digits (083…, +27…, spaced, dashed)
+const parseNumber = (input) => {
+  if (!input) return null;
+  let digits = input.replace(/\D/g, '');
+  if (!digits || digits.length < 8) return null;
+  if (digits.startsWith('0')) digits = (config.defaultCountryCode || '27') + digits.slice(1);
+  return digits;
+};
 
 module.exports = {
   name: 'dmblocker',
@@ -26,7 +36,7 @@ module.exports = {
 
       if (!action || action === 'status') {
         const approved = database.getApprovedNumbers();
-        const list = approved.length ? approved.map(n => `  • ${n}`).join('\n') : '  _None_';
+        const list = approved.length ? approved.map(n => `  • ${database.canonicalNumber(n) || n}`).join('\n') : '  _None_';
         return await sock.sendMessage(chatId, {
           text: `*🚫 DM BLOCKER*\n\n` +
                `*Status:* *${currentStatus}*\n\n` +
@@ -69,39 +79,42 @@ module.exports = {
       }
 
       if (action === 'approve') {
-        const number = args[1];
-        if (!number) {
+        const number = args.slice(1).join(' ').trim();
+        if (!number || !/\d/.test(number)) {
           return await sock.sendMessage(chatId, {
-            text: `*Usage:* ${prefix}dmblocker approve <number>\n\n_Example: ${prefix}dmblocker approve 27831234567_`
+            text: `*Usage:* ${prefix}dmblocker approve <number>\n\n_Any format:_ ${prefix}dmblocker approve 083 388 2383`
           }, { quoted: msg });
         }
 
-        let digits = number.replace(/\D/g, '');
-        if (!digits || digits.length < 8) {
+        const digits = parseNumber(number);
+        if (!digits) {
           extra.fail();
           return await sock.sendMessage(chatId, {
             text: `❌ ERROR\n\n_Invalid number_`
           }, { quoted: msg });
         }
-        if (digits.startsWith('0')) digits = (config.defaultCountryCode || '27') + digits.slice(1);
         const targetJid = digits + '@s.whatsapp.net';
 
-        // Add to approved list
-        const added = database.addApprovedNumber(number);
+        // Add to approved list — canonical digits
+        const added = database.addApprovedNumber(digits);
 
-        // WhatsApp-unblock if blocked
-        let wasBlocked = false;
-        try { await sock.updateBlockStatus(targetJid, 'unblock'); wasBlocked = true; } catch (e) {}
+        // WhatsApp-unblock (PN/LID variants) — report real failures only
+        let unblockErr = '';
+        try { await updateBlockStatusSafe(sock, targetJid, 'unblock'); }
+        catch (e) { unblockErr = e.message || 'unknown error'; console.error(`[DMBLOCKER] unblock failed for ${digits}:`, unblockErr); }
 
         // Unban if banned
         let wasBanned = false;
-        const user = database.getUser(targetJid);
-        if (user && user.banned) {
-          database.updateUser(targetJid, { banned: false, bannedIn: null });
-          wasBanned = true;
-        }
+        try {
+          const user = database.getUser(targetJid);
+          if (user && user.banned) {
+            database.updateUser(targetJid, { banned: false, bannedIn: null });
+            wasBanned = true;
+          }
+        } catch (e) { console.error('[DMBLOCKER] ban check failed:', e.message); }
 
-        // DM them the approval message
+        // DM them the approval message — failures captured, logged and SHOWN
+        let dmErr = '';
         try {
           await sock.sendMessage(targetJid, {
             text: `🎉 *WELCOME TO KAMI BOT* 🤖\n\n` +
@@ -111,42 +124,62 @@ module.exports = {
                   `Type *${prefix}help* if you get stuck\n\n` +
                   `_Lekke, enjoy the bot!_ 💀`
           });
-        } catch (e) {}
+        } catch (e) {
+          dmErr = e.message || 'unknown error';
+          console.error(`[DMBLOCKER] welcome DM failed for ${digits}:`, dmErr);
+        }
 
         // Confirm in chat
         let reply = added
           ? `*✅ APPROVED*\n\n_${digits} can now use the bot._`
           : `*⚠️ ALREADY APPROVED*\n\n_${digits} is already approved._`;
 
-        if (wasBlocked) {
-          reply += `\n\n🔓 *UNBLOCKED* — off the WhatsApp block list`;
-        }
         if (wasBanned) {
           reply += `\n\n🔨 *BAN LIFTED* — off the bot ban list`;
         }
+        if (dmErr) {
+          extra.fail();
+          reply += `\n\n⚠️ *Welcome DM failed:* ${dmErr}` +
+            (/not-authorized|forbidden|blocked/i.test(dmErr)
+              ? `\n_They've most likely blocked the bot — approval is saved, but the welcome can't reach them._`
+              : `\n_Approval is saved — the welcome DM just couldn't be delivered._`);
+        }
+        if (unblockErr) {
+          reply += `\n\n⚠️ *WhatsApp unblock failed:* ${unblockErr}`;
+        }
 
+        console.log(`[DMBLOCKER] approve ${digits} added=${!!added} dm=${dmErr ? 'FAILED: ' + dmErr : 'sent'}`);
         return await sock.sendMessage(chatId, { text: reply }, { quoted: msg });
       }
 
       if (action === 'disapprove') {
-        const number = args[1];
-        if (!number) {
+        const number = args.slice(1).join(' ').trim();
+        if (!number || !/\d/.test(number)) {
+          extra.fail();
           return await sock.sendMessage(chatId, {
-            text: `*Usage:* ${prefix}dmblocker disapprove <number>`
+            text: `*Usage:* ${prefix}dmblocker disapprove <number>\n\n_Any format:_ ${prefix}dmblocker disapprove 083 388 2383`
           }, { quoted: msg });
         }
-        const removed = database.removeApprovedNumber(number);
+        const digits = parseNumber(number);
+        if (!digits) {
+          extra.fail();
+          return await sock.sendMessage(chatId, {
+            text: `❌ ERROR\n\n_Invalid number_`
+          }, { quoted: msg });
+        }
+        const removed = database.removeApprovedNumber(digits);
+        if (!removed) extra.fail();
         return await sock.sendMessage(chatId, {
           text: removed
-            ? `*❌ REMOVED*\n\n_${number} can't use the bot anymore._`
-            : `*⚠️ NOT FOUND*\n\n_${number} wasn't on the approved list._`
+            ? `*❌ REMOVED*\n\n_${digits} can't use the bot anymore._`
+            : `*⚠️ NOT FOUND*\n\n_${digits} wasn't on the approved list._`
         }, { quoted: msg });
       }
 
       if (action === 'list') {
         const approved = database.getApprovedNumbers();
         const list = approved.length
-          ? approved.map(n => `  • ${n}`).join('\n')
+          ? approved.map(n => `  • ${database.canonicalNumber(n) || n}`).join('\n')
           : '  _No approved numbers yet_';
         return await sock.sendMessage(chatId, {
           text: `*📋 APPROVED NUMBERS*\n\n${list}`

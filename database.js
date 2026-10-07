@@ -247,12 +247,26 @@ const getApprovedNumbers = () => {
   return settings.approvedNumbers || [];
 };
 
+// Canonical phone form — digits only, local leading 0 → country code.
+// Every approved-number comparison goes through this so format differences
+// (083…, 083 388 2383, +27 83 388 2383, 27833882383) can't dodge the
+// DM blocker or leave unmatchable entries behind.
+const canonicalNumber = (input) => {
+  let digits = String(input == null ? '' : input).replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('0') && digits.length >= 8) {
+    digits = (config.defaultCountryCode || '27') + digits.slice(1);
+  }
+  return digits;
+};
+
 const addApprovedNumber = (number) => {
   const settings = getGlobalSettings();
   if (!settings.approvedNumbers) settings.approvedNumbers = [];
-  // Normalize: remove +, spaces, dashes
-  const normalized = number.replace(/[\+\-\s]/g, '');
-  if (!settings.approvedNumbers.includes(normalized)) {
+  const normalized = canonicalNumber(number);
+  if (!normalized) return false;
+  // Compare canonically so legacy entries stored as 083… don't double-add
+  if (!settings.approvedNumbers.some(n => canonicalNumber(n) === normalized)) {
     settings.approvedNumbers.push(normalized);
     return writeDB(GLOBAL_DB, settings);
   }
@@ -262,8 +276,12 @@ const addApprovedNumber = (number) => {
 const removeApprovedNumber = (number) => {
   const settings = getGlobalSettings();
   if (!settings.approvedNumbers) return false;
-  const normalized = number.replace(/[\+\-\s]/g, '');
-  settings.approvedNumbers = settings.approvedNumbers.filter(n => n !== normalized);
+  const target = canonicalNumber(number);
+  if (!target) return false;
+  const before = settings.approvedNumbers.length;
+  // Canonical match also cleans up legacy 083…-style entries
+  settings.approvedNumbers = settings.approvedNumbers.filter(n => canonicalNumber(n) !== target);
+  if (settings.approvedNumbers.length === before) return false; // nothing removed → report honestly
   return writeDB(GLOBAL_DB, settings);
 };
 
@@ -277,11 +295,11 @@ const isApprovedNumber = (jid) => {
   const number = (normalized || jid).replace(/@.*$/, '');
   const rawNumber = jid.replace(/@.*$/, '');
   
-  const approved = settings.approvedNumbers || [];
-  // Owner is always approved
-  const ownerNumbers = (config.ownerNumber || []).map(n => n.replace(/[\+\-\s]/g, ''));
-  if (ownerNumbers.includes(number) || ownerNumbers.includes(rawNumber)) return true;
-  return approved.includes(number) || approved.includes(rawNumber);
+  const approved = (settings.approvedNumbers || []).map(canonicalNumber);
+  // Owner is always approved (config.ownerNumber is often stored as 083…)
+  const ownerNumbers = (config.ownerNumber || []).map(canonicalNumber);
+  if (ownerNumbers.includes(canonicalNumber(number)) || ownerNumbers.includes(canonicalNumber(rawNumber))) return true;
+  return approved.includes(canonicalNumber(number)) || approved.includes(canonicalNumber(rawNumber));
 };
 
 // ==================== Team Admin Approval ====================
@@ -1247,6 +1265,7 @@ module.exports = {
   getGlobalSettings,
   updateGlobalSettings,
   getApprovedNumbers,
+  canonicalNumber,
   addApprovedNumber,
   removeApprovedNumber,
   isApprovedNumber,
