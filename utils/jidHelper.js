@@ -197,6 +197,42 @@ const updateBlockStatusSafe = async (sock, jid, action) => {
   throw lastError || new Error('could not resolve a usable jid');
 };
 
+// Log delivery status for an outgoing DM. A resolved sendMessage only means
+// WhatsApp ACCEPTED it — it says nothing about delivery, so the panel console
+// gets a line per ack: 2 = server, 3 = delivered to their phone, 4 = read, and
+// "still pending" = accepted but never delivered (they blocked the bot, or
+// WhatsApp filtered it to Message requests).
+const trackSendAck = (sock, sentKey, label) => {
+  if (!sock || !sock.ev || !sentKey || !sentKey.id) return;
+  const NAMES = { 0: 'ERROR', 1: 'pending', 2: 'sent(server)', 3: 'DELIVERED', 4: 'READ' };
+  let settled = false;
+  const onUpdate = (updates) => {
+    for (const u of updates || []) {
+      if (!u || !u.key || u.key.id !== sentKey.id) continue;
+      if (u.update && u.update.error) {
+        console.log(`[${label}] DM ack ERROR to ${sentKey.remoteJid}:`, u.update.error.message || u.update.error);
+        settled = true;
+        sock.ev.off('messages.update', onUpdate);
+        continue;
+      }
+      const s = u.update ? u.update.status : undefined;
+      if (s === undefined) continue;
+      console.log(`[${label}] DM ack status=${s} (${NAMES[s] || '?'}) to ${sentKey.remoteJid}`);
+      if (s === 0 || s >= 3) {
+        settled = true;
+        sock.ev.off('messages.update', onUpdate);
+      }
+    }
+  };
+  sock.ev.on('messages.update', onUpdate);
+  setTimeout(() => {
+    if (!settled) {
+      console.log(`[${label}] DM still pending after 60s to ${sentKey.remoteJid} — accepted but never delivered (blocked by them / filtered?)`);
+    }
+    sock.ev.off('messages.update', onUpdate);
+  }, 60000);
+};
+
 module.exports = {
   findParticipant,
   buildComparableIds,
@@ -205,6 +241,7 @@ module.exports = {
   clearLidCache,
   candidateJids,
   mentionJid,
-  updateBlockStatusSafe
+  updateBlockStatusSafe,
+  trackSendAck
 };
 

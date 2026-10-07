@@ -4,7 +4,7 @@
 
 const config = require('../../config');
 const { bold, pick, SLANG, voice } = require('../../utils/format');
-const { updateBlockStatusSafe, mentionJid } = require('../../utils/jidHelper');
+const { updateBlockStatusSafe, mentionJid, trackSendAck } = require('../../utils/jidHelper');
 
 const parsePhoneNumber = (input) => {
   if (!input) return null;
@@ -62,15 +62,11 @@ module.exports = {
       // Real number when the target arrived as LID digits (used for the DM too)
       const shown = mentionJid(target);
 
-      // Confirmation to owner
-      await sock.sendMessage(extra.from, {
-        text: `*✅ UNBLOCKED*\n\n@${shown.split('@')[0]} _has been unblocked, ${voice.tag('affirm')}!_`,
-        mentions: [shown]
-      }, { quoted: msg });
-
-      // DM the unblocked user
+      // DM the unblocked user — failure is captured and SHOWN to the owner
+      let dmErr = '';
+      let sentKey = null;
       try {
-        await sock.sendMessage(shown, {
+        const sent = await sock.sendMessage(shown, {
           text:
             `━━━━━━━━━━━━━━━━\n` +
             `*KAMI UNLOCKED YOU* 🔓\n` +
@@ -78,9 +74,27 @@ module.exports = {
             `${voice.greetOpen()}, ${voice.mate()}\n\n` +
             `_You were blocked but you're free now_`
         });
-      } catch (dmErr) {
-        console.error('[UNBLOCK] DM to unblocked user failed:', dmErr.message);
+        sentKey = sent && sent.key ? sent.key : null;
+        console.log(`[UNBLOCK] unlock DM sent to ${shown}`);
+      } catch (e) {
+        dmErr = e.message || 'unknown error';
+        console.error(`[UNBLOCK] DM to unblocked user failed for ${shown}:`, dmErr);
       }
+      if (sentKey) trackSendAck(sock, sentKey, 'UNBLOCK-DM');
+
+      // Confirmation to owner (with the DM outcome attached)
+      let reply = `*✅ UNBLOCKED*\n\n@${shown.split('@')[0]} _has been unblocked, ${voice.tag('affirm')}!_`;
+      if (dmErr) {
+        extra.fail();
+        reply += `\n\n⚠️ *Unlock DM failed:* ${dmErr}` +
+          (/not-authorized|forbidden|blocked/i.test(dmErr)
+            ? `\n_They've most likely blocked the bot — they're unblocked, but the unlock message can't reach them._`
+            : `\n_They're unblocked — the unlock DM just couldn't be delivered._`);
+      }
+      await sock.sendMessage(extra.from, {
+        text: reply,
+        mentions: [shown]
+      }, { quoted: msg });
       
     } catch (error) {
       extra.fail();

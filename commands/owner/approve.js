@@ -8,7 +8,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, voice } = require('../../utils/format');
-const { updateBlockStatusSafe } = require('../../utils/jidHelper');
+const { updateBlockStatusSafe, trackSendAck } = require('../../utils/jidHelper');
 
 const parseNumber = (input) => {
   if (!input) return null;
@@ -73,8 +73,9 @@ module.exports = {
 
       // DM them the approval message — failure is captured, logged and SHOWN
       let dmErr = '';
+      let sentKey = null;
       try {
-        await sock.sendMessage(targetJid, {
+        const sent = await sock.sendMessage(targetJid, {
           text: `🎉 *WELCOME TO KAMI BOT* 🤖\n\n` +
                 `✅ You're *approved* by KAMI\n` +
                 `🔓 You can message this bot directly now\n\n` +
@@ -82,10 +83,12 @@ module.exports = {
                 `Type *${prefix}help* if you get stuck\n\n` +
                 `_Lekke, enjoy the bot!_ 💀`
         });
+        sentKey = sent && sent.key ? sent.key : null;
       } catch (e) {
         dmErr = e.message || 'unknown error';
         console.error(`[APPROVE] welcome DM failed for ${digits}:`, dmErr);
       }
+      if (sentKey) trackSendAck(sock, sentKey, 'APPROVE-DM');
 
       // Confirm in chat with details
       let reply = added
