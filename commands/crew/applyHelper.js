@@ -21,11 +21,25 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
   const { replyFn, from, applyingForSomeone = false } = opts;
   const teamGroupJid = config.crewTeams[teamKey].jid;
 
-  // 1. Already in the crew DB for this team?
-  if (database.getCrewMember(teamGroupJid, applicantJid)) {
+  // 1. Already in the crew DB for this team? (checks PN + LID variants so a
+  // LID-resolved applicant matches their rostered phone entry too)
+  const memberVariants = buildComparableIds(applicantJid);
+  const member = database.getCrewMember(teamGroupJid, applicantJid)
+    || memberVariants.map(v => database.getCrewMember(teamGroupJid, v)).find(Boolean);
+  if (member) {
+    const roleTxt = member.role ? ` as *${member.role}*` : '';
+    let whenTxt = '';
+    if (member.joined) {
+      try {
+        whenTxt = `, joined ${new Date(member.joined).toLocaleDateString('en-ZA', {
+          timeZone: config.timezone || 'Africa/Johannesburg',
+        })}`;
+      } catch (e) { /* date formatting is best-effort */ }
+    }
     const msg = applyingForSomeone
-      ? `❌ ERROR\n\n${mention(applicantJid)} is already part of ${TEAMS[teamKey].label}, hey`
-      : `❌ ERROR\n\nYou're already part of ${TEAMS[teamKey].label}, boet`;
+      ? `❌ ERROR\n\n${mention(applicantJid)} is already in ${TEAMS[teamKey].label}${roleTxt}${whenTxt}, hey`
+      : `❌ ERROR\n\nYou're already in ${TEAMS[teamKey].label}${roleTxt}${whenTxt}, boet\n\n` +
+        `_Wrong entry? Ask KAMI to take it off._`;
     if (replyFn) await replyFn(msg);
     return { ok: false, error: 'already_in_crew' };
   }

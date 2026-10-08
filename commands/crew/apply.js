@@ -38,12 +38,16 @@ module.exports = {
       const hasTeam = !!(first && TEAMS[teamKey] && config.crewTeams[teamKey]);
 
       // No team arg → owner can push the team selection to someone's DMs
-      // (reply, @mention or number in any format), from anywhere.
+      // (reply, @mention or number), from anywhere.
       if (!hasTeam) {
         const target = resolveUser(args || [], mentioned, ctx);
+        // A reply to the BOT's own message resolves to the bot — never
+        // target ourselves (sending cards to our own jid blows up).
+        if (target.jid && isSelfJid(sock, target.jid)) target.jid = null;
 
         if (target.jid) {
           if (extra.isOwner) return sendTeamSelection(sock, msg, extra, target);
+          extra.deny && extra.deny('team selection is owner-only');
           return extra.reply(
             `❌ ERROR\n\nProvide a team — only KAMI can drop the team selection on its own\n\n` +
             `Usage:\n` +
@@ -68,6 +72,9 @@ module.exports = {
 
       // Team given → normal application flow (self, reply, mention or number)
       const resolved = resolveUser(args.slice(1), mentioned, ctx);
+      // Same guard: a reply to the bot's own message targets nobody — fall
+      // through to self-apply instead of sending the form to ourselves.
+      if (resolved.jid && isSelfJid(sock, resolved.jid)) resolved.jid = null;
 
       let applicantJid;
       let applyingForSomeone = false;
@@ -91,7 +98,9 @@ module.exports = {
         applyingForSomeone,
       });
 
-      if (!result.ok) return;
+      // Failure already replied an error via replyFn — mark the verdict ❌
+      // (the reply classifier catches it too, but be explicit).
+      if (!result.ok) return extra.fail(result.error);
 
       // Confirm where they applied from
       const confirmText =
@@ -103,17 +112,36 @@ module.exports = {
           : `📲 Dropped the form in your DMs.\n\n`) +
         `_${voice.greetOpen()}, good luck!_`;
 
-      await sock.sendMessage(extra.from, {
-        text: confirmText,
-        mentions: [applicantJid],
-      }, { quoted: msg });
+      try {
+        await sock.sendMessage(extra.from, {
+          text: confirmText,
+          mentions: [applicantJid],
+        }, { quoted: msg });
+      } catch (reportErr) {
+        // App already created + form DM delivered — don't claim total
+        // failure, but don't end on ✅ either.
+        console.error('[CREW APPLY] confirm send failed:', reportErr.message);
+        extra.fail && extra.fail('confirm send failed');
+      }
 
     } catch (error) {
       console.error('Crew apply error:', error);
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't kick it off, shame`);
+      extra.fail && extra.fail(error.message || error);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — couldn't kick it off, shame (${error.message || 'unknown'})`);
     }
   },
 };
+
+// Is this jid the bot's own account? (reply-to-bot contexts)
+function isSelfJid(sock, jid) {
+  try {
+    const botNum = (sock.user?.id || '').split(':')[0];
+    const jidNum = (jid || '').split('@')[0].split(':')[0];
+    return !!(botNum && jidNum && botNum === jidNum);
+  } catch (e) {
+    return false;
+  }
+}
 
 function applyUsage(prefix) {
   return (
@@ -133,9 +161,22 @@ function applyUsage(prefix) {
 async function sendTeamSelection(sock, msg, extra, resolved) {
   const { sendTeamCards, toDmJid, sendApplyDmNotice } = require('../general/start');
   const { allowTempDm } = require('../../handler');
+  const prefix = config.prefix || '.';
 
   const targetJid = resolved.jid;
-  const dmJid = toDmJid(targetJid);
+
+  let dmJid;
+  try {
+    dmJid = toDmJid(targetJid);
+  } catch (e) {
+    console.error('[APPLY-INVITE] toDmJid failed:', e.message);
+    extra.fail && extra.fail(e.message);
+    return sock.sendMessage(extra.from, {
+      text: `❌ ERROR\n\nCouldn't work out ${mention(targetJid)}'s DM number — ${e.message}\n\n` +
+            `_Check the number and try again, shame`,
+      mentions: [targetJid],
+    }, { quoted: msg });
+  }
 
   // Unblock so DMs land + mark them temp-allowed (orders/apply only)
   try { await sock.updateBlockStatus(dmJid, 'unblock'); } catch (e) {}
@@ -143,17 +184,43 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
 
   console.log('[APPLY-INVITE]', extra.sender, '→', targetJid, `(${resolved.method}) dm=${dmJid}`);
 
-  // Unblock notice FIRST, then the team cards — identical to .start flow
-  await sendApplyDmNotice(sock, dmJid);
-  await sendTeamCards(sock, dmJid, dmJid);
+  // Unblock notice FIRST, then the team cards — identical to .start flow.
+  // Either send can fail (blocked bot, unreachable number, privacy settings) —
+  // report the real cause with a ❌ verdict instead of the generic
+  // "couldn't kick it off".
+  try {
+    await sendApplyDmNotice(sock, dmJid);
+    await sendTeamCards(sock, dmJid, dmJid);
+  } catch (dmErr) {
+    console.error('[APPLY-INVITE] DM chain failed:', dmErr.message);
+    extra.fail && extra.fail(dmErr.message);
+    return sock.sendMessage(extra.from, {
+      text: `❌ ERROR\n\nCouldn't DM ${mention(targetJid)} the team cards — ${dmErr.message}\n\n` +
+            `Likely one of:\n` +
+            `• They blocked the bot\n` +
+            `• Privacy settings are stopping DMs\n` +
+            `• The number isn't on WhatsApp\n\n` +
+            `💡 *Try:*\n` +
+            `• Get them to \`${prefix}start\` first\n` +
+            `• Re-check the number (spaces/plus are fine)\n` +
+            `• Or \`${prefix}apply <team> @user\` so they kick it off themselves`,
+      mentions: [targetJid],
+    }, { quoted: msg });
+  }
 
-  await sock.sendMessage(extra.from, {
-    text:
-      `📤 *TEAM SELECTION SENT*\n\n` +
-      `📲 Dropped the team cards in ${mention(targetJid)}'s DMs — they pick a team and the form starts ${voice.tag('neutral')}\n\n` +
-      `_Picked up by: ${resolved.method}_`,
-    mentions: [targetJid],
-  }, { quoted: msg });
+  try {
+    await sock.sendMessage(extra.from, {
+      text:
+        `📤 *TEAM SELECTION SENT*\n\n` +
+        `📲 Dropped the team cards in ${mention(targetJid)}'s DMs — they pick a team and the form starts ${voice.tag('neutral')}\n\n` +
+        `_Picked up by: ${resolved.method}_`,
+      mentions: [targetJid],
+    }, { quoted: msg });
+  } catch (reportErr) {
+    // Cards went out — just the report-back failed.
+    console.error('[APPLY-INVITE] report-back failed:', reportErr.message);
+    extra.fail && extra.fail(reportErr.message);
+  }
 }
 
 // ── Button Handlers ──────────────────────────────────────────

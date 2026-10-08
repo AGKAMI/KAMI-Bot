@@ -16,13 +16,13 @@ function phoneToJid(phone) {
   return digits + '@s.whatsapp.net';
 }
 
-// Resolve user from @mention or phone number
+// Resolve user from @mention, phone number or reply — in that order.
+// Explicit beats implicit: a typed number or a tag always wins over the
+// reply context, so `.apply kssmp 077 158 6969` while replying to some
+// other message still targets the NUMBER (reply used to shadow it and
+// silently apply for whoever was quoted instead).
 function resolveUser(args, mentionedJid, contextInfo) {
-  // Method 1: Reply to someone's message
-  if (contextInfo?.participant) {
-    return { jid: contextInfo.participant, args, method: 'reply' };
-  }
-  // Method 2: @mention
+  // Method 1: @mention (explicit tag)
   if (mentionedJid && mentionedJid.length > 0) {
     return { jid: mentionedJid[0], args, method: 'mention' };
   }
@@ -44,6 +44,10 @@ function resolveUser(args, mentionedJid, contextInfo) {
       return { jid, args: args.slice(roleIdx), method: 'phone' };
     }
     return { jid: null, error: 'invalid_phone' };
+  }
+  // Method 3: reply context (implicit — only when nothing explicit given)
+  if (contextInfo?.participant) {
+    return { jid: contextInfo.participant, args, method: 'reply' };
   }
   return { jid: null, args, method: 'none' };
 }

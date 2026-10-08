@@ -14,11 +14,22 @@ const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG, voice }
 const { buildImage } = require('./utils/imageText');
 const { handleButtonResponse, requireAdmin } = require('./utils/buttonHelper');
 const { hasActiveSession, getApplicantState, sendProgressiveResponse } = require('./commands/crew/applyInteractive');
-const { runWithReactions, stageEmoji } = require('./utils/progressReaction');
+const { runWithReactions, stageEmoji, classifyReply } = require('./utils/progressReaction');
 const { updateBlockStatusSafe } = require('./utils/jidHelper');
 
 // All admin command buttons are admin-only
 requireAdmin('admin');
+
+// Final verdict reaction for requests that never reach the command's own
+// reaction lifecycle (permission gates, DM blockers, slowmode, unknown
+// commands). 🚫 = not allowed, ❌ = failed. Honours progressReactions so
+// turning the feature off silences these too. Fire-and-forget.
+const verdictReact = (sock, from, msg, emoji) => {
+  if (!config.progressReactions || !msg?.key) return;
+  try {
+    sock.sendMessage(from, { react: { text: emoji, key: msg.key } }).catch(() => {});
+  } catch (e) { /* reaction is never worth failing the flow over */ }
+};
 
 // Slowmode enforcement (in-memory cooldown tracking)
 let slowmodeModule;
@@ -672,6 +683,7 @@ const handleMessage = async (sock, msg) => {
                   } catch (blockErr) {
                     console.error('[DMBLOCKER] admin block failed:', blockErr.message);
                   }
+                  verdictReact(sock, from, msg, '🚫');
                   return;
                 }
               }
@@ -732,6 +744,7 @@ const handleMessage = async (sock, msg) => {
                   } catch (blockErr) {
                     console.error('[DMBLOCKER] temp block failed:', blockErr.message);
                   }
+                  verdictReact(sock, from, msg, '🚫');
                   return;
                 }
                 // Button tap or apply command — let through
@@ -752,6 +765,7 @@ const handleMessage = async (sock, msg) => {
                 } catch (blockErr) {
                   console.error('[DMBLOCKER] block failed:', blockErr.message);
                 }
+                verdictReact(sock, from, msg, '🚫');
                 return;
               }
             }
@@ -1308,6 +1322,7 @@ const handleMessage = async (sock, msg) => {
                   });
                 } catch (e) {}
               }
+              verdictReact(sock, from, msg, '🚫');
               return;
             }
           }
@@ -1334,6 +1349,7 @@ const handleMessage = async (sock, msg) => {
             text: `🐢 *SLOWMODE*\n\n@${sender.split('@')[0]} — wait *${remaining}s* before sending again`,
             mentions: [sender]
           });
+          verdictReact(sock, from, msg, '🚫');
           return;
         }
 
@@ -1359,7 +1375,11 @@ const handleMessage = async (sock, msg) => {
     
     // Get command
     const command = commands.get(commandName);
-    if (!command) return;
+    if (!command) {
+      // Unknown command = failed request — end on ❌ instead of staying silent.
+      if (commandName) verdictReact(sock, from, msg, '❌');
+      return;
+    }
     
     // Check self mode (private mode) - only owner/approved can use commands (DMs ONLY, groups unaffected)
     // Pending applicants and team admins are exempt so the .crew apply / accept / deny flow works in DMs.
@@ -1376,6 +1396,7 @@ const handleMessage = async (sock, msg) => {
       } catch (e) {
         console.error('[DMBLOCKER] block failed:', e.message);
       }
+      verdictReact(sock, from, msg, '🚫');
       return;
     }
     
@@ -1388,6 +1409,7 @@ const handleMessage = async (sock, msg) => {
       const isAllowedCmd = new RegExp('^\\' + prefixEscaped +
         'crew\\s+(accept|deny|hire|reject|fire|applicants|pending)\\b').test(lowerBody);
       if (!isAllowedCmd) {
+        verdictReact(sock, from, msg, '🚫');
         return sock.sendMessage(from, {
           text: `❌ ERROR\n\n` +
                 `Ai — as a team admin you only accept or deny pending applications in DMs\n\n` +
@@ -1448,34 +1470,41 @@ const handleMessage = async (sock, msg) => {
               `\`${prefix}crew withdraw <UID>\` — withdraw your application\n` +
               `\`${prefix}crew applicants <team>\` — check your app status`;
         }
+        verdictReact(sock, from, msg, '🚫');
         return sock.sendMessage(from, { text: restrictionMsg }, { quoted: msg });
       }
     }
     
-    // Permission checks
+    // Permission checks — every denial ends on 🚫 (not-allowed verdict).
     if (command.ownerOnly && !isOwner(sender) && !msg.key.fromMe) {
+      verdictReact(sock, from, msg, '🚫');
       return sock.sendMessage(from, { text: config.messages.ownerOnly }, { quoted: msg });
     }
     
     if (command.modOnly && !isMod(sender) && !isOwner(sender)) {
+      verdictReact(sock, from, msg, '🚫');
       return sock.sendMessage(from, { text: `${bold('Moderators only')} — this one's strictly for the mods, boet` }, { quoted: msg });
     }
     
     if (command.groupOnly && !isGroup) {
+      verdictReact(sock, from, msg, '🚫');
       return sock.sendMessage(from, { text: config.messages.groupOnly }, { quoted: msg });
     }
     
     if (command.privateOnly && isGroup) {
+      verdictReact(sock, from, msg, '🚫');
       return sock.sendMessage(from, { text: config.messages.privateOnly }, { quoted: msg });
     }
     
     if (command.adminOnly && !(await isAdmin(sock, sender, from, groupMetadata)) && !isOwner(sender)) {
+      verdictReact(sock, from, msg, '🚫');
       return sock.sendMessage(from, { text: config.messages.adminOnly }, { quoted: msg });
     }
     
     if (command.botAdminNeeded) {
       const botIsAdmin = await isBotAdmin(sock, from, groupMetadata);
       if (!botIsAdmin) {
+        verdictReact(sock, from, msg, '🚫');
         return sock.sendMessage(from, { text: config.messages.botAdminNeeded }, { quoted: msg });
       }
     }
@@ -1493,9 +1522,12 @@ const handleMessage = async (sock, msg) => {
     console.log(`Executing command: ${commandName} from ${sender}`);
     
     try {
-      // Set by extra.fail() when a command reports its own failure instead
-      // of rethrowing — progressReaction reads it to pick ✅ vs ❌.
-      const outcome = { failed: false };
+      // Verdict state read by progressReaction to pick 🚫 vs ❌ vs ✅:
+      //   failed      — sticky, set by extra.fail()
+      //   denied      — sticky, set by extra.deny()
+      //   replyVerdict— last reply classified ('none' | 'fail' | 'deny'),
+      //                 reassigned on every reply so latest text wins
+      const outcome = { failed: false, denied: false, replyVerdict: 'none' };
       const commandExtra = {
         from,
         sender,
@@ -1510,7 +1542,13 @@ const handleMessage = async (sock, msg) => {
         sock,
         reply: async (text) => {
           try {
-            return await sock.sendMessage(from, { text }, { quoted: msg });
+            const sent = await sock.sendMessage(from, { text }, { quoted: msg });
+            // Safety net: a ❌-leading reply marks the run failed, and a
+            // permission-flavoured ❌ text ("only KAMI", "admins only"…)
+            // escalates to denied — so no command can reply an error and
+            // still end on ✅.
+            outcome.replyVerdict = classifyReply(text);
+            return sent;
           } catch (err) {
             console.error(`[REPLY ERROR] Failed to send to ${from}:`, err.message);
             throw err;
@@ -1518,7 +1556,9 @@ const handleMessage = async (sock, msg) => {
         },
         edit: async (key, text) => {
           try {
-            return await sock.sendMessage(from, { text, edit: key });
+            const sent = await sock.sendMessage(from, { text, edit: key });
+            outcome.replyVerdict = classifyReply(text);
+            return sent;
           } catch (err) {
             console.error(`[EDIT ERROR] Failed to edit in ${from}:`, err.message);
             throw err;
@@ -1532,8 +1572,8 @@ const handleMessage = async (sock, msg) => {
           }
         },
         // Fire a reaction stage by name ('received' | 'generating' | 'done'
-        // | 'confirm' | 'error') or pass a literal emoji to override this
-        // command's set. `confirm` is the final ✅/❌ verdict.
+        // | 'confirm' | 'error' | 'deny') or pass a literal emoji to override
+        // this command's set. `confirm` is the final ✅ verdict.
         stage: async (nameOrEmoji) => {
           try {
             const emoji = stageEmoji(command, nameOrEmoji);
@@ -1548,6 +1588,12 @@ const handleMessage = async (sock, msg) => {
         fail: (reason) => {
           outcome.failed = true;
           if (reason) console.log(`[CMD-FAIL] ${commandName}:`, reason);
+        },
+        // Report a permission/restriction rejection from inside the command —
+        // flips the final verdict to 🚫 (wins over fail()). Idempotent.
+        deny: (reason) => {
+          outcome.denied = true;
+          if (reason) console.log(`[CMD-DENY] ${commandName}:`, reason);
         }
       };
 
