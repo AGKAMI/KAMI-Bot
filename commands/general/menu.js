@@ -30,7 +30,7 @@ const categoryMeta = {
 
 const order = ['general', 'ai', 'media', 'fun', 'games', 'utility', 'anime', 'textmaker', 'admin', 'crew', 'owner'];
 
-function buildCategoryText(cat) {
+function buildCategoryText(cat, opts = {}) {
   const prefix = config.prefix || '.';
   const commands = getCommands();
   const meta = categoryMeta[cat] || { emoji: '📁', label: cat };
@@ -46,7 +46,12 @@ function buildCategoryText(cat) {
     text += `${prefix}${cmd.name}${cmd.description ? ` — \`${cmd.description}\`` : ''}\n`;
   }
   if (items.length === 0) text += `_No commands here yet, ${voice.tag('err')}_`;
-  text += `\n----------\n_Use ${prefix}help <cmd> for info_`;
+  text += `\n----------\n`;
+  // Button views carry a Back button — but if it falls back to plain text
+  // (button mode off / rate-limited), the typed path must be spelled out.
+  text += opts.nav
+    ? `_Tap ⬅️ Back for the menu or type ${prefix}menu · ${prefix}help <cmd> for info_`
+    : `_Use ${prefix}help <cmd> for info_`;
   return text;
 }
 
@@ -182,12 +187,12 @@ module.exports = {
   }
 };
 
-// Register category button handlers (runs once at command load)
-// Layout: msg1 = 3 buttons (2 categories + More), msg2 = Back (separate message)
-// Last page: Owner + Back in one message (2 buttons)
-// Category detail views = plain text, no buttons
+// Register button handlers (runs once at command load)
+// Layout: main menu = category buttons + More; More = Anime/Textmaker/Back;
+// every category view = command list + Back (parent-aware: More children go
+// back to More, main categories go back to main). Also served when the same
+// menu:* ids are pressed from start.js's `start:menu` layout.
 
-const { sendButtons: sendBtns } = require('../../utils/buttonHelper');
 const mainText = `*KAMI BOT* ${voice.greetOpen()}! 👋\n\n🤖 Hit a button for that section's commands 👇\n\n📖 Everything: *${config.prefix || '.'}menu all*`;
 const mainBtns = [
   { id: 'menu:admin',   text: '🛡️ Admin' },
@@ -202,34 +207,28 @@ const mainBtns = [
   { id: 'menu:more',    text: '📂 More' },
 ];
 
-// ── Category views (plain text) ──────────────────────
-onButton('menu:admin', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('admin') });
-});
-onButton('menu:crew', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('crew') });
-});
-onButton('menu:general', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('general') });
-});
-onButton('menu:ai', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('ai') });
-});
-onButton('menu:media', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('media') });
-});
-onButton('menu:fun', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('fun') });
-});
-onButton('menu:games', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('games') });
-});
-onButton('menu:utility', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('utility') });
-});
+const BACK_MAIN = { id: 'menu:back:main', text: '⬅️ Back to Menu' };
+const BACK_MORE = { id: 'menu:back:more', text: '⬅️ Back to More' };
 
-// 👑 Owner button — only KAMI gets the owner command list; everyone else
-// gets told plainly. Handles: fromMe taps (owner's own device), PN jids,
+// Category view = the list WITH a Back button (never a dead end)
+async function sendCategoryView(sock, from, cat, backBtn) {
+  await sendButtons(sock, from, {
+    text: buildCategoryText(cat, { nav: true }),
+    footer: config.botName || 'KAMI Bot',
+    buttons: [backBtn],
+  });
+}
+
+// ── Main-page categories → Back to main menu ────────────
+for (const b of mainBtns) {
+  if (b.id === 'menu:owner' || b.id === 'menu:more') continue; // special-cased below
+  const cat = b.id.slice('menu:'.length);
+  onButton(b.id, (sock, msg, from) => sendCategoryView(sock, from, cat, BACK_MAIN));
+}
+
+// ── 👑 Owner button — only KAMI gets the owner command list; everyone else
+// gets told plainly (with a Back button, so they're not stuck).
+// Handles: fromMe taps (owner's own device), PN jids,
 // LID participants (normalized), and config.ownerNumber stored as 083….
 const isOwnerClicker = (msg, sender) => {
   if (msg && msg.key && msg.key.fromMe) return true;
@@ -239,41 +238,41 @@ const isOwnerClicker = (msg, sender) => {
   return (config.ownerNumber || []).some(o => canonicalNumber(o) === canonicalNumber(digits));
 };
 
-onButton('menu:owner', (sock, msg, from, sender) => {
+onButton('menu:owner', async (sock, msg, from, sender) => {
   const clicker = sender || (msg && msg.key && msg.key.participant) || from;
   if (!isOwnerClicker(msg, clicker)) {
-    return sock.sendMessage(from, {
-      text: `👑 *KAMI ONLY*\n\n_Only KAMI has access to those commands._`
+    return sendButtons(sock, from, {
+      text: `👑 *KAMI ONLY*\n\n_Only KAMI has access to those commands._`,
+      footer: config.botName || 'KAMI Bot',
+      buttons: [BACK_MAIN],
     });
   }
-  sock.sendMessage(from, { text: buildCategoryText('owner') });
+  await sendCategoryView(sock, from, 'owner', BACK_MAIN);
 });
 
 // ── More page: Anime, Textmaker, Back ────────────────
-onButton('menu:more', async (sock, msg, from) => {
-  await sendBtns(sock, from, {
+async function sendMorePage(sock, from) {
+  await sendButtons(sock, from, {
     text: `📂 *MORE*\n\nTap to see commands:`,
     footer: config.botName || 'KAMI Bot',
     buttons: [
       { id: 'menu:anime',     text: '⛩️ Anime' },
       { id: 'menu:textmaker', text: '✨ Textmaker' },
-      { id: 'menu:back:main', text: '⬅️ Back to Menu' },
+      BACK_MAIN,
     ],
   });
-});
-onButton('menu:anime', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('anime') });
-});
-onButton('menu:textmaker', (sock, msg, from) => {
-  sock.sendMessage(from, { text: buildCategoryText('textmaker') });
-});
+}
+onButton('menu:more', (sock, msg, from) => sendMorePage(sock, from));
+onButton('menu:back:more', (sock, msg, from) => sendMorePage(sock, from)); // children's parent-aware Back
+
+// More-page children → Back returns to the More page, not the main menu
+onButton('menu:anime', (sock, msg, from) => sendCategoryView(sock, from, 'anime', BACK_MORE));
+onButton('menu:textmaker', (sock, msg, from) => sendCategoryView(sock, from, 'textmaker', BACK_MORE));
 
 // ── Back to Main Menu ────────────────────────────────
-onButton('menu:back:main', async (sock, msg, from) => {
-  await sendBtns(sock, from, {
-    text: mainText,
-    footer: config.botName || 'KAMI Bot',
-    header: 'KAMI BOT',
-    buttons: mainBtns,
-  });
-});
+onButton('menu:back:main', (sock, msg, from) => sendButtons(sock, from, {
+  text: mainText,
+  footer: config.botName || 'KAMI Bot',
+  header: 'KAMI BOT',
+  buttons: mainBtns,
+}));
