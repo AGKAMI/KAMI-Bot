@@ -12,6 +12,13 @@ const path = require('path');
 const execFilePromise = util.promisify(execFile);
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const { withTimeout } = require('../../utils/withTimeout');
+
+// Hard ceilings — see utils/withTimeout.js for why (frozen-⬇️ bug).
+// Method 1 sends by URL, which Baileys fetches itself with no timeout.
+const URL_SEND_TIMEOUT_MS = 60000;
+// Umbrella watchdog; the env override is a test seam only.
+const WATCHDOG_MS = Number(process.env.FB_WATCHDOG_MS) || 180000;
 
 // Repo-shipped yt-dlp binary (bin/yt-dlp) preferred, then config path, then bare command
 const repoYtDlp = path.join(__dirname, '..', '..', 'bin', 'yt-dlp');
@@ -112,6 +119,8 @@ module.exports = {
   usage: '.fb <Facebook video link>',
 
   async execute(sock, msg, args, extra) {
+    let watchdogTimer = null;
+    let aborted = false;
     try {
       if (processedMessages.has(msg.key.id)) {
         return;
@@ -140,83 +149,111 @@ module.exports = {
         return await extra.reply(`❌ _${voice.openErr()}, invalid Facebook link_\n_use:_ .fb <facebook video link>`);
       }
 
-      let videoData = null;
-      let lastError = null;
+      // Everything below is bounded (yt-dlp/API have their own timeouts,
+      // the URL send gets URL_SEND_TIMEOUT_MS, the watchdog caps the run)
+      // — execute() always settles so the ❌ verdict always lands.
+      const run = (async () => {
+        let videoData = null;
+        let lastError = null;
 
-      // Try yt-dlp first
-      try {
-        console.log('.fb: trying yt-dlp...');
-        videoData = await fetchWithYtDlp(url);
-        console.log('.fb: yt-dlp ok');
-      } catch (err) {
-        lastError = err;
-        console.log('.fb: yt-dlp failed:', err.message);
-      }
-
-      // then public API
-      if (!videoData) {
+        // Try yt-dlp first
         try {
-          console.log('.fb: trying API fallback...');
-          videoData = await fetchFromApi(url);
-          console.log('.fb: API fallback ok');
+          console.log('.fb: trying yt-dlp...');
+          videoData = await fetchWithYtDlp(url);
+          console.log('.fb: yt-dlp ok');
         } catch (err) {
           lastError = err;
-          console.log('.fb: API fallback failed:', err.message);
+          console.log('.fb: yt-dlp failed:', err.message);
         }
-      }
 
-      if (!videoData || !videoData.url) {
-        const detail = lastError?.message ? `\n\n_Source detail: _${lastError.message}_` : '';
-        extra.fail();
-        return await extra.reply(
-          `❌ _${voice.openErr()} — couldn't get the video link_\n\n_All download sources failed._${detail}\n_Try a public post link (not login-walled)._`
-        );
-      }
+        // then public API
+        if (!videoData && !aborted) {
+          try {
+            console.log('.fb: trying API fallback...');
+            videoData = await fetchFromApi(url);
+            console.log('.fb: API fallback ok');
+          } catch (err) {
+            lastError = err;
+            console.log('.fb: API fallback failed:', err.message);
+          }
+        }
 
-      const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}\n_${voice.lead('affirm')}, enjoy_`;
-      let sendSuccess = false;
+        // The watchdog already reported this run — don't double-reply.
+        if (aborted) return;
 
-      // Method 1: direct URL
-      try {
-        console.log('.fb: Method 1 direct URL');
-        await sock.sendMessage(extra.from, {
-          video: { url: videoData.url },
-          caption,
-        }, { quoted: msg });
-        sendSuccess = true;
-      } catch (e1) {
-        console.log('.fb: Method 1 failed:', e1.message);
-        // Method 2: download buffer (500MB limit)
+        if (!videoData || !videoData.url) {
+          const detail = lastError?.message ? `\n\n_Source detail: _${lastError.message}_` : '';
+          extra.fail();
+          return await extra.reply(
+            `❌ _${voice.openErr()} — couldn't get the video link_\n\n_All download sources failed._${detail}\n_Try a public post link (not login-walled)._`
+          );
+        }
+
+        const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}\n_${voice.lead('affirm')}, enjoy_`;
+        let sendSuccess = false;
+
+        // Method 1: direct URL (Baileys fetches it — bound it)
         try {
-          console.log('.fb: Method 2 buffer');
-          const videoResponse = await axios.get(videoData.url, {
-            responseType: 'arraybuffer',
-            timeout: 120000,
-            maxContentLength: 16 * 1024 * 1024, // 16MB — WhatsApp limit
-            proxy: false,
-          });
-          const buffer = Buffer.from(videoResponse.data);
-          await sock.sendMessage(extra.from, {
-            video: buffer,
-            mimetype: 'video/mp4',
+          console.log('.fb: Method 1 direct URL');
+          await withTimeout(sock.sendMessage(extra.from, {
+            video: { url: videoData.url },
             caption,
-          }, { quoted: msg });
+          }, { quoted: msg }), URL_SEND_TIMEOUT_MS, 'URL send');
           sendSuccess = true;
-        } catch (e2) {
-          console.log('.fb: Method 2 failed:', e2.message);
+        } catch (e1) {
+          console.log('.fb: Method 1 failed:', e1.message);
+          if (aborted) return;
+          // Method 2: download buffer (500MB limit)
+          try {
+            console.log('.fb: Method 2 buffer');
+            const videoResponse = await axios.get(videoData.url, {
+              responseType: 'arraybuffer',
+              timeout: 120000,
+              maxContentLength: 16 * 1024 * 1024, // 16MB — WhatsApp limit
+              proxy: false,
+            });
+            const buffer = Buffer.from(videoResponse.data);
+            await sock.sendMessage(extra.from, {
+              video: buffer,
+              mimetype: 'video/mp4',
+              caption,
+            }, { quoted: msg });
+            sendSuccess = true;
+          } catch (e2) {
+            console.log('.fb: Method 2 failed:', e2.message);
+          }
         }
-      }
 
-      if (!sendSuccess) {
-        extra.fail();
-        return await extra.reply(
-          `❌ _${voice.openErr()} — couldn't download the video_\n\n_The file might be too large for WhatsApp (>100MB)._\n_Try:_\n• _A shorter video_\n• _Using browser to download manually_`
-        );
-      }
+        if (aborted) return;
+        if (!sendSuccess) {
+          extra.fail();
+          return await extra.reply(
+            `❌ _${voice.openErr()} — couldn't download the video_\n\n_The file might be too large for WhatsApp (>100MB)._\n_Try:_\n• _A shorter video_\n• _Using browser to download manually_`
+          );
+        }
+      })();
+
+      // Late failures after the watchdog took over must stay silent.
+      run.catch(() => {});
+
+      await Promise.race([
+        run,
+        new Promise((_, reject) => {
+          watchdogTimer = setTimeout(() => {
+            aborted = true;
+            reject(new Error(`timed out after ${Math.round(WATCHDOG_MS / 1000)}s`));
+          }, WATCHDOG_MS);
+        }),
+      ]);
     } catch (error) {
       console.error('.fb Error:', error.message || error);
       extra.fail();
-      await extra.reply(`❌ _${voice.openErr()} — ${(error.message || 'try again later')}_`);
+      const timedOut = /timed out/.test(error.message || '');
+      await extra.reply(timedOut
+        ? `❌ _${voice.openErr()} — download timed out, try that link again_`
+        : `❌ _${voice.openErr()} — ${(error.message || 'try again later')}_`);
+    } finally {
+      if (watchdogTimer) clearTimeout(watchdogTimer);
     }
   },
 };

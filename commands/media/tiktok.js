@@ -7,6 +7,7 @@ const axios = require('axios');
 const { ttdl } = require('ruhend-scraper');
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const { withTimeout } = require('../../utils/withTimeout');
 
 const processedMessages = new Map(); // id → timestamp
 
@@ -41,20 +42,6 @@ const URL_SEND_TIMEOUT_MS = 60000;
 // rejects so the ❌ verdict + error reply always land. Env override is a
 // test seam only — production always uses 3 minutes.
 const WATCHDOG_MS = Number(process.env.TT_WATCHDOG_MS) || 180000;
-
-function withTimeout(promise, ms, label) {
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)),
-      ms
-    );
-  });
-  // A timed-out promise keeps running in the background — swallow its
-  // eventual rejection so it never becomes an unhandled rejection.
-  promise.catch(() => {});
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
 
 function extractVideoId(url) {
   const match = url.match(/\/video\/(\d+)/);

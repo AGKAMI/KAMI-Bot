@@ -13,6 +13,15 @@ const crypto = require('crypto');
 const config = require('../../config');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const { withTimeout } = require('../../utils/withTimeout');
+
+// Hard ceilings — see utils/withTimeout.js for why (frozen-⬇️ bug).
+const IGDL_TIMEOUT_MS = 30000;
+// axios' timeout only bounds the headers — the stream body collect below
+// needs its own deadline or a stalled body hangs execute() forever.
+const STREAM_COLLECT_TIMEOUT_MS = 40000;
+// Umbrella watchdog; the env override is a test seam only (shared with igs).
+const WATCHDOG_MS = Number(process.env.IGS_WATCHDOG_MS) || 180000;
 
 // Function to extract unique media URLs (same as .ig command)
 function extractUniqueMedia(mediaData) {
@@ -341,11 +350,11 @@ async function fetchBufferFromUrl(url, itemIndex = 0) {
           });
 
           const chunks = [];
-          await new Promise((resolve, reject) => {
+          await withTimeout(new Promise((resolve, reject) => {
             res.data.on('data', c => chunks.push(c));
             res.data.on('end', resolve);
             res.data.on('error', reject);
-          });
+          }), STREAM_COLLECT_TIMEOUT_MS, 'stream collect');
 
           const buffer = Buffer.concat(chunks);
 
@@ -435,6 +444,8 @@ async function forceMiniSticker(inputBuffer, isVideo, cropSquare) {
 
 // Main command handler
 async function igsCommand(sock, msg, args, extra, crop = false) {
+  let watchdogTimer = null;
+  let aborted = false;
   try {
     const text = msg.message?.conversation ||
       msg.message?.extendedTextMessage?.text ||
@@ -445,34 +456,40 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
       return extra.reply(`📝 _${voice.lead('neutral')}, send me an Instagram post or reel link_\n\n_Usage:_\n.igs <url>\n.igsc <url>`);
     }
 
-    const downloadData = await igdl(urlMatch[0]).catch(() => null);
-    if (!downloadData || !downloadData.data) {
-      extra.fail();
-      return extra.reply(`❌ _${voice.openErr()}, couldn't fetch from that instagram link_`);
-    }
+    // Everything below is bounded: igdl by IGDL_TIMEOUT_MS, buffer fetch
+    // by its axios timeout, the stream collect by STREAM_COLLECT_TIMEOUT_MS,
+    // and the whole body by the watchdog — execute() always settles so the
+    // ❌ verdict + error reply always land (never a frozen ⬇️ / false ✅).
+    const run = (async () => {
+      const downloadData = await withTimeout(igdl(urlMatch[0]).catch(() => null), IGDL_TIMEOUT_MS, 'igdl');
+      if (!downloadData || !downloadData.data) {
+        extra.fail();
+        return extra.reply(`❌ _${voice.openErr()}, couldn't fetch from that instagram link_`);
+      }
 
-    // Get all media items from scraper - process in order without URL deduplication
-    // The scraper returns items in sequence, so we should process them as-is
-    const mediaData = downloadData.data || [];
+      // Get all media items from scraper - process in order without URL deduplication
+      // The scraper returns items in sequence, so we should process them as-is
+      const mediaData = downloadData.data || [];
 
 
-    const rawItems = mediaData.filter(m => m && pickMediaUrl(m));
+      const rawItems = mediaData.filter(m => m && pickMediaUrl(m));
 
-    // Limit to maximum 10 items for stickers
-    const mediaToDownload = rawItems.slice(0, 10);
+      // Limit to maximum 10 items for stickers
+      const mediaToDownload = rawItems.slice(0, 10);
 
-    if (mediaToDownload.length === 0) {
-      extra.fail();
-      return extra.reply(`❌ _${voice.openErr()}, no media found — might be private_`);
-    }
+      if (mediaToDownload.length === 0) {
+        extra.fail();
+        return extra.reply(`❌ _${voice.openErr()}, no media found — might be private_`);
+      }
 
-    let successCount = 0;
-    let failCount = 0;
-    const seenHashes = new Set(); // Track content hashes to prevent sending duplicates
+      let successCount = 0;
+      let failCount = 0;
+      const seenHashes = new Set(); // Track content hashes to prevent sending duplicates
 
-    // Download all media and convert to stickers (SAME LOOP STRUCTURE AS .ig)
-    for (let i = 0; i < mediaToDownload.length; i++) {
-      try {
+      // Download all media and convert to stickers (SAME LOOP STRUCTURE AS .ig)
+      for (let i = 0; i < mediaToDownload.length; i++) {
+        if (aborted) break;
+        try {
         const media = mediaToDownload[i];
 
         // Pick the best URL from media object
@@ -570,7 +587,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
         }
 
         // Add small delay between downloads to prevent rate limiting (SAME AS .ig)
-        if (i < mediaToDownload.length - 1) {
+        if (i < mediaToDownload.length - 1 && !aborted) {
           await new Promise(resolve => setTimeout(resolve, 800));
         }
 
@@ -578,13 +595,38 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
         failCount++;
         // Continue with next media if one fails (SAME AS .ig)
       }
-    }
+      }
 
+      // The watchdog already reported this run — don't double-reply.
+      if (aborted) return;
+      // Every item failed is a failure, not a ✅.
+      if (successCount === 0) {
+        extra.fail();
+        return extra.reply(`❌ _${voice.openErr()}, none of those downloads made it as stickers — try that link again_`);
+      }
+    })();
 
+    // Late failures after the watchdog took over must stay silent.
+    run.catch(() => {});
+
+    await Promise.race([
+      run,
+      new Promise((_, reject) => {
+        watchdogTimer = setTimeout(() => {
+          aborted = true;
+          reject(new Error(`timed out after ${Math.round(WATCHDOG_MS / 1000)}s`));
+        }, WATCHDOG_MS);
+      }),
+    ]);
   } catch (err) {
     console.error('Error in igsc command:', err);
     extra.fail();
-    await extra.reply(`❌ _${voice.openErr()}, couldn't turn that link into a sticker_`);
+    const timedOut = /timed out/.test(err.message || '');
+    await extra.reply(timedOut
+      ? `❌ _${voice.openErr()}, sticker timed out — try that link again_`
+      : `❌ _${voice.openErr()}, couldn't turn that link into a sticker_`);
+  } finally {
+    if (watchdogTimer) clearTimeout(watchdogTimer);
   }
 }
 
