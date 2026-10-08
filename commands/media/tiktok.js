@@ -31,6 +31,31 @@ const dlAxios = axios.create({
   }
 });
 
+// Hard ceilings for every remote step. node-fetch inside ruhend-scraper
+// and Baileys' own URL media fetch have NO timeout — a stalled request
+// used to hang execute() forever, freezing reactions on ⬇️ with no ❌,
+// no error text and no video (the "choked .tt" bug).
+const RUHEND_TIMEOUT_MS = 30000;
+const URL_SEND_TIMEOUT_MS = 60000;
+// Umbrella: if anything (even a Baileys send) stalls past this, the run
+// rejects so the ❌ verdict + error reply always land. Env override is a
+// test seam only — production always uses 3 minutes.
+const WATCHDOG_MS = Number(process.env.TT_WATCHDOG_MS) || 180000;
+
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)),
+      ms
+    );
+  });
+  // A timed-out promise keeps running in the background — swallow its
+  // eventual rejection so it never becomes an unhandled rejection.
+  promise.catch(() => {});
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 function extractVideoId(url) {
   const match = url.match(/\/video\/(\d+)/);
   return match ? match[1] : null;
@@ -62,11 +87,15 @@ async function sendVideo(sock, chatId, videoUrl, title, msg) {
         ? `*DOWNLOADED BY ${botName}*\n\n${title}\n_${voice.lead('affirm')}, enjoy_`
         : `*DOWNLOADED BY ${botName}*\n_${voice.lead('affirm')}, enjoy_`;
 
-      await sock.sendMessage(chatId, {
-        video: { url: videoUrl },
-        mimetype: 'video/mp4',
-        caption
-      }, { quoted: msg });
+      await withTimeout(
+        sock.sendMessage(chatId, {
+          video: { url: videoUrl },
+          mimetype: 'video/mp4',
+          caption
+        }, { quoted: msg }),
+        URL_SEND_TIMEOUT_MS,
+        'URL send'
+      );
       return true;
     } catch (e2) {
       console.error('[TT] URL send failed:', e2.message);
@@ -75,7 +104,7 @@ async function sendVideo(sock, chatId, videoUrl, title, msg) {
   }
 }
 
-async function sendSlideshow(sock, chatId, images, title, msg) {
+async function sendSlideshow(sock, chatId, images, title, msg, shouldStop) {
   try {
     const botName = config.botName.toUpperCase();
     const total = images.length;
@@ -83,12 +112,13 @@ async function sendSlideshow(sock, chatId, images, title, msg) {
     // Send header text
     const header = title
       ? `*DOWNLOADED BY ${botName}*\n\n${title}\n_${total} images_\n_${voice.lead('affirm')}, enjoy_`
-      : `*DOWNLOADED BY ${botName}*\n_${total} images_\n_${voice.lead('affirm')}, enjoy_`;
+      : `*DOWNLOADED BY ${botName}*\n_${voice.lead('affirm')}, enjoy_`;
     await sock.sendMessage(chatId, { text: header }, { quoted: msg });
 
     // Send each image
     let sent = 0;
     for (let i = 0; i < total; i++) {
+      if (shouldStop && shouldStop()) break;
       try {
         const imgUrl = images[i];
         const imgRes = await dlAxios.get(imgUrl);
@@ -138,8 +168,10 @@ async function methodTikwm(url) {
   };
 }
 
-async function methodRuhend(url) {
-  const result = await ttdl(url);
+async function methodRuhend(url, timeoutMs = RUHEND_TIMEOUT_MS) {
+  // ttdl() fetches through node-fetch with no timeout at all — unbounded,
+  // it was the main way .tt froze on the ⬇️ stage.
+  const result = await withTimeout(ttdl(url), timeoutMs, 'ruhend');
   if (!result) throw new Error('ruhend: no result');
 
   // Slideshow — has images array
@@ -175,6 +207,8 @@ module.exports = {
   usage: '.tt <TikTok URL>',
 
   async execute(sock, msg, args, extra) {
+    let watchdogTimer = null;
+    let aborted = false;
     try {
       if (processedMessages.has(msg.key.id)) return;
       processedMessages.set(msg.key.id, Date.now());
@@ -191,46 +225,88 @@ module.exports = {
         return extra.reply(`📝 _${voice.lead('neutral')}, send a TikTok link after the command_\n\n*.tt <tiktok url>*`);
       }
 
-      const methods = [
-        { name: 'tikwm', fn: () => methodTikwm(url) },
-        { name: 'ruhend', fn: () => methodRuhend(url) },
-        { name: 'tikcdn', fn: () => methodTikcdn(url) }
-      ];
+      const run = (async () => {
+        const methods = [
+          { name: 'tikwm', fn: () => methodTikwm(url) },
+          { name: 'ruhend', fn: () => methodRuhend(url) },
+          { name: 'tikcdn', fn: () => methodTikcdn(url) }
+        ];
 
-      let success = false;
-      let lastError = null;
+        let success = false;
+        let lastError = null;
 
-      for (const method of methods) {
-        try {
-          console.log(`[TT] trying ${method.name}...`);
-          const result = await method.fn();
-          console.log(`[TT] ${method.name} succeeded — type: ${result.type || 'video'}`);
+        for (const method of methods) {
+          if (aborted) break;
+          try {
+            console.log(`[TT] trying ${method.name}...`);
+            const result = await method.fn();
+            console.log(`[TT] ${method.name} succeeded — type: ${result.type || 'video'}`);
+            if (aborted) break;
 
-          let sent = false;
-          if (result.type === 'slideshow' && result.images?.length > 0) {
-            sent = await sendSlideshow(sock, extra.from, result.images, result.title, msg);
-          } else if (result.videoUrl) {
-            sent = await sendVideo(sock, extra.from, result.videoUrl, result.title, msg);
+            let sent = false;
+            if (result.type === 'slideshow' && result.images?.length > 0) {
+              sent = await sendSlideshow(sock, extra.from, result.images, result.title, msg, () => aborted);
+            } else if (result.videoUrl) {
+              sent = await sendVideo(sock, extra.from, result.videoUrl, result.title, msg);
+            }
+
+            if (sent) {
+              success = true;
+              break;
+            }
+          } catch (e) {
+            console.error(`[TT] ${method.name} failed: ${e.message}`);
+            lastError = e;
           }
-
-          if (sent) {
-            success = true;
-            break;
-          }
-        } catch (e) {
-          console.error(`[TT] ${method.name} failed: ${e.message}`);
-          lastError = e;
         }
-      }
 
-      if (!success) {
-        extra.fail();
-        return extra.reply(`❌ _${voice.openErr()} — couldn't download the video, try a different link_`);
-      }
+        // The watchdog already reported this run — don't double-reply.
+        if (aborted) return;
+        if (!success) {
+          extra.fail();
+          return extra.reply(`❌ _${voice.openErr()} — couldn't download the video, try a different link_`);
+        }
+      })();
+
+      // Anything that goes wrong after the watchdog took over must stay
+      // silent (the timeout reply already went out).
+      run.catch(() => {});
+
+      // Umbrella watchdog: every step above is bounded, but if some other
+      // await stalls (WhatsApp send, Baileys internals) execute() must
+      // still settle — a hung execute froze reactions on ⬇️ forever with
+      // no ❌ and no error text.
+      await Promise.race([
+        run,
+        new Promise((_, reject) => {
+          watchdogTimer = setTimeout(() => {
+            aborted = true;
+            reject(new Error(`timed out after ${Math.round(WATCHDOG_MS / 1000)}s`));
+          }, WATCHDOG_MS);
+        }),
+      ]);
     } catch (error) {
       console.error('[TT] command error:', error);
       extra.fail();
-      await extra.reply(`❌ _${voice.openErr()} — error processing request, try again_`);
+      const timedOut = /timed out/.test(error.message || '');
+      await extra.reply(timedOut
+        ? `❌ _${voice.openErr()} — download timed out, try again or use a different link_`
+        : `❌ _${voice.openErr()} — error processing request, try again_`);
+    } finally {
+      if (watchdogTimer) clearTimeout(watchdogTimer);
     }
-  }
+  },
+
+  // Test seams — never invoked by the command loader.
+  _internals: {
+    withTimeout,
+    methodRuhend,
+    sendVideo,
+    sendSlideshow,
+    methodTikwm,
+    RUHEND_TIMEOUT_MS,
+    URL_SEND_TIMEOUT_MS,
+    WATCHDOG_MS,
+    TIKTOK_REGEX,
+  },
 };
