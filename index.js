@@ -188,6 +188,17 @@ const createSuppressedLogger = (level = 'silent') => {
 // Session reconnect retry counter — module-level so it persists across startBot() reconnects
 let sessionRetryCount = 0;
 
+// Single pending reconnect shared by ALL paths (close handler, watchdog, conflict retry)
+// so we never spawn two sockets for the same account (second socket → 440 conflict).
+let reconnectTimer = null;
+function scheduleReconnect(delay, tag) {
+  if (reconnectTimer) return;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    startBot().catch(e => console.error(`[${tag}] reconnect failed:`, e.message));
+  }, delay);
+}
+
 // Main connection function
 async function startBot() {
   const sessionFolder = `./${config.sessionName}`;
@@ -278,7 +289,10 @@ async function startBot() {
       console.log('⚠️ No activity detected. Forcing reconnect...');
       await sock.end(undefined, undefined, { reason: 'inactive' });
       clearInterval(watchdogInterval);
-      setTimeout(() => startBot().catch(e => console.error('[WATCHDOG] reconnect failed:', e.message)), 5000);
+      // The close event below already queues the standard reconnect — scheduling a
+      // second startBot() here spawned two sockets (connection replaced → 440 conflict).
+      // Keep this as a fallback only: if the close event never fires, timer still runs.
+      scheduleReconnect(5000, 'WATCHDOG');
     }
   }, 5 * 60 * 1000); // Every 5 min check
 
@@ -287,6 +301,7 @@ async function startBot() {
     const { connection } = update;
     if (connection === 'open') {
       lastActivity = Date.now(); // Reset on open
+      sessionRetryCount = 0; // Successful connect clears accumulated session-retry count
     } else if (connection === 'close') {
       clearInterval(watchdogInterval);
     }
@@ -312,14 +327,19 @@ async function startBot() {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const errorMessage = lastDisconnect?.error?.message || 'Unknown error';
 
-      // 401 = loggedOut, 440 = conflict — retry with backoff, clear session if stuck
-      if (statusCode === 401 || statusCode === 440 || errorMessage.includes('conflict')) {
+      // 401 = loggedOut (session genuinely dead — the ONLY case allowed to delete it),
+      // 440 / conflict = transient (another connection replaced ours, e.g. reconnect
+      // overlap) — must never touch the session, just retry.
+      const isLoggedOut = statusCode === 401;
+      const isTransient = statusCode === 440 || errorMessage.includes('conflict');
+
+      if (isLoggedOut || isTransient) {
         sessionRetryCount = (sessionRetryCount || 0) + 1;
         const retryDelay = Math.min(10000 * sessionRetryCount, 60000);
         console.log(`⚠️ Session issue (${statusCode}) — retry ${sessionRetryCount}/5 in ${retryDelay / 1000}s...`);
 
-        if (sessionRetryCount >= 5) {
-          console.log('\n❌ Session stuck after 5 retries — clearing stale session files for fresh QR...');
+        if (sessionRetryCount >= 5 && isLoggedOut) {
+          console.log('\n❌ Session logged out after 5 retries — clearing session files for fresh QR...');
           try {
             const sessionPath = path.join(__dirname, config.sessionName);
             if (fs.existsSync(sessionPath)) {
@@ -332,7 +352,13 @@ async function startBot() {
           process.exit(1);
         }
 
-        setTimeout(() => startBot().catch(e => console.error('[CONFLICT] reconnect failed:', e.message)), retryDelay);
+        if (sessionRetryCount >= 5) {
+          // Transient conflict exhausted 5 retries — session is still valid, keep it.
+          console.log('⚠️ Repeated connection conflicts — session kept, retrying...');
+          sessionRetryCount = 0;
+        }
+
+        scheduleReconnect(retryDelay, 'CONFLICT');
         return;
       }
       // Reset retry counter on successful or non-session-related close
@@ -349,7 +375,7 @@ async function startBot() {
       }
 
       if (shouldReconnect) {
-        setTimeout(() => startBot().catch(e => console.error('[RECONNECT] reconnect failed:', e.message)), 3000);
+        scheduleReconnect(3000, 'RECONNECT');
       } else {
         console.log('\n⚠️ Session expired. QR code will appear on next restart.');
         console.log('   Restart the bot from the panel to re-pair.\n');
