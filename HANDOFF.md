@@ -13,15 +13,16 @@ Ship working auto-kick for 14-day-inactive members in KAMI Bot (WhatsApp bot) an
 
 **Broken / incomplete:**
 - Exact kick count unknown — 18:15 console output rotated out (panel log buffer = ~16–100 lines). Each kick posts a `🗑️ AUTO-KICK` message into its group (`autoProgression.js:414`) — user can scroll groups to count.
-- GitHub workflow `.github/workflows/deploy-bot-hosting.yml`: `BOT_HOSTING_API_KEY` secret replaced 10-09 (was 401-expired since 06-15) but `BOT_HOSTING_SERVER_ID` = old `08b6894d` → dispatch restarts the DEAD box. Must rewrite to MCP/bhk_ flow (or correct id) — deferred to zombie-fix task.
+- Zombie-fix deploy in flight at handoff time: `index.js` fixes (reconnect backoff retry, watchdog readyState===3, 15s version-fetch timeout) + workflow rewrite committed and pushed; workflow auto-restarts the live box (secrets now = bhk_ key + live deployment id). Verify boot via MCP `deployments_logs` next session.
 - Old panel API key `ptlc_b2LS…` only works against stale box `08b6894d` (404 on live `u9mg7ylz`) — different panel account owns the live server.
-- Zombie-death fixes DESIGNED BUT NOT EDITED: `scheduleReconnect` retry, watchdog `readyState===3`, `withTimeout` on `fetchLatestBaileysVersion`, workflow stop→start rewrite.
 
 **Files changed this session (working tree state):**
-- `AGENTS.md` — two-server warning, MCP restart path, bhk_ credentials, 4 new gotchas (uncommitted)
-- `~/.claude/CLAUDE.md` — Known Gotchas + Deployment Workflow updated (outside repo; commit per its own rule if desired)
+- `index.js` — 3 zombie fixes: `scheduleReconnect` re-arms with ×2 backoff (cap 5 min) if `startBot()` throws pre-wiring (`:194`); `fetchLatestBaileysVersion` raced with 15s timeout, falls back to Baileys default version (`:237`); watchdog now also fires on `readyState===3`/missing ws (dead socket, no close event) and only `end()`s live sockets (`:291`)
+- `.github/workflows/deploy-bot-hosting.yml` — rewritten: JSON-RPC `tools/call deployments_power` (`action:"restart"`, `waitSeconds:30`) against `https://bot-hosting.net/api/mcp` with `bhk_` key; secrets `BOT_HOSTING_API_KEY` = bhk_ key, `BOT_HOSTING_SERVER_ID` = `b0665152-9b54-4ede-a11f-45c4a6641704` (set via gh 21:42)
+- `AGENTS.md` — two-server warning, MCP restart path, bhk_ credentials, 4 new gotchas
+- `~/.claude/CLAUDE.md` — Known Gotchas + Deployment Workflow updated (outside repo)
 - `HANDOFF.md` — this rewrite
-- Prior commits already pushed: backdate episodes, engine fixes — HEAD = `3c9fb2c` (verify with `git log`)
+- Verified locally: `node --check index.js`, `checkall.js` 234 files 0 failed, `runtime-smoke.js` 4/4, workflow YAML parses
 
 ## What Was Tried That Failed
 - **Pterodactyl client API restarts via `08b6894d`/ptlc_ key** — hit a DEAD June–Sep box; the live bot was never restarted by them. Root cause of the whole "backdate ignored" saga (plus in-memory state caching).
@@ -50,11 +51,10 @@ Ship working auto-kick for 14-day-inactive members in KAMI Bot (WhatsApp bot) an
 - Standing user directive: commit/push/SFTP when done, don't wait for approval.
 
 ## Next Steps
-1. Ask user to confirm the kicks: scroll the 5 crew groups for `🗑️ AUTO-KICK` announcements (each kick posts one), or report members missing. Expected: up to 89 processed, mixture of kicked vs cleared (left/active/protected).
-2. Commit + push docs (`AGENTS.md`, `HANDOFF.md`): `chore(docs): two-server discovery, MCP restart path, kick-pass verification` — stage ONLY those (never-commit list: `__pycache__/`, `app.json`, `check.js`, `check_disk.py`, `kami_session/`, `upload_*.py`).
-3. With user approval of the bhk_ key in GH secrets: rewrite `deploy-bot-hosting.yml` to call `bot-hosting.net/api/mcp` (`deployments_power` on `b0665152-…`) instead of Pterodactyl/`08b6894d`; set `BOT_HOSTING_API_KEY` = bhk_ key; test-dispatch.
-4. Resume zombie-fix workstream: `scheduleReconnect` retry, watchdog `readyState===3`, `withTimeout(fetchLatestBaileysVersion)`, workflow stop→start → `node --check` + `checkall.js` + `runtime-smoke.js` → commit/push → MCP `deployments_apply`/`power` restart → verify session + engine boot line.
-5. Oct 16+: notice cooldown expires — watch for duplicate group notices (groups[] @17:07 should prevent; verify first hourly check after Oct 16 17:07).
+1. Verify the zombie-fix deploy landed: `git log -1`, then MCP `deployments_logs`/`searchLogs` for boot lines (KAMI BOT CONNECTED) and confirm `files_read index.js` shows the new watchdog text ("WebSocket dead without close event"). If the workflow run failed, check `gh run list`.
+2. Ask user to confirm the kicks: scroll the 5 crew groups for `🗑️ AUTO-KICK` announcements (each kick posts one), or report members missing. Expected: up to 89 processed, mixture of kicked vs cleared (left/active/protected).
+3. Oct 16+: notice cooldown expires — watch for duplicate group notices (groups[] @17:07 should prevent; verify first hourly check after Oct 16 17:07).
+4. Optional hardening: session-401 cleanup path (`index.js:341` process.exit(1)) still requires a human panel restart — could exit-and-restart via child process or rely on Pterodactyl `always restart`.
 
 ## Memory Keys
 mcp__claude-flow__memory_search { query: "kami kick backdate two-server MCP bhk panel stale box", namespace: "project" }

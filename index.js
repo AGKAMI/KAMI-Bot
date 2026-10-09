@@ -193,9 +193,17 @@ let sessionRetryCount = 0;
 let reconnectTimer = null;
 function scheduleReconnect(delay, tag) {
   if (reconnectTimer) return;
-  reconnectTimer = setTimeout(() => {
+  reconnectTimer = setTimeout(async () => {
     reconnectTimer = null;
-    startBot().catch(e => console.error(`[${tag}] reconnect failed:`, e.message));
+    try {
+      await startBot();
+    } catch (e) {
+      // startBot threw BEFORE wiring the close handler (auth state, version fetch,
+      // etc.) — no connection.update will ever fire, so nothing else retries and
+      // the process sits as a zombie. Re-arm with capped backoff.
+      console.error(`[${tag}] reconnect failed:`, e.message);
+      scheduleReconnect(Math.min(delay * 2, 5 * 60 * 1000), tag);
+    }
   }, delay);
 }
 
@@ -233,7 +241,19 @@ async function startBot() {
   }
 
   const { state, saveCreds } = await useMultiFileAuthState(sessionFolder);
-  const { version } = await fetchLatestBaileysVersion();
+  // fetchLatestBaileysVersion() does outbound HTTP with no timeout — a hung request
+  // stalls startBot forever (zombie at boot). Race it; on timeout/error fall back to
+  // Baileys' bundled default version (undefined → makeWASocket picks DEFAULT_VERSION).
+  let version;
+  try {
+    ({ version } = await Promise.race([
+      fetchLatestBaileysVersion(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('version fetch timed out after 15s')), 15000)),
+    ]));
+  } catch (e) {
+    console.warn(`⚠️ Version fetch failed (${e.message}) — using Baileys default`);
+    version = undefined;
+  }
 
   // Use suppressed logger for socket
   const suppressedLogger = createSuppressedLogger('silent');
@@ -285,13 +305,20 @@ async function startBot() {
 
   // Check every 5 min
   const watchdogInterval = setInterval(async () => {
-    if (Date.now() - lastActivity > INACTIVITY_TIMEOUT && sock.ws.readyState === 1) { // WebSocket open but inactive
-      console.log('⚠️ No activity detected. Forcing reconnect...');
-      await sock.end(undefined, undefined, { reason: 'inactive' });
+    const wsState = sock.ws ? sock.ws.readyState : 3; // missing ws = dead socket
+    // readyState 3 (CLOSED) with no close event = Baileys zombie: the socket is
+    // gone but nothing queues a reconnect. Also catch OPEN-but-silent sockets.
+    if (wsState === 3 || (wsState === 1 && Date.now() - lastActivity > INACTIVITY_TIMEOUT)) {
+      console.log(wsState === 3
+        ? '⚠️ WebSocket dead without close event. Forcing reconnect...'
+        : '⚠️ No activity detected. Forcing reconnect...');
       clearInterval(watchdogInterval);
-      // The close event below already queues the standard reconnect — scheduling a
-      // second startBot() here spawned two sockets (connection replaced → 440 conflict).
-      // Keep this as a fallback only: if the close event never fires, timer still runs.
+      // Only end() a live socket — end() on a CLOSED ws throws. The close event
+      // (if it fires) queues the standard reconnect; scheduleReconnect is shared,
+      // so a double-fire can't spawn two sockets (440 conflict).
+      if (wsState === 1) {
+        await sock.end(undefined, undefined, { reason: 'inactive' }).catch(() => {});
+      }
       scheduleReconnect(5000, 'WATCHDOG');
     }
   }, 5 * 60 * 1000); // Every 5 min check

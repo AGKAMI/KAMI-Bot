@@ -10,57 +10,48 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Sync & restart bot-hosting server
+      - name: Restart live deployment via bot-hosting MCP
         env:
-          PANEL_API_KEY: ${{ secrets.BOT_HOSTING_API_KEY }}
-          SERVER_ID: ${{ secrets.BOT_HOSTING_SERVER_ID }}
+          BH_API_KEY: ${{ secrets.BOT_HOSTING_API_KEY }}
+          DEPLOYMENT_ID: ${{ secrets.BOT_HOSTING_SERVER_ID }}
         run: |
-          if [ -z "$PANEL_API_KEY" ]; then
-            echo "::error::Missing BOT_HOSTING_API_KEY secret"
+          if [ -z "$BH_API_KEY" ]; then
+            echo "::error::Missing BOT_HOSTING_API_KEY secret (bhk_ key)"
             exit 1
           fi
 
-          if [ -z "$SERVER_ID" ]; then
-            echo "::error::Missing BOT_HOSTING_SERVER_ID secret"
+          if [ -z "$DEPLOYMENT_ID" ]; then
+            echo "::error::Missing BOT_HOSTING_SERVER_ID secret (deployment UUID)"
             exit 1
           fi
 
-          AUTH="Authorization: Bearer ${PANEL_API_KEY}"
-          API="https://control.bot-hosting.net/api/client/servers/${SERVER_ID}"
+          echo "Restarting deployment ${DEPLOYMENT_ID} (auto-pull on restart)..."
+          RESP=$(curl -sS --max-time 240 https://bot-hosting.net/api/mcp \
+            -H "Authorization: Bearer ${BH_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"deployments_power\",\"arguments\":{\"id\":\"${DEPLOYMENT_ID}\",\"action\":\"restart\",\"waitSeconds\":30}}}")
 
-          echo "Checking server status..."
-          STATUS=$(curl -s -w "\n%{http_code}" --request GET \
-            --header "$AUTH" \
-            --header "Accept: application/json" \
-            "${API}" | tail -1)
-
-          if [ "$STATUS" != "200" ]; then
-            echo "::error::Failed to reach server (HTTP $STATUS)"
-            exit 1
-          fi
-
-          echo "Sending restart signal (auto-update pulls from GitHub on boot)..."
-          RESP=$(curl -s -w "\n%{http_code}" --request POST \
-            --header "$AUTH" \
-            --header "Accept: application/json" \
-            --header "Content-Type: application/json" \
-            --data '{"signal":"restart"}' \
-            "${API}/power" | tail -1)
-
-          if [ "$RESP" = "204" ] || [ "$RESP" = "200" ]; then
-            echo "Restart signal sent successfully (HTTP $RESP)"
-          else
-            echo "::warning::Restart returned HTTP $RESP — server may need manual restart"
-          fi
-
-          echo "Waiting 10s for server to boot..."
-          sleep 10
-
-          echo "Checking server state..."
-          STATE=$(curl -s --request GET \
-            --header "$AUTH" \
-            --header "Accept: application/json" \
-            "${API}" | python3 -c "import sys,json; print(json.load(sys.stdin)['attributes'].get('status','unknown'))" 2>/dev/null || echo "unknown")
-
-          echo "Server state: $STATE"
-          echo "Deployment complete."
+          echo "$RESP" | python3 -c '
+          import sys, json
+          raw = sys.stdin.read()
+          try:
+              r = json.loads(raw)
+          except Exception:
+              print("::error::Non-JSON response from MCP:", raw[:500]); sys.exit(1)
+          if "error" in r:
+              print("::error::MCP error:", r["error"]); sys.exit(1)
+          text = r.get("result", {}).get("content", [{}])[0].get("text", "")
+          try:
+              data = json.loads(text)
+          except Exception:
+              print(text[:1500]); sys.exit(0)
+          print("ok:", data.get("ok"))
+          print("state:", data.get("state") or data.get("status"))
+          print("payload keys:", ", ".join(data.keys()))
+          if data.get("ok") is False:
+              print("::warning::Restart not accepted — check panel console")
+          tail = data.get("console") or data.get("logs") or data.get("consoleOutput") or ""
+          if tail:
+              print("--- console tail ---")
+              print(str(tail)[-1500:])
+          '
