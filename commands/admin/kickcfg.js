@@ -313,13 +313,13 @@ onButton('kickcfg:toggle', ow(async (sock, msg, from, sender, btnId) => {
 }));
 
 onButton('kickcfg:menu', ow(async (sock, msg, from, sender, btnId) => {
-  const [, key, scopeCode] = btnId.split(':');
+  const [, , key, scopeCode] = btnId.split(':');
   if (!PRESETS[key]) return;
   return sendSubmenu(sock, msg, from, key, scopeCode || 'l');
 }));
 
 onButton('kickcfg:set', ow(async (sock, msg, from, sender, btnId) => {
-  const [, key, scopeCode, value] = btnId.split(':');
+  const [, , key, scopeCode, value] = btnId.split(':');
   if (!PRESETS[key] || !value) return;
   const r = resolveScope(from, scopeCode || 'l');
   if (r.error) return sock.sendMessage(from, { text: r.error });
@@ -332,7 +332,7 @@ onButton('kickcfg:set', ow(async (sock, msg, from, sender, btnId) => {
 }));
 
 onButton('kickcfg:custom', ow(async (sock, msg, from, sender, btnId) => {
-  const [, key, scopeCode] = btnId.split(':');
+  const [, , key, scopeCode] = btnId.split(':');
   const prefix = config.prefix || '.';
   const scopeBit = (scopeCode === 'g') ? ' g' : '';
   const example = key === 'msgs' ? '8' : key === 'maxkicks' ? '15' : '25d';
