@@ -15,12 +15,13 @@ KAMI Bot auto-kick button UX (`.kickcfg`): DM'd, paginated group-picker with per
   - `.kickcfg` in a crew chat defaults scope to that group (`crewHere ? 'g' : 'l'`)
   - `maxKicksPerCycle` group-overridable (`utils/kickSettings.js` GROUP_OVERRIDABLE); engine enforces per-group cap with kickedByGroup/capped map, one log per group
   - 🛡️ Kick-cap dashboard button (presets 3/5/10/15/25); Refresh only shown outside crew chats (10-button limit)
+  - **Auto-registration**: dashboard opened inside an untracked group shows ➕ *Track this group* (+ note line, Refresh swapped out); tap → `ensureCrewGroup` derives abbrev from live group name (initials, fallback `G`+last4, collision → append digit), `database.setTeamMap`, confirmation, re-opens group-scoped dashboard. No more manual `!crew setteam` needed for new groups. Idempotent (already-tracked → straight to dashboard)
 - **Engine exports added** (`utils/autoProgression.js`): `getLiveGroupName(sock, groupJid)`, `runGroupKick(sock, groupJid)` (scoped real kick: `_computeDueFlags` filtered, massAck set, isBotAdmin check, `_botKicked` guard, respects maxKicksPerCycle, returns `{kicked, due, capped, error}`), `sendGroupNotice(sock, groupJid)` (ignores cooldown, notice text via `voice.lead('neutral')`, sets group cooldown, flags all with flaggedAt=now, returns `{notified, error}`)
 - **`.event` system fixed** (root bug: `addCrewEvent` dropped `status` → events.js/attend.js filtered `status === 'upcoming'` → events never listed, RSVP broken):
   - `database.js addCrewEvent` persists `status` (`|| 'upcoming'`), `attendees`, `results`
   - `events.js`/`attend.js` filters now `!evt.status || evt.status === 'upcoming'` (legacy compat); `attend.js` done-check `if (event.status && event.status !== 'upcoming')`
   - `event.js`/`events.js`/`attend.js` rewritten standalone (`name` + `subName` so `.crew event` still routes); numbered list, RSVP via `.attend <number>` (also legacy `evt_` ID, no-arg=first upcoming, toggle in/out); command prefix `.`
-- Verified: node --check all touched, checkall 236/0, test-kickcfg 25/25, test-btn-dispatch 16/16, test-picker 36/36 (full flow: picker→page2→group screen→kick→notice→settings→DM toggle→submenu→no-kick-when-0-due→stale picker), test-event 15/15, runtime-smoke errors 0
+- Verified: node --check all touched, checkall 236/0, test-kickcfg 25/25, test-btn-dispatch 16/16, test-picker 45/45 (full flow: picker→page2→group screen→kick→notice→settings→DM toggle→submenu→no-kick-when-0-due→stale picker→reg affordance→Track→derived abbrev ZF→scoped dashboard→idempotent reg), test-event 15/15, runtime-smoke errors 0
 
 **Pending:**
 - Live boot verify after this session's deploy push (MCP logs: KAMI BOT CONNECTED, no [KICKCFG]/[INACTIVE-CHECK] errors)

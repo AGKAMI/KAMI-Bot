@@ -86,6 +86,35 @@ const resolveScope = (from, scopeCode, groupJidOverride) => {
 const scopeCodeOf = (scope, from) =>
   scope !== 'global' && engine().isCrewGroupJid(from) ? 'g' : 'l';
 
+// ── On-demand group registration ─────────────────────────
+// Hitting "Track this group" (or Settings/Enable in a fresh group) registers
+// it as a crew team so the auto-kick engine picks it up — no setteam needed.
+// Abbrev is derived from the live group name (initials, fallback = G+last4).
+const ensureCrewGroup = async (sock, groupJid) => {
+  const database = require('../../database');
+  if (!groupJid.endsWith('@g.us')) return { ok: false, error: 'That is not a group chat.' };
+  let name = '';
+  try {
+    const meta = await sock.groupMetadata(groupJid);
+    name = (meta && meta.subject || '').trim();
+  } catch (e) {}
+  if (engine().isCrewGroupJid(groupJid)) {
+    return { ok: true, already: true, name: name || groupJid };
+  }
+  const words = name.split(/\s+/).filter(Boolean);
+  let abbrev = words.map(w => w[0]).join('').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+  if (!abbrev) abbrev = 'G' + groupJid.replace(/\D/g, '').slice(-4);
+  const map = database.getTeamMap();
+  let candidate = abbrev;
+  let n = 2;
+  while (map[candidate] && map[candidate].jid !== groupJid) {
+    candidate = abbrev + n;
+    n++;
+  }
+  database.setTeamMap(candidate, groupJid, name || candidate);
+  return { ok: true, already: false, abbrev: candidate, name: name || candidate };
+};
+
 // ── Dashboard ─────────────────────────────────────────────
 const buildDashboardText = (scope, label) => {
   const summary = engine().getKickStateSummary();
@@ -126,7 +155,7 @@ const buildDashboardText = (scope, label) => {
   return lines.join('\n');
 };
 
-const dashButtons = (from, scopeCode, groupJidOverride) => {
+const dashButtons = (from, scopeCode, groupJidOverride, showReg) => {
   const ctxJid = groupJidOverride || _dmScope.get(from) || from;
   const inCrew = engine().isCrewGroupJid(ctxJid);
   const { scope } = resolveScope(from, scopeCode, groupJidOverride) || {};
@@ -147,7 +176,8 @@ const dashButtons = (from, scopeCode, groupJidOverride) => {
   b.push({ id: `kickcfg:preview:${scopeCode}`, text: '🔍 Preview' });
   b.push({ id: `kickcfg:purge:${scopeCode}`, text: '🗑️ Purge flags' });
   b.push({ id: `kickcfg:reset:${scopeCode}`, text: '♻️ Reset' });
-  if (!inCrew) b.push({ id: `kickcfg:main:${scopeCode}`, text: '🔄 Refresh' });
+  if (showReg) b.push({ id: 'kickcfg:reg', text: '➕ Track this group' });
+  else if (!inCrew) b.push({ id: `kickcfg:main:${scopeCode}`, text: '🔄 Refresh' });
   return b.slice(0, 10);
 };
 
@@ -156,16 +186,22 @@ const sendDashboard = async (sock, msg, to, scopeCode, groupJidOverride) => {
   const code = r.error ? 'l' : scopeCode;
   const scope = r.error ? 'global' : r.scope;
   let label = r.error ? 'Global' : r.label;
+  // Offer one-tap registration when the panel is open inside an untracked group
+  const showReg = !r.error && scope === 'global' && to.endsWith('@g.us') && !engine().isCrewGroupJid(to);
   if (scope !== 'global') {
     // Remember the group so submenu/toggle buttons pressed in a DM still
     // resolve to it; label with the live name, not a generic string.
     _dmScope.set(to, scope);
     try { label = await engine().getLiveGroupName(sock, scope); } catch (e) {}
   }
+  let text = buildDashboardText(scope, label);
+  if (showReg) {
+    text += `\n\n➕ _This group isn't tracked yet — tap *Track this group* to include it in auto-kick._`;
+  }
   return sendButtons(sock, to, {
-    text: buildDashboardText(scope, label),
+    text,
     footer: 'Auto-Kick · owner only',
-    buttons: dashButtons(to, code, groupJidOverride),
+    buttons: dashButtons(to, code, groupJidOverride, showReg),
   }, msg);
 };
 
@@ -406,6 +442,17 @@ onButton('kickcfg:toggle', ow(async (sock, msg, from, sender, btnId) => {
   const res = kickSettings.update(r.scope, { enabled: !cur });
   if (!res.ok) return sock.sendMessage(from, { text: `❌ ${res.error}` });
   return sendDashboard(sock, msg, from, scopeCode);
+}));
+
+onButton('kickcfg:reg', ow(async (sock, msg, from, sender, btnId) => {
+  const res = await ensureCrewGroup(sock, from);
+  if (!res.ok) return sock.sendMessage(from, { text: `❌ ${res.error}` });
+  if (!res.already) {
+    await sock.sendMessage(from, {
+      text: `➕ *TRACKING ENABLED*\n\n🏷️ ${res.name} \`${res.abbrev}\`\n\n_Engine will scan this group every pass — it also shows up in the preview picker._`,
+    });
+  }
+  return sendDashboard(sock, msg, from, 'g');
 }));
 
 onButton('kickcfg:menu', ow(async (sock, msg, from, sender, btnId) => {
