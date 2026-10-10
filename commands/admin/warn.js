@@ -77,6 +77,19 @@ module.exports = {
         `📝 *Reason:* ${reason}\n`;
 
       if (warnings.count >= config.maxWarnings) {
+        // Owner-protected members can't be warn-kicked — only KAMI kicks them
+        const { buildComparableIds } = require('../../utils/jidHelper');
+        const isProtectedMember = [target, ...buildComparableIds(target)]
+          .some(v => database.isOwnerProtected(extra.from, v));
+        if (isProtectedMember && extra.isBotAdmin) {
+          text += `🛡️ *PROTECTED* — only KAMI kicks them, hey`;
+          await sock.sendMessage(extra.from, {
+            text,
+            mentions: [target]
+          }, { quoted: msg });
+          return;
+        }
+
         text += `❌ *MAX WARNINGS HIT*\n\n`;
         text += `${mention(target)} is getting removed from the group`;
 
@@ -181,6 +194,21 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
       }
     }
 
+    // Owner-protected members can only be kicked by KAMI
+    const database = require('../../database');
+    const { buildComparableIds } = require('../../utils/jidHelper');
+    const isProtectedMember = [target, ...buildComparableIds(target)]
+      .some(v => database.isOwnerProtected(from, v));
+    if (isProtectedMember) {
+      return await sock.sendMessage(from, {
+        text:
+          `🛡️ *PROTECTED* 💪\n\n` +
+          `${mention(target)} was added by KAMI personally\n\n` +
+          `Only KAMI kicks them, hey`,
+        mentions: [target],
+      });
+    }
+
     // Mark as bot-initiated so handler.js skips member protection (prevents re-add loop)
     const handler = require('../../handler');
     handler._botKicked.add(target);
@@ -195,7 +223,6 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
         `_${voice.react('ok')}_`,
       mentions: [target],
     });
-    const database = require('../../database');
     database.clearWarnings(from, target);
   } catch (e) {
     console.error('[KICK BTN] Error:', e.message);

@@ -74,6 +74,12 @@ async function buildImage(bgBuffer, style = {}) {
   const w = meta.width;
   const h = meta.height;
 
+  // Scale all drawn elements to the background size. Crew-group backgrounds are
+  // 1:1 profile pics (often 640–1080px) where fixed 72px text looks enormous;
+  // 1600 (default welcome image) = scale 1, smaller images shrink proportionally.
+  const scale = Math.max(0.4, Math.min(1, (w || 1600) / 1600));
+  const scaled = (n) => Math.round(n * scale);
+
   const composites = [];
 
   // 1. Add dark overlay for readability
@@ -88,15 +94,15 @@ async function buildImage(bgBuffer, style = {}) {
   let avatarBottomY = 0;
   if (config.avatar) {
     try {
-      const size = config.avatarSize || 120;
+      const size = Math.max(60, scaled(config.avatarSize || 120));
       const border = config.avatarBorder || 4;
       const circle = await createCircleAvatar(
         config.avatar, size, config.avatarBorderColor || '#ffffff', border
       );
       const avatarX = (w - size - border * 2) / 2;
-      const avatarY = h / 2 - (size + border * 2) - 40;
+      const avatarY = h / 2 - (size + border * 2) - scaled(40);
       composites.push({ input: circle, top: Math.round(avatarY), left: Math.round(avatarX) });
-      avatarBottomY = avatarY + size + border * 2 + 20;
+      avatarBottomY = avatarY + size + border * 2 + scaled(20);
     } catch (e) {
       console.error('Avatar overlay error:', e);
     }
@@ -106,37 +112,39 @@ async function buildImage(bgBuffer, style = {}) {
   const { lines, fontFamily, padding: pad } = { ...DEFAULT_STYLE, ...config };
   if (lines.length) {
     const lineHeight = 1.4;
+    const lineSizes = lines.map(l => Math.max(14, scaled(l.size || 32)));
     let totalH = 0;
-    for (const l of lines) totalH += (l.size || 32) * lineHeight;
+    for (const size of lineSizes) totalH += size * lineHeight;
 
-    const bgPad = config.bg?.padding || 24;
+    const bgPad = scaled(config.bg?.padding || 24);
     const blockH = totalH + bgPad * 2;
-    const blockW = w - (pad || 40) * 2;
+    const blockW = w - scaled(pad || 40) * 2;
 
     // Position below avatar if present, otherwise center
     let startY;
     if (config.avatar) {
       startY = avatarBottomY;
     } else if (config.position === 'top') {
-      startY = pad || 40;
+      startY = scaled(pad || 40);
     } else if (config.position === 'bottom') {
-      startY = h - blockH - (pad || 40);
+      startY = h - blockH - scaled(pad || 40);
     } else {
       startY = (h - blockH) / 2;
     }
-    startY = Math.max(pad || 40, Math.min(startY, h - blockH - (pad || 40)));
+    startY = Math.max(scaled(pad || 40), Math.min(startY, h - blockH - scaled(pad || 40)));
 
     let svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">`;
 
     // Text background
     if (config.bg) {
-      svg += `<rect x="${pad || 40}" y="${startY}" width="${blockW}" height="${blockH}" rx="${config.bg.radius || 0}" fill="${config.bg.color}"/>`;
+      svg += `<rect x="${scaled(pad || 40)}" y="${startY}" width="${blockW}" height="${blockH}" rx="${config.bg.radius || 0}" fill="${config.bg.color}"/>`;
     }
 
     // Text
     let y = startY + bgPad;
-    for (const l of lines) {
-      const size = l.size || 32;
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      const size = lineSizes[i];
       const color = l.color || '#ffffff';
       const weight = l.bold ? 'bold' : 'normal';
       const deco = l.italic ? 'italic' : 'normal';

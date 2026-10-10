@@ -196,6 +196,10 @@ module.exports = {
 
       // Track owner-added members for protection (auto re-add if kicked)
       if (extra.isOwner) {
+        const { buildComparableIds } = require('../../utils/jidHelper');
+        for (const v of [target, ...buildComparableIds(target)]) {
+          database.unbanMember(groupJid, v);
+        }
         database.addOwnerAddedMember(groupJid, target, extra.sender);
       }
 

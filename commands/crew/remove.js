@@ -52,6 +52,20 @@ module.exports = {
         );
       }
 
+      // ── Protection — only the owner can remove owner-added members ──
+      if (!extra.isOwner) {
+        const { buildComparableIds } = require('../../utils/jidHelper');
+        const isProtected = [target, ...buildComparableIds(target)]
+          .some(v => database.isOwnerProtected(extra.from, v));
+        if (isProtected) {
+          return extra.reply(
+            `🚫 *NAH BRU* 💀\n\n` +
+            `${mention(target)} was added by KAMI personally\n\n` +
+            `Only KAMI can remove them, boet — that's not a suggestion ${voice.tag('tease')}`
+          );
+        }
+      }
+
       // Remove from crew DB
       database.removeCrewMember(extra.from, target);
 

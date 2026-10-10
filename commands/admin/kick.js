@@ -268,6 +268,19 @@ module.exports = {
         for (const t of usersToKick) handler._botKicked.delete(t);
       }, 5000);
 
+      // Owner kick = ban — only the owner can re-add them afterwards.
+      // Also clear stale protection entries (deliberate removal).
+      const { buildComparableIds } = require('../../utils/jidHelper');
+      if (extra.isOwner) {
+        for (const t of usersToKick) {
+          database.banMember(chatId, t, extra.sender);
+          for (const v of [t, ...buildComparableIds(t)]) {
+            database.removeOwnerAddedMember(chatId, v);
+            database.removeOwnerPromotedAdmin(chatId, v);
+          }
+        }
+      }
+
       await sock.groupParticipantsUpdate(chatId, usersToKick, 'remove');
 
       const usernames = usersToKick.map((jid) => mention(jid));
@@ -277,6 +290,9 @@ module.exports = {
           `✅ SUCCESS\n\n` +
           `🔨 KICKED\n\n` +
           `${usernames.join(', ')} has been kicked\n\n` +
+          (extra.isOwner
+            ? `🚫 *Banned from re-adding* — only you can bring them back, ${voice.tag('neutral')}\n\n`
+            : '') +
           `_${voice.react('ok')}_`,
         mentions: usersToKick,
         footer: 'Kick Management',
@@ -319,6 +335,29 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
   }
 
   const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
+
+  // ── Ban check — owner-kicked members: only owner may re-add ──
+  const clickerIsOwner = (config.ownerNumber || []).some(n =>
+    sender.split(':')[0].split('@')[0].replace(/\D/g, '') === n.replace(/\D/g, '')
+  );
+  const isBannedTarget = [target, ...buildComparableIds(target)]
+    .some(v => database.isBanned(from, v));
+  if (isBannedTarget && !clickerIsOwner) {
+    return await sock.sendMessage(from, {
+      text:
+        `🚫 *NAH BRU* 💀\n\n` +
+        `${mention(target)} was kicked by KAMI personally\n\n` +
+        `Only KAMI can bring them back, boet — don't even try ${voice.tag('tease')}`,
+      mentions: [target],
+    });
+  }
+  // Owner re-adding a banned member — lift the ban BEFORE the add so the
+  // group-participants event doesn't race and kick them straight back out
+  if (isBannedTarget && clickerIsOwner) {
+    for (const v of [target, ...buildComparableIds(target)]) {
+      database.unbanMember(from, v);
+    }
+  }
 
   // Check if already in the group
   try {
@@ -374,11 +413,19 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
       });
     }
 
+    // Owner re-added a banned member — restore protection (ban lifted above)
+    if (isBannedTarget && clickerIsOwner) {
+      database.addOwnerAddedMember(from, target, sender);
+    }
+
     await sock.sendMessage(from, {
       text:
         `✅ SUCCESS\n\n` +
         `🔄 RE-ADDED\n\n` +
         `${mention(target)} is back in the group\n\n` +
+        (isBannedTarget && clickerIsOwner
+          ? `_Ban lifted — they're protected again, ${voice.tag('neutral')}_\n\n`
+          : '') +
         `_${voice.react('ok')}_`,
       mentions: [target],
     });

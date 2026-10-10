@@ -144,6 +144,10 @@ module.exports = {
 
       // Track owner-added members for protection
       if (extra.isOwner) {
+        const { buildComparableIds } = require('../../utils/jidHelper');
+        for (const v of [target, ...buildComparableIds(target)]) {
+          database.unbanMember(extra.from, v);
+        }
         database.addOwnerAddedMember(extra.from, target, extra.sender);
       }
 

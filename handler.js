@@ -1650,12 +1650,15 @@ const handleMessage = async (sock, msg) => {
 // Group participant update handler
 const handleGroupUpdate = async (sock, update) => {
   try {
-    const { id, participants, action } = update;
+    const { id, participants, action, author } = update;
     
     // Validate group JID before processing
     if (!id || !id.endsWith('@g.us')) {
       return;
     }
+
+    // Members kicked back out for violating a ban this event — skip their welcome
+    const bannedKicked = new Set();
     
     // Crew sync — auto-add/remove from crew DB based on group membership.
     // Runs BEFORE the welcome/goodbye early-return so it always fires.
@@ -1686,6 +1689,99 @@ const handleGroupUpdate = async (sock, update) => {
           }
           
           if (action === 'add') {
+            // ── Kick-ban enforcement ──────────────────────
+            // Owner-kicked members: anyone else re-adding them (native UI,
+            // invite join, another admin) gets them kicked straight back out.
+            // Only the owner can lift the ban by re-adding them.
+            const banVariants = [jid, ...jidVariants];
+            const banned = banVariants.some(v => database.isBanned(id, v));
+            const actorDigits = String(author || '').split(':')[0].split('@')[0].replace(/\D/g, '');
+            const actorIsOwner = !!actorDigits &&
+              (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === actorDigits);
+
+            if (banned) {
+              if (actorIsOwner) {
+                // Owner re-added them — lift ban, restore protection
+                for (const v of banVariants) database.unbanMember(id, v);
+                database.addOwnerAddedMember(id, jid, author);
+                console.log(`[KICK BAN] Owner re-added banned member ${jid.split('@')[0]} in ${id} — ban lifted, protected`);
+              } else {
+                console.log(`[KICK BAN] Banned member ${jid.split('@')[0]} re-added to ${id} by ${author || 'unknown'} — removing`);
+                let removed = false;
+                try {
+                  for (const v of banVariants) _botKicked.add(v);
+                  setTimeout(() => { for (const v of banVariants) _botKicked.delete(v); }, 5000);
+                  const { normalizeJidWithLid } = require('./utils/jidHelper');
+                  const candidates = [];
+                  const strippedJid = jid.replace(/:\d+@/, '@');
+                  if (strippedJid !== jid) candidates.push(strippedJid);
+                  try {
+                    const resolved = normalizeJidWithLid(jid);
+                    if (resolved && resolved !== jid && resolved !== strippedJid) candidates.push(resolved);
+                  } catch {}
+                  for (const v of banVariants) if (!candidates.includes(v)) candidates.push(v);
+                  candidates.push(jid);
+                  for (const c of candidates) {
+                    try {
+                      await sock.groupParticipantsUpdate(id, [c], 'remove');
+                      removed = true;
+                      break;
+                    } catch {}
+                  }
+                } catch (e) {
+                  console.error(`[KICK BAN] Remove failed for ${jid.split('@')[0]}:`, e.message);
+                }
+
+                const bannedNum = jid.split(':')[0].split('@')[0];
+                bannedKicked.add(jid);
+                for (const v of banVariants) bannedKicked.add(v);
+
+                // Group message — they tried sneaking back in
+                try {
+                  await sock.sendMessage(id, {
+                    text:
+                      `🚫 *NAH BRU* 💀\n\n` +
+                      `@${bannedNum} was kicked by KAMI and tried sneaking back in\n\n` +
+                      (removed
+                        ? `Kicked them straight back out — only KAMI re-adds them, boet\n\n`
+                        : `I'm not admin here so I couldn't kick them — KAMI, sort it hey\n\n`) +
+                      `${voice.say('tease')}`,
+                    mentions: [jid],
+                  });
+                } catch {}
+
+                // DM the owner
+                for (const oNum of (config.ownerNumber || [])) {
+                  try {
+                    const oJid = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
+                    await sock.sendMessage(oJid, {
+                      text: removed
+                        ? `🛡️ *KICK BAN* 💪\n\n` +
+                          `@${bannedNum} tried sneaking back into a group\n\n` +
+                          `Kicked them straight back out, ${voice.tag('neutral')}`
+                        : `⚠️ *KICK BAN* 💀\n\n` +
+                          `@${bannedNum} (banned) got re-added to a group\n\n` +
+                          `I'm not admin there so I couldn't kick them back out — sort me out hey`,
+                      mentions: [jid],
+                    });
+                  } catch {}
+                }
+
+                database.logProtection({
+                  action: 'ban-enforce',
+                  target: jid,
+                  triggeredBy: author || 'unknown',
+                  group: id,
+                  result: removed ? 'kicked' : 'failed',
+                });
+                continue; // skip crew sync / protection for the kicked member
+              }
+            } else if (actorIsOwner) {
+              // Owner added via native WhatsApp UI — mark for kick protection
+              database.addOwnerAddedMember(id, jid, author);
+              console.log(`[MEMBER PROTECTION] Owner-native add of ${jid.split('@')[0]} in ${id} — marked protected`);
+            }
+
             if (!isInCrew) {
               database.addCrewMember(id, jid, {
                 role: 'member',
@@ -1787,7 +1883,28 @@ const handleGroupUpdate = async (sock, update) => {
             }
 
             // ── Owner-Protected Member Removal ────────────
+            // Owner removing them (any method) is deliberate — clear protection,
+            // don't re-add. Anyone else removing a protected member → re-add.
             let kickProtectionFired = false;
+            const removeActorDigits = String(author || '').split(':')[0].split('@')[0].replace(/\D/g, '');
+            const removeActorIsOwner = !!removeActorDigits &&
+              (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === removeActorDigits);
+            if (isProtected && removeActorIsOwner && !wasBotKicked) {
+              // Owner removed a protected member via native UI — respect it
+              for (const v of [jid, ...allVariants]) {
+                database.removeOwnerAddedMember(id, v);
+                database.removeOwnerPromotedAdmin(id, v);
+              }
+              console.log(`[MEMBER PROTECTION] Owner removed protected member ${jid.split('@')[0]} from ${id} — protection cleared`);
+              database.logProtection({
+                action: 'kick',
+                target: jid,
+                triggeredBy: author,
+                group: id,
+                result: 'owner-removed-protection-cleared',
+              });
+              continue;
+            }
             if (isProtected && !wasBotKicked) {
               kickProtectionFired = true;
               console.log(`[MEMBER PROTECTION] Protected member ${jid.split('@')[0]} removed from ${id} — attempting re-add`);
@@ -2083,6 +2200,9 @@ const handleGroupUpdate = async (sock, update) => {
       }
       
       const participantNumber = participantJid.split('@')[0];
+
+      // Banned member kicked straight back out this event — no welcome for them
+      if (bannedKicked.has(participantJid)) continue;
       
       if (action === 'add' && groupSettings.welcome) {
         try {
@@ -2183,9 +2303,9 @@ const handleGroupUpdate = async (sock, update) => {
             const ws = groupSettings.welcomeStyle || {};
             const joinedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
             const textLines = [
-              { text: 'New Member', size: ws.fontSize || 72, bold: true, color: ws.textColor || '#ffffff' },
-              { text: `Welcome to ${groupName}`, size: ws.subFontSize || 44, color: '#ffffff' },
-              { text: `Member #${groupMetadata.participants.length} | ${joinedDate}`, size: 32, color: '#cccccc' },
+              { text: 'New Member', size: ws.fontSize || 56, bold: true, color: ws.textColor || '#ffffff' },
+              { text: `Welcome to ${groupName}`, size: ws.subFontSize || 36, color: '#ffffff' },
+              { text: `Member #${groupMetadata.participants.length} | ${joinedDate}`, size: 26, color: '#cccccc' },
             ];
             try {
             const resultBuffer = await buildImage(bgBuffer, {
@@ -2304,9 +2424,9 @@ const handleGroupUpdate = async (sock, update) => {
             const gs = groupSettings.goodbyeStyle || {};
             const leftDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
             const textLines = [
-              { text: 'Goodbye', size: gs.fontSize || 72, bold: true, color: gs.textColor || '#ffffff' },
-              { text: `Farewell from ${groupName}`, size: gs.subFontSize || 44, color: '#ffffff' },
-              { text: `Member #${groupMetadata.participants.length} | ${leftDate}`, size: 32, color: '#cccccc' },
+              { text: 'Goodbye', size: gs.fontSize || 56, bold: true, color: gs.textColor || '#ffffff' },
+              { text: `Farewell from ${groupName}`, size: gs.subFontSize || 36, color: '#ffffff' },
+              { text: `Member #${groupMetadata.participants.length} | ${leftDate}`, size: 26, color: '#cccccc' },
             ];
             const resultBuffer = await buildImage(bgBuffer, {
               lines: textLines,

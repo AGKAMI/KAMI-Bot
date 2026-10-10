@@ -32,8 +32,8 @@ module.exports = {
           position: style.position || 'center',
           textColor: style.textColor || '#ffffff',
           bgColor: style.bgColor || 'rgba(0,0,0,0.65)',
-          fontSize: style.fontSize || 40,
-          subFontSize: style.subFontSize || 28,
+          fontSize: style.fontSize || 56,
+          subFontSize: style.subFontSize || 36,
         };
 
         return extra.reply(

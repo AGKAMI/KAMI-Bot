@@ -6,6 +6,7 @@
  */
 
 const config = require('../../config');
+const database = require('../../database');
 const axios = require('axios');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons } = require('../../utils/buttonHelper');
@@ -65,6 +66,26 @@ module.exports = {
 
       // Try the add with JID variants (privacy/locked users get rejected on exact JIDs sometimes)
       const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
+
+      // ── Ban check — owner-kicked members: only owner may re-add ──
+      const isBannedTarget = [target, ...buildComparableIds(target)]
+        .some(v => database.isBanned(extra.from, v));
+      if (isBannedTarget && !extra.isOwner) {
+        extra.fail();
+        return extra.reply(
+          `🚫 *NAH BRU* 💀\n\n` +
+          `${mention(target)} was kicked by KAMI personally\n\n` +
+          `Only KAMI can add them back, boet — don't even try ${voice.tag('tease')}`
+        );
+      }
+      // Owner re-adding a banned member — lift the ban BEFORE the add so the
+      // group-participants event doesn't race and kick them straight back out
+      if (isBannedTarget && extra.isOwner) {
+        for (const v of [target, ...buildComparableIds(target)]) {
+          database.unbanMember(extra.from, v);
+        }
+      }
+
       const candidateJids = [];
       const stripped = target.replace(/:\d+@/, '@');
       if (stripped !== target) candidateJids.push(stripped);
@@ -85,8 +106,16 @@ module.exports = {
       }
 
       if (added) {
+        // Owner add — mark for kick protection (ban already lifted above if any)
+        if (extra.isOwner) {
+          database.addOwnerAddedMember(extra.from, target, extra.sender);
+        }
         await sock.sendMessage(extra.from, {
-          text: `✅ SUCCESS\n\n➕ ADDED\n\n${mention(target)} is in the group now`,
+          text:
+            `✅ SUCCESS\n\n➕ ADDED\n\n${mention(target)} is in the group now\n\n` +
+            (extra.isOwner
+              ? `_Protected — only you can kick them, ${voice.tag('neutral')}_`
+              : ''),
           mentions: [target],
         }, { quoted: msg });
         return;

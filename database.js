@@ -16,6 +16,7 @@ const CREW_DB = path.join(DB_PATH, 'crew.json');
 const GLOBAL_DB = path.join(DB_PATH, 'global.json');
 const OWNER_PROMOTED_DB = path.join(DB_PATH, 'ownerPromotedAdmins.json');
 const OWNER_ADDED_DB = path.join(DB_PATH, 'ownerAddedMembers.json');
+const KICK_BANS_DB = path.join(DB_PATH, 'kickBans.json');
 const AUDIT_DB = path.join(DB_PATH, 'audit.json');
 
 // Initialize database directory
@@ -38,6 +39,7 @@ initDB(CREW_DB, { groups: {}, teamMap: {} });
 initDB(GLOBAL_DB, { selfMode: false, approvedNumbers: [] });
 initDB(OWNER_PROMOTED_DB, {});
 initDB(OWNER_ADDED_DB, {});
+initDB(KICK_BANS_DB, {});
 
 // ── In-memory cache layer ────────────────────────────────────────
 // All reads hit memory. Writes go to memory + debounced disk flush.
@@ -992,6 +994,41 @@ const resetKickAttempts = (groupJid, memberJid) => {
   }
 };
 
+// ── Kick bans (owner-kicked members — only owner may re-add) ──
+// Recorded when the owner kicks via !kick. Anyone else re-adding them
+// (re-add button, !add, native WhatsApp add, invite join) gets them
+// kicked straight back out; only the owner can bring them back.
+const isBanned = (groupJid, memberJid) => {
+  const data = readDB(KICK_BANS_DB);
+  const group = data[groupJid];
+  if (!group) return false;
+  const num = _normalizeJid(memberJid);
+  return Object.keys(group).some(k => _normalizeJid(k) === num);
+};
+
+const banMember = (groupJid, memberJid, byJid) => {
+  const data = readDB(KICK_BANS_DB);
+  if (!data[groupJid]) data[groupJid] = {};
+  data[groupJid][memberJid] = { by: byJid, at: Date.now() };
+  return writeDB(KICK_BANS_DB, data);
+};
+
+const unbanMember = (groupJid, memberJid) => {
+  const data = readDB(KICK_BANS_DB);
+  if (data[groupJid]) {
+    const num = _normalizeJid(memberJid);
+    for (const key of Object.keys(data[groupJid])) {
+      if (_normalizeJid(key) === num) {
+        delete data[groupJid][key];
+      }
+    }
+    if (Object.keys(data[groupJid]).length === 0) {
+      delete data[groupJid];
+    }
+    writeDB(KICK_BANS_DB, data);
+  }
+};
+
 // ── Audit Log ─────────────────────────────────────────────────
 // Tracks every command execution, protection event, and admin action.
 // Structure: { entries: [...], capped at 500 most recent }
@@ -999,14 +1036,17 @@ const resetKickAttempts = (groupJid, memberJid) => {
 const AUDIT_MAX = 500;
 
 const _readAudit = () => {
-  if (_cache.has(AUDIT_DB)) {
-    return _cache.get(AUDIT_DB);
+  let audit = _cache.get(AUDIT_DB);
+  if (!audit || !Array.isArray(audit.entries)) {
+    try {
+      audit = JSON.parse(fs.readFileSync(AUDIT_DB, 'utf8'));
+    } catch {
+      audit = { entries: [] };
+    }
+    if (!Array.isArray(audit.entries)) audit.entries = [];
+    _cache.set(AUDIT_DB, audit);
   }
-  try {
-    return JSON.parse(fs.readFileSync(AUDIT_DB, 'utf8'));
-  } catch {
-    return { entries: [] };
-  }
+  return audit;
 };
 
 const _writeAudit = (data) => {
@@ -1371,6 +1411,11 @@ module.exports = {
   getKickAttempts,
   incrementKickAttempts,
   resetKickAttempts,
+
+  // Kick bans (owner-kicked — only owner may re-add)
+  isBanned,
+  banMember,
+  unbanMember,
 
   // Audit log
   logCommand,
