@@ -26,6 +26,7 @@ const PRESETS = {
   grace: ['1d', '3d', '7d', '14d', '30d'],
   msgs: ['1', '5', '10', '20'],
   cooldown: ['3d', '7d', '14d'],
+  maxkicks: ['3', '5', '10', '15', '25'],
 };
 
 const KEY_LABELS = {
@@ -86,7 +87,7 @@ const buildDashboardText = (scope, label) => {
     `⏰ Grace after notice: *${kickSettings.fmtDuration(s.gracePeriod)}*`,
     `💬 Min messages in window: *${s.minMessages}*`,
     `🔁 Notice cooldown: *${kickSettings.fmtDuration(s.noticeCooldown)}*`,
-    `🛡️ Kick cap: *${kickSettings.getGlobal().maxKicksPerCycle}* per cycle _(global)_`,
+    `🛡️ Kick cap: *${s.maxKicksPerCycle}* per cycle`,
   ];
 
   if (scope === 'global') {
@@ -128,10 +129,11 @@ const dashButtons = (from, scopeCode) => {
   b.push({ id: `kickcfg:menu:grace:${scopeCode}`, text: '⏰ Grace' });
   b.push({ id: `kickcfg:menu:msgs:${scopeCode}`, text: '💬 Min msgs' });
   b.push({ id: `kickcfg:menu:cooldown:${scopeCode}`, text: '🔁 Cooldown' });
+  b.push({ id: `kickcfg:menu:maxkicks:${scopeCode}`, text: '🛡️ Kick cap' });
   b.push({ id: `kickcfg:preview:${scopeCode}`, text: '🔍 Preview' });
   b.push({ id: `kickcfg:purge:${scopeCode}`, text: '🗑️ Purge flags' });
   b.push({ id: `kickcfg:reset:${scopeCode}`, text: '♻️ Reset' });
-  b.push({ id: `kickcfg:main:${scopeCode}`, text: '🔄 Refresh' });
+  if (!inCrew) b.push({ id: `kickcfg:main:${scopeCode}`, text: '🔄 Refresh' });
   return b.slice(0, 10);
 };
 
@@ -156,10 +158,16 @@ const sendSubmenu = async (sock, msg, from, key, scopeCode) => {
   const example = key === 'msgs' ? '8' : key === 'maxkicks' ? '15' : '25d';
   const presetBtns = PRESETS[key].map(v => ({
     id: `kickcfg:set:${key}:${scopeCode}:${v}`,
-    text: key === 'msgs' ? `${v} msgs` : fmtVal(key, kickSettings.parseDuration(v)),
+    text: key === 'msgs' ? `${v} msgs` : key === 'maxkicks' ? `${v} kicks` : fmtVal(key, kickSettings.parseDuration(v)),
   }));
   presetBtns.push({ id: `kickcfg:custom:${key}:${scopeCode}`, text: '✏️ Custom' });
   presetBtns.push({ id: `kickcfg:main:${scopeCode}`, text: '⬅️ Back' });
+
+  const unitsHint = key === 'msgs'
+    ? `\n_(plain number — messages required inside the window)_`
+    : key === 'maxkicks'
+      ? `\n_(kicks allowed per hourly cycle)_`
+      : `\n_(units: d / w / m / y)_`;
 
   return sendButtons(sock, from, {
     text:
@@ -168,7 +176,7 @@ const sendSubmenu = async (sock, msg, from, key, scopeCode) => {
       `Current: *${cur}*\n\n` +
       `Pick a preset, or type:\n` +
       `_${prefix}kickcfg set${scopeCode === 'g' ? ' g' : ''} ${key} ${example}_` +
-      (key === 'msgs' ? `\n_(plain number — messages required inside the window)_` : `\n_(units: d / w / m / y)_`),
+      unitsHint,
     footer: 'Auto-Kick · owner only',
     buttons: presetBtns.slice(0, 10),
   }, msg);
@@ -185,7 +193,7 @@ const buildPreviewText = (p) => {
   ];
   for (const grp of p.perGroup) {
     const flag = grp.enabled ? '✅' : '🔕';
-    lines.push(`${flag} *${grp.name}* — inactive ${grp.inactiveCount} · flagged ${grp.flaggedCount} · due ${grp.dueCount} · kicks *${grp.kickCount}*`);
+    lines.push(`${flag} *${grp.name}* — inactive ${grp.inactiveCount} · flagged ${grp.flaggedCount} · due ${grp.dueCount} · kicks *${grp.kickCount}* · cap ${grp.cap}`);
     const clearedParts = Object.entries(grp.cleared || {}).map(([k, v]) => `${v} ${k}`);
     if (clearedParts.length) lines.push(`   cleared: ${clearedParts.join(', ')}`);
     for (const k of grp.kickList.slice(0, 15)) {
@@ -284,8 +292,8 @@ module.exports = {
       return extra.reply(`✅ *${KEY_LABELS[key]}* → *${fmtVal(key, kickSettings.validate(KEYMAP[key], value).value || currentVal(scope, key))}* _(${label})_`);
     }
 
-    // Default: dashboard
-    return sendDashboard(sock, msg, extra.from, 'l');
+    // Default: dashboard — the group you're in when in a crew group, else global
+    return sendDashboard(sock, msg, extra.from, crewHere ? 'g' : 'l');
   },
 };
 
@@ -344,13 +352,16 @@ onButton('kickcfg:custom', ow(async (sock, msg, from, sender, btnId) => {
       `_${prefix}kickcfg set${scopeBit} ${key} ${example}_\n\n` +
       (key === 'msgs'
         ? `_Plain number = messages required inside the window._`
-        : `_Units: d / w / m / y (m = 30d, y = 365d). E.g. 25d, 6w, 1m, 1y_`),
+        : key === 'maxkicks'
+          ? `_Plain number = kicks allowed per hourly cycle._`
+          : `_Units: d / w / m / y (m = 30d, y = 365d). E.g. 25d, 6w, 1m, 1y_`),
     footer: 'Auto-Kick · owner only',
     buttons: [{ id: `kickcfg:menu:${key}:${scopeCode || 'l'}`, text: '⬅️ Back' }],
   }, msg);
 }));
 
-onButton('kickcfg:preview', ow(async (sock, msg, from, sender) => {
+onButton('kickcfg:preview', ow(async (sock, msg, from, sender, btnId) => {
+  const scopeCode = btnId.split(':')[2] || 'l';
   const p = await engine().runKickPreview(sock);
   const text = buildPreviewText(p);
   try {
@@ -358,7 +369,7 @@ onButton('kickcfg:preview', ow(async (sock, msg, from, sender) => {
   } catch (e) {
     await sock.sendMessage(from, { text });
   }
-  return sendDashboard(sock, msg, from, 'l');
+  return sendDashboard(sock, msg, from, scopeCode);
 }));
 
 onButton('kickcfg:purge', ow(async (sock, msg, from, sender, btnId) => {

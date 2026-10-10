@@ -6,7 +6,7 @@
  *
  * Structure:
  *   global  — base policy for every crew group
- *   groups  — per-group overrides (any policy key except maxKicksPerCycle)
+ *   groups  — per-group overrides (any policy key)
  *   firstSeen — { digits: { first, last } } roster-sighting guard
  */
 
@@ -22,11 +22,11 @@ const DEFAULTS = {
   gracePeriod: 14 * DAY,      // after notice, still quiet this long → kicked
   minMessages: 1,             // msgs inside the window to count as active
   noticeCooldown: 7 * DAY,    // per-group spacing between notices
-  maxKicksPerCycle: 10,       // global safety valve (not overridable per group)
+  maxKicksPerCycle: 10,       // default kicks per hourly cycle (groups may override)
 };
 
 // Keys a group may override
-const GROUP_OVERRIDABLE = ['enabled', 'inactiveWindow', 'gracePeriod', 'minMessages', 'noticeCooldown'];
+const GROUP_OVERRIDABLE = ['enabled', 'inactiveWindow', 'gracePeriod', 'minMessages', 'noticeCooldown', 'maxKicksPerCycle'];
 
 const LIMITS = {
   inactiveWindow: { min: DAY, max: 5 * 365 * DAY },
@@ -158,10 +158,6 @@ const update = (scope, patch) => {
 
   const errors = [];
   for (const [key, raw] of Object.entries(patch)) {
-    if (key === 'maxKicksPerCycle' && !isGlobal) {
-      errors.push('maxKicksPerCycle is global-only');
-      continue;
-    }
     if (!Object.prototype.hasOwnProperty.call(DEFAULTS, key)) {
       errors.push(`unknown key "${key}"`);
       continue;

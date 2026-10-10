@@ -400,7 +400,7 @@ const _computeDueFlags = (teamsByJid, participantsByGroup, inactiveByGroup, owne
 
 // ── Auto-kick pass ────────────────────────────────────────
 // Flag bookkeeping (left/active/owner/protected) always runs. Actual removals
-// honour: effective enabled, mass-kill hold, bot-admin, maxKicksPerCycle.
+// honour: effective enabled, mass-kill hold, bot-admin, maxKicksPerCycle (per-group).
 // Kick FAILURES keep flags (retry next cycle); terminal states delete them.
 const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGroup, ownerDigits, botDigits, now) => {
   const handler = require('../handler');
@@ -416,7 +416,6 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGro
 
   const due = _computeDueFlags(teamsByJid, participantsByGroup, inactiveByGroup, ownerDigits, botDigits, now);
   const eligible = due.filter(d => !d.reason);
-  const maxPerCycle = kickSettings.getGlobal().maxKicksPerCycle;
   const ackFresh = _state.massAck && (now - _state.massAck.at < MASS_ACK_TTL);
   const holdKicks = eligible.length >= MASS_DUE_THRESHOLD && !ackFresh;
 
@@ -439,11 +438,17 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGro
   if (holdKicks) return kicked;
 
   const botAdminCache = new Map();
+  const kickedByGroup = new Map();
+  const capped = new Set();
   for (const d of due) {
     if (d.reason) continue; // too-new keeps its flag; others already cleared
-    if (kicked >= maxPerCycle) {
-      console.log(`[INACTIVE-CHECK] Kick cap reached (${maxPerCycle}/cycle) — remaining kicks roll to the next pass`);
-      break;
+    const cap = d.s.maxKicksPerCycle;
+    if ((kickedByGroup.get(d.groupJid) || 0) >= cap) {
+      if (!capped.has(d.groupJid)) {
+        capped.add(d.groupJid);
+        console.log(`[INACTIVE-CHECK] Kick cap reached for ${d.teamInfo.key || d.groupJid} (${cap}/cycle) — remaining kicks roll to the next pass`);
+      }
+      continue;
     }
     const { groupJid, entryJid, flaggedAt, targetId, memberDigits, teamInfo, teamName, s } = d;
 
@@ -467,6 +472,7 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGro
       if (_state.flagged[groupJid]) delete _state.flagged[groupJid][entryJid];
       _saveState();
       kicked++;
+      kickedByGroup.set(groupJid, (kickedByGroup.get(groupJid) || 0) + 1);
 
       const when = new Date(flaggedAt).toLocaleDateString();
       console.log(`[INACTIVE-CHECK] AUTO-KICKED ${_digits(targetId)} from ${teamInfo.key || groupJid} (flagged ${when})`);
@@ -712,6 +718,7 @@ const runKickPreview = async (sock) => {
       flaggedCount: Object.keys(flagMap).length,
       dueCount: gDue.length,
       kickCount: eligible.length,
+      cap: s.maxKicksPerCycle,
       cleared: reasons,
       kickList,
     });
