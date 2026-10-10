@@ -1,60 +1,51 @@
 # HANDOFF
 
 ## Goal
-Ship working auto-kick for 14-day-inactive members in KAMI Bot (WhatsApp bot) and keep the live deployment healthy. Primary goal ACHIEVED this session: the backdated flag state was finally reloaded by a live restart and the kick pass processed all 89 due flags at 2026-10-09 18:15:43. Exact kicked-vs-cleared counts need user confirmation (see Next Steps #1).
+KAMI Bot auto-kick: customizable by the owner via button UI (`.kickcfg`) — inactivity window, grace, min messages, notice cooldown, per-group overrides, with edge-case guards. SHIPPED this session (commit after this HANDOFF); verify live boot + tell user how to use it.
 
 ## Current State
-**Working:**
-- Live bot running (deployment `b0665152-9b54-4ede-a11f-45c4a6641704`, state `running`), WhatsApp connected as of ~21:33.
-- `database/inactiveAlerts.json` on live box (verified via MCP `files_read`): 8 flags remaining (2+5+1), all ts `179155844xxxx` = 17:07 fresh notices → grace till Oct 23; `groups[]` all 17:07 → notice cooldown to Oct 16; `holdUntil` Sep 25 preserved.
-- The 89 backdated (Sep 25 12:00) flags are GONE — deleted by the 18:15:43 kick pass. Zero failure-retained flags → every due flag hit a terminal branch (kicked / left / active-again / owner / protected). Kick-failure branch RETAINS flags (`autoProgression.js:423`), and not-admin retains a whole group's flags (`:361`) — neither happened, so bot was admin in all 5 crew groups and no kick errored.
-- MCP API access to the LIVE box works: `POST https://bot-hosting.net/api/mcp`, `Authorization: Bearer bhk_b77e82b54bfb19ebe8be6391d3833e514af2614e1478d0e8`, JSON-RPC `tools/call` (`deployments_list/logs/searchLogs/shell/power/diagnose/apply`, `files_*`, `env_*`, `backups_*`). Requires `id` + args in `params`.
-- Docs updated this session: `AGENTS.md` (two-server warning, MCP credentials, new gotchas), `~/.claude/CLAUDE.md` (Known Gotchas + Deployment Workflow).
+**Working / verified:**
+- Yesterday's backdated kicks CONFIRMED by user ("it did kick them all those inactive for more than 14 days") — the two-server saga is closed.
+- Deploy pipeline fully live: push → workflow → MCP `deployments_power` on `b0665152-…` (bhk_ key) → auto-pull. Zombie fixes (reconnect backoff, readyState===3 watchdog, 15s version-fetch timeout) running on live since `4913c16`.
+- **New this session — `.kickcfg` (alias `.autokick`, ownerOnly, category admin):**
+  - `utils/kickSettings.js` — hot-reloaded settings in `database/kickConfig.json` (gitignored): global + per-group overrides {enabled, inactiveWindow, gracePeriod, minMessages, noticeCooldown} + global-only maxKicksPerCycle; parse `25d/6w/1m/1y`; all-or-nothing validation; firstSeen store with 90d prune
+  - `utils/autoProgression.js` — inactive scan + kick pass use effective per-group settings every pass; `minMessages` counts window msgs via new `database.getMessagesInWindow`; first-seen guard (kick-eligible only after firstSeen + window, seeded from earliest groupStats activity); mass-kill guard (≥10 due → kicks held until owner runs Preview, ack 12h); maxKicksPerCycle cap; notice/kick texts interpolate real values; `runKickPreview` (dry run, acks mass guard), `getKickStateSummary`, `purgeKickFlags`, `isCrewGroupJid` exports
+  - `commands/admin/kickcfg.js` — dashboard + preset submenu buttons (nativeFlow via buttonHelper), scope toggle global↔this-group, Custom button → type `.kickcfg set window 25d`, Preview (DMs owner, fallback chat), Purge, Reset; every button double-gated `isOwner(sender)||fromMe` via lazy `require('../../handler')`
+  - `database.js` — `getMessagesInWindow()` + `firstActive` added to `getMemberActivity`
+  - Defaults unchanged from old behavior: 30d window · 14d grace · 1 msg · 7d cooldown · cap 10/cycle
+  - Verified: node --check, checkall 236 files 0 failed, 23/23 unit asserts (`%TEMP%\opencode\test-kickcfg.js`), runtime-smoke errors 0
 
-**Broken / incomplete:**
-- Exact kick count unknown — 18:15 console output rotated out (panel log buffer = ~16–100 lines). Each kick posts a `🗑️ AUTO-KICK` message into its group (`autoProgression.js:414`) — user can scroll groups to count.
-- Zombie-fix deploy in flight at handoff time: `index.js` fixes (reconnect backoff retry, watchdog readyState===3, 15s version-fetch timeout) + workflow rewrite committed and pushed; workflow auto-restarts the live box (secrets now = bhk_ key + live deployment id). Verify boot via MCP `deployments_logs` next session.
-- Old panel API key `ptlc_b2LS…` only works against stale box `08b6894d` (404 on live `u9mg7ylz`) — different panel account owns the live server.
-
-**Files changed this session (working tree state):**
-- `index.js` — 3 zombie fixes: `scheduleReconnect` re-arms with ×2 backoff (cap 5 min) if `startBot()` throws pre-wiring (`:194`); `fetchLatestBaileysVersion` raced with 15s timeout, falls back to Baileys default version (`:237`); watchdog now also fires on `readyState===3`/missing ws (dead socket, no close event) and only `end()`s live sockets (`:291`)
-- `.github/workflows/deploy-bot-hosting.yml` — rewritten: JSON-RPC `tools/call deployments_power` (`action:"restart"`, `waitSeconds:30`) against `https://bot-hosting.net/api/mcp` with `bhk_` key; secrets `BOT_HOSTING_API_KEY` = bhk_ key, `BOT_HOSTING_SERVER_ID` = `b0665152-9b54-4ede-a11f-45c4a6641704` (set via gh 21:42)
-- `AGENTS.md` — two-server warning, MCP restart path, bhk_ credentials, 4 new gotchas
-- `~/.claude/CLAUDE.md` — Known Gotchas + Deployment Workflow updated (outside repo)
-- `HANDOFF.md` — this rewrite
-- Verified locally: `node --check index.js`, `checkall.js` 234 files 0 failed, `runtime-smoke.js` 4/4, workflow YAML parses
+**Pending:**
+- Live boot verify after the deploy push (MCP logs: KAMI BOT CONNECTED; engine `[AUTO-PROGRESSION] Engine started`)
+- User hasn't seen `.kickcfg` yet — explain usage in final reply
+- Oct 16 17:07+: notice cooldown expires — confirm no duplicate notices / new flags behave with the new engine
 
 ## What Was Tried That Failed
-- **Pterodactyl client API restarts via `08b6894d`/ptlc_ key** — hit a DEAD June–Sep box; the live bot was never restarted by them. Root cause of the whole "backdate ignored" saga (plus in-memory state caching).
-- **Deploy workflow auto-restart** — every run since 2026-06-15 failed HTTP 401 (expired secret). Key replaced 10-09; dispatch returned 204 but restarted `08b6894d` (wrong `BOT_HOSTING_SERVER_ID`).
-- **`bhk_` key on `control.bot-hosting.net/api/client`** — 401; bhk_ belongs to `bot-hosting.net/api/mcp` (found via docs search).
-- **Disk-editing `inactiveAlerts.json` while bot runs** — invisible until restart (`_loadState()` at module load); live process wrote its in-memory Oct-2 flags back over edits at 17:07:38.
-- **Recovering 18:15 kick lines** — `deployments_searchLogs` (lines:5000) and `deployments_logs` (size:500) only expose ~16–100 lines; rotated out.
-- **`grep`/`head`/inline heredocs on this Windows box** — use ripgrep; write scripts to `$env:TEMP\opencode\` via file-writer instead of `node -e`/`python -c` with embedded quotes.
+- Restarting the stale panel box `08b6894d`/ptlc_ key — dead June–Sep server; live = `b0665152-…` via MCP/bhk_ only
+- Disk-editing `inactiveAlerts.json` while bot runs — invisible until restart (in-memory cache); kick failures KEEP flags, terminal states DELETE
+- `bhk_` key against `control.bot-hosting.net/api/client` — 401; correct endpoint `bot-hosting.net/api/mcp`
+- Recovering old console lines — panel log buffer ~16–100 lines, verify from state files instead
+- Test expectations: `fmtDuration(14d)` = "2 weeks" (even division); kickSettings.update is all-or-nothing (mixed valid+invalid batch rejected entirely) — both by design
 
 ## Active Files
-- `utils/autoProgression.js` — kick engine; `_runKickPass` 325-428 (deletion semantics 365-424), notice loop 504-584, `_loadState/_saveState` 274-290, scheduling 221-245. Server copy md5-matches local (newline-normalized).
-- `index.js` — open handler 300-566, engine start at 542; TARGET of pending zombie fixes.
-- `.github/workflows/deploy-bot-hosting.yml` — needs rewrite for live-server restart.
-- `HANDOFF.md`, `AGENTS.md`, `~/.claude/CLAUDE.md` — updated this session (repo files uncommitted).
-- `%TEMP%\opencode\` — `merge_backdate.py` (verified uploader), `kick_now.py`, `panel.ps1`, `inactiveAlerts.backup.json/.current.json/.now.json`, `autoProgression.server.js`, `checkall.js`, `runtime-smoke.js`.
-- Host state: `database/inactiveAlerts.json` (8 flags, mtime 18:15:43), `database/groupStats.json` (message-flow marker, mtime ~21:32).
+- `utils/kickSettings.js`, `utils/autoProgression.js`, `commands/admin/kickcfg.js`, `database.js` — this feature
+- `commands/admin/antiflood.js`, `utils/buttonHelper.js`, `utils/commandLoader.js` — reference patterns (buttons, settings, lazy handler require)
+- `HANDOFF.md`, `AGENTS.md` — docs; workflow `.github/workflows/deploy-bot-hosting.yml` — MCP restart (working)
+- Host: `database/kickConfig.json` (created on live at first engine scan), `database/inactiveAlerts.json` (8 flags @17:07 grace Oct 23, groups cooldown to Oct 16)
 
 ## Known Gotchas
-- TWO SERVERS: live = `b0665152-…/u9mg7ylz` (SFTP+MCP); stale = `08b6894d` (ptlc_ key, frozen 09-18). Full detail in `AGENTS.md`.
-- `bhk_` → `bot-hosting.net/api/mcp`; `ptlc_` → `control.bot-hosting.net/api/client`; different panel accounts.
-- Console log buffer tiny (~16–100 lines) — never verify from logs; use state-file mtime/content.
-- Kick pass: failures keep flags; terminal states delete; not-admin keeps whole group's flags.
-- Bot caches state in memory at boot — full process restart required after any disk edit of `database/*.json`.
-- Each bash call = fresh shell (env like `GH_TOKEN` doesn't persist); `>` writes UTF-16LE; `%TEMP%` not expanded in PowerShell — use `$env:TEMP`.
-- `gh` unauthed; token via `git credential fill` (host github.com, username AGKAMI).
-- Standing user directive: commit/push/SFTP when done, don't wait for approval.
+- TWO SERVERS + MCP/bhk_ vs ptlc_ + tiny log buffer + kick-pass flag semantics + boot-cache — see AGENTS.md gotchas
+- Command files must require `handler.js` LAZILY inside functions (loader runs during handler init → partial module / cycle)
+- `buttonHelper.js` has a module-level `setInterval` — scripts that require it need `process.exit()`
+- `kickSettings.update` rejects the whole batch on any invalid key; `maxKicksPerCycle` is global-only
+- Mass-kill guard: Preview grants 12h ack; cap still limits per-cycle removals
+- firstSeen seeds new members at first roster sighting (hint: earliest groupStats activity) — members seen before this deploy get first≈their earliest activity or now
 
 ## Next Steps
-1. Verify the zombie-fix deploy landed: `git log -1`, then MCP `deployments_logs`/`searchLogs` for boot lines (KAMI BOT CONNECTED) and confirm `files_read index.js` shows the new watchdog text ("WebSocket dead without close event"). If the workflow run failed, check `gh run list`.
-2. Ask user to confirm the kicks: scroll the 5 crew groups for `🗑️ AUTO-KICK` announcements (each kick posts one), or report members missing. Expected: up to 89 processed, mixture of kicked vs cleared (left/active/protected).
-3. Oct 16+: notice cooldown expires — watch for duplicate group notices (groups[] @17:07 should prevent; verify first hourly check after Oct 16 17:07).
-4. Optional hardening: session-401 cleanup path (`index.js:341` process.exit(1)) still requires a human panel restart — could exit-and-restart via child process or rely on Pterodactyl `always restart`.
+1. After push: MCP `deployments_logs` — confirm boot + engine start, no [KICKCFG]/[INACTIVE-CHECK] errors on the 5-min first scan.
+2. Tell user: `.kickcfg` opens the panel (owner only, works in DM or any crew group); `.kickcfg preview` dry-runs; group scope via the 👥 button or `.kickcfg set g grace 7d`.
+3. Oct 16+: watch first post-cooldown scan — flags/notices should follow the new settings (defaults = old behavior).
+4. Optional: wire `.kickcfg` shortcut into the owner menu buttons (`commands/general/owner.js`).
 
 ## Memory Keys
-mcp__claude-flow__memory_search { query: "kami kick backdate two-server MCP bhk panel stale box", namespace: "project" }
+mcp__claude-flow__memory_search { query: "kami kickcfg auto-kick settings buttons firstSeen mass guard", namespace: "project" }

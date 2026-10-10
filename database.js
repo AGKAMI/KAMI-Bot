@@ -1142,6 +1142,7 @@ const getMemberActivity = (groupJid, memberJid) => {
   let totalMessages = 0;
   let daysActive = 0;
   let lastActive = null;
+  let firstActive = null;
 
   for (const [date, dayData] of Object.entries(groupStats)) {
     if (dayData.users && dayData.users[memberJid]) {
@@ -1152,12 +1153,15 @@ const getMemberActivity = (groupJid, memberJid) => {
       if (!lastActive || dateTs > lastActive) {
         lastActive = dateTs;
       }
+      if (!firstActive || dateTs < firstActive) {
+        firstActive = dateTs;
+      }
     }
   }
 
   const avgPerDay = daysActive > 0 ? (totalMessages / daysActive).toFixed(1) : 0;
 
-  return { totalMessages, daysActive, lastActive, avgPerDay: Number(avgPerDay) };
+  return { totalMessages, daysActive, lastActive, firstActive, avgPerDay: Number(avgPerDay) };
 };
 
 // Get all members with their activity stats for a group
@@ -1193,6 +1197,30 @@ const getInactiveMembers = (groupJid, days = 30) => {
   }
 
   return inactive;
+};
+
+// Message count for a member inside the last `days` days (from daily stats)
+const getMessagesInWindow = (groupJid, memberJid, days) => {
+  const statsPath = path.join(DB_PATH, 'groupStats.json');
+  let stats;
+  try {
+    stats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
+  } catch {
+    return 0;
+  }
+  const groupStats = stats[groupJid];
+  if (!groupStats) return 0;
+
+  const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
+  let total = 0;
+  for (const [date, dayData] of Object.entries(groupStats)) {
+    const dateTs = new Date(date).getTime();
+    if (!(dateTs >= cutoff)) continue;
+    if (dayData.users && dayData.users[memberJid]) {
+      total += dayData.users[memberJid] || 0;
+    }
+  }
+  return total;
 };
 
 // ── Owner-Demoted Blacklist ──────────────────────────────────
@@ -1252,6 +1280,7 @@ const clearOwnerMuted = (groupJid) => {
 module.exports = {
   getGroupSettings,
   updateGroupSettings,
+  getMessagesInWindow,
   getUser,
   updateUser,
   getWarnings,
