@@ -1,51 +1,69 @@
 # HANDOFF
 
 ## Goal
-KAMI Bot auto-kick: customizable by the owner via button UI (`.kickcfg`) — inactivity window, grace, min messages, notice cooldown, per-group overrides, with edge-case guards. SHIPPED this session (commit after this HANDOFF); verify live boot + tell user how to use it.
+KAMI Bot auto-kick button UX (`.kickcfg`): DM'd, paginated group-picker with per-group kick/notice/settings screens + finish the `.event` system fix. Both DONE this session; commits pushed (auto-deploy), live boot verified.
 
 ## Current State
 **Working / verified:**
-- Yesterday's backdated kicks CONFIRMED by user ("it did kick them all those inactive for more than 14 days") — the two-server saga is closed.
-- Deploy pipeline fully live: push → workflow → MCP `deployments_power` on `b0665152-…` (bhk_ key) → auto-pull. Zombie fixes (reconnect backoff, readyState===3 watchdog, 15s version-fetch timeout) running on live since `4913c16`.
-- **New this session — `.kickcfg` (alias `.autokick`, ownerOnly, category admin):**
-  - `utils/kickSettings.js` — hot-reloaded settings in `database/kickConfig.json` (gitignored): global + per-group overrides {enabled, inactiveWindow, gracePeriod, minMessages, noticeCooldown} + global-only maxKicksPerCycle; parse `25d/6w/1m/1y`; all-or-nothing validation; firstSeen store with 90d prune
-  - `utils/autoProgression.js` — inactive scan + kick pass use effective per-group settings every pass; `minMessages` counts window msgs via new `database.getMessagesInWindow`; first-seen guard (kick-eligible only after firstSeen + window, seeded from earliest groupStats activity); mass-kill guard (≥10 due → kicks held until owner runs Preview, ack 12h); maxKicksPerCycle cap; notice/kick texts interpolate real values; `runKickPreview` (dry run, acks mass guard), `getKickStateSummary`, `purgeKickFlags`, `isCrewGroupJid` exports
-  - `commands/admin/kickcfg.js` — dashboard + preset submenu buttons (nativeFlow via buttonHelper), scope toggle global↔this-group, Custom button → type `.kickcfg set window 25d`, Preview (DMs owner, fallback chat), Purge, Reset; every button double-gated `isOwner(sender)||fromMe` via lazy `require('../../handler')`
-  - `database.js` — `getMessagesInWindow()` + `firstActive` added to `getMemberActivity`
-  - Defaults unchanged from old behavior: 30d window · 14d grace · 1 msg · 7d cooldown · cap 10/cycle
-  - Verified: node --check, checkall 236 files 0 failed, 23/23 unit asserts (`%TEMP%\opencode\test-kickcfg.js`), runtime-smoke errors 0
+- Deploy pipeline fully live: push → gh workflow (~12s) → MCP `deployments_power` on `b0665152-…` (bhk_ key) → auto-pull. All 6 commits this arc boot-verified (`fb25188` feature → `b580612` destructuring fix → `e4cbeaf` preset fmt → `d65b632` group-default+cap → this session's events+picker commit).
+- **`.kickcfg` full button flow (this session's redesign):**
+  - `.kickcfg preview` (and Preview button) → DM'd paginated GROUP PICKER: live group names (groupMetadata.subject → fallback team label), 9 per page + ⬅️/➡️ nav, list text `Page N of M`
+  - Group screen per group: live-name header, window/grace/min/cap line, inactive/flagged/due/kicks counts, due-member list, buttons 👢 Kick N due · 🔔 Notice N inactive · ⚙️ Settings · ⬅️ Groups
+  - Settings button → standard dashboard scoped to that group (`sendDashboard(..., 'g', groupJid)`); `_dmScope` Map remembers owner-DM → group so submenu/toggle presses in DM resolve correctly
+  - Kick/notice run scoped (no full scan), DM confirmation, then refreshed group screen
+  - Stale picker id → "expired" message; picker TTL 1h; picker state in `_pickers` Map (not persisted)
+  - `.kickcfg` in a crew chat defaults scope to that group (`crewHere ? 'g' : 'l'`)
+  - `maxKicksPerCycle` group-overridable (`utils/kickSettings.js` GROUP_OVERRIDABLE); engine enforces per-group cap with kickedByGroup/capped map, one log per group
+  - 🛡️ Kick-cap dashboard button (presets 3/5/10/15/25); Refresh only shown outside crew chats (10-button limit)
+- **Engine exports added** (`utils/autoProgression.js`): `getLiveGroupName(sock, groupJid)`, `runGroupKick(sock, groupJid)` (scoped real kick: `_computeDueFlags` filtered, massAck set, isBotAdmin check, `_botKicked` guard, respects maxKicksPerCycle, returns `{kicked, due, capped, error}`), `sendGroupNotice(sock, groupJid)` (ignores cooldown, notice text via `voice.lead('neutral')`, sets group cooldown, flags all with flaggedAt=now, returns `{notified, error}`)
+- **`.event` system fixed** (root bug: `addCrewEvent` dropped `status` → events.js/attend.js filtered `status === 'upcoming'` → events never listed, RSVP broken):
+  - `database.js addCrewEvent` persists `status` (`|| 'upcoming'`), `attendees`, `results`
+  - `events.js`/`attend.js` filters now `!evt.status || evt.status === 'upcoming'` (legacy compat); `attend.js` done-check `if (event.status && event.status !== 'upcoming')`
+  - `event.js`/`events.js`/`attend.js` rewritten standalone (`name` + `subName` so `.crew event` still routes); numbered list, RSVP via `.attend <number>` (also legacy `evt_` ID, no-arg=first upcoming, toggle in/out); command prefix `.`
+- Verified: node --check all touched, checkall 236/0, test-kickcfg 25/25, test-btn-dispatch 16/16, test-picker 36/36 (full flow: picker→page2→group screen→kick→notice→settings→DM toggle→submenu→no-kick-when-0-due→stale picker), test-event 15/15, runtime-smoke errors 0
 
 **Pending:**
-- Live boot verify after the deploy push (MCP logs: KAMI BOT CONNECTED; engine `[AUTO-PROGRESSION] Engine started`)
-- User hasn't seen `.kickcfg` yet — explain usage in final reply
+- Live boot verify after this session's deploy push (MCP logs: KAMI BOT CONNECTED, no [KICKCFG]/[INACTIVE-CHECK] errors)
+- Tell user: new `.kickcfg` preview flow (DM'd picker), `.event` fixed
 - Oct 16 17:07+: notice cooldown expires — confirm no duplicate notices / new flags behave with the new engine
+- Optional: wire `.kickcfg` shortcut into owner menu buttons (`commands/general/owner.js`)
 
 ## What Was Tried That Failed
-- Restarting the stale panel box `08b6894d`/ptlc_ key — dead June–Sep server; live = `b0665152-…` via MCP/bhk_ only
-- Disk-editing `inactiveAlerts.json` while bot runs — invisible until restart (in-memory cache); kick failures KEEP flags, terminal states DELETE
+- Restoring `database/crew.json` from a pre-test backup after a CRASHED test run — backup captured the already-dirty file (fakes left by prior crash). Fix: surgical key removal in test cleanup + `git checkout -- database/crew.json` (tracked, not gitignored)
+- Test expectations assuming `handleButtonResponse` awaits the handler — it's fire-and-forget; tests must settle (~250ms) before asserting sends
+- First picker test "passed" against leftover fake groups in crew.json — after clean checkout, steps 7+ failed because `isCrewGroupJid` reads the REAL crew map (fake jids not in it). Fix: test patches `engine.isCrewGroupJid` to accept FAKE jids
+- `kickSettings.update` rejects whole batch on invalid key — by design (all-or-nothing)
 - `bhk_` key against `control.bot-hosting.net/api/client` — 401; correct endpoint `bot-hosting.net/api/mcp`
-- Recovering old console lines — panel log buffer ~16–100 lines, verify from state files instead
-- Test expectations: `fmtDuration(14d)` = "2 weeks" (even division); kickSettings.update is all-or-nothing (mixed valid+invalid batch rejected entirely) — both by design
+- Stale panel box `08b6894d`/ptlc_ key — dead June–Sep server; live = `b0665152-…` via MCP/bhk_ only
+- Disk-editing `database/inactiveAlerts.json` while bot runs — invisible until restart (in-memory cache); kick failures KEEP flags, terminal states DELETE
 
 ## Active Files
-- `utils/kickSettings.js`, `utils/autoProgression.js`, `commands/admin/kickcfg.js`, `database.js` — this feature
-- `commands/admin/antiflood.js`, `utils/buttonHelper.js`, `utils/commandLoader.js` — reference patterns (buttons, settings, lazy handler require)
-- `HANDOFF.md`, `AGENTS.md` — docs; workflow `.github/workflows/deploy-bot-hosting.yml` — MCP restart (working)
-- Host: `database/kickConfig.json` (created on live at first engine scan), `database/inactiveAlerts.json` (8 flags @17:07 grace Oct 23, groups cooldown to Oct 16)
+- `commands/admin/kickcfg.js` — picker/group-screen/handler redesign + dashboards/submenus; `_pickers`/`_dmScope`/`resolveScope`
+- `utils/autoProgression.js` — `getLiveGroupName`/`runGroupKick`/`sendGroupNotice` + per-group cap
+- `utils/kickSettings.js` — GROUP_OVERRIDABLE includes maxKicksPerCycle
+- `database.js` — addCrewEvent status/attendees/results persist
+- `commands/crew/event.js`, `events.js`, `attend.js` — standalone rewrites (name+subName)
+- Test scripts: `%TEMP%\opencode\test-picker.js` (patches engine fns + isCrewGroupJid; surgical crew.json cleanup), `test-event.js`, `test-btn-dispatch.js`, `test-kickcfg.js`, `checkall.js`, `runtime-smoke.js` — all need `process.exit()` (buttonHelper module-level setInterval)
+- `HANDOFF.md` — this file; `AGENTS.md` — two-server/MCP gotchas
+- Host: `database/kickConfig.json` (gitignored, per-group overrides persist), `database/inactiveAlerts.json` (8 flags @17:07 grace Oct 23)
 
 ## Known Gotchas
-- TWO SERVERS + MCP/bhk_ vs ptlc_ + tiny log buffer + kick-pass flag semantics + boot-cache — see AGENTS.md gotchas
-- Command files must require `handler.js` LAZILY inside functions (loader runs during handler init → partial module / cycle)
-- `buttonHelper.js` has a module-level `setInterval` — scripts that require it need `process.exit()`
-- `kickSettings.update` rejects the whole batch on any invalid key; `maxKicksPerCycle` is global-only
+- `handleButtonResponse` does NOT await handlers (fire-and-forget) — async sends race test reads; settle 250ms+ after press
+- `database.js` caches crew.json in memory at require-time — disk edits invisible until process restart (same as inactiveAlerts)
+- `database/crew.json` is TRACKED (not gitignored) — tests that write to it must restore surgically or `git checkout`
+- `btnId.split(':')[2]` is the group JID for kickcfg:gk/gn/gs — JIDs contain no colons, safe split
+- Command files must require `handler.js` LAZILY inside functions (loader cycle)
+- `buttonHelper.js` module-level `setInterval` — test scripts need `process.exit()`
 - Mass-kill guard: Preview grants 12h ack; cap still limits per-cycle removals
-- firstSeen seeds new members at first roster sighting (hint: earliest groupStats activity) — members seen before this deploy get first≈their earliest activity or now
+- Kick pass: failures KEEP flags; terminal states (kicked/left/active/owner/protected) DELETE; not-admin keeps whole group's flags
+- TWO SERVERS + MCP/bhk_ vs ptlc_ + tiny log buffer — see AGENTS.md gotchas
+- Command prefix is `.` (user sometimes types `!event` — won't match)
 
 ## Next Steps
-1. After push: MCP `deployments_logs` — confirm boot + engine start, no [KICKCFG]/[INACTIVE-CHECK] errors on the 5-min first scan.
-2. Tell user: `.kickcfg` opens the panel (owner only, works in DM or any crew group); `.kickcfg preview` dry-runs; group scope via the 👥 button or `.kickcfg set g grace 7d`.
-3. Oct 16+: watch first post-cooldown scan — flags/notices should follow the new settings (defaults = old behavior).
-4. Optional: wire `.kickcfg` shortcut into the owner menu buttons (`commands/general/owner.js`).
+1. MCP `deployments_logs` on `b0665152-…` — confirm boot + engine start, no [KICKCFG]/[INACTIVE-CHECK]/[EVENT] errors on first 5-min scan.
+2. Tell user: `.kickcfg preview` now opens a DM'd group picker (live names, tap group → kick/notice/settings); `.event`/`.events`/`.attend` fixed and standalone (`.attend 1` to RSVP).
+3. Oct 16+: watch first post-cooldown scan — flags/notices should follow new settings (defaults = old behavior).
+4. Optional: wire `.kickcfg` shortcut into owner menu buttons (`commands/general/owner.js`).
 
 ## Memory Keys
-mcp__claude-flow__memory_search { query: "kami kickcfg auto-kick settings buttons firstSeen mass guard", namespace: "project" }
+mcp__claude-flow__memory_search { query: "kami kickcfg group picker preview engine runGroupKick sendGroupNotice event status upcoming", namespace: "project" }

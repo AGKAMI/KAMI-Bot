@@ -59,13 +59,26 @@ const ow = (fn) => async (sock, msg, from, sender, btnId) => {
   catch (e) { console.error('[KICKCFG] button error:', e.message); }
 };
 
+// ── Picker state ──────────────────────────────────────────
+// Pickers live 1h in memory — button presses re-open the same session.
+// _dmScope remembers which group's settings the owner is editing when the
+// dashboard was opened in DMs via the group screen (scope 'g' has no chat
+// context there).
+const _pickers = new Map();
+let _pickerSeq = 0;
+const _dmScope = new Map();
+const PICKER_TTL_MS = 60 * 60 * 1000;
+const PAGE_SIZE = 9; // +1 slot for Back/Next = 10 buttons max
+
 // scopeCode: 'l' = global, 'g' = the chat the button was pressed in
-const resolveScope = (from, scopeCode) => {
+// (or the group remembered from the picker when pressed in DMs)
+const resolveScope = (from, scopeCode, groupJidOverride) => {
   if (scopeCode === 'g') {
-    if (!engine().isCrewGroupJid(from)) {
+    const jid = groupJidOverride || _dmScope.get(from) || from;
+    if (!engine().isCrewGroupJid(jid)) {
       return { error: '❌ That chat is not a crew group — group scope only works inside one.' };
     }
-    return { scope: from, label: 'This group' };
+    return { scope: jid, label: 'This group' };
   }
   return { scope: 'global', label: 'Global' };
 };
@@ -113,10 +126,11 @@ const buildDashboardText = (scope, label) => {
   return lines.join('\n');
 };
 
-const dashButtons = (from, scopeCode) => {
-  const inCrew = engine().isCrewGroupJid(from);
-  const { scope } = resolveScope(from, scopeCode) || {};
-  const enabled = scope === 'global'
+const dashButtons = (from, scopeCode, groupJidOverride) => {
+  const ctxJid = groupJidOverride || _dmScope.get(from) || from;
+  const inCrew = engine().isCrewGroupJid(ctxJid);
+  const { scope } = resolveScope(from, scopeCode, groupJidOverride) || {};
+  const enabled = !scope || scope === 'global'
     ? kickSettings.getGlobal().enabled
     : kickSettings.getEffective(scope).enabled;
 
@@ -137,15 +151,21 @@ const dashButtons = (from, scopeCode) => {
   return b.slice(0, 10);
 };
 
-const sendDashboard = async (sock, msg, from, scopeCode) => {
-  const r = resolveScope(from, scopeCode);
+const sendDashboard = async (sock, msg, to, scopeCode, groupJidOverride) => {
+  const r = resolveScope(to, scopeCode, groupJidOverride);
   const code = r.error ? 'l' : scopeCode;
   const scope = r.error ? 'global' : r.scope;
-  const label = r.error ? 'Global' : r.label;
-  return sendButtons(sock, from, {
+  let label = r.error ? 'Global' : r.label;
+  if (scope !== 'global') {
+    // Remember the group so submenu/toggle buttons pressed in a DM still
+    // resolve to it; label with the live name, not a generic string.
+    _dmScope.set(to, scope);
+    try { label = await engine().getLiveGroupName(sock, scope); } catch (e) {}
+  }
+  return sendButtons(sock, to, {
     text: buildDashboardText(scope, label),
     footer: 'Auto-Kick · owner only',
-    buttons: dashButtons(from, code),
+    buttons: dashButtons(to, code, groupJidOverride),
   }, msg);
 };
 
@@ -153,6 +173,10 @@ const sendDashboard = async (sock, msg, from, scopeCode) => {
 const sendSubmenu = async (sock, msg, from, key, scopeCode) => {
   const r = resolveScope(from, scopeCode);
   if (r.error) return sock.sendMessage(from, { text: r.error }, msg ? { quoted: msg } : {});
+  let label = r.label;
+  if (r.scope !== 'global') {
+    try { label = await engine().getLiveGroupName(sock, r.scope); } catch (e) {}
+  }
   const cur = fmtVal(key, currentVal(r.scope, key));
   const prefix = config.prefix || '.';
   const example = key === 'msgs' ? '8' : key === 'maxkicks' ? '15' : '25d';
@@ -171,7 +195,7 @@ const sendSubmenu = async (sock, msg, from, key, scopeCode) => {
 
   return sendButtons(sock, from, {
     text:
-      `${KEY_LABELS[key]} — *${r.label}*\n` +
+      `${KEY_LABELS[key]} — *${label}*\n` +
       `━━━━━━━━━━━━━━━━\n` +
       `Current: *${cur}*\n\n` +
       `Pick a preset, or type:\n` +
@@ -182,44 +206,108 @@ const sendSubmenu = async (sock, msg, from, key, scopeCode) => {
   }, msg);
 };
 
-// ── Preview ───────────────────────────────────────────────
-const buildPreviewText = (p) => {
-  const g = kickSettings.getGlobal();
+// ── Preview: paged group picker → per-group screen ────────
+// Every group gets its own button (live names), auto-paginated at 9 + a
+// More/Back slot. Tapping a group opens its full status with quick actions.
+
+const buildGroupScreenText = (name, g, eff) => {
   const lines = [
-    `🔍 *AUTO-KICK PREVIEW (dry run)*`,
+    `🔍 *${name}*`,
     `━━━━━━━━━━━━━━━━`,
-    `Window ${kickSettings.fmtDuration(g.inactiveWindow)} · grace ${kickSettings.fmtDuration(g.gracePeriod)} · min ${g.minMessages} msg · cap ${g.maxKicksPerCycle}/cycle`,
+    `Status: ${g.enabled ? '✅ enabled' : '🔕 disabled'}`,
+    `⏳ Window *${kickSettings.fmtDuration(eff.inactiveWindow)}* · grace *${kickSettings.fmtDuration(eff.gracePeriod)}* · min *${eff.minMessages}* msg · cap *${g.cap}*/cycle`,
     ``,
+    `👥 Inactive: *${g.inactiveCount}* · flagged: *${g.flaggedCount}* · due now: *${g.dueCount}* · kicks: *${g.kickCount}*`,
   ];
-  for (const grp of p.perGroup) {
-    const flag = grp.enabled ? '✅' : '🔕';
-    lines.push(`${flag} *${grp.name}* — inactive ${grp.inactiveCount} · flagged ${grp.flaggedCount} · due ${grp.dueCount} · kicks *${grp.kickCount}* · cap ${grp.cap}`);
-    const clearedParts = Object.entries(grp.cleared || {}).map(([k, v]) => `${v} ${k}`);
-    if (clearedParts.length) lines.push(`   cleared: ${clearedParts.join(', ')}`);
-    for (const k of grp.kickList.slice(0, 15)) {
-      lines.push(`   → @${k.digits} (flagged ${new Date(k.flaggedAt).toLocaleDateString()})`);
+  const clearedParts = Object.entries(g.cleared || {}).map(([k, v]) => `${v} ${k}`);
+  if (clearedParts.length) lines.push(`_Cleared this scan: ${clearedParts.join(', ')}_`);
+  if (g.kickList.length) {
+    lines.push('', `*Due for kick:*`);
+    for (const k of g.kickList.slice(0, 20)) {
+      lines.push(`→ @${k.digits} (flagged ${new Date(k.flaggedAt).toLocaleDateString()})`);
     }
-    if (grp.kickList.length > 15) lines.push(`   … +${grp.kickList.length - 15} more`);
+    if (g.kickList.length > 20) lines.push(`… +${g.kickList.length - 20} more`);
   }
-  lines.push(
-    ``,
-    `*Totals:* ${p.totals.inactive} inactive · ${p.totals.flagged} flagged · ${p.totals.due} due · *${p.totals.kicks}* kicks`,
-  );
-  if (p.massHoldWouldApply) {
-    lines.push(`⚠️ ≥10 due at once — mass-ack granted for 12h (kicks still capped ${p.maxPerCycle}/cycle)`);
-  }
-  lines.push(`_Nothing was removed. Ack recorded — kicks may proceed on the next scan._`);
+  lines.push('', `_Kicks respect the cap · failed kicks retry next scan._`);
   return lines.join('\n');
 };
 
-const doPreview = async (sock, msg, extra) => {
-  const p = await engine().runKickPreview(sock);
-  const text = buildPreviewText(p);
-  // Owner DM first (privacy); fall back to the chat it was run in
+const sendGroupScreen = async (sock, msg, to, groupJid, pickerId) => {
+  const name = await engine().getLiveGroupName(sock, groupJid);
+  const p = await engine().runKickPreview(sock); // dry run; acks the mass guard
+  const g = p.perGroup.find(x => x.jid === groupJid);
+  if (!g) {
+    return sock.sendMessage(to, { text: `⚠️ *${name}* is no longer a crew group — dropped from the list.` });
+  }
+  const eff = kickSettings.getEffective(groupJid);
+
+  const btns = [];
+  if (g.kickCount > 0) btns.push({ id: `kickcfg:gk:${groupJid}`, text: `👢 Kick ${g.kickCount} due` });
+  if (g.inactiveCount > 0) btns.push({ id: `kickcfg:gn:${groupJid}`, text: `🔔 Notice ${g.inactiveCount} inactive` });
+  btns.push({ id: `kickcfg:gs:${groupJid}`, text: '⚙️ Settings' });
+  if (pickerId) btns.push({ id: `kickcfg:gpb:${pickerId}`, text: '⬅️ Groups' });
+
+  return sendButtons(sock, to, {
+    text: buildGroupScreenText(name, g, eff),
+    footer: 'Auto-Kick · owner only',
+    buttons: btns.slice(0, 10),
+  }, msg);
+};
+
+const sendGroupPicker = async (sock, msg, to, page = 0, cachedEntries = null, fallbackJid = null) => {
+  let entries = cachedEntries;
+  if (!entries) {
+    const summary = engine().getKickStateSummary();
+    entries = [];
+    for (const gp of summary.per) {
+      entries.push({
+        jid: gp.jid,
+        name: await engine().getLiveGroupName(sock, gp.jid),
+        enabled: gp.enabled,
+        flags: gp.flags,
+      });
+    }
+  }
+  if (!entries.length) {
+    return sock.sendMessage(to, { text: '⚠️ No crew groups registered — map one with `.crew setteam` first.' });
+  }
+
+  const pages = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
+  const p = Math.min(Math.max(0, page), pages - 1);
+  const slice = entries.slice(p * PAGE_SIZE, (p + 1) * PAGE_SIZE);
+
+  const pickerId = `pk${Date.now().toString(36)}${(_pickerSeq++).toString(36)}`;
+  _pickers.set(pickerId, { entries, page: p, at: Date.now() });
+  for (const [k, v] of _pickers) {
+    if (k !== pickerId && Date.now() - v.at > PICKER_TTL_MS) _pickers.delete(k);
+  }
+
+  const listLines = slice.map((e, i) => {
+    const n = p * PAGE_SIZE + i + 1;
+    const flagBit = e.flags ? ` — ${e.flags} flag${e.flags === 1 ? '' : 's'}` : '';
+    return `*${n}.* ${e.enabled ? '✅' : '🔕'} ${e.name}${flagBit}`;
+  });
+
+  const btns = slice.map((e, i) => ({
+    id: `kickcfg:gp:${pickerId}:${i}`,
+    text: `${p * PAGE_SIZE + i + 1}. ${e.name}`.slice(0, 40),
+  }));
+  if (p > 0) btns.push({ id: `kickcfg:gpp:${pickerId}:${p - 1}`, text: '⬅️ Back' });
+  if (p < pages - 1) btns.push({ id: `kickcfg:gpp:${pickerId}:${p + 1}`, text: '➡️ More' });
+
+  const text =
+    `🔍 *AUTO-KICK — PICK A GROUP*\n` +
+    `━━━━━━━━━━━━━━━━\n` +
+    listLines.join('\n') +
+    (pages > 1 ? `\n\n_Page ${p + 1} of ${pages}_` : '') +
+    `\n\n_Tap a group for its status + quick actions._`;
+
+  const opts = { text, footer: 'Auto-Kick · owner only', buttons: btns.slice(0, 10) };
   try {
-    await sock.sendMessage(extra.sender, { text });
+    return await sendButtons(sock, to, opts, msg);
   } catch (e) {
-    await extra.reply(text);
+    if (fallbackJid && fallbackJid !== to) return sendButtons(sock, fallbackJid, opts, msg);
+    throw e;
   }
 };
 
@@ -237,7 +325,7 @@ module.exports = {
     const sub = (args[0] || '').toLowerCase();
     const crewHere = extra.isGroup && engine().isCrewGroupJid(extra.from);
 
-    if (sub === 'preview') return doPreview(sock, msg, extra);
+    if (sub === 'preview') return sendGroupPicker(sock, msg, extra.sender, 0, null, extra.from);
 
     if (sub === 'on' || sub === 'off') {
       const res = kickSettings.update('global', { enabled: sub === 'on' });
@@ -360,22 +448,15 @@ onButton('kickcfg:custom', ow(async (sock, msg, from, sender, btnId) => {
   }, msg);
 }));
 
-onButton('kickcfg:preview', ow(async (sock, msg, from, sender, btnId) => {
-  const scopeCode = btnId.split(':')[2] || 'l';
-  const p = await engine().runKickPreview(sock);
-  const text = buildPreviewText(p);
-  try {
-    await sock.sendMessage(sender, { text });
-  } catch (e) {
-    await sock.sendMessage(from, { text });
-  }
-  return sendDashboard(sock, msg, from, scopeCode);
+onButton('kickcfg:preview', ow(async (sock, msg, from, sender) => {
+  return sendGroupPicker(sock, msg, sender, 0, null, from);
 }));
 
 onButton('kickcfg:purge', ow(async (sock, msg, from, sender, btnId) => {
   const scopeCode = btnId.split(':')[2] || 'l';
-  const useGroup = scopeCode === 'g' && engine().isCrewGroupJid(from);
-  engine().purgeKickFlags(useGroup ? from : null);
+  const r = resolveScope(from, scopeCode);
+  const useGroup = scopeCode === 'g' && r.scope;
+  engine().purgeKickFlags(useGroup ? r.scope : null);
   await sock.sendMessage(from, {
     text: useGroup ? `🗑️ Flags purged for this group.` : `🗑️ Flags purged for ALL crew groups.`,
   });
@@ -385,8 +466,9 @@ onButton('kickcfg:purge', ow(async (sock, msg, from, sender, btnId) => {
 onButton('kickcfg:reset', ow(async (sock, msg, from, sender, btnId) => {
   const scopeCode = btnId.split(':')[2] || 'l';
   if (scopeCode === 'g') {
-    if (!engine().isCrewGroupJid(from)) return sock.sendMessage(from, { text: '❌ Not a crew group.' });
-    const had = kickSettings.resetGroup(from);
+    const r = resolveScope(from, 'g');
+    if (r.error) return sock.sendMessage(from, { text: '❌ Not a crew group.' });
+    const had = kickSettings.resetGroup(r.scope);
     await sock.sendMessage(from, {
       text: had ? `♻️ This group now inherits global settings.` : `ℹ️ This group had no override.`,
     });
@@ -395,4 +477,71 @@ onButton('kickcfg:reset', ow(async (sock, msg, from, sender, btnId) => {
   kickSettings.resetGlobal();
   await sock.sendMessage(from, { text: `♻️ Global settings reset to defaults.` });
   return sendDashboard(sock, msg, from, 'l');
+}));
+
+// ── Group picker (DM) ─────────────────────────────────────
+onButton('kickcfg:gp', ow(async (sock, msg, from, sender, btnId) => {
+  const [, , pickerId, idxStr] = btnId.split(':');
+  const picker = _pickers.get(pickerId);
+  const jid = picker ? picker.entries[parseInt(idxStr, 10)]?.jid : null;
+  if (!jid) {
+    return sock.sendMessage(sender, { text: '⚠️ That list expired — press Preview again.' });
+  }
+  return sendGroupScreen(sock, msg, sender, jid, pickerId);
+}));
+
+onButton('kickcfg:gpp', ow(async (sock, msg, from, sender, btnId) => {
+  const [, , pickerId, pageStr] = btnId.split(':');
+  const picker = _pickers.get(pickerId);
+  if (!picker) {
+    return sock.sendMessage(sender, { text: '⚠️ That list expired — press Preview again.' });
+  }
+  return sendGroupPicker(sock, msg, sender, parseInt(pageStr, 10) || 0, picker.entries, from);
+}));
+
+onButton('kickcfg:gpb', ow(async (sock, msg, from, sender, btnId) => {
+  const [, , pickerId] = btnId.split(':');
+  const picker = _pickers.get(pickerId);
+  if (!picker) {
+    return sock.sendMessage(sender, { text: '⚠️ That list expired — press Preview again.' });
+  }
+  return sendGroupPicker(sock, msg, sender, picker.page, picker.entries, from);
+}));
+
+// ── Group screen actions ──────────────────────────────────
+onButton('kickcfg:gk', ow(async (sock, msg, from, sender, btnId) => {
+  const groupJid = btnId.split(':')[2];
+  const name = await engine().getLiveGroupName(sock, groupJid);
+  const res = await engine().runGroupKick(sock, groupJid);
+  if (res.error) {
+    return sock.sendMessage(sender, { text: `❌ *${name}*\n${res.error}${res.due ? `\n(${res.due} due once resolved)` : ''}` });
+  }
+  const cappedNote = res.capped ? `\n⚠️ Cap hit — the rest roll to the next scan.` : '';
+  await sock.sendMessage(sender, {
+    text: res.kicked
+      ? `👢 Kicked *${res.kicked}* inactive member${res.kicked === 1 ? '' : 's'} from *${name}*${cappedNote}`
+      : `ℹ️ Nobody due for kick in *${name}* right now.`,
+  });
+  return sendGroupScreen(sock, msg, sender, groupJid, null);
+}));
+
+onButton('kickcfg:gn', ow(async (sock, msg, from, sender, btnId) => {
+  const groupJid = btnId.split(':')[2];
+  const name = await engine().getLiveGroupName(sock, groupJid);
+  const res = await engine().sendGroupNotice(sock, groupJid);
+  if (res.error) {
+    return sock.sendMessage(sender, { text: `❌ *${name}*\n${res.error}` });
+  }
+  if (!res.notified) {
+    return sock.sendMessage(sender, { text: `ℹ️ Nobody inactive in *${name}* right now.` });
+  }
+  await sock.sendMessage(sender, {
+    text: `🔔 Notice posted in *${name}* — ${res.notified} member${res.notified === 1 ? '' : 's'} flagged, grace clock running.`,
+  });
+  return sendGroupScreen(sock, msg, sender, groupJid, null);
+}));
+
+onButton('kickcfg:gs', ow(async (sock, msg, from, sender, btnId) => {
+  const groupJid = btnId.split(':')[2];
+  return sendDashboard(sock, msg, sender, 'g', groupJid);
 }));
