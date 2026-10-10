@@ -2318,6 +2318,15 @@ const handleGroupUpdate = async (sock, update) => {
               await sock.sendMessage(id, { image: resultBuffer, caption: welcomeMsg, mentions: [participantJid] });
             } catch (imgErr) {
               console.error('Welcome buildImage error:', imgErr.message);
+              // Fall back to text welcome — don't leave the member with nothing
+              try {
+                let message = groupSettings.welcomeMessage || `${greet()} @user! 👋\n${lekker()} to have you in @group!`;
+                message = message.replace('@user', `@${displayName}`);
+                message = message.replace('@group', groupMetadata.subject || 'the group');
+                await sock.sendMessage(id, { text: message, mentions: [participantJid] });
+              } catch (e) {
+                console.error('Welcome text fallback error:', e.message);
+              }
             }
           } else {
             console.error('Welcome: no bgBuffer available');
