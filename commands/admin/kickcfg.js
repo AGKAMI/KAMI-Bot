@@ -156,7 +156,7 @@ const sendSubmenu = async (sock, msg, from, key, scopeCode) => {
   const example = key === 'msgs' ? '8' : key === 'maxkicks' ? '15' : '25d';
   const presetBtns = PRESETS[key].map(v => ({
     id: `kickcfg:set:${key}:${scopeCode}:${v}`,
-    text: fmtVal(key, v),
+    text: key === 'msgs' ? `${v} msgs` : fmtVal(key, kickSettings.parseDuration(v)),
   }));
   presetBtns.push({ id: `kickcfg:custom:${key}:${scopeCode}`, text: '✏️ Custom' });
   presetBtns.push({ id: `kickcfg:main:${scopeCode}`, text: '⬅️ Back' });
