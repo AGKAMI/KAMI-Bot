@@ -420,8 +420,9 @@ const addCrewEvent = (groupJid, eventId, data) => {
     name: data.name,
     time: data.time,
     createdBy: data.createdBy,
-    attendees: [],
-    results: null,
+    attendees: data.attendees || [],
+    status: data.status || 'upcoming',
+    results: data.results ?? null,
     created: Date.now()
   };
   return updateTeam(groupJid, team);

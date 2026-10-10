@@ -1,12 +1,23 @@
-const { bold, pick, SLANG, voice } = require('../../utils/format');
 const database = require('../../database');
 
 const config = require('../../config');
+
+// Same time-of-day sort used by events.js — keep both in sync.
+// Missing status = upcoming (events written before status was persisted).
+const sortUpcoming = (allEvents) => Object.entries(allEvents)
+  .filter(([, evt]) => !evt.status || evt.status === 'upcoming')
+  .sort((a, b) => {
+    const timeA = a[1].time.split(':').map(Number);
+    const timeB = b[1].time.split(':').map(Number);
+    return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+  });
+
 module.exports = {
   subName: 'attend',
-  name: null,
-  description: 'RSVP to a crew event, lekke',
-  usage: '.crew attend <event-id> or .crew attend',
+  name: 'attend',
+  category: 'crew',
+  description: 'RSVP to a crew event — toggles you in/out',
+  usage: '.attend [number] · no number = first/only event',
   adminOnly: false,
   groupOnly: true,
 
@@ -16,47 +27,45 @@ module.exports = {
     const jid = extra.from;
     const sender = msg.key.participant || msg.key.remoteJid;
 
-    let eventId;
+    const allEvents = database.getCrewEvents(jid);
+    const upcoming = allEvents ? sortUpcoming(allEvents) : [];
 
-    if (args && args.length > 0) {
-      eventId = args[0];
-    } else {
-      const allEvents = database.getCrewEvents(jid);
-      if (!allEvents || Object.keys(allEvents).length === 0) {
-        return sock.sendMessage(jid, {
-          text: `❌ *ERROR*\n\nNo events coming up, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
-        });
-      }
-
-      const upcoming = Object.entries(allEvents)
-        .filter(([id, evt]) => evt.status === 'upcoming')
-        .sort((a, b) => {
-          const timeA = a[1].time.split(':').map(Number);
-          const timeB = b[1].time.split(':').map(Number);
-          return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
-        });
-
-      if (upcoming.length === 0) {
-        return sock.sendMessage(jid, {
-          text: `❌ *ERROR*\n\nNo events coming up, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
-        });
-      }
-
-      eventId = upcoming[0][0];
-    }
-
-    const team = database.getTeam(jid);
-    if (!team || !team.events || !team.events[eventId]) {
+    if (upcoming.length === 0) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nNo event with that ID: *${eventId}*\nSee all events with: \`${prefix}crew events\``
+        text: `❌ *ERROR*\n\nNo events coming up.\nMake one with: \`${prefix}event <name> <time>\``
       });
     }
 
-    const event = team.events[eventId];
+    // Resolve which event: number from .events list, bare ID, or the only/first one
+    let eventId;
+    const arg = args && args[0];
 
-    if (event.status !== 'upcoming') {
+    if (arg && /^\d+$/.test(arg)) {
+      const idx = parseInt(arg, 10) - 1;
+      if (!upcoming[idx]) {
+        return sock.sendMessage(jid, {
+          text: `❌ *ERROR*\n\nOnly ${upcoming.length} event${upcoming.length === 1 ? '' : 's'} coming up.\nSee them with: \`${prefix}events\``
+        });
+      }
+      eventId = upcoming[idx][0];
+    } else if (arg && allEvents[arg]) {
+      eventId = arg; // old-style evt_xxx ID still works
+    } else {
+      eventId = upcoming[0][0]; // no arg → first/only event
+    }
+
+    const team = database.getTeam(jid);
+    const event = team && team.events ? team.events[eventId] : null;
+
+    if (!event) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nThat one is done and dusted.\nSee all events with: \`${prefix}crew events\``
+        text: `❌ *ERROR*\n\nNo event with that number.\nSee them with: \`${prefix}events\``
+      });
+    }
+
+    if (event.status && event.status !== 'upcoming') {
+      return sock.sendMessage(jid, {
+        text: `❌ *ERROR*\n\nThat one is done and dusted.\nSee what's next with: \`${prefix}events\``
       });
     }
 
@@ -65,27 +74,20 @@ module.exports = {
     }
 
     const isAttending = event.attendees.includes(sender);
+    const count = () => event.attendees.length;
 
     if (isAttending) {
       event.attendees = event.attendees.filter(a => a !== sender);
       database.updateTeam(jid, team);
-
-      const member = database.getCrewMember(jid, sender);
-      const name = member ? member.name : sender.split(':')[0].split('@')[0];
-
       return sock.sendMessage(jid, {
-        text: `✅ *SUCCESS*\n\n*${name}* is out of the event\n\n🏎️ *Event:* ${event.name}\n⏰ *Time:* ${event.time}\n👥 *Attending:* ${event.attendees.length}`
-      });
-    } else {
-      event.attendees.push(sender);
-      database.updateTeam(jid, team);
-
-      const member = database.getCrewMember(jid, sender);
-      const name = member ? member.name : sender.split(':')[0].split('@')[0];
-
-      return sock.sendMessage(jid, {
-        text: `✅ *SUCCESS*\n\n*${name}* is locked in!\n\n🏎️ *Event:* ${event.name}\n⏰ *Time:* ${event.time}\n👥 *Attending:* ${event.attendees.length}`
+        text: `✅ You're out of *${event.name}* (${count()} going)`
       });
     }
+
+    event.attendees.push(sender);
+    database.updateTeam(jid, team);
+    return sock.sendMessage(jid, {
+      text: `✅ You're locked in for *${event.name}* at *${event.time}* (${count()} going)`
+    });
   }
 };

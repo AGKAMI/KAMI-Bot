@@ -1,12 +1,23 @@
-const { bold, pick, SLANG, voice } = require('../../utils/format');
 const database = require('../../database');
 
 const config = require('../../config');
+
+// Same time-of-day sort used by attend.js — keep both in sync.
+// Missing status = upcoming (events written before status was persisted).
+const sortUpcoming = (allEvents) => Object.entries(allEvents)
+  .filter(([, evt]) => !evt.status || evt.status === 'upcoming')
+  .sort((a, b) => {
+    const timeA = a[1].time.split(':').map(Number);
+    const timeB = b[1].time.split(':').map(Number);
+    return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+  });
+
 module.exports = {
   subName: 'events',
-  name: null,
+  name: 'events',
+  category: 'crew',
   description: 'View upcoming crew events',
-  usage: '.crew events',
+  usage: '.events',
   adminOnly: false,
   groupOnly: true,
 
@@ -16,41 +27,23 @@ module.exports = {
     const jid = extra.from;
 
     const allEvents = database.getCrewEvents(jid);
+    const upcoming = allEvents ? sortUpcoming(allEvents) : [];
 
-    if (!allEvents || Object.keys(allEvents).length === 0) {
+    if (upcoming.length === 0) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nNo events coming up, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
-      });
-    }
-
-    const upcomingEvents = Object.entries(allEvents)
-      .filter(([id, evt]) => evt.status === 'upcoming')
-      .sort((a, b) => {
-        const timeA = a[1].time.split(':').map(Number);
-        const timeB = b[1].time.split(':').map(Number);
-        return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
-      });
-
-    if (upcomingEvents.length === 0) {
-      return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nNo events coming up, ${voice.tag('err')}\nMake one with: \`${prefix}crew event <name> <time>\``
+        text: `❌ *ERROR*\n\nNo events coming up.\nMake one with: \`${prefix}event <name> <time>\``
       });
     }
 
     let response = `📅 *UPCOMING EVENTS*\n\n`;
 
-    upcomingEvents.forEach(([id, evt], index) => {
+    upcoming.forEach(([id, evt], index) => {
       const attendeeCount = evt.attendees ? evt.attendees.length : 0;
-      response += `🗓️ *${evt.name}*\n`;
-      response += `   ⏰ Time: *${evt.time}*\n`;
-      response += `   👥 Attending: *${attendeeCount}*\n`;
-      response += `   🆔 ID: *${id}*\n`;
-      if (index < upcomingEvents.length - 1) {
-        response += `\n`;
-      }
+      response += `*${index + 1}.* 🗓️ *${evt.name}*\n`;
+      response += `   ⏰ ${evt.time} · 👥 ${attendeeCount} going\n`;
     });
 
-    response += `\nRSVP with: \`${prefix}crew attend <event-id>\``;
+    response += `\nRSVP: \`${prefix}attend <number>\` — eg \`${prefix}attend 1\``;
 
     return sock.sendMessage(jid, { text: response });
   }

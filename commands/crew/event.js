@@ -1,12 +1,12 @@
-const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
 
 const config = require('../../config');
 module.exports = {
   subName: 'event',
-  name: null,
+  name: 'event',
+  category: 'crew',
   description: 'Line up a new crew event',
-  usage: '.crew event <name> <time>',
+  usage: '.event <name> <time>',
   adminOnly: true,
   groupOnly: true,
 
@@ -18,7 +18,7 @@ module.exports = {
 
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nUsage: \`${prefix}crew event <name> <time>\`\nExample: \`${prefix}crew event Friday Drift 20:30\`\n\nDrop the event name and the time.`
+        text: `❌ *ERROR*\n\nUsage: \`${prefix}event <name> <time>\`\nExample: \`${prefix}event Friday Drift 20:30\`\n\nDrop the event name and the time.`
       });
     }
 
@@ -42,17 +42,11 @@ module.exports = {
       createdAt: new Date().toISOString()
     });
 
-    const member = database.getCrewMember(jid, sender);
-    const creatorName = member ? member.name : sender.split(':')[0].split('@')[0];
-
     return sock.sendMessage(jid, {
       text: `📅 *EVENT CREATED*\n\n` +
-        `🏎️ *Name:* ${name}\n` +
-        `⏰ *Time:* ${time}\n` +
-        `👤 *Created by:* ${creatorName}\n` +
-        `🆔 *Event ID:* ${eventId}\n\n` +
-        `See all events with: \`${prefix}crew events\`\n` +
-        `Members can RSVP with: \`${prefix}crew attend ${eventId}\``
+        `🏎️ *${name}*\n` +
+        `⏰ *${time}*\n\n` +
+        `Everyone RSVPs with: \`${prefix}attend\``
     });
   }
 };
