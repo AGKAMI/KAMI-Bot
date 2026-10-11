@@ -1,6 +1,6 @@
 /**
  * Global Cleanup System
- * Aggressive cleanup to prevent ENOSPC on small 1GB servers
+ * Aggressive cleanup to prevent ENOSPC on the 512MB panel box
  */
 
 const fs = require('fs');
@@ -8,15 +8,18 @@ const path = require('path');
 const { getTempDir } = require('./tempManager');
 const config = require('../config');
 
-// Run every 2 minutes
-const CLEANUP_INTERVAL_MS = 2 * 60 * 1000;
+// Run every 1 minute — the 512MB box can hit the disk cap within one
+// old interval when a big video pair lands in temp
+const CLEANUP_INTERVAL_MS = 1 * 60 * 1000;
 
 // Delete files older than 2 minutes (Baileys enc files should be done by then)
 const FILE_AGE_THRESHOLD_MS = 2 * 60 * 1000;
 
-// HARD LIMIT: 150MB — on a 1GB server, video files can be 300MB+
-const SIZE_LIMIT_BYTES = 150 * 1024 * 1024;
-const SIZE_TARGET_BYTES = 50 * 1024 * 1024;
+// HARD LIMIT: 100MB — box is 512MB with ~335MB baseline, so temp must stay
+// well under ~170MB or the panel kills the process (ENOSPC deadlock:
+// dead process can't run its own cleanup)
+const SIZE_LIMIT_BYTES = 100 * 1024 * 1024;
+const SIZE_TARGET_BYTES = 30 * 1024 * 1024;
 
 // Session directory name (must NEVER be cleaned)
 const SESSION_DIR_NAME = config.sessionName || 'session';
@@ -81,9 +84,14 @@ function nukeDir(dirPath) {
 /**
  * Aggressively clean up ALL temp files
  * Deletes everything in temp except session dir
- * Called after every media send
+ * Called after every media send (age-gated) and at boot (force)
+ *
+ * force=true skips the age gate. ONLY safe at startup: the previous process
+ * is dead, so no upload can still be using a file. Without this, orphans
+ * from a crashed mid-video send fill the disk and the bot can never boot
+ * again to run its own cleanup (ENOSPC deadlock).
  */
-function cleanupTempFiles() {
+function cleanupTempFiles(force = false) {
   try {
     const tempDir = getTempDir();
     if (!fs.existsSync(tempDir)) return;
@@ -111,7 +119,7 @@ function cleanupTempFiles() {
         // Only files older than FILE_AGE_THRESHOLD_MS — a younger file may
         // still be mid-upload for the send that started 400ms after the last
         // one finished (cleanup is scheduled 500ms after every media send).
-        if (now - stats.mtimeMs < FILE_AGE_THRESHOLD_MS) {
+        if (!force && now - stats.mtimeMs < FILE_AGE_THRESHOLD_MS) {
           continue;
         }
 
@@ -130,7 +138,7 @@ function cleanupTempFiles() {
 
     if (deletedCount > 0) {
       const sizeMB = (totalSizeFreed / (1024 * 1024)).toFixed(2);
-      console.log(`🧹 Cleanup: Deleted ${deletedCount} temp file(s), freed ${sizeMB} MB`);
+      console.log(`🧹 Cleanup: Deleted ${deletedCount} temp file(s), freed ${sizeMB} MB${force ? ' (startup force-pass)' : ''}`);
     }
   } catch (error) {
     console.error('Error during cleanup:', error.message);
@@ -211,8 +219,9 @@ function nukeCacheDirs() {
 function startCleanup() {
   console.log('🧹 Starting aggressive cleanup system...');
 
-  // Initial cleanup on startup
-  cleanupTempFiles();
+  // Initial cleanup on startup — force: previous process is dead, nothing
+  // is in flight, so orphaned mid-send files (even "young" ones) are garbage
+  cleanupTempFiles(true);
   cleanupBySize();
   nukeCacheDirs();
 

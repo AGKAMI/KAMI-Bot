@@ -6,7 +6,7 @@
  *   .announce all    → ALL CPM groups + Community + SS crew groups + Newsletter
  *
  * Requires: reply to a message. Supports text, image, video, document, audio, sticker.
- * Sends all targets in parallel — no delays.
+ * Sends all targets sequentially with a gap — one media encode at a time.
  */
 
 const fs = require('fs');
@@ -18,7 +18,10 @@ const { pick, SLANG, voice } = require('../../utils/format');
 const { downloadMediaMessage, generateThumbnail } = require('@whiskeysockets/baileys');
 
 const SEND_GAP_MS = 400;
-const MEDIA_LIMITS_MB = { image: 60, video: 150, document: 150, audio: 40, sticker: 10 };
+// Caps sized for the 512MB box: Baileys writes original+enc pairs to temp
+// during upload (~2× file size). Baseline disk ~335MB, so a 50MB cap keeps
+// peak at ~435MB — under the 512MB panel limit that kills the process.
+const MEDIA_LIMITS_MB = { image: 40, video: 50, document: 50, audio: 30, sticker: 10 };
 
 function toBytes(v) {
   if (v == null) return 0;
