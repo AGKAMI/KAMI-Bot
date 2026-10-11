@@ -37,6 +37,7 @@ Crew dashboard (Attend shortcut only), 14 admin mega-panels, WYR A/B buttons, la
 - `tests/{buttonHelper,againDispatch}.test.js` — extend when adding ALLOW entries
 
 ## Known Gotchas (this arc)
+- **Admin button gate layers (`3250ef8`)**: `menu:admin` view gated (ADMINS ONLY, mirrors owner); `admin:*` ids globally gated via `requireAdmin('admin')`; hub `route()` re-checks TARGET flags via `passesGates` (kickcfg is ownerOnly — plain admins can't reach it, row hidden); `kickcfg:*` ids now `requireOwner('kickcfg')` + internal `ow()` per-handler gates
 - `node --test tests/` DIRECTORY ARG FAILS on Windows/Node 24 → npm test = explicit file list
 - Non-unref'd intervals hang test runs — kill stray node procs before rerunning
 - ownerHub overlap warnings on boot are EXPECTED (longest match wins) — ~25 lines, informational
