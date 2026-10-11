@@ -7,6 +7,7 @@
  */
 
 const config = require('../config');
+const nameCache = require('./nameCache');
 
 // ─── WhatsApp Formatting Helpers ──────────────────────────────────────────────
 
@@ -14,8 +15,13 @@ const bold = (text) => `*${text}*`;
 const italic = (text) => `_${text}_`;
 const strike = (text) => `~${text}~`;
 const mono = (text) => '`' + text + '`';
+// Show a person's cached display name when we know it (never a raw jid/lid).
+// Falls back to the @digits tag — paired with a mentions array that renders
+// as a proper WhatsApp mention; on its own it's the last-resort digits form.
 const mention = (jid) => {
   if (!jid) return '@unknown';
+  const name = nameCache.get(jid);
+  if (name) return name;
   return `@${String(jid).split(':')[0].split('@')[0]}`;
 };
 

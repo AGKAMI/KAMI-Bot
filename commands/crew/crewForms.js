@@ -5,6 +5,7 @@
 
 const config = require('../../config');
 const { getTeamDisplayName } = require('../../utils/teamName');
+const nameCache = require('../../utils/nameCache');
 
 // Team metadata: display name + emoji theme. Group JID + invite live in config.crewTeams.
 const TEAMS = {
@@ -108,7 +109,9 @@ const REQUIREMENTS = [
 // Returns { text, buttons } for use with sendButtons()
 const buildAdminNotice = (app) => {
   const team = TEAMS[app.team];
-  const num = app.jid ? app.jid.split(':')[0].split('@')[0] : 'unknown';
+  // Applicant display name — never raw jid/lid digits
+  const label = nameCache.get(app.jid)
+    || (app.jid ? `user …${app.jid.split('@')[0].split(':')[0].replace(/\D/g, '').slice(-3)}` : 'unknown');
   const prefix = config.prefix || '.';
 
   // Use actual questions from session if available, otherwise fallback
@@ -129,7 +132,7 @@ const buildAdminNotice = (app) => {
     `*NEW ${app.team} APPLICATION* ${team ? team.emoji : ''}\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `🆔 *App ID:* ${app.appUid}\n` +
-    `👤 *Applicant:* ${num}\n\n` +
+    `👤 *Applicant:* ${label}\n\n` +
     qaSection + '\n\n' +
     `━━━━━━━━━━━━━━━━\n\n` +
     `📋 *MINIMUM REQUIREMENTS:*\n` +
@@ -141,8 +144,8 @@ const buildAdminNotice = (app) => {
     `📋 \`${prefix}crew applicants ${app.team}\``;
 
   const buttons = [
-    { id: `crew:accept:${app.appUid}`, text: `✅ Accept ${num}` },
-    { id: `crew:deny:${app.appUid}`, text: `❌ Deny ${num}` },
+    { id: `crew:accept:${app.appUid}`, text: `✅ Accept ${label}` },
+    { id: `crew:deny:${app.appUid}`, text: `❌ Deny ${label}` },
     { id: `crew:pending:${app.team}`, text: `📋 View Pending` },
   ];
 

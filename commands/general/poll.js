@@ -69,7 +69,7 @@ module.exports = {
         for (const poll of active) {
           await sendButtons(sock, from, {
             text: formatResults(poll),
-            footer: `Poll by ${poll.creator.split('@')[0]} — vote below, hey, hey`,
+            footer: `Poll by ${mention(poll.creator)} — vote below, hey, hey`,
             buttons: [
               ...poll.options.map((opt, i) => ({ id: `poll:vote:${poll.id}:${i}`, text: `🗳️ ${opt}` })),
               { id: `poll:results:${poll.id}`, text: '📊 Results' },

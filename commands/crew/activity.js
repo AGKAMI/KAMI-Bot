@@ -1,5 +1,6 @@
 const database = require('../../database');
 const config = require('../../config');
+const { mention } = require('../../utils/format');
 
 module.exports = {
   name: 'activity',
@@ -52,7 +53,7 @@ module.exports = {
       if (entries.length === 0) {
         return extra.reply(
           `📋 ACTIVITY LOG\n\n` +
-          `No activity for @${targetAdmin} in the last ${days} days, shame`,
+          `No activity for ${mention(`${targetAdmin}@s.whatsapp.net`)} in the last ${days} days, shame`,
           { mentions: [`${targetAdmin}@s.whatsapp.net`] }
         );
       }
@@ -74,7 +75,7 @@ module.exports = {
       const recent = entries.filter(e => e.type === 'command').slice(-10);
 
       let text =
-        `📋 ADMIN ACTIVITY — @${targetAdmin}\n` +
+        `📋 ADMIN ACTIVITY — ${mention(`${targetAdmin}@s.whatsapp.net`)}\n` +
         `━━━━━━━━━━━━━━━━\n` +
         `📅 Last ${days} days\n\n`;
 
@@ -117,9 +118,8 @@ module.exports = {
       `📅 Last ${days} days\n\n`;
 
     for (const [adminJid, stats] of Object.entries(activity)) {
-      const num = adminJid.split('@')[0].replace(/\D/g, '');
       const total = stats.accepted + stats.denied + stats.cancelled + stats.rerolled;
-      text += `@${num}\n`;
+      text += `${mention(adminJid)}\n`;
       if (total > 0) {
         text += `  ✅ ${stats.accepted} accepted · ❌ ${stats.denied} denied · 🚫 ${stats.cancelled} cancelled · 🔄 ${stats.rerolled} rolled back\n`;
       }
@@ -131,9 +131,9 @@ module.exports = {
     if (protections.length > 0) {
       text += `🛡️ *PROTECTION EVENTS:* ${protections.length}\n`;
       for (const p of protections.slice(-3)) {
-        const targetNum = p.target ? p.target.split('@')[0].replace(/\D/g, '') : 'unknown';
+        const targetLabel = p.target ? mention(p.target) : 'unknown';
         const time = new Date(p.timestamp).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
-        text += `  \`${time}\` ${p.action} @${targetNum} → ${p.result}\n`;
+        text += `  \`${time}\` ${p.action} ${targetLabel} → ${p.result}\n`;
       }
     }
 

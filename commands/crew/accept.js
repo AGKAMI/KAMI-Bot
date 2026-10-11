@@ -13,6 +13,7 @@ const { sendButtons } = require('../../utils/buttonHelper');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { TEAMS, buildHiredMessage } = require('./crewForms');
 const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
+const nameCache = require('../../utils/nameCache');
 
 // Dynamic emoji mapping — first role gets 👤, last gets 👑
 const getRoleEmoji = (role, roles) => {
@@ -50,14 +51,17 @@ module.exports = {
         const processed = database.getProcessedApp(uid);
         if (processed) {
           const time = new Date(processed.processedAt).toLocaleString('en-ZA');
+          // Show the admin's display name — mention() renders a raw lid
+          // with no mentions array, which is unreadable.
+          const byWho = processed.adminName || nameCache.who(processed.admin);
           if (processed.action === 'accepted') {
             return extra.reply(
-              `❌ ERROR\n\nEish — *${uid}* was already accepted by ${mention(processed.admin)} on ${time}` +
+              `❌ ERROR\n\nEish — *${uid}* was already accepted by ${byWho} on ${time}` +
               (processed.role ? `\n🏷️ Role given: ${processed.role}` : '')
             );
           } else {
             return extra.reply(
-              `❌ ERROR\n\nEish — *${uid}* was already denied by ${mention(processed.admin)} on ${time}` +
+              `❌ ERROR\n\nEish — *${uid}* was already denied by ${byWho} on ${time}` +
               (processed.reason ? `\n📝 Reason: ${processed.reason}` : '')
             );
           }
@@ -199,8 +203,10 @@ module.exports = {
       database.trackProcessedApp(teamGroupJid, app.appUid, {
         action: 'accepted',
         admin: extra.sender,
+        adminName: msg.pushName || extra.pushName || null,
         role,
         applicantJid,
+        applicantName: app.name || nameCache.get(applicantJid) || null,
         team: teamKey,
       });
 

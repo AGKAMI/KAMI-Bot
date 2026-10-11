@@ -67,7 +67,9 @@ module.exports = {
       database.trackProcessedApp(teamGroupJid, app.appUid, {
         action: 'withdrawn',
         admin: applicantJid,
+        adminName: msg.pushName || extra.pushName || null,
         applicantJid: app.jid,
+        applicantName: app.name || null,
         team: teamKey,
       });
 

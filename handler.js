@@ -16,6 +16,7 @@ const { handleButtonResponse, requireAdmin } = require('./utils/buttonHelper');
 const { hasActiveSession, getApplicantState, sendProgressiveResponse } = require('./commands/crew/applyInteractive');
 const { runWithReactions, stageEmoji, classifyReply } = require('./utils/progressReaction');
 const { updateBlockStatusSafe } = require('./utils/jidHelper');
+const nameCache = require('./utils/nameCache');
 
 // All admin command buttons are admin-only
 requireAdmin('admin');
@@ -859,6 +860,10 @@ const handleMessage = async (sock, msg) => {
     // from already defined above in DM block check
     const sender = msg.key.fromMe ? sock.user.id.split(':')[0] + '@s.whatsapp.net' : msg.key.participant || msg.key.remoteJid;
     const isGroup = from.endsWith('@g.us'); // Should always be true now due to DM block above
+
+    // Learn the sender's display name so commands can show "Tapiwa"
+    // instead of a raw jid/lid (see utils/nameCache.js)
+    if (msg.pushName && sender) nameCache.remember(sender, msg.pushName);
     
     // Fetch group metadata immediately if it's a group
     const groupMetadata = isGroup ? await getGroupMetadata(sock, from) : null;
@@ -1542,9 +1547,15 @@ const handleMessage = async (sock, msg) => {
         isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
         isMod: isMod(sender),
         sock,
-        reply: async (text) => {
+        pushName: msg.pushName || null,
+        // Display name for any jid — cached pushName, else "user …223".
+        // Use this instead of rendering raw jid/lid digits in replies.
+        who: nameCache.who,
+        reply: async (text, opts) => {
           try {
-            const sent = await sock.sendMessage(from, { text }, { quoted: msg });
+            // Forward optional extras (mentions, image, etc) so @tags
+            // actually resolve to names instead of raw digits.
+            const sent = await sock.sendMessage(from, { text, ...(opts || {}) }, { quoted: msg });
             // Safety net: a ❌-leading reply marks the run failed, and a
             // permission-flavoured ❌ text ("only KAMI", "admins only"…)
             // escalates to denied — so no command can reply an error and

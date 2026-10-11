@@ -10,6 +10,7 @@ const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { buildDeniedMessage } = require('./crewForms');
 const { sendButtons } = require('../../utils/buttonHelper');
+const nameCache = require('../../utils/nameCache');
 
 module.exports = {
   subName: 'deny',
@@ -38,14 +39,16 @@ module.exports = {
         const processed = database.getProcessedApp(uid);
         if (processed) {
           const time = new Date(processed.processedAt).toLocaleString('en-ZA');
+          // Display name — mention() with no mentions array renders a raw lid
+          const byWho = processed.adminName || nameCache.who(processed.admin);
           if (processed.action === 'accepted') {
             return extra.reply(
-              `❌ ERROR\n\nEish — *${uid}* was already accepted by ${mention(processed.admin)} on ${time}` +
+              `❌ ERROR\n\nEish — *${uid}* was already accepted by ${byWho} on ${time}` +
               (processed.role ? `\n🏷️ Role given: ${processed.role}` : '')
             );
           } else {
             return extra.reply(
-              `❌ ERROR\n\nEish — *${uid}* was already denied by ${mention(processed.admin)} on ${time}` +
+              `❌ ERROR\n\nEish — *${uid}* was already denied by ${byWho} on ${time}` +
               (processed.reason ? `\n📝 Reason: ${processed.reason}` : '')
             );
           }
@@ -88,8 +91,10 @@ module.exports = {
       database.trackProcessedApp(teamGroupJid, app.appUid, {
         action: 'denied',
         admin: extra.sender,
+        adminName: msg.pushName || extra.pushName || null,
         reason,
         applicantJid,
+        applicantName: app.name || nameCache.get(applicantJid) || null,
         team: teamKey,
       });
 

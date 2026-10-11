@@ -5,6 +5,7 @@
 
 const database = require('../../database');
 const { bold, pick, SLANG, voice } = require('../../utils/format');
+const nameCache = require('../../utils/nameCache');
 const fs = require('fs');
 const path = require('path');
 
@@ -154,7 +155,7 @@ async function viewTable(sock, msg, args, extra) {
   } else if (tableName === 'warnings') {
     for (const [jid, warns] of Object.entries(data).slice(0, 10)) {
       const count = Array.isArray(warns) ? warns.length : (warns.count || 0);
-      text += `\n⚠️ ${jid.split('@')[0]} — ${count} warnings`;
+      text += `\n⚠️ ${nameCache.who(jid)} — ${count} warnings`;
     }
   } else if (tableName === 'crew') {
     const groups = Object.keys(data);
@@ -178,7 +179,7 @@ async function viewTable(sock, msg, args, extra) {
       text += `\n🏢 ${groupJid.split('@')[0]} — ${teamName}`;
       text += `\n   👥 ${memberCount} members | 📅 ${eventCount} events`;
       for (const [jid, m] of Object.entries(groupData.members || {}).slice(0, 5)) {
-        text += `\n   👤 ${jid.split('@')[0]} — ${m.role} (${m.team || 'no team'})`;
+        text += `\n   👤 ${nameCache.who(jid)} — ${m.role} (${m.team || 'no team'})`;
       }
       if (Object.keys(groupData.members || {}).length > 5) {
         text += `\n   ... +${Object.keys(groupData.members).length - 5} more`;
@@ -191,7 +192,7 @@ async function viewTable(sock, msg, args, extra) {
     const mods = data.moderators || [];
     text += `\n🛡️ ${mods.length} moderators`;
     for (const jid of mods.slice(0, 10)) {
-      text += `\n• ${jid.split('@')[0]}`;
+      text += `\n• ${nameCache.who(jid)}`;
     }
   } else {
     // Generic view

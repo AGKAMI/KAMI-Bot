@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG, voice } = require('../../utils/format');
+const { pick, SLANG, voice, mention } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
@@ -79,7 +79,8 @@ module.exports = {
 
     for (const [jid, data] of inactiveList) {
       if (count >= 20) break; // Limit to prevent message too long
-      const num = jid.split(':')[0].split('@')[0].replace(/\D/g, '');
+      // Show cached display name — never raw jid/lid digits
+      const label = mention(jid);
       const lastActiveStr = data.lastActive
         ? new Date(data.lastActive).toLocaleDateString('en-ZA')
         : 'Never';
@@ -87,7 +88,7 @@ module.exports = {
         ? Math.floor((Date.now() - data.lastActive) / (24 * 60 * 60 * 1000))
         : '?';
 
-      text += `• @${num} — *${data.role}*\n`;
+      text += `• ${label} — *${data.role}*\n`;
       text += `  📅 Joined: ${data.joined ? new Date(data.joined).toLocaleDateString('en-ZA') : '?'}\n`;
       text += `  💬 Messages: ${data.totalMessages}\n`;
       text += `  ⏰ Last active: ${lastActiveStr} (${inactiveDays}d ago)\n\n`;

@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, pick, SLANG, voice } = require('../../utils/format');
+const { bold, pick, SLANG, voice, mention } = require('../../utils/format');
 const { updateBlockStatusSafe, mentionJid } = require('../../utils/jidHelper');
 
 const parsePhoneNumber = (input) => {
@@ -56,10 +56,10 @@ module.exports = {
       
       await updateBlockStatusSafe(sock, target, 'block');
 
-      // Show the real number when the target arrived as LID digits
+      // Show the real number/name when the target arrived as LID digits
       const shown = mentionJid(target);
       await sock.sendMessage(extra.from, {
-        text: `*✅ BLOCKED*\n\n@${shown.split('@')[0]} _has been blocked, ${voice.tag('affirm')}!_`,
+        text: `*✅ BLOCKED*\n\n${mention(shown)} _has been blocked, ${voice.tag('affirm')}!_`,
         mentions: [shown]
       }, { quoted: msg });
 

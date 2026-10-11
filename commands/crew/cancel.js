@@ -8,6 +8,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
+const nameCache = require('../../utils/nameCache');
 
 module.exports = {
   subName: 'cancel',
@@ -33,9 +34,10 @@ module.exports = {
       if (!app) {
         const processed = database.getProcessedApp(uid);
         if (processed) {
+          const byWho = processed.admin === 'system' ? 'system (expired)' : (processed.adminName || nameCache.who(processed.admin));
           return extra.reply(
             `❌ ERROR\n\nApplication *${uid}* was already *${processed.action}*` +
-            (processed.admin ? ` by ${processed.admin === 'system' ? 'system (expired)' : mention(processed.admin)}` : '')
+            (processed.admin ? ` by ${byWho}` : '')
           );
         }
         return extra.reply(
@@ -52,8 +54,10 @@ module.exports = {
       database.trackProcessedApp(teamGroupJid, app.appUid, {
         action: 'cancelled',
         admin: extra.sender,
+        adminName: msg.pushName || extra.pushName || null,
         reason: reason || null,
         applicantJid,
+        applicantName: app.name || nameCache.get(applicantJid) || null,
         team: teamKey,
       });
 

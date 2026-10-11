@@ -2,7 +2,7 @@
  * Set Description Command - Change group description with template variables
  */
 
-const { bold, pick, SLANG, voice } = require('../../utils/format');
+const { bold, pick, SLANG, voice, mention } = require('../../utils/format');
 const database = require('../../database');
 
 const config = require('../../config');
@@ -73,9 +73,9 @@ module.exports = {
       return extra.reply(
         `✅ *DESCRIPTION UPDATED*\n\n` +
         `📝 *New description:* ${resolved}\n` +
-        `👤 *Changed by:* @${senderNum}\n\n` +
+        `👤 *Changed by:* ${mention(extra.sender)}\n\n` +
         `_${voice.lead('affirm')}, fresh description!_`,
-        [extra.sender]
+        { mentions: [extra.sender] }
       );
 
     } catch (error) {

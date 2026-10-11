@@ -98,7 +98,7 @@ module.exports = {
         await sock.sendMessage(extra.from, {
           text:
             `🚫 *YOH THE AUDACITY* 💀\n\n` +
-            `@${demoterNum} — you really tried to demote KAMI?? yoh\n\n` +
+            `${mention(extra.sender)} — you really tried to demote KAMI?? yoh\n\n` +
             `No way you tryna demote the owner, bru 😭\n` +
             `Don't act like a laaitie man, ${voice.tag('neutral')}`,
           mentions: [extra.sender],
@@ -114,7 +114,7 @@ module.exports = {
         await sock.sendMessage(extra.from, {
           text:
             `🚫 *YOH THE AUDACITY* 💀\n\n` +
-            `@${demoterNum} — you really tried to demote KAMI?? yoh\n\n` +
+            `${mention(extra.sender)} — you really tried to demote KAMI?? yoh\n\n` +
             `No way you tryna demote the owner, bru 😭\n` +
             `Don't act like a laaitie man, ${voice.tag('neutral')}`,
           mentions: [extra.sender],
@@ -143,9 +143,9 @@ module.exports = {
             await sock.sendMessage(extra.from, {
               text:
                 `🚫 *NAH BRU* 💀\n\n` +
-                `@${demoterNum} tried demoting @${targetNum}\n\n` +
+                `${mention(extra.sender)} tried demoting ${mention(target)}\n\n` +
                 (ownerNum
-                  ? `That's @${ownerNum}'s admin wena 💀\n`
+                  ? `That's ${mention(ownerJid)}'s admin wena 💀\n`
                   : `That's KAMI's admin wena 💀\n`) +
                 `You can't touch them\n\n` +
                 `_Try that again and see what happens, ${voice.tag('neutral')}_`,
@@ -159,7 +159,7 @@ module.exports = {
               await sock.sendMessage(target, {
                 text:
                   `🛡️ *YOU GOOD* 💪\n\n` +
-                  `@${demoterNum} tried demoting you hey 💀\n` +
+                  `${mention(extra.sender)} tried demoting you hey 💀\n` +
                   `Blocked — you're still the admin, ne\n\n` +
                   `KAMI put you there — nobody else decides 👑`,
                 mentions: [extra.sender],
@@ -185,7 +185,7 @@ module.exports = {
                 await sock.sendMessage(oJid, {
                   text:
                     `🛡️ *PROTECTION* 💀\n\n` +
-                    `@${demoterNum} tried demoting @${targetNum}\n` +
+                    `${mention(extra.sender)} tried demoting ${mention(target)}\n` +
                     `Blocked — they really thought they could tho 😭\n\n` +
                     `${voice.say('tease')}`,
                   mentions: [target, extra.sender],
@@ -220,11 +220,11 @@ module.exports = {
             await sock.sendMessage(extra.from, {
               text:
                 `🚨 *CAUGHT IN 4K* 📸\n\n` +
-                `@${demoterNum} got demoted 💀\n` +
+                `${mention(extra.sender)} got demoted 💀\n` +
                 (ownerNum
-                  ? `Kept trying to touch @${ownerNum}'s admin, bru\n\n`
+                  ? `Kept trying to touch ${mention(ownerJid)}'s admin, bru\n\n`
                   : `Kept trying to touch KAMI's admin, bru\n\n`) +
-                `@${targetNum} back where they belong\n\n` +
+                `${mention(target)} back where they belong\n\n` +
                 `_KAMI-Bot doesn't play_ 👑`,
               mentions: ownerNum
                 ? [target, extra.sender, ownerJid]
@@ -236,7 +236,7 @@ module.exports = {
               await sock.sendMessage(target, {
                 text:
                   `🛡️ *SORTED* 💪\n\n` +
-                  `@${demoterNum} tried demoting you twice hey 💀\n` +
+                  `${mention(extra.sender)} tried demoting you twice hey 💀\n` +
                   `They got demoted for it\n` +
                   `You're back as admin\n\n` +
                 `${voice.say('protected')}`,
@@ -264,9 +264,9 @@ module.exports = {
                 await sock.sendMessage(oJid2, {
                   text:
                     `🛡️ *ADMIN PROTECTION* 💀\n\n` +
-                    `@${demoterNum} tried demoting @${targetNum} twice\n` +
+                    `${mention(extra.sender)} tried demoting ${mention(target)} twice\n` +
                     `They got demoted for it\n` +
-                    `@${targetNum} back where they belong\n\n` +
+                    `${mention(target)} back where they belong\n\n` +
                     `${voice.say('protected')}`,
                   mentions: [target, extra.sender],
                 });

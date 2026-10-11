@@ -5,7 +5,7 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { pick, SLANG } = require('../../utils/format');
+const { pick, SLANG, mention } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
@@ -83,7 +83,8 @@ module.exports = {
     };
 
     for (const [jid, data] of memberList) {
-      const num = jid.split(':')[0].split('@')[0].replace(/\D/g, '');
+      // Show cached display name — never raw jid/lid digits
+      const label = mention(jid);
 
       // Role header
       if (data.role !== currentRole) {
@@ -100,7 +101,7 @@ module.exports = {
         : inactiveDays > 7 ? '🟡'
         : '🟢';
 
-      text += `${status} @${num} — 💬${data.totalMessages || 0} 📅${data.daysActive || 0}d\n`;
+      text += `${status} ${label} — 💬${data.totalMessages || 0} 📅${data.daysActive || 0}d\n`;
       mentions.push(jid);
     }
 

@@ -3,7 +3,7 @@
  */
 
 const config = require('../../config');
-const { bold, pick, SLANG, voice } = require('../../utils/format');
+const { bold, pick, SLANG, voice, mention } = require('../../utils/format');
 const { updateBlockStatusSafe, mentionJid, trackSendAck } = require('../../utils/jidHelper');
 
 const parsePhoneNumber = (input) => {
@@ -83,7 +83,7 @@ module.exports = {
       if (sentKey) trackSendAck(sock, sentKey, 'UNBLOCK-DM');
 
       // Confirmation to owner (with the DM outcome attached)
-      let reply = `*✅ UNBLOCKED*\n\n@${shown.split('@')[0]} _has been unblocked, ${voice.tag('affirm')}!_`;
+      let reply = `*✅ UNBLOCKED*\n\n${mention(shown)} _has been unblocked, ${voice.tag('affirm')}!_`;
       if (dmErr) {
         extra.fail();
         reply += `\n\n⚠️ *Unlock DM failed:* ${dmErr}` +

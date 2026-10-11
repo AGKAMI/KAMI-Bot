@@ -1,6 +1,6 @@
 const database = require('../../database');
 const config = require('../../config');
-const { bold, pick, SLANG, voice } = require('../../utils/format');
+const { bold, pick, SLANG, voice, mention } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 
 const getRoleEmoji = (role, roles) => {
@@ -36,11 +36,10 @@ module.exports = {
       }
 
       const target = resolved.jid;
-      const targetNum = target.split(':')[0].split('@')[0];
 
       const member = database.getCrewMember(extra.from, target);
       if (!member) {
-        return extra.reply('❌ ERROR\n\n@' + targetNum + ' is not in this crew');
+        return extra.reply(`❌ ERROR\n\n${mention(target)} is not in this crew`);
       }
 
       const validRoles = database.getCustomRoles(extra.from);
@@ -48,7 +47,7 @@ module.exports = {
       const idx = validRoles.indexOf(oldRole);
 
       if (idx <= 0) {
-        return extra.reply('❌ ERROR\n\n@' + targetNum + ' is already the lowest rank');
+        return extra.reply(`❌ ERROR\n\n${mention(target)} is already the lowest rank`);
       }
 
       const newRole = validRoles[idx - 1];
@@ -61,7 +60,7 @@ module.exports = {
           (ownerVIP
             ? '👑 THE BOSS HAS SPOKEN 👑\n\n'
             : '⬇️ DEMOTED\n\n') +
-          '@' + targetNum + '\n\n' +
+          mention(target) + '\n\n' +
           (getRoleEmoji(oldRole, validRoles)) + ' ' + oldRole + ' → ' +
           (getRoleEmoji(newRole, validRoles)) + ' ' + bold(newRole) +
           (ownerVIP ? '\n\n_The owner himself has demoted this member._ 👑' : ''),

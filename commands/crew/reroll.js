@@ -9,6 +9,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
+const nameCache = require('../../utils/nameCache');
 
 module.exports = {
   subName: 'reroll',
@@ -89,7 +90,7 @@ module.exports = {
       await extra.reply(
         `✅ REROLLED\n\n` +
         `🆔 App ID: *${uid}*\n` +
-        `👤 ${mention(applicantJid)}\n` +
+        `👤 ${nameCache.who(applicantJid)}\n` +
         `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
         `📋 Previous action: *${processed.action}*\n\n` +
         `_Processed record cleared. Applicant can reapply._`

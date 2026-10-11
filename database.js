@@ -503,10 +503,12 @@ const trackProcessedApp = (groupJid, appUid, data) => {
   team.processedApps[appUid] = {
     action: data.action,       // 'accepted' or 'denied'
     admin: data.admin,         // JID of admin who processed it
+    adminName: data.adminName || null, // display name (pushName) — shown instead of raw jid
     role: data.role || null,   // role assigned (accept only)
     reason: data.reason || null, // reason (deny only)
     processedAt: Date.now(),
     applicantJid: data.applicantJid,
+    applicantName: data.applicantName || null,
     team: data.team,
   };
   return updateTeam(groupJid, team);
