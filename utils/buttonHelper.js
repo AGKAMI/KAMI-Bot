@@ -172,6 +172,7 @@ async function sendButtons(sock, jid, opts, quoted) {
   const safeQuoted = quoted && quoted.key ? quoted : undefined;
 
   if (!isButtonModeOn() || buttons.length === 0) {
+    console.log(`[BTNSND] to=${jid} btns=${buttons.length} path=text (mode=${isButtonModeOn() ? 'on' : 'OFF'})`);
     if (image) {
       return sock.sendMessage(jid, { image, caption: text, mentions }, safeQuoted ? { quoted: safeQuoted } : {});
     }
@@ -182,6 +183,7 @@ async function sendButtons(sock, jid, opts, quoted) {
 
   // ── Rate limit: if we sent an interactive message recently, fall back to plain text ──
   if (!canSendInteractive(jid)) {
+    console.log(`[BTNSND] to=${jid} btns=${buttons.length} path=text (cooldown)`);
     if (image) {
       return sock.sendMessage(jid, { image, caption: text, mentions }, safeQuoted ? { quoted: safeQuoted } : {});
     }
@@ -246,9 +248,11 @@ async function sendButtons(sock, jid, opts, quoted) {
       messageId: built.key.id,
       additionalNodes,
     });
+    console.log(`[BTNSND] to=${jid} btns=${rows.length} path=flow`);
     return built;
   } catch (err) {
     console.error('[BUTTON] relay failed:', err.message);
+    console.log(`[BTNSND] to=${jid} btns=${rows.length} path=text (relay fail: ${err.message})`);
   }
 
   return safeQuoted
@@ -310,6 +314,11 @@ async function handleButtonResponse(sock, msg, isAdmin) {
 
     if (!btnId) return false;
 
+    // Tap trace — one line per tap: id, chat jid, sender jid, wire format.
+    // Without this, "button doesn't work" reports are undebuggable (the
+    // panel log buffer rotates in minutes).
+    console.log(`[BTNTAP] id=${btnId} from=${from} sender=${sender} fmt=${m.templateButtonReplyMessage ? 'template' : m.buttonsResponseMessage ? 'buttons' : 'interactive'}`);
+
     // Admin-only check
     if (isAdminOnly(btnId)) {
       const isSenderAdmin = typeof isAdmin === 'function' ? await isAdmin(sender, from) : false;
@@ -346,11 +355,12 @@ async function handleButtonResponse(sock, msg, isAdmin) {
       }
     }
     if (handler) {
-      lastHandlerPromise = Promise.resolve(handler(sock, msg, from, sender, btnId)).catch(err => {
+      Promise.resolve(handler(sock, msg, from, sender, btnId)).catch(err => {
         console.error('[ButtonHelper] Handler error:', err.message);
       });
       return true;
     }
+    console.log(`[BTNTAP] NO HANDLER for id=${btnId} from=${from}`);
     return false;
   } catch (e) {
     console.error('[BUTTON] handle error:', e.message);

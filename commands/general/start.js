@@ -64,6 +64,20 @@ function jidsMatch(a, b) {
   return av.some(v => bv.includes(v));
 }
 
+// Is this jid one of the bot owner's numbers? (owner bypass for the group
+// check below — KAMI sits in every team group and would otherwise get
+// "nothing to apply for" when testing the flow)
+function isOwnerNumber(jid) {
+  const digits = String(jid || '').split('@')[0].replace(/\D/g, '');
+  if (!digits) return false;
+  return (config.ownerNumber || []).some(o => {
+    let d = String(o).replace(/\D/g, '');
+    if (!d) return false;
+    if (d.startsWith('0')) d = (config.defaultCountryCode || '27') + d.slice(1);
+    return d === digits;
+  });
+}
+
 // Every team the applicant is already tied to:
 //   rosterTeams  — on the crew DB roster (member keys may be PN *or* LID jids,
 //                  so both sides get variant-expanded before comparing)
@@ -95,13 +109,15 @@ async function getTakenTeams(sock, applicantJid) {
       }
     }
 
-    // WhatsApp group membership check
-    try {
-      const meta = sock ? await sock.groupMetadata(team.jid) : null;
-      if (meta?.participants?.some(p => jidsMatch(p.id, applicantJid) || jidsMatch(p.lid, applicantJid))) {
-        groupTeams.add(key);
-      }
-    } catch (e) { /* bot not in that group / network blip — skip the check */ }
+    // WhatsApp group membership check (owner bypass — see isOwnerNumber)
+    if (!isOwnerNumber(applicantJid)) {
+      try {
+        const meta = sock ? await sock.groupMetadata(team.jid) : null;
+        if (meta?.participants?.some(p => jidsMatch(p.id, applicantJid) || jidsMatch(p.lid, applicantJid))) {
+          groupTeams.add(key);
+        }
+      } catch (e) { /* bot not in that group / network blip — skip the check */ }
+    }
   }
 
   return { rosterTeams, pendingTeams, groupTeams };
