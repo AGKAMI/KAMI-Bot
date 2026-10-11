@@ -691,7 +691,9 @@ const handleMessage = async (sock, msg) => {
               else if (database.hasPendingApplication(dmSender) || isApplyCmd) {
                 // Applicant with pending app or starting application — let through
                 // Send progressive response for non-command, non-button messages
-                if (!isApplyCmd && !btnId) {
+                const isBtnTap = !!(msg.message?.templateButtonReplyMessage ||
+                  msg.message?.buttonsResponseMessage || msg.message?.interactiveResponseMessage);
+                if (!isApplyCmd && !isBtnTap) {
                   const state = getApplicantState(dmSender);
                   if (state.state === 'wizard') {
                     await sock.sendMessage(from, {

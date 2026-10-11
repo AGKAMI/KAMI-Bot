@@ -323,19 +323,36 @@ async function startBot() {
   const watchdogInterval = setInterval(async () => {
     const wsState = sock.ws ? sock.ws.readyState : 3; // missing ws = dead socket
     // readyState 3 (CLOSED) with no close event = Baileys zombie: the socket is
-    // gone but nothing queues a reconnect. Also catch OPEN-but-silent sockets.
-    if (wsState === 3 || (wsState === 1 && Date.now() - lastActivity > INACTIVITY_TIMEOUT)) {
-      console.log(wsState === 3
-        ? '⚠️ WebSocket dead without close event. Forcing reconnect...'
-        : '⚠️ No activity detected. Forcing reconnect...');
+    // gone but nothing queues a reconnect.
+    if (wsState === 3) {
+      console.log('⚠️ WebSocket dead without close event. Forcing reconnect...');
       clearInterval(watchdogInterval);
-      // Only end() a live socket — end() on a CLOSED ws throws. The close event
-      // (if it fires) queues the standard reconnect; scheduleReconnect is shared,
-      // so a double-fire can't spawn two sockets (440 conflict).
-      if (wsState === 1) {
-        await sock.end(undefined, undefined, { reason: 'inactive' }).catch(() => {});
-      }
       scheduleReconnect(5000, 'WATCHDOG');
+      return;
+    }
+    // OPEN but silent — do NOT blindly end()+reconnect: tearing down a healthy
+    // socket races WhatsApp's server-side teardown of the old connection and
+    // produces Stream Errored (conflict) → 401 cascade → (previously) session
+    // wipe. Verify with a real server roundtrip first; keep the socket if alive.
+    if (wsState === 1 && Date.now() - lastActivity > INACTIVITY_TIMEOUT) {
+      console.log('⚠️ No activity for 30min — health-checking socket...');
+      try {
+        await Promise.race([
+          sock.sendPresenceUpdate('available'),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('ping timeout')), 15000))
+        ]);
+        lastActivity = Date.now();
+        console.log('✅ Socket healthy despite silence — keeping connection.');
+        return;
+      } catch (pingErr) {
+        console.log(`⚠️ Health check failed (${pingErr.message}). Forcing reconnect...`);
+        clearInterval(watchdogInterval);
+        // Only end() a live socket — end() on a CLOSED ws throws. The close event
+        // (if it fires) queues the standard reconnect; scheduleReconnect is shared,
+        // so a double-fire can't spawn two sockets (440 conflict).
+        await sock.end(undefined, undefined, { reason: 'inactive' }).catch(() => {});
+        scheduleReconnect(5000, 'WATCHDOG');
+      }
     }
   }, 5 * 60 * 1000); // Every 5 min check
 
@@ -388,7 +405,12 @@ async function startBot() {
         console.log(`⚠️ Session issue (${statusCode}) — retry ${sessionRetryCount}/8 in ${retryDelay / 1000}s...`);
         logConnEvent({ event: 'session-retry', attempt: sessionRetryCount, statusCode });
 
-        if (sessionRetryCount >= 8 && isLoggedOut) {
+        if (sessionRetryCount >= 8 && isLoggedOut && !isTransient) {
+          // Only a GENUINE logged-out (401 without conflict semantics) may wipe.
+          // WhatsApp sends code=401 on conflict stream errors too (server's
+          // node.attrs.code overrides Baileys' CODE_MAP — see generics.js:289),
+          // so a 401 whose message mentions conflict is transient: the session
+          // is still valid and deleting it forces an unnecessary re-scan.
           console.log('\n❌ Session logged out after 8 retries — backing up + clearing session files for fresh QR...');
           logConnEvent({ event: 'session-cleared', afterRetries: sessionRetryCount });
           try {
