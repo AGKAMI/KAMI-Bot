@@ -37,6 +37,7 @@ Crew dashboard (Attend shortcut only), 14 admin mega-panels, WYR A/B buttons, la
 - `tests/{buttonHelper,againDispatch}.test.js` — extend when adding ALLOW entries
 
 ## Known Gotchas (this arc)
+- **Button audit (`bdef088`, `tests/buttonAudit.test.js`, 26/26 green)**: every button id must resolve to a handler; adminHub pages were busting the silent `slice(0,10)` cap (Back button dropped = dead-end) — now 4 pages ≤10 incl. nav; `npm test` uses `--test-force-exit` (loading all commands leaves intervals alive); again: dispatcher 2s/chat cooldown + sendButtons 500ms/chat rate limit both DROP rapid same-chat taps (audit uses unique chat jids)
 - **Admin button gate layers (`3250ef8`)**: `menu:admin` view gated (ADMINS ONLY, mirrors owner); `admin:*` ids globally gated via `requireAdmin('admin')`; hub `route()` re-checks TARGET flags via `passesGates` (kickcfg is ownerOnly — plain admins can't reach it, row hidden); `kickcfg:*` ids now `requireOwner('kickcfg')` + internal `ow()` per-handler gates
 - `node --test tests/` DIRECTORY ARG FAILS on Windows/Node 24 → npm test = explicit file list
 - Non-unref'd intervals hang test runs — kill stray node procs before rerunning
