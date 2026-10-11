@@ -11,7 +11,8 @@
  */
 
 const config = require('../../config');
-const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { sendButtons, onButton, isOwnerJid } = require('../../utils/buttonHelper');
+const { passesGates } = require('../../utils/againDispatch');
 const { loadCommands } = require('../../utils/commandLoader');
 
 let _cmds = null;
@@ -50,6 +51,18 @@ async function route(sock, msg, from, name) {
       buttons: [{ id: 'admin:hub', text: '⬅️ Hub' }],
     }, msg);
   }
+  // Defense in depth (edge #22): programmatic execute() bypasses handler.js
+  // gates — re-check the TARGET command's flags (e.g. kickcfg is ownerOnly).
+  const sender = (msg.key && msg.key.participant) || from;
+  if (!(await passesGates(cmd, sock, msg, from, sender))) {
+    return sendButtons(sock, from, {
+      text: cmd.ownerOnly
+        ? '👑 *OWNER ONLY*\n\n_This panel is restricted to the bot owner._'
+        : '🛡️ *ADMINS ONLY*\n\n_This panel is restricted to group admins._',
+      footer: config.botName || 'KAMI Bot',
+      buttons: [{ id: 'admin:hub', text: '⬅️ Hub' }],
+    }, msg);
+  }
   let groupMetadata = null;
   try { groupMetadata = await sock.groupMetadata(from); } catch (e) { /* DM or fetch fail — command handles */ }
   const extra = {
@@ -75,6 +88,8 @@ async function route(sock, msg, from, name) {
 
 async function renderPage(sock, msg, from, page) {
   const cfg = config;
+  const sender = (msg.key && msg.key.participant) || from;
+  const isOwner = (msg.key && msg.key.fromMe) || isOwnerJid(msg, sender);
   let ids, body, buttons;
   if (page === 1) {
     ids = PAGE1;
@@ -85,7 +100,8 @@ async function renderPage(sock, msg, from, page) {
       BACK_MENU,
     ];
   } else if (page === 2) {
-    ids = PAGE2;
+    // kickcfg is ownerOnly — hide the row from plain admins
+    ids = PAGE2.filter(n => n !== 'kickcfg' || isOwner);
     body = `*🛡️ ADMIN HUB — PAGE 2*\n\n_moderation — tap a panel_\n\n_typed escape:_ \`${prefix()}help\``;
     buttons = [
       ...ids.map(n => ({ id: `admin:hub:go:${n}`, text: LABELS[n] || n })),

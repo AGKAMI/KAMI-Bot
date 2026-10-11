@@ -228,18 +228,43 @@ for (const b of mainBtns) {
   onButton(b.id, (sock, msg, from) => sendCategoryView(sock, from, cat, BACK_MAIN));
 }
 
-// ── 🛡️ Admin button — router to the interactive hub (gated: admin:* ids
-// are admin-only globally via buttonHelper.requireAdmin in handler.js).
-onButton('menu:admin', (sock, msg, from) =>
-  sendCategoryView(sock, from, 'admin', BACK_MAIN, [
+// ── 🛡️ Admin button — only group admins get the admin list + hub;
+// everyone else gets told plainly (with a Back button, so they're not stuck).
+onButton('menu:admin', async (sock, msg, from, sender) => {
+  const clicker = sender || (msg && msg.key && msg.key.participant) || from;
+  if (!(await isAdminClicker(sock, msg, from, clicker))) {
+    return sendButtons(sock, from, {
+      text: `🛡️ *ADMINS ONLY*\n\n_Only group admins can use those commands._`,
+      footer: config.botName || 'KAMI Bot',
+      buttons: [BACK_MAIN],
+    });
+  }
+  await sendCategoryView(sock, from, 'admin', BACK_MAIN, [
     { id: 'admin:hub', text: '🛡️ Admin Hub' },
-  ]));
+  ]);
+});
 
 // ── 👑 Owner button — only KAMI gets the owner command list; everyone else
 // gets told plainly (with a Back button, so they're not stuck).
 // Owner predicate now shared via buttonHelper.isOwnerJid (fromMe, PN jids,
 // LID participants normalized, config.ownerNumber stored as 083…).
 const isOwnerClicker = (msg, sender) => isOwnerJid(msg, sender);
+
+// Admin predicate for the 🛡️ view — mirrors handler.js's button gate:
+// owner/fromMe pass anywhere; otherwise group admin required.
+const isAdminClicker = async (sock, msg, from, sender) => {
+  if (msg && msg.key && msg.key.fromMe) return true;
+  if (isOwnerJid(msg, sender)) return true;
+  if (!String(from).endsWith('@g.us')) return false;
+  try {
+    const meta = await sock.groupMetadata(from);
+    const { findParticipant } = require('../../utils/jidHelper');
+    const part = findParticipant(meta.participants || [], [sender]);
+    return !!(part && part.admin);
+  } catch (e) {
+    return false;
+  }
+};
 
 onButton('menu:owner', async (sock, msg, from, sender) => {
   const clicker = sender || (msg && msg.key && msg.key.participant) || from;

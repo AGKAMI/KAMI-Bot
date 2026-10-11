@@ -6,7 +6,10 @@
 
 const config = require('../../config');
 const kickSettings = require('../../utils/kickSettings');
-const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { sendButtons, onButton, requireOwner } = require('../../utils/buttonHelper');
+// Global tap gate — kickcfg is ownerOnly; reject at handleButtonResponse
+// before any handler runs (handlers also self-gate via ow()).
+requireOwner('kickcfg');
 
 // Lazy requires inside handlers — handler.js loads commands during init,
 // so requiring it at top level would give a partial module (cycle).
