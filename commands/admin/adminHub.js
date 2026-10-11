@@ -24,11 +24,14 @@ function getCmd(name) {
 function prefix() { return (config && config.prefix) || '.'; }
 
 // ── Hub pages ────────────────────────────────────────────────────────
-// Page 1 — group-protection panels (each routes to its existing surface)
-const PAGE1 = ['antilink', 'antibadword', 'antiflood', 'antitag', 'antigroupmention', 'welcome', 'goodbye', 'autosticker', 'slowmode'];
-// Page 2 — moderation panels
-const PAGE2 = ['lock', 'mute', 'unmute', 'kickcfg', 'groupsettings', 'ban', 'unban', 'warn', 'warnings'];
-// Page 3 — misc admin (routed) — promote/demote/rules/groupstatus/uptime/help
+// Page 1 — group-protection panels (each routes to its existing surface).
+// Page sizes respect the hard 10-button cap INCLUDING nav buttons.
+const PAGE1 = ['antilink', 'antibadword', 'antiflood', 'antitag', 'antigroupmention', 'welcome', 'goodbye'];
+// Page 2 — moderation panels (kickcfg hidden from plain admins at render)
+const PAGE2 = ['autosticker', 'slowmode', 'lock', 'mute', 'unmute', 'kickcfg', 'groupsettings', 'ban'];
+// Page 3 — more moderation + public info
+const PAGE3 = ['unban', 'warn', 'warnings', 'promote', 'demote', 'rules', 'groupstatus'];
+// Page 4 (rendered below) — info + free cta buttons
 
 const LABELS = {
   antilink: '🔗 Antilink', antibadword: '🚫 Antibadword', antiflood: '💧 Antiflood',
@@ -107,27 +110,30 @@ async function renderPage(sock, msg, from, page) {
       ...ids.map(n => ({ id: `admin:hub:go:${n}`, text: LABELS[n] || n })),
       { id: 'admin:hub:3', text: '➡️ Page 3' },
       { id: 'admin:hub', text: '⬅️ Page 1' },
-      BACK_MENU,
+    ];
+  } else if (page === 3) {
+    ids = PAGE3;
+    body = `*🛡️ ADMIN HUB — PAGE 3*\n\n_more actions & info_\n\n_typed escape:_ \`${prefix()}help\``;
+    buttons = [
+      ...ids.map(n => ({ id: `admin:hub:go:${n}`, text: LABELS[n] || n })),
+      { id: 'admin:hub:4', text: '➡️ Info' },
+      { id: 'admin:hub:2', text: '⬅️ Page 2' },
     ];
   } else {
-    // Page 3 — misc + free info buttons
+    // Page 4 — misc + free info buttons
     let linkRow = [];
     try {
       const code = await sock.groupInviteCode(from);
       linkRow = [{ text: '🔗 Grouplink', url: `https://chat.whatsapp.com/${code}` }];
     } catch (e) { /* not a group or no permission — skip */ }
     const gh = (config.socials && config.socials.github) || 'https://github.com/AGKAMI/KAMI-Bot';
-    body = `*🛡️ ADMIN HUB — PAGE 3*\n\n_misc & info_\n\n_typed escape:_ \`${prefix()}help\``;
+    body = `*🛡️ ADMIN HUB — INFO*\n\n_misc & links_\n\n_typed escape:_ \`${prefix()}help\``;
     buttons = [
-      { id: 'admin:hub:go:promote', text: LABELS.promote },
-      { id: 'admin:hub:go:demote', text: LABELS.demote },
-      { id: 'admin:hub:go:rules', text: LABELS.rules },
-      { id: 'admin:hub:go:groupstatus', text: LABELS.groupstatus },
       { id: 'admin:hub:go:uptime', text: LABELS.uptime },
       { id: 'admin:hub:go:help', text: LABELS.help },
       { text: '🐙 GitHub', url: gh },
       ...linkRow,
-      { id: 'admin:hub', text: '⬅️ Page 1' },
+      { id: 'admin:hub:3', text: '⬅️ Page 3' },
       BACK_MENU,
     ];
   }
@@ -142,6 +148,7 @@ async function renderPage(sock, msg, from, page) {
 onButton('admin:hub', async (sock, msg, from) => renderPage(sock, msg, from, 1));
 onButton('admin:hub:2', async (sock, msg, from) => renderPage(sock, msg, from, 2));
 onButton('admin:hub:3', async (sock, msg, from) => renderPage(sock, msg, from, 3));
+onButton('admin:hub:4', async (sock, msg, from) => renderPage(sock, msg, from, 4));
 
 onButton('admin:hub:go:', async (sock, msg, from, sender, btnId) => {
   const name = btnId.split(':').pop();

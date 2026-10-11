@@ -346,7 +346,7 @@ async function handleButtonResponse(sock, msg, isAdmin) {
       }
     }
     if (handler) {
-      Promise.resolve(handler(sock, msg, from, sender, btnId)).catch(err => {
+      lastHandlerPromise = Promise.resolve(handler(sock, msg, from, sender, btnId)).catch(err => {
         console.error('[ButtonHelper] Handler error:', err.message);
       });
       return true;
@@ -358,4 +358,9 @@ async function handleButtonResponse(sock, msg, isAdmin) {
   }
 }
 
-module.exports = { sendButtons, onButton, handleButtonResponse, isButtonModeOn, requireAdmin, requireOwner, isAdminOnly, isOwnerOnly, isOwnerJid };
+// Test hooks — the button audit awaits handler completion deterministically.
+let lastHandlerPromise = null;
+const getLastHandlerPromise = () => lastHandlerPromise;
+const listButtonHandlers = () => Array.from(buttonHandlers.keys());
+
+module.exports = { sendButtons, onButton, handleButtonResponse, isButtonModeOn, requireAdmin, requireOwner, isAdminOnly, isOwnerOnly, isOwnerJid, listButtonHandlers, getLastHandlerPromise };
