@@ -10,11 +10,12 @@
 const path = require('path');
 const fs = require('fs');
 const config = require('../../config');
+const database = require('../../database');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
-const { normalizeJidWithLid } = require('../../utils/jidHelper');
+const { normalizeJidWithLid, buildComparableIds, updateBlockStatusSafe } = require('../../utils/jidHelper');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { TEAMS } = require('../crew/crewForms');
-const { createApplication, getUserTeam, getUserPendingTeam } = require('../crew/applyHelper');
+const { createApplication } = require('../crew/applyHelper');
 const { sendMainMenu: sendOrderMenu } = require('./order');
 
 // Team display order
@@ -53,21 +54,84 @@ function buildTeamCaption(teamKey) {
   return text;
 }
 
-// Send the 4 team cards (filtered by user's existing membership)
-async function sendTeamCards(sock, from, applicantJid) {
-  const userTeam = getUserTeam(applicantJid);
-  const pendingTeam = getUserPendingTeam(applicantJid);
+// Do two jids point at the same human? Covers PN vs LID (and unknown
+// mappings where both sides fall back to their own form)
+function jidsMatch(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const av = buildComparableIds(a);
+  const bv = buildComparableIds(b);
+  return av.some(v => bv.includes(v));
+}
 
-  const available = TEAM_ORDER.filter(k => k !== userTeam && k !== pendingTeam);
+// Every team the applicant is already tied to:
+//   rosterTeams  — on the crew DB roster (member keys may be PN *or* LID jids,
+//                  so both sides get variant-expanded before comparing)
+//   pendingTeams — pending application(s), could be more than one team
+//   groupTeams   — sitting in the team's WhatsApp group but missing from the
+//                  roster (added manually) — createApplication would reject
+//                  them there anyway, so don't tease them with the card
+async function getTakenTeams(sock, applicantJid) {
+  const rosterTeams = new Set();
+  const pendingTeams = new Set();
+  const groupTeams = new Set();
+  if (!applicantJid) return { rosterTeams, pendingTeams, groupTeams };
+
+  for (const [key, team] of Object.entries(config.crewTeams || {})) {
+    if (key === 'SSGENERAL') continue;
+
+    // Roster check
+    const members = database.getCrewMembers(team.jid) || {};
+    for (const memberJid of Object.keys(members)) {
+      if (jidsMatch(memberJid, applicantJid)) { rosterTeams.add(key); break; }
+    }
+
+    // Pending application check
+    const apps = database.getApplicants(team.jid) || {};
+    for (const app of Object.values(apps)) {
+      if (app.status === 'pending' && jidsMatch(app.jid, applicantJid)) {
+        pendingTeams.add(key);
+        break;
+      }
+    }
+
+    // WhatsApp group membership check
+    try {
+      const meta = sock ? await sock.groupMetadata(team.jid) : null;
+      if (meta?.participants?.some(p => jidsMatch(p.id, applicantJid) || jidsMatch(p.lid, applicantJid))) {
+        groupTeams.add(key);
+      }
+    } catch (e) { /* bot not in that group / network blip — skip the check */ }
+  }
+
+  return { rosterTeams, pendingTeams, groupTeams };
+}
+
+// Teams the applicant can still apply for, in card order
+async function getAvailableTeams(sock, applicantJid) {
+  const { rosterTeams, pendingTeams, groupTeams } = await getTakenTeams(sock, applicantJid);
+  const available = TEAM_ORDER.filter(k =>
+    !rosterTeams.has(k) && !pendingTeams.has(k) && !groupTeams.has(k));
+  return { available, rosterTeams, pendingTeams, groupTeams };
+}
+
+// Send the team cards (filtered by the user's existing membership)
+async function sendTeamCards(sock, from, applicantJid) {
+  const { available, rosterTeams, pendingTeams, groupTeams } = await getAvailableTeams(sock, applicantJid);
 
   if (available.length === 0) {
+    const inTeam = [...rosterTeams][0] || [...groupTeams][0];
+    let why;
+    if (rosterTeams.size) {
+      why = `You're already part of *${config.crewTeams[inTeam].name}*\n\n` +
+            `Just hit up an admin if you want to move teams.`;
+    } else if (pendingTeams.size) {
+      why = `You've already got an application waiting.\n\nLet it get reviewed, or chat to an admin.`;
+    } else {
+      why = `You're already chilling in the team groups.\n\nChat to an admin if you want to move teams.`;
+    }
     await sock.sendMessage(from, {
-      text:
-        `\u{1F4CB} *SECURITY TEAMS*\n\n` +
-        (userTeam
-          ? `You're already part of *${config.crewTeams[userTeam].name}*\n\n` +
-            `Just hit up an admin if you want to move teams.`
-          : `You've already got one in the pipeline.\n\nLet it get reviewed, or chat to an admin.`),
+      text: `\u{1F4CB} *SECURITY TEAMS*\n\n${why}`,
     });
     return;
   }
@@ -238,7 +302,7 @@ onButton('start:apply', async (sock, msg, from, sender) => {
   
   // Unblock so DMs land + mark them temp-allowed (orders/apply only)
   const dmJid = toDmJid(sender);
-  try { await sock.updateBlockStatus(dmJid, 'unblock'); } catch (e) {}
+  try { await updateBlockStatusSafe(sock, dmJid, 'unblock'); } catch (e) {}
   const { allowTempDm } = require('../../handler');
   allowTempDm(dmJid);
   allowTempDm(sender);
@@ -260,7 +324,7 @@ onButton('start:order', async (sock, msg, from, sender) => {
   }
   const dmJid = toDmJid(sender);
   // Unblock so DMs land + mark them temp-allowed (orders/apply only)
-  try { await sock.updateBlockStatus(dmJid, 'unblock'); } catch (e) {}
+  try { await updateBlockStatusSafe(sock, dmJid, 'unblock'); } catch (e) {}
   const { allowTempDm } = require('../../handler');
   allowTempDm(dmJid);
   allowTempDm(sender);
@@ -331,3 +395,5 @@ onButton('start:back', async (sock, msg, from, sender) => {
 module.exports.sendTeamCards = sendTeamCards;
 module.exports.toDmJid = toDmJid;
 module.exports.sendApplyDmNotice = sendApplyDmNotice;
+module.exports.getAvailableTeams = getAvailableTeams;
+module.exports.getTakenTeams = getTakenTeams;

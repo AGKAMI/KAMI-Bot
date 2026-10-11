@@ -159,8 +159,9 @@ function applyUsage(prefix) {
 // as .start → "Apply for Security Team" (unblock notice → team cards).
 // Their pick runs the normal start:join → start:confirm → form wizard.
 async function sendTeamSelection(sock, msg, extra, resolved) {
-  const { sendTeamCards, toDmJid, sendApplyDmNotice } = require('../general/start');
+  const { sendTeamCards, toDmJid, sendApplyDmNotice, getAvailableTeams } = require('../general/start');
   const { allowTempDm } = require('../../handler');
+  const { updateBlockStatusSafe } = require('../../utils/jidHelper');
   const prefix = config.prefix || '.';
 
   const targetJid = resolved.jid;
@@ -173,13 +174,38 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
     extra.fail && extra.fail(e.message);
     return sock.sendMessage(extra.from, {
       text: `❌ ERROR\n\nCouldn't work out ${mention(targetJid)}'s DM number — ${e.message}\n\n` +
-            `_Check the number and try again, shame`,
+            `_Check the number and try again, shame_`,
+      mentions: [targetJid],
+    }, { quoted: msg });
+  }
+
+  // Check the team DB + group rosters FIRST — if there's nothing left for
+  // them to apply for, don't unblock them or drop a confusing "UNBLOCKED"
+  // notice in their DMs. Tell the owner what's what instead.
+  const { available, rosterTeams, pendingTeams, groupTeams } = await getAvailableTeams(sock, targetJid);
+  if (available.length === 0) {
+    const teamList = (set) => [...set].map(k => getTeamDisplayName(k)).join(', ');
+    let why;
+    if (rosterTeams.size) {
+      why = `They're already in *${teamList(rosterTeams)}*`;
+    } else if (pendingTeams.size) {
+      why = `They've already got applications waiting: *${teamList(pendingTeams)}*`;
+    } else {
+      why = `They're already sitting in all the team groups`;
+    }
+    console.log('[APPLY-INVITE] no teams available for', targetJid, '— nothing sent');
+    return sock.sendMessage(extra.from, {
+      text:
+        `🚫 *NOTHING TO APPLY FOR*\n\n` +
+        `${why}, hey — no team cards dropped ${voice.tag('neutral')}\n\n` +
+        `💡 To move them to a different team, remove them from the current one first\n` +
+        `(\`${prefix}crew remove\` in that team's group)`,
       mentions: [targetJid],
     }, { quoted: msg });
   }
 
   // Unblock so DMs land + mark them temp-allowed (orders/apply only)
-  try { await sock.updateBlockStatus(dmJid, 'unblock'); } catch (e) {}
+  try { await updateBlockStatusSafe(sock, dmJid, 'unblock'); } catch (e) {}
   try { allowTempDm(dmJid); allowTempDm(targetJid); } catch (e) {}
 
   console.log('[APPLY-INVITE]', extra.sender, '→', targetJid, `(${resolved.method}) dm=${dmJid}`);
@@ -208,12 +234,25 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
     }, { quoted: msg });
   }
 
+  // Heads-up for the owner when the target is already tied to some teams —
+  // those cards were deliberately left out of the DM drop
+  const noteBits = [];
+  if (rosterTeams.size) noteBits.push(`in *${[...rosterTeams].map(k => getTeamDisplayName(k)).join(', ')}*`);
+  if (pendingTeams.size) noteBits.push(`pending for *${[...pendingTeams].map(k => getTeamDisplayName(k)).join(', ')}*`);
+  if (groupTeams.size) {
+    const extraTeams = [...groupTeams].filter(k => !rosterTeams.has(k) && !pendingTeams.has(k));
+    if (extraTeams.length) noteBits.push(`in the *${extraTeams.map(k => getTeamDisplayName(k)).join(', ')}* group(s)`);
+  }
+  const skipNote = noteBits.length
+    ? `\n\n⚠️ _Heads up: they're already ${noteBits.join(' and ')} — those cards were left out_`
+    : '';
+
   try {
     await sock.sendMessage(extra.from, {
       text:
         `📤 *TEAM SELECTION SENT*\n\n` +
         `📲 Dropped the team cards in ${mention(targetJid)}'s DMs — they pick a team and the form starts ${voice.tag('neutral')}\n\n` +
-        `_Picked up by: ${resolved.method}_`,
+        `_Picked up by: ${resolved.method}_${skipNote}`,
       mentions: [targetJid],
     }, { quoted: msg });
   } catch (reportErr) {

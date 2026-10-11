@@ -137,9 +137,13 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
  */
 function getUserTeam(applicantJid) {
   const crewTeams = config.crewTeams || {};
+  const inputVariants = buildComparableIds(applicantJid);
   for (const [key, team] of Object.entries(crewTeams)) {
     if (key === 'SSGENERAL') continue;
-    if (database.getCrewMember(team.jid, applicantJid)) {
+    // Roster keys may be PN *or* LID jids — match across variants
+    const member = database.getCrewMember(team.jid, applicantJid)
+      || inputVariants.map(v => database.getCrewMember(team.jid, v)).find(Boolean);
+    if (member) {
       return key;
     }
   }

@@ -20,13 +20,21 @@ const sessions = new Map();
 const SESSION_TTL = 30 * 60 * 1000; // 30 minutes
 
 function getSession(jid) {
-  const s = sessions.get(jid);
-  if (!s) return null;
-  if (Date.now() - s.startedAt > SESSION_TTL) {
-    sessions.delete(jid);
-    return null;
+  if (!jid) return null;
+  // Variant-aware: the session may be keyed by the phone jid while the
+  // applicant's messages arrive from their LID jid (or vice versa) — try
+  // every comparable form before giving up
+  const keys = [String(jid), ...buildComparableIds(jid)];
+  for (const k of keys) {
+    const s = sessions.get(k);
+    if (!s) continue;
+    if (Date.now() - s.startedAt > SESSION_TTL) {
+      sessions.delete(k);
+      continue;
+    }
+    return s;
   }
-  return s;
+  return null;
 }
 
 // Check if user has an active crew wizard session (used by DM blocker)
