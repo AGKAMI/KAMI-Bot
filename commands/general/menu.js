@@ -1,9 +1,7 @@
 const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
-const { sendButtons, onButton, isButtonModeOn } = require('../../utils/buttonHelper');
-const { normalizeJidWithLid } = require('../../utils/jidHelper');
-const { canonicalNumber } = require('../../database');
+const { sendButtons, onButton, isButtonModeOn, isOwnerJid } = require('../../utils/buttonHelper');
 const fs = require('fs');
 const path = require('path');
 
@@ -193,7 +191,11 @@ module.exports = {
 // back to More, main categories go back to main). Also served when the same
 // menu:* ids are pressed from start.js's `start:menu` layout.
 
-const mainText = `*KAMI BOT* ${voice.greetOpen()}! 👋\n\n🤖 Hit a button for that section's commands 👇\n\n📖 Everything: *${config.prefix || '.'}menu all*`;
+// Rendered per-send (not a module-load const) so .setprefix changes show up —
+// prefix is mutable at runtime via config.js string-replace.
+function getMainText() {
+  return `*KAMI BOT* ${voice.greetOpen()}! 👋\n\n🤖 Hit a button for that section's commands 👇\n\n📖 Everything: *${config.prefix || '.'}menu all*`;
+}
 const mainBtns = [
   { id: 'menu:admin',   text: '🛡️ Admin' },
   { id: 'menu:crew',    text: '🔰 Crew' },
@@ -211,32 +213,33 @@ const BACK_MAIN = { id: 'menu:back:main', text: '⬅️ Back to Menu' };
 const BACK_MORE = { id: 'menu:back:more', text: '⬅️ Back to More' };
 
 // Category view = the list WITH a Back button (never a dead end)
-async function sendCategoryView(sock, from, cat, backBtn) {
+async function sendCategoryView(sock, from, cat, backBtn, extraBtns) {
   await sendButtons(sock, from, {
     text: buildCategoryText(cat, { nav: true }),
     footer: config.botName || 'KAMI Bot',
-    buttons: [backBtn],
+    buttons: [...(extraBtns || []), backBtn],
   });
 }
 
 // ── Main-page categories → Back to main menu ────────────
 for (const b of mainBtns) {
-  if (b.id === 'menu:owner' || b.id === 'menu:more') continue; // special-cased below
+  if (b.id === 'menu:owner' || b.id === 'menu:more' || b.id === 'menu:admin') continue; // special-cased below
   const cat = b.id.slice('menu:'.length);
   onButton(b.id, (sock, msg, from) => sendCategoryView(sock, from, cat, BACK_MAIN));
 }
 
+// ── 🛡️ Admin button — router to the interactive hub (gated: admin:* ids
+// are admin-only globally via buttonHelper.requireAdmin in handler.js).
+onButton('menu:admin', (sock, msg, from) =>
+  sendCategoryView(sock, from, 'admin', BACK_MAIN, [
+    { id: 'admin:hub', text: '🛡️ Admin Hub' },
+  ]));
+
 // ── 👑 Owner button — only KAMI gets the owner command list; everyone else
 // gets told plainly (with a Back button, so they're not stuck).
-// Handles: fromMe taps (owner's own device), PN jids,
-// LID participants (normalized), and config.ownerNumber stored as 083….
-const isOwnerClicker = (msg, sender) => {
-  if (msg && msg.key && msg.key.fromMe) return true;
-  const jid = normalizeJidWithLid(sender) || sender || '';
-  const digits = String(jid).split('@')[0].replace(/\D/g, '');
-  if (!digits) return false;
-  return (config.ownerNumber || []).some(o => canonicalNumber(o) === canonicalNumber(digits));
-};
+// Owner predicate now shared via buttonHelper.isOwnerJid (fromMe, PN jids,
+// LID participants normalized, config.ownerNumber stored as 083…).
+const isOwnerClicker = (msg, sender) => isOwnerJid(msg, sender);
 
 onButton('menu:owner', async (sock, msg, from, sender) => {
   const clicker = sender || (msg && msg.key && msg.key.participant) || from;
@@ -247,7 +250,10 @@ onButton('menu:owner', async (sock, msg, from, sender) => {
       buttons: [BACK_MAIN],
     });
   }
-  await sendCategoryView(sock, from, 'owner', BACK_MAIN);
+  // Owner Hub launcher → interactive anticall/mode/autoreact/dmblocker panels
+  await sendCategoryView(sock, from, 'owner', BACK_MAIN, [
+    { id: 'owner:hub', text: '🎛️ Owner Hub' },
+  ]);
 });
 
 // ── More page: Anime, Textmaker, Back ────────────────
@@ -271,7 +277,7 @@ onButton('menu:textmaker', (sock, msg, from) => sendCategoryView(sock, from, 'te
 
 // ── Back to Main Menu ────────────────────────────────
 onButton('menu:back:main', (sock, msg, from) => sendButtons(sock, from, {
-  text: mainText,
+  text: getMainText(),
   footer: config.botName || 'KAMI Bot',
   header: 'KAMI BOT',
   buttons: mainBtns,

@@ -97,6 +97,7 @@ function buildStatus(settings) {
 
 // Button handlers
 onButton('admin:antilink:on', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antilink: true });
   await sock.sendMessage(from, {
@@ -105,6 +106,7 @@ onButton('admin:antilink:on', async (sock, msg, from) => {
 });
 
 onButton('admin:antilink:off', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antilink: false });
   await sock.sendMessage(from, {
@@ -113,6 +115,7 @@ onButton('admin:antilink:off', async (sock, msg, from) => {
 });
 
 onButton('admin:antilink:set:warn', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antilinkAction: 'warn', antilink: true });
   await sock.sendMessage(from, {
@@ -121,6 +124,7 @@ onButton('admin:antilink:set:warn', async (sock, msg, from) => {
 });
 
 onButton('admin:antilink:set:delete', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antilinkAction: 'delete', antilink: true });
   await sock.sendMessage(from, {
@@ -129,6 +133,7 @@ onButton('admin:antilink:set:delete', async (sock, msg, from) => {
 });
 
 onButton('admin:antilink:set:kick', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antilinkAction: 'kick', antilink: true });
   await sock.sendMessage(from, {

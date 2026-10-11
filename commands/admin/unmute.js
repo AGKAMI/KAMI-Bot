@@ -53,6 +53,7 @@ module.exports = {
 
 // Button handlers
 onButton('admin:mute', async (sock, msg, from, sender, btnId) => {
+  if (!from.endsWith('@g.us')) return;
   try {
     await sock.groupSettingUpdate(from, 'announcement');
     await sock.sendMessage(from, {
@@ -65,6 +66,7 @@ onButton('admin:mute', async (sock, msg, from, sender, btnId) => {
 });
 
 onButton('admin:unmute', async (sock, msg, from, sender, btnId) => {
+  if (!from.endsWith('@g.us')) return;
   try {
     if (database.isOwnerMuted(from) && !isOwner(sender)) {
       return await sock.sendMessage(from, {

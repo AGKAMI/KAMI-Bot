@@ -238,6 +238,7 @@ function buildStatus(settings, prefix) {
 
 // Button handlers
 onButton('admin:antiflood:on', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antiflood: true });
   await sock.sendMessage(from, {
@@ -246,6 +247,7 @@ onButton('admin:antiflood:on', async (sock, msg, from) => {
 });
 
 onButton('admin:antiflood:off', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antiflood: false });
   await sock.sendMessage(from, {

@@ -21,6 +21,9 @@ const nameCache = require('./utils/nameCache');
 // All admin command buttons are admin-only
 requireAdmin('admin');
 
+// Generic Again/replay dispatcher — registers the 'again:' prefix handler
+require('./utils/againDispatch');
+
 // Final verdict reaction for requests that never reach the command's own
 // reaction lifecycle (permission gates, DM blockers, slowmode, unknown
 // commands). 🚫 = not allowed, ❌ = failed. Honours progressReactions so
@@ -246,23 +249,56 @@ const _botDemoted = new Set();
 // Track bot-initiated kicks to skip protection handler
 const _botKicked = new Set();
 
-// Temporarily-allowed DMs — users unblocked via a Make Order / Apply button.
-// While in this window they pass ONLY button taps and .crew apply commands;
-// plain-text DMs for anything else get blocked again. TTL 2h.
+// Temporarily-allowed DMs — users unblocked via a Make Order / Apply button
+// (or .apply <number> owner invite). While in this window they pass ONLY
+// button taps and apply commands; plain-text DMs get warned, then blocked
+// on a repeat. TTL 2h. Persisted so a bot restart mid-application doesn't
+// drop the window and feed the applicant straight into the blocker.
 const _tempAllowed = new Map(); // jid → ts
 const TEMP_ALLOW_TTL = 2 * 60 * 60 * 1000;
+const TEMP_ALLOWED_DB = path.join(__dirname, 'database', 'tempAllowed.json');
+
+try {
+  const saved = JSON.parse(fs.readFileSync(TEMP_ALLOWED_DB, 'utf8'));
+  for (const [jid, v] of Object.entries(saved || {})) {
+    const ts = typeof v === 'number' ? v : v?.ts;
+    if (ts && Date.now() - ts <= TEMP_ALLOW_TTL) _tempAllowed.set(jid, ts);
+  }
+} catch (e) { /* no file yet / corrupt — start clean */ }
+
+const saveTempAllowed = () => {
+  try {
+    const out = {};
+    for (const [jid, ts] of _tempAllowed) out[jid] = { ts };
+    fs.writeFileSync(TEMP_ALLOWED_DB, JSON.stringify(out, null, 2));
+  } catch (e) { /* best-effort */ }
+};
+
+// Plain-text strikes inside the temp window — keyed by bare digits so the
+// phone jid stored by allowTempDm and the (possibly LID) incoming jid match
+const _tempStrikes = new Map(); // digits → count
+
+const digitsOf = (jid) => String(jid || '').split(':')[0].split('@')[0].replace(/\D/g, '');
 
 setInterval(() => {
   const now = Date.now();
+  let changed = false;
   for (const [jid, ts] of _tempAllowed) {
-    if (now - ts > TEMP_ALLOW_TTL) _tempAllowed.delete(jid);
+    if (now - ts > TEMP_ALLOW_TTL) {
+      _tempAllowed.delete(jid);
+      _tempStrikes.delete(digitsOf(jid));
+      changed = true;
+    }
   }
+  if (changed) saveTempAllowed();
 }, 60 * 60 * 1000);
 
 // Mark a user as temporarily allowed (called from start.js button handlers)
 const allowTempDm = (jid) => {
   if (!jid) return;
   _tempAllowed.set(String(jid), Date.now());
+  _tempStrikes.delete(digitsOf(jid)); // fresh window, fresh chances
+  saveTempAllowed();
 };
 
 // Check if a jid is temp-allowed (jid or any variant)
@@ -652,7 +688,12 @@ const handleMessage = async (sock, msg) => {
         if (!from.endsWith('@g.us')) {
           try {
             const dmGlobal = database.getGlobalSettings();
-            const dmSender = msg.key.fromMe ? (sock.user.id.split(':')[0] + '@s.whatsapp.net') : (msg.key.participant || msg.key.remoteJid);
+            const dmSenderRaw = msg.key.fromMe ? (sock.user.id.split(':')[0] + '@s.whatsapp.net') : (msg.key.participant || msg.key.remoteJid);
+            // LID → phone: unblock + temp-allow land on the phone jid, so an
+            // incoming LID-jid DM must be read as the same person — otherwise
+            // the blocker treats the applicant as a stranger and re-blocks
+            // them mid-application
+            const dmSender = normalizeJidWithLid(dmSenderRaw) || dmSenderRaw;
             if (dmGlobal.selfMode && !msg.key.fromMe && !isOwner(dmSender) && !database.isApprovedNumber(dmSender)) {
               const dmText =
                 (msg.message?.conversation) ||
@@ -661,7 +702,10 @@ const handleMessage = async (sock, msg) => {
                 (msg.message?.videoMessage?.caption) ||
                 '';
               const dmBody = (dmText || '').trim().toLowerCase();
-              const isApplyCmd = dmBody.startsWith('.crew apply');
+              const prefixEsc = (config.prefix || '.').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              // Both apply entry points pass — they're what the window is FOR
+              const isApplyCmd = new RegExp('^' + prefixEsc + 'crew\\s+apply\\b').test(dmBody) ||
+                                 new RegExp('^' + prefixEsc + 'apply\\s+\\S').test(dmBody);
 
               // Team admin check — allowed only if they have pending applications for their teams
               if (database.isTeamAdmin(dmSender)) {
@@ -728,16 +772,44 @@ const handleMessage = async (sock, msg) => {
                 }
               }
               // Temp-allowed (unblocked via Make Order / Apply button) —
-              // button taps and .crew apply pass; plain-text DMs get blocked again
+              // button taps and apply commands pass; plain-text DMs get ONE
+              // nudge (they may be texting "kssmp" instead of tapping a
+              // button), second strike blocks
               else if (isTempAllowed(dmSender) || isTempAllowed(from)) {
                 const isButtonTap = !!(msg.message?.templateButtonReplyMessage || msg.message?.buttonsResponseMessage || msg.message?.interactiveResponseMessage);
                 if (!isButtonTap && !isApplyCmd) {
+                  const strikeKey = digitsOf(dmSender) || digitsOf(from);
+                  const strikes = (_tempStrikes.get(strikeKey) || 0) + 1;
+                  _tempStrikes.set(strikeKey, strikes);
+
+                  if (strikes === 1) {
+                    // First text — steer them to the buttons, don't nuke the flow
+                    const p = config.prefix || '.';
+                    try {
+                      await sock.sendMessage(from, {
+                        text: `🤖 *BUTTONS ONLY* — I'm a bot, hey\n\n` +
+                              `Pick a team by tapping one of the buttons above ☝️\n` +
+                              `or send \`${p}crew apply <team>\` to apply by text\n\n` +
+                              `⚠️ Text me anything else and your number is BLOCKED ⛔🔒`
+                      });
+                    } catch (warnErr) {
+                      console.error('[DMBLOCKER] temp nudge failed:', warnErr.message);
+                    }
+                    return;
+                  }
+
+                  // Strike 2+ — they were warned, block them
+                  for (const t of [..._tempAllowed.keys()]) {
+                    if (digitsOf(t) === strikeKey) _tempAllowed.delete(t);
+                  }
+                  _tempStrikes.delete(strikeKey);
+                  saveTempAllowed();
                   try {
                     await sock.sendMessage(from, {
                       text: `🔓 *TIME'S UP* — you're blocked again\n\n` +
                             `Your number was only allowed to make orders or apply for security\n` +
-                            `DM me for anything else and this is what happens, ${voice.tag('neutral')}\n\n` +
-                            `⚠️ *Your number is BLOCKED after this message* ⛔🔒`
+                            `I warned you, and you texted again ${voice.tag('neutral')}\n\n` +
+                            `⚠️ *Your number is now BLOCKED* ⛔🔒`
                     });
                   } catch (warnErr) {
                     console.error('[DMBLOCKER] temp block warning failed:', warnErr.message);
@@ -1389,9 +1461,11 @@ const handleMessage = async (sock, msg) => {
     }
     
     // Check self mode (private mode) - only owner/approved can use commands (DMs ONLY, groups unaffected)
-    // Pending applicants and team admins are exempt so the .crew apply / accept / deny flow works in DMs.
+    // Pending applicants, team admins and temp-allowed (apply/order invite) users are
+    // exempt so the .crew apply / accept / deny flow works in DMs.
     const globalSettings = database.getGlobalSettings();
-    if (!isGroup && globalSettings.selfMode && !isOwner(sender) && !database.isApprovedNumber(sender) && !database.isTeamAdmin(sender) && !database.hasPendingApplication(sender) && !hasActiveSession(sender)) {
+    const senderNorm = normalizeJidWithLid(sender) || sender;
+    if (!isGroup && globalSettings.selfMode && !isOwner(senderNorm) && !database.isApprovedNumber(senderNorm) && !database.isTeamAdmin(senderNorm) && !database.hasPendingApplication(senderNorm) && !hasActiveSession(senderNorm) && !isTempAllowed(senderNorm) && !isTempAllowed(sender) && !isTempAllowed(from)) {
       // Send warning then block (owner can never reach here due to isOwner check above)
       try {
         await sock.sendMessage(from, {
@@ -1399,7 +1473,7 @@ const handleMessage = async (sock, msg) => {
                 `📲 *Message me on:* 084 082 0712\n` +
                 `⚠️ *One more message and your number is BLOCKED* ⛔🔒`
         });
-        await updateBlockStatusSafe(sock, sender, 'block');
+        await updateBlockStatusSafe(sock, senderNorm, 'block');
       } catch (e) {
         console.error('[DMBLOCKER] block failed:', e.message);
       }

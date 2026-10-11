@@ -86,7 +86,7 @@ setInterval(() => {
       console.error(`[DB-FLUSH] Error writing ${path.basename(filePath)}: ${e.message}`);
     }
   }
-}, FLUSH_INTERVAL_MS);
+}, FLUSH_INTERVAL_MS).unref(); // .unref() — never holds a short-lived process open (tests); the bot's own sockets keep the loop alive
 
 // Read database — from memory cache
 const readDB = (filePath) => {

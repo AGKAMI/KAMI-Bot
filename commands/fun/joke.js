@@ -3,7 +3,9 @@
  */
 
 const APIs = require('../../utils/api');
-const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const config = require('../../config');
+const { voice } = require('../../utils/format');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'joke',
@@ -19,7 +21,11 @@ module.exports = {
       
       let text = `${joke.setup}\n\n${joke.punchline}`;
       
-      await extra.reply(text);
+      await sendButtons(sock, extra.from, {
+        text,
+        footer: config.botName || 'KAMI Bot',
+        buttons: [{ id: 'again:joke', text: '🔁 Another joke' }],
+      }, msg);
       
     } catch (error) {
       extra.fail();

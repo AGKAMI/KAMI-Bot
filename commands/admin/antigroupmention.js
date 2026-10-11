@@ -99,6 +99,7 @@ function buildStatus(settings) {
 
 // Button handlers
 onButton('admin:antigroupmention:on', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antigroupmention: true });
   await sock.sendMessage(from, {
@@ -107,6 +108,7 @@ onButton('admin:antigroupmention:on', async (sock, msg, from) => {
 });
 
 onButton('admin:antigroupmention:off', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antigroupmention: false });
   await sock.sendMessage(from, {
@@ -115,6 +117,7 @@ onButton('admin:antigroupmention:off', async (sock, msg, from) => {
 });
 
 onButton('admin:antigroupmention:set:warn', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antigroupmentionAction: 'warn', antigroupmention: true });
   await sock.sendMessage(from, {
@@ -123,6 +126,7 @@ onButton('admin:antigroupmention:set:warn', async (sock, msg, from) => {
 });
 
 onButton('admin:antigroupmention:set:delete', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antigroupmentionAction: 'delete', antigroupmention: true });
   await sock.sendMessage(from, {
@@ -131,6 +135,7 @@ onButton('admin:antigroupmention:set:delete', async (sock, msg, from) => {
 });
 
 onButton('admin:antigroupmention:set:kick', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antigroupmentionAction: 'kick', antigroupmention: true });
   await sock.sendMessage(from, {

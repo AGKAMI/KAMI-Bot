@@ -3,7 +3,9 @@
  */
 
 const axios = require('axios');
-const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const config = require('../../config');
+const { voice } = require('../../utils/format');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 const BASE = 'https://api.waifu.pics/sfw/waifu';
 const VALID_COUNTRIES = ['india','malaysia', 'thailand', 'china', 'indonesia', 'japan', 'korea', 'vietnam'];
@@ -69,10 +71,13 @@ module.exports = {
         throw new Error('API did not return an image');
       }
       
-      await sock.sendMessage(extra.from, {
+      await sendButtons(sock, extra.from, {
         image: imageBuffer,
-        caption: `_kiff, here's your ${country} pies, ${voice.tag('neutral')}_`
-      }, { quoted: msg });
+        text: `_kiff, here's your ${country} pies, ${voice.tag('neutral')}_`,
+        buttonText: `🔁 More ${country} pies`,
+        footer: config.botName || 'KAMI Bot',
+        buttons: [{ id: `again:pies:${country}`, text: `🔁 More ${country} pies` }],
+      }, msg);
       
     } catch (error) {
       console.error('Error in pies command:', error);

@@ -4,7 +4,9 @@
 
 const { truth } = require('@bochilteam/scraper');
 const { translate } = require('@vitalets/google-translate-api');
-const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const config = require('../../config');
+const { voice } = require('../../utils/format');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 module.exports = {
     name: 'truth',
@@ -20,7 +22,11 @@ module.exports = {
         // Translate to English
         const res = await translate(question, { to: 'en' });
         
-        await extra.reply(res.text);
+        await sendButtons(sock, extra.from, {
+          text: res.text,
+          footer: config.botName || 'KAMI Bot',
+          buttons: [{ id: 'again:truth', text: '🔁 Another truth' }],
+        }, msg);
         
       } catch (error) {
         console.error('Truth Error:', error);

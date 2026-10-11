@@ -1,4 +1,5 @@
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const config = require('../../config');
+const { sendButtons } = require('../../utils/buttonHelper');
 const questions = [
   'Have the ability to fly or be invisible?',
   'Always be 10 minutes late or 20 minutes early?',
@@ -26,6 +27,10 @@ module.exports = {
     } else {
       text += q;
     }
-    await ctx.reply(text);
+    await sendButtons(sock, ctx.from, {
+      text,
+      footer: config.botName || 'KAMI Bot',
+      buttons: [{ id: 'again:wouldyourather', text: '🔁 Next question' }],
+    }, msg);
   }
 };

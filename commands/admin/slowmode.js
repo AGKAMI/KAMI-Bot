@@ -230,6 +230,7 @@ function buildStatus(settings, extra, prefix) {
 
 // Button handlers
 onButton('admin:slowmode:off', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { slowmode: 0 });
   await sock.sendMessage(from, {
@@ -238,6 +239,7 @@ onButton('admin:slowmode:off', async (sock, msg, from) => {
 });
 
 onButton('admin:slowmode:10s', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { slowmode: 10 });
   await sock.sendMessage(from, {
@@ -246,6 +248,7 @@ onButton('admin:slowmode:10s', async (sock, msg, from) => {
 });
 
 onButton('admin:slowmode:30s', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { slowmode: 30 });
   await sock.sendMessage(from, {

@@ -1,6 +1,7 @@
 const database = require('../../database');
 
 const config = require('../../config');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 // Same time-of-day sort used by events.js — keep both in sync.
 // Missing status = upcoming (events written before status was persisted).
@@ -79,15 +80,25 @@ module.exports = {
     if (isAttending) {
       event.attendees = event.attendees.filter(a => a !== sender);
       database.updateTeam(jid, team);
-      return sock.sendMessage(jid, {
-        text: `✅ You're out of *${event.name}* (${count()} going)`
-      });
+      return sendButtons(sock, jid, {
+        text: `✅ You're out of *${event.name}* (${count()} going)`,
+        footer: config.botName || 'KAMI Bot',
+        buttons: [
+          { id: `again:attend:${args && args[0] ? args[0] : '1'}`, text: '↩️ Get back in' },
+          { id: 'again:events', text: '📅 All events' },
+        ],
+      }, msg);
     }
 
     event.attendees.push(sender);
     database.updateTeam(jid, team);
-    return sock.sendMessage(jid, {
-      text: `✅ You're locked in for *${event.name}* at *${event.time}* (${count()} going)`
-    });
+    return sendButtons(sock, jid, {
+      text: `✅ You're locked in for *${event.name}* at *${event.time}* (${count()} going)`,
+      footer: config.botName || 'KAMI Bot',
+      buttons: [
+        { id: `again:attend:${args && args[0] ? args[0] : '1'}`, text: '↩️ Change my mind' },
+        { id: 'again:events', text: '📅 All events' },
+      ],
+    }, msg);
   }
 };

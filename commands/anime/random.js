@@ -6,6 +6,8 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
+const { sendSfw, sfwRow } = require('../../utils/sfwAnime');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 const BASE = 'https://nekos.life/api/v2/img/waifu';
 const API_KEY = 'prince';
@@ -97,10 +99,7 @@ module.exports = {
           fs.writeFileSync(tempImagePath, imageBuffer);
           const finalBuffer = fs.readFileSync(tempImagePath);
           
-          await sock.sendMessage(extra.from, {
-            image: finalBuffer,
-            caption: caption
-          }, { quoted: msg });
+          await sendSfw(sock, extra.from, msg, 'random', finalBuffer, caption);
           
         } finally {
           try {
@@ -109,10 +108,13 @@ module.exports = {
           }
         }
       } else {
-        // Send text only if no image
-        await sock.sendMessage(extra.from, {
-          text: caption
-        }, { quoted: msg });
+        // Send text only if no image (still with SFW buttons so the loop closes)
+        await sendButtons(sock, extra.from, {
+          text: caption,
+          buttonText: '👇 More below',
+          footer: require('../../config').botName || 'KAMI Bot',
+          buttons: sfwRow('random'),
+        }, msg);
       }
       
     } catch (error) {

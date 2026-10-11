@@ -1,6 +1,7 @@
 const database = require('../../database');
 
 const config = require('../../config');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 // Same time-of-day sort used by attend.js — keep both in sync.
 // Missing status = upcoming (events written before status was persisted).
@@ -43,8 +44,20 @@ module.exports = {
       response += `   ⏰ ${evt.time} · 👥 ${attendeeCount} going\n`;
     });
 
-    response += `\nRSVP: \`${prefix}attend <number>\` — eg \`${prefix}attend 1\``;
+    response += `\n_tap to RSVP (taps again to cancel):_`;
 
-    return sock.sendMessage(jid, { text: response });
+    // Max 10 buttons — cap events shown as buttons at 7 (+ refresh + menu)
+    const shown = upcoming.slice(0, 7);
+    const buttons = shown.map(([, evt], i) => ({
+      id: `again:attend:${i + 1}`,
+      text: `✅ ${evt.name.slice(0, 18)} ${i + 1}`,
+    }));
+    buttons.push({ id: 'again:events', text: '🔄 Refresh' });
+
+    return sendButtons(sock, jid, {
+      text: response,
+      footer: config.botName || 'KAMI Bot',
+      buttons,
+    }, msg);
   }
 };

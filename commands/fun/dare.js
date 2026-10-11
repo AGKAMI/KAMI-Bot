@@ -2,7 +2,9 @@
  * Dare - Get a random dare, lekke
  */
 
-const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const config = require('../../config');
+const { voice } = require('../../utils/format');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 module.exports = {
     name: 'dare',
@@ -38,8 +40,10 @@ module.exports = {
         
         const randomDare = dares[Math.floor(Math.random() * dares.length)];
         
-        await sock.sendMessage(msg.key.remoteJid, {
-          text: `${randomDare}`
+        await sendButtons(sock, msg.key.remoteJid, {
+          text: `${randomDare}`,
+          footer: config.botName || 'KAMI Bot',
+          buttons: [{ id: 'again:dare', text: '🔁 Another dare' }],
         }, { quoted: msg });
         
       } catch (error) {

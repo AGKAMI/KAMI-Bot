@@ -99,6 +99,7 @@ function buildStatus(settings) {
 
 // Button handlers
 onButton('admin:antitag:on', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antitag: true });
   await sock.sendMessage(from, {
@@ -107,6 +108,7 @@ onButton('admin:antitag:on', async (sock, msg, from) => {
 });
 
 onButton('admin:antitag:off', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antitag: false });
   await sock.sendMessage(from, {
@@ -115,6 +117,7 @@ onButton('admin:antitag:off', async (sock, msg, from) => {
 });
 
 onButton('admin:antitag:set:delete', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antitagAction: 'delete', antitag: true });
   await sock.sendMessage(from, {
@@ -123,6 +126,7 @@ onButton('admin:antitag:set:delete', async (sock, msg, from) => {
 });
 
 onButton('admin:antitag:set:kick', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antitagAction: 'kick', antitag: true });
   await sock.sendMessage(from, {

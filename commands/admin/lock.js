@@ -156,6 +156,7 @@ function buildStatus(settings, prefix) {
 
 // Button handlers
 onButton('admin:lockall', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   try {
     const database = require('../../database');
     database.updateGroupSettings(from, { lock: true, lockName: true, lockDesc: true, lockPp: true });
@@ -170,6 +171,7 @@ onButton('admin:lockall', async (sock, msg, from) => {
 });
 
 onButton('admin:unlockall', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   try {
     const database = require('../../database');
     database.updateGroupSettings(from, { lock: false, lockName: false, lockDesc: false, lockPp: false });

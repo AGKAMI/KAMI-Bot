@@ -1,4 +1,6 @@
-const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const config = require('../../config');
+const { voice } = require('../../utils/format');
+const { sendButtons } = require('../../utils/buttonHelper');
 const REELS = ['🍒','🍋','🍇','🍉','🔔','💎','7️⃣'];
 const PAYOUTS = {
   '7️⃣7️⃣7️⃣': 100,
@@ -31,6 +33,10 @@ module.exports = {
     } else {
       text += `😢 ${voice.openErr()}, no match — try again!`;
     }
-    await ctx.reply(text);
+    await sendButtons(sock, ctx.from, {
+      text: `${text}\n\n_spin again?_`,
+      footer: config.botName || 'KAMI Bot',
+      buttons: [{ id: 'again:slots', text: '🎰 Spin again' }],
+    }, msg);
   }
 };

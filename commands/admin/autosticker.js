@@ -70,6 +70,7 @@ module.exports = {
 
 // Button handlers
 onButton('admin:autosticker:on', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { autosticker: true });
   await sock.sendMessage(from, {
@@ -78,6 +79,7 @@ onButton('admin:autosticker:on', async (sock, msg, from) => {
 });
 
 onButton('admin:autosticker:off', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { autosticker: false });
   await sock.sendMessage(from, {

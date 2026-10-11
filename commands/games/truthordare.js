@@ -1,4 +1,6 @@
-const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const config = require('../../config');
+const { voice } = require('../../utils/format');
+const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const truths = [
   'What is your biggest fear?',
   'What is the most embarrassing thing you have done?',
@@ -29,14 +31,57 @@ module.exports = {
   description: 'Play truth or dare',
   aliases: ['tod'],
   category: 'games',
+  usage: '.tod [truth|dare]',
   execute: async (sock, msg, args, ctx) => {
+    const prefix = config.prefix || '.';
     const choice = (args[0] || '').toLowerCase();
     if (!['truth', 'dare'].includes(choice)) {
-      ctx.fail();
-      return ctx.reply(`❌ _${voice.openErr()} — usage: .tod <truth|dare>_`);
+      return sendButtons(sock, ctx.from, {
+        text: `🎭 *TRUTH OR DARE*\n\n_pick below, or type ${prefix}tod <truth|dare>_`,
+        footer: config.botName || 'KAMI Bot',
+        buttons: [
+          { id: 'games:tod:play:truth', text: '🟦 Truth' },
+          { id: 'games:tod:play:dare', text: '🟥 Dare' },
+        ],
+      }, msg);
     }
     const pool = choice === 'truth' ? truths : dares;
     const p = pool[Math.floor(Math.random() * pool.length)];
-    await ctx.reply((choice === 'truth' ? '🟦 TRUTH: ' : '🟥 DARE: ') + p);
+    // Alternation row: after a Truth, Dare first (and vice versa)
+    const buttons = choice === 'truth'
+      ? [
+          { id: 'games:tod:play:dare', text: '🟥 Now a Dare' },
+          { id: 'games:tod:play:truth', text: '🟦 Another Truth' },
+        ]
+      : [
+          { id: 'games:tod:play:truth', text: '🟦 Now a Truth' },
+          { id: 'games:tod:play:dare', text: '🟥 Another Dare' },
+        ];
+    await sendButtons(sock, ctx.from, {
+      text: (choice === 'truth' ? '🟦 TRUTH: ' : '🟥 DARE: ') + p,
+      footer: config.botName || 'KAMI Bot',
+      buttons,
+    }, msg);
   }
 };
+
+onButton('games:tod:play:', async (sock, msg, from, sender, btnId) => {
+  const choice = btnId.split(':').pop();
+  if (!['truth', 'dare'].includes(choice)) return;
+  const pool = choice === 'truth' ? truths : dares;
+  const p = pool[Math.floor(Math.random() * pool.length)];
+  const buttons = choice === 'truth'
+    ? [
+        { id: 'games:tod:play:dare', text: '🟥 Now a Dare' },
+        { id: 'games:tod:play:truth', text: '🟦 Another Truth' },
+      ]
+    : [
+        { id: 'games:tod:play:truth', text: '🟦 Now a Truth' },
+        { id: 'games:tod:play:dare', text: '🟥 Another Dare' },
+      ];
+  await sendButtons(sock, from, {
+    text: (choice === 'truth' ? '🟦 TRUTH: ' : '🟥 DARE: ') + p,
+    footer: config.botName || 'KAMI Bot',
+    buttons,
+  }, msg);
+});

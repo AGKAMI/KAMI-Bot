@@ -1,4 +1,5 @@
-const { bold, italic, pick, SLANG } = require('../../utils/format');
+const config = require('../../config');
+const { sendButtons } = require('../../utils/buttonHelper');
 module.exports = {
   name: 'coinflip',
   reactions: { received: '🪙', done: '📈' },
@@ -7,6 +8,10 @@ module.exports = {
   category: 'games',
   execute: async (sock, msg, args, ctx) => {
     const side = Math.random() < 0.5 ? 'heads' : 'tails';
-    await ctx.reply('🪙 Coin: ' + side);
+    await sendButtons(sock, ctx.from, {
+      text: `🪙 Coin: ${side}\n\n_flip again?_`,
+      footer: config.botName || 'KAMI Bot',
+      buttons: [{ id: 'again:coinflip', text: '🪙 Flip again' }],
+    }, msg);
   }
 };

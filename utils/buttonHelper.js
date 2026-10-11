@@ -24,6 +24,7 @@ const { generateWAMessageFromContent } = require('@whiskeysockets/baileys');
 
 const buttonHandlers = new Map();
 const adminOnlyButtons = new Set(); // button ID prefixes that require admin
+const ownerOnlyButtons = new Set(); // button ID prefixes that require owner
 
 // ── Rate limiter: WhatsApp throttles interactive messages ──────────
 // Only allow 1 interactive message per JID every COOLDOWN_MS.
@@ -31,13 +32,14 @@ const adminOnlyButtons = new Set(); // button ID prefixes that require admin
 const COOLDOWN_MS = 500; // 500ms between interactive messages per chat
 const lastInteractive = new Map(); // jid → timestamp
 
-// Cleanup stale entries every 5 minutes (prevents memory leaks)
+// Cleanup stale entries every 5 minutes (prevents memory leaks).
+// .unref() so the timer never holds a short-lived process open (tests).
 setInterval(() => {
   const now = Date.now();
   for (const [jid, ts] of lastInteractive) {
     if (now - ts > 300000) lastInteractive.delete(jid);
   }
-}, 300000);
+}, 300000).unref();
 
 function isButtonModeOn() {
   return config.buttonMode === true || config.buttonMode === 'on';
@@ -69,6 +71,38 @@ function isAdminOnly(btnId) {
     }
   }
   return false;
+}
+
+/**
+ * Register a button ID prefix as owner-only.
+ * Enforced inside handleButtonResponse — forged taps can't bypass it.
+ */
+function requireOwner(prefix) {
+  ownerOnlyButtons.add(prefix);
+}
+
+function isOwnerOnly(btnId) {
+  for (const prefix of ownerOnlyButtons) {
+    if (btnId === prefix || btnId.startsWith(prefix + ':')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Owner predicate — fromMe OR digit-normalized match against config.ownerNumber.
+ * Moved here from menu.js isOwnerClicker so every owner gate shares one logic
+ * (config stores 083…-style local numbers, sender jids carry 27…/LID digits).
+ */
+function isOwnerJid(msg, sender) {
+  if (msg && msg.key && msg.key.fromMe) return true;
+  const { normalizeJidWithLid } = require('./jidHelper');
+  const jid = normalizeJidWithLid(sender) || sender || '';
+  const digits = String(jid).split('@')[0].replace(/\D/g, '');
+  if (!digits) return false;
+  const { canonicalNumber } = require('../database');
+  return (config.ownerNumber || []).some(o => canonicalNumber(o) === canonicalNumber(digits));
 }
 
 /**
@@ -223,6 +257,16 @@ async function sendButtons(sock, jid, opts, quoted) {
 }
 
 function onButton(id, handler) {
+  // Prefix-overlap warning — two prefix keys where one shadows the other
+  // makes routing ambiguous. Longest match wins, but flag it at boot.
+  const myPrefix = id.endsWith(':') ? id : id + ':';
+  for (const key of buttonHandlers.keys()) {
+    if (key === id) continue;
+    const keyPrefix = key.endsWith(':') ? key : key + ':';
+    if (myPrefix.startsWith(keyPrefix) || keyPrefix.startsWith(myPrefix)) {
+      console.warn(`[BUTTON] prefix overlap: "${id}" vs "${key}" — longest match wins`);
+    }
+  }
   buttonHandlers.set(id, handler);
 }
 
@@ -278,14 +322,26 @@ async function handleButtonResponse(sock, msg, isAdmin) {
       }
     }
 
+    // Owner-only check — forged taps can't bypass (hub checks are UI, not security)
+    if (isOwnerOnly(btnId) && !isOwnerJid(msg, sender)) {
+      await sock.sendMessage(from, {
+        text: '\u{1F451} *OWNER ONLY*\n_This button is restricted to KAMI._',
+      });
+      return true;
+    }
+
     // Exact match first
     let handler = buttonHandlers.get(btnId);
     if (!handler) {
-      // Prefix match — check if any registered ID is a prefix of btnId
+      // Longest-prefix match — insertion order no longer matters.
+      // Keys match via their colon-extended form: 'crew:accept' matches
+      // 'crew:accept:123', 'cwiz:a:' matches 'cwiz:a:team:…'.
+      let bestLen = -1;
       for (const [key, hnd] of buttonHandlers) {
-        if (key.endsWith(':') ? btnId.startsWith(key) : btnId.startsWith(key + ':')) {
+        const prefix = key.endsWith(':') ? key : key + ':';
+        if (btnId.startsWith(prefix) && prefix.length > bestLen) {
+          bestLen = prefix.length;
           handler = hnd;
-          break;
         }
       }
     }
@@ -302,4 +358,4 @@ async function handleButtonResponse(sock, msg, isAdmin) {
   }
 }
 
-module.exports = { sendButtons, onButton, handleButtonResponse, isButtonModeOn, requireAdmin, isAdminOnly };
+module.exports = { sendButtons, onButton, handleButtonResponse, isButtonModeOn, requireAdmin, requireOwner, isAdminOnly, isOwnerOnly, isOwnerJid };

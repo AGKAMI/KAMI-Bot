@@ -54,6 +54,7 @@ module.exports = {
 
 // Button handlers
 onButton('admin:goodbye:on', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { goodbye: true });
   await sock.sendMessage(from, {
@@ -62,6 +63,7 @@ onButton('admin:goodbye:on', async (sock, msg, from) => {
 });
 
 onButton('admin:goodbye:off', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { goodbye: false });
   await sock.sendMessage(from, {

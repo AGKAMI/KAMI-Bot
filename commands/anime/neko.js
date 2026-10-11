@@ -6,6 +6,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { getTempDir, deleteTempFile } = require('../../utils/tempManager');
+const { sendSfw } = require('../../utils/sfwAnime');
 
 const BASE = 'https://nekos.life/api/v2/img/neko';
 const API_KEY = 'prince';
@@ -93,10 +94,8 @@ module.exports = {
           throw new Error('Failed to read image from temp file');
         }
         
-        // Send the image
-        await sock.sendMessage(extra.from, {
-          image: finalBuffer
-        }, { quoted: msg });
+        // Send the image (with SFW cross-launcher buttons)
+        await sendSfw(sock, extra.from, msg, 'neko', finalBuffer, '😺 neko~');
         
       } finally {
         // Cleanup temp file

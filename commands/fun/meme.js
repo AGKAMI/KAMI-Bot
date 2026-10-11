@@ -4,7 +4,9 @@
 
 const APIs = require('../../utils/api');
 const axios = require('axios');
-const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const config = require('../../config');
+const { voice } = require('../../utils/format');
+const { sendButtons } = require('../../utils/buttonHelper');
 
 module.exports = {
   name: 'meme',
@@ -20,10 +22,13 @@ module.exports = {
       
       const imageBuffer = await axios.get(meme.url, { responseType: 'arraybuffer' });
       
-      await sock.sendMessage(extra.from, {
+      await sendButtons(sock, extra.from, {
         image: Buffer.from(imageBuffer.data),
-        caption: `😂 *${meme.title}*\n\n_lekke, from_ r/${meme.subreddit}\n👤 By: ${meme.author}\n⬆️ Upvotes: ${meme.ups}`
-      }, { quoted: msg });
+        text: `😂 *${meme.title}*\n\n_lekke, from_ r/${meme.subreddit}\n👤 By: ${meme.author}\n⬆️ Upvotes: ${meme.ups}`,
+        buttonText: '🔁 Another meme',
+        footer: config.botName || 'KAMI Bot',
+        buttons: [{ id: 'again:meme', text: '🔁 Another meme' }],
+      }, msg);
       
     } catch (error) {
       extra.fail();

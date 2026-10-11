@@ -182,6 +182,7 @@ function buildStatus(settings, prefix) {
 
 // Button handlers
 onButton('admin:antibadword:on', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   const config = require('../../config');
   const settings = database.getGroupSettings(from);
@@ -195,6 +196,7 @@ onButton('admin:antibadword:on', async (sock, msg, from) => {
 });
 
 onButton('admin:antibadword:off', async (sock, msg, from) => {
+  if (!from.endsWith('@g.us')) return;
   const database = require('../../database');
   database.updateGroupSettings(from, { antibadword: false });
   await sock.sendMessage(from, {

@@ -75,6 +75,7 @@ module.exports = {
 // ── Toggle handler ───────────────────────────────────────────
 // admin:settings prefix → covered by the central requireAdmin('admin') check
 onButton('admin:settings:toggle:', async (sock, msg, from, sender, btnId) => {
+  if (!from.endsWith('@g.us')) return;
   const key = btnId.replace('admin:settings:toggle:', '');
   const toggle = TOGGLES.find(t => t.key === key);
   if (!toggle) return;
