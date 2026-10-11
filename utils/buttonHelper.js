@@ -209,8 +209,12 @@ async function sendButtons(sock, jid, opts, quoted) {
     // Fall through to send buttons as separate message — use btnBody (short text)
   }
 
+  // NOTE: no `header` in the payload — header'd native_flow messages relay
+  // fine but silently fail to render on some clients (the whole message —
+  // body + buttons — never appears). This made every "Back to Menu" send
+  // invisible while header-less sends worked. The `header` opt is accepted
+  // but deliberately dropped; body text carries the title instead.
   const interactiveMsg = {
-    ...(header ? { header: { title: header, subtitle: '', hasMediaAttachment: false } } : {}),
     body: { text: image ? btnBody : text },
     ...(footer ? { footer: { text: footer } } : {}),
     nativeFlowMessage: { buttons: rows },
@@ -355,7 +359,10 @@ async function handleButtonResponse(sock, msg, isAdmin) {
       }
     }
     if (handler) {
-      Promise.resolve(handler(sock, msg, from, sender, btnId)).catch(err => {
+      // Keep the assignment — tests await getLastHandlerPromise() to know
+      // when a tapped handler finished (83d6c56 dropped it while adding
+      // tap-trace, racing every async handler assertion).
+      lastHandlerPromise = Promise.resolve(handler(sock, msg, from, sender, btnId)).catch(err => {
         console.error('[ButtonHelper] Handler error:', err.message);
       });
       return true;

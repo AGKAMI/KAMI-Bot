@@ -87,3 +87,26 @@ test('isOwnerJid: fromMe is owner; stranger digits are not', () => {
   assert.strictEqual(isOwnerJid({ key: { fromMe: true } }, 'anyone@s.whatsapp.net'), true);
   assert.strictEqual(isOwnerJid({ key: { fromMe: false } }, '99999@s.whatsapp.net'), false);
 });
+
+test('sendButtons payload never contains a header (headered native_flow renders invisible on some clients)', async () => {
+  const { sendButtons } = require('../utils/buttonHelper');
+  const built = [];
+  const sock = {
+    user: { id: '555:1@s.whatsapp.net' },
+    async sendMessage() { return { key: { id: 'x' } }; },
+    async relayMessage(jid, message) { built.push(message); return { key: { id: 'x' } }; },
+  };
+  await sendButtons(sock, '120363@g.us', {
+    text: 'body text',
+    footer: 'foot',
+    header: 'KAMI BOT',
+    buttons: [{ id: 'tp:one', text: 'One' }],
+  });
+  assert.strictEqual(built.length, 1, 'relay path used');
+  const im = built[0].interactiveMessage
+    || (built[0].ephemeralMessage && built[0].ephemeralMessage.message && built[0].ephemeralMessage.message.interactiveMessage);
+  assert.ok(im, 'interactiveMessage present');
+  assert.strictEqual(im.header, undefined, 'header must be stripped from the payload');
+  assert.ok(im.body && im.body.text, 'body preserved');
+  assert.ok(im.nativeFlowMessage.buttons.length >= 1, 'buttons preserved');
+});
