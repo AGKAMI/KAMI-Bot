@@ -1,70 +1,55 @@
 # HANDOFF
 
 ## Goal
-Keep KAMI Bot alive on its 512MB panel box. Prior arcs: disk-full deadlock, 401 conflict-wipe cascade, adminpush silent-delivery — all fixed and live. This arc: stop every command leaking raw jid/lid into user-facing output — show display names instead (`8f11f82`).
+Hybrid button-ification of ALL command categories — minimize typing, maximize buttons ("go ahead and finish it all"). Three judge agents + final judge locked the plan (score 7.5/10). All 5 batches shipped: `34cfd69` (buttons) + `3291267` (carryover apply/start work).
 
 ## Current State
-- **Bot: running new code, CONNECTED** on 27833882383, prefix `!`, session survives deploy restarts (401-fix held)
-- Box HEAD = `8f11f82`, `bin/yt-dlp` = `-rwxr-xr-x` (exec bit tracked in git: 100644→100755)
-- Prior arcs healthy: disk ~335MB/512MB (`8dd01d4`), 401 conflict-wipe fix (`27aa6e1`), adminpush audit/canary (`b178490`)
-- **name-display arc (`8f11f82`, deployed)**: user reported commands leak raw jid/lid (e.g. accept flow "already accepted by @62281337557223"). THREE root causes: (1) `extra.reply(text, { mentions })` SILENTLY DROPPED the options — reply helper only took `text`, so every @tag in the codebase rendered as raw digits; (2) `mention(processed.admin)` had no mentions array + admin stored as LID → unresolvable digits; (3) raw `jid.split('@')[0]` / `@${num}` leaks in many commands
-- Fix shipped: `utils/nameCache.js` learns pushName from every message (persisted `database/nameCache.json`, gitignored, capped 5000, 60s flush, `.unref()`); `mention()` returns cached name else `@digits`; `extra.reply` forwards opts; accept/deny/cancel/reroll/withdraw store+show `adminName`; swept roster/inactive/activity/demote(crew+admin)/poll/block/unblock/db/setname/setdesc/crewForms. Tests: nameCache 13/13, checkall 237/0, btn-dispatch 16/16, event/picker/ban green
+- Bot was CONNECTED on 27833882383 (prefix `!`) at last verify; this commit triggers auto-pull deploy — **confirm `KAMI BOT CONNECTED` in MCP logs after ~90s**
+- HEAD = `3291267`; prior arcs healthy (name-cache `8f11f82`, 401-fix `27aa6e1`, disk `8dd01d4`)
+- 204/204 command load sweep green; 17/17 unit tests (`tests/buttonHelper.test.js`, `tests/againDispatch.test.js`); syntax-clean on 22 touched files
+- **Soak SKIPPED** (judges recommended 48h after batch 1; owner chose single ship) — watch for: button-tap storms (500ms/chat rate limit), again: replay loops on external APIs (joke/truth/dare hit APIs every tap; 2s/chat cooldown in dispatcher mitigates), ownerHub config.js string-replace races
 
-**Incident timeline (this arc):**
-1. User pasted console log: `.fb` → `spawn bin/yt-dlp EACCES`; `[DMBLOCKER] early check error: btnId is not defined` on every button tap; `⚠️ Session issue (401) — retry N/8` ending in crew-accept `Connection Closed` (428)
-2. `database/connectionLog.log` (persistent log from `8137f93` — first real post-mortem use): first close at 11:56:43 = **`401 "Stream Errored (conflict)"`**, then 7× `401 "Connection Failure"`, `session-cleared afterRetries:8` at 12:01:34, then QR events. Bot had been up since 10:29:05 open — conflict 87 min later
-3. Old box `08b6894d` deleted from panel (client API returns SPA HTML, not JSON) — ruled out. Only one deployment on bot-hosting — no second bot instance
-4. Root-cause chain found and fixed (see below)
+## What Shipped (all 5 batches)
+1. **Infra**: longest-prefix button dispatch + overlap boot warning (`utils/buttonHelper.js`); `requireOwner`/`isOwnerJid` shared owner gate; generic `again:` replay dispatcher (`utils/againDispatch.js`, allowlist + gate re-checks + 2s/chat cooldown); `.unref()` on buttonHelper cleanup + database.js flush intervals; group-guard sweep (11 admin files); F6 live-prefix (`menu.js getMainText()`)
+2. **Games/fun/anime**: rps chooser buttons (`games:rps:play:<choice>`); truth/dare no-arg chooser + alternating result row (`games:tod:play:`); dice/coinflip/slots/wyr result rows via `again:` ids; fun another-buttons (joke/truth/dare/meme/pies — pies encodes country in id); SFW anime cross-launcher (`utils/sfwAnime.js`: another+siblings+menu) — **NSFW anime typed-only permanently** (judge unanimity: consent/liability)
+3. **Owner**: `commands/owner/ownerHub.js` — `.ohub` + panels for anticall/mode/autoreact/dmblocker; handlers delegate to real execute() with swallowed reply → panel re-render, confirmation in header (F7); dmblocker on/off mutates DB directly (its execute sends unswallowable messages); approve/disapprove stays typed; every handler self-gates `isOwnerJid`
+4. **Admin**: `commands/admin/adminHub.js` — `.ahub` paginated router (3 pages, PAGE 9+nav), routes via `cmd.execute([], buildExtra)` to existing surfaces (no panel rebuilds); p3 = cta_url grouplink (live invite code) + GitHub + routed promote/demote/rules/groupstatus/uptime/help; admin-gated globally via existing `requireAdmin('admin')` on `admin:` prefix
+5. **Crew**: events list shows Attend buttons (`again:attend:<n>`, max 7 + refresh); attend toggle result has change-mind/all-events row; `events`+`attend` added to again ALLOW
 
-## Root Cause (401 cascade)
-1. **Watchdog false-positive**: `lastActivity` only updates on `messages.upsert` + open. A 30-min-quiet group window (~11:26→11:56, matches exactly) made the watchdog `end()` a HEALTHY open socket and reconnect. Tearing down a live socket races WhatsApp's server-side close of the old connection → new socket gets `Stream Errored (conflict)`
-2. **Conflict carries code 401**: Baileys `generics.js:289` — server's `node.attrs.code` OVERRIDES `CODE_MAP`, and WhatsApp sends `code=401` on conflict stream errors (not 440). So `statusCode === 401` was true for a pure conflict
-3. **Wipe misclassification**: `index.js` wiped the session after 8 retries whenever `isLoggedOut` (401) — including conflict-401s where the session was still valid. Wipe → `process.exit(1)` → QR needed → owner re-scan. The "another device" was our own reconnect churn
-4. **btnId bug**: `handler.js:694` referenced `btnId` (never defined in that scope) in the DM-blocker early check → ReferenceError → caught at :772 → whole early check silently aborted on every button tap (DM blocker broken for button-pressing DMs)
-5. **yt-dlp EACCES**: git index had `bin/yt-dlp` as 100644; Windows `core.filemode=false` never corrects it; every Linux checkout = 644 = no exec bit. The Oct 11 10:28 mtime = last deploy's checkout
+Menu integration: owner view → [🎛️ Owner Hub], admin view → [🛡️ Admin Hub] (both above Back).
 
-## The Fix (`27aa6e1`, pushed, deployed, verified on box)
-- `index.js` wipe guard: `sessionRetryCount >= 8 && isLoggedOut && !isTransient` — conflict-401s retry forever, never wipe. Genuine logged-out (401 without conflict semantics) still wipes after 8 with backup
-- `index.js` watchdog: OPEN-but-silent sockets now get `sendPresenceUpdate('available')` health-check (15s race timeout) — alive → keep + reset activity window; dead → end()+reconnect. CLOSED-ws zombie path unchanged
-- `handler.js:694`: `btnId` → `isBtnTap` (same message-shape detection as line 730)
-- `bin/yt-dlp`: `git update-index --chmod=+x` → 100755. Verified post-deploy: `-rwxr-xr-x`
-- Tests: checkall 236/0, btn-dispatch 16/16, event 15/15, ban 17/17, kickcfg + picker green
+## Edge Register (judge-locked, 22 items) — key ones
+- Forged-tap security: global owner/admin gates in handleButtonResponse + every ownerHub handler self-gates
+- **Dispatcher re-checks groupOnly/adminOnly/ownerOnly** (edge #22, final-judge catch) — programmatic execute() bypasses handler.js gates
+- Arg-loss on replay: args encoded in button id + `^[a-z0-9]{1,20}$` whitelist
+- Stale/concurrent taps: 500ms/chat limiter + idempotent SET-ids
+- DM phantom rows: dmblocker panel reads live DB per render
 
-## What Was Tried That Failed
-- `files_chmod` MCP with `path` arg → `expected string, received undefined` (schema wants `file` + `root`); retry with correct schema → 500 node_error. **Use `deployments_shell` + `chmod` instead** — shell works fine when disk is under the cap
-- `deployments_searchLogs` for the conflicting connection → buffer rotated (`scanned: 59`), useless for forensics. connectionLog.log is the tool that actually solved this
-- `rg` with glob `node_modules/.../Socket/*.js` on Windows → path error; quote or drop the glob
+## Kill List (per judges — do NOT resurrect)
+Crew dashboard (Attend shortcut only), 14 admin mega-panels, WYR A/B buttons, launcher list views, setter panels, NSFW buttons, per-command Again handlers (generic dispatcher instead).
 
 ## Active Files
-- `utils/nameCache.js` — pushName cache: `remember/get/who/flush`; `mention()` in `utils/format.js` delegates to it; `handler.js` remembers sender name + `extra.reply` forwards opts + `extra.who`/`extra.pushName`
-- `database.js` — `trackProcessedApp` stores `adminName`/`applicantName`
-- `commands/crew/{accept,deny,cancel,reroll,withdraw}.js` — store+show display names
-- `index.js` — watchdog health-check (~322-350), wipe guard (~391), scheduleReconnect single-timer, logConnEvent
-- `handler.js:694` — isBtnTap fix in DM-blocker early check
-- `bin/yt-dlp` — mode 100755 in git index (Windows: `core.filemode=false` so never "fix" it by re-adding)
-- `database/connectionLog.log` — persistent conn forensics (capped ~400 entries/96KB, gitignored via `*.log`)
-- `HANDOFF.md` — this file
+- `utils/againDispatch.js` — ALLOW set (dice coinflip slots truthordare wouldyourather joke meme truth dare pies waifu neko random konachan events attend); adding a command = add to ALLOW + attach button row inside execute (so dispatcher re-invoke keeps buttons)
+- `utils/sfwAnime.js` — sendSfw/sfwRow for the 4 SFW anime commands
+- `commands/owner/ownerHub.js` — hub + 15 handlers (all `owner:hub:*`)
+- `commands/admin/adminHub.js` — 3-page router (`admin:hub*`, LABELS map, PAGE1/PAGE2 arrays)
+- `commands/general/menu.js` — special-cased owner/admin category views, getMainText()
+- `tests/{buttonHelper,againDispatch}.test.js` — extend when adding ALLOW entries
 
-## Known Gotchas
-- **WhatsApp sends code=401 on CONFLICT stream errors** — `statusCode===401` ≠ logged out. Always check the message for 'conflict' before treating 401 as logout (Baileys `generics.js:289`: server code overrides CODE_MAP)
-- **Watchdog inactivity reconnect is dangerous on this box** — groups go quiet for hours; NEVER revert the health-check to blind end()+reconnect
-- `lastActivity` only ticks on `messages.upsert` — presence pings from the watchdog itself don't count (by design, we set it manually on healthy ping)
-- **`bin/yt-dlp` loses +x on every deploy if index mode regresses to 100644** — check `git ls-files -s bin/yt-dlp` shows 100755 after any re-add
-- `files_chmod` MCP is broken (500) — use `deployments_shell`
-- Old panel `08b6894d`/ptlc_ key now returns SPA HTML (server deleted from panel) — fully dead, stop investigating it
-- `deployments_searchLogs` scans ~59 lines post-incident — rely on connectionLog.log + file mtimes
-- Bot is at QR until owner scans; session backups exist as `kami_session.bak-<ts>` (newest 2) if a false-wipe ever needs manual restore
-- Disk arc gotchas still apply: 512MB cap, ~335MB baseline, boot force-pass, 1-min sweep, announce caps 50MB
-- **`extra.reply(text, opts)` now forwards opts** — before 8f11f82 it SILENTLY DROPPED `{mentions}` etc, so every @tag rendered as raw digits. Any code relying on the old 1-arg-only behaviour is unaffected (extra args are optional)
-- **`mention()` returns the cached display name when known, else `@digits`** — the @digits form only renders as a proper WhatsApp tag when paired with a `mentions` array; alone it's a last-resort digits label. `utils/nameCache.js` learns names from every incoming message (`msg.pushName`) — `database/nameCache.json` (gitignored, capped 5000 entries, 60s flush with `.unref()`)
-- **Two servers**: panel `08b6894d` ≠ live `b0665152…/u9mg7ylz` — SFTP/MCP = live, Pterodactyl API = dead box
+## Known Gotchas (this arc)
+- `node --test tests/` DIRECTORY ARG FAILS on Windows/Node 24 → npm test = explicit file list
+- Non-unref'd intervals hang test runs — kill stray node procs before rerunning
+- ownerHub overlap warnings on boot are EXPECTED (longest match wins) — ~25 lines, informational
+- anticall/mode rewrite config.js + bust require cache → ownerHub re-requires config per render (freshConfig)
+- attend "first event" fallback bakes `1` into the replay button — correct only while sort order stable (time-of-day sort, deterministic)
+- Never-commit: `__pycache__/`, `app.json`, `check.js`, `check_disk.py`, `upload_*.py`; restore `database/crew.json` before commit if test-ban.js ran
 
 ## Next Steps
-1. Ask owner to re-test the accept flow that showed `@62281337557223` — after the accepting admin has sent ANY message to the bot (warms the cache), it now shows their name; before warm-up it shows `user …223` or the digits only as last resort
-2. If canary DM fails on adminpush: DM path dead → check connection (connectionLog.log) before anything else
-3. Optional: `.fb` should now hit yt-dlp directly (EACCES gone) — ask owner to test a facebook link
-4. Optional hardening (only if conflicts recur post-fix): add `sock.ev.process` backpressure logging; consider `DisconnectReason.restartRequired` (515) handling audit
-5. Optional: kickcfg.js:263 still shows `@${k.digits}` (real phone digits, not LID) in the kick list — acceptable but could use nameCache if a jid is threaded through
+1. Verify MCP deploy: logs show `KAMI BOT CONNECTED`, state running (~90s after push)
+2. Live smoke (owner): `.ohub` → tap anticall On → panel shows ON; `.menu` → 👑 Owner → 🎛️ Owner Hub; `.menu` → 🛡️ Admin → Admin Hub → antilink; `.events` → Attend 1 → tapped again → out
+3. Watch 24h for again: API-multiplication (joke/truth/dare external calls) — if abused, tighten dispatcher cooldown 2s→5s
+4. If dispatcher misfires: `validate()` rejects are silent by design (non-allowlist taps do nothing)
 
 ## Memory Keys
-mcp__claude-flow__memory_search { query: "kami nameCache pushName display name mention jid lid raw digits extra.reply forward options mentions array accept deny cancel already accepted by 401 conflict wipe watchdog health-check yt-dlp EACCES git filemode adminpush canary status ERROR lidOnly silent drop", namespace: "project" }
+- `project/buttons` — hybrid button-ification arc: allowlist dispatcher + hubs
+- `project/identity` — stack, entry points, deploy flow
