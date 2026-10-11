@@ -2789,7 +2789,12 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
 const initializeAntiCall = (sock, isOwner) => {
   sock.ev.on('call', async (calls) => {
     try {
-      if (!config.defaultGroupSettings.anticall) return;
+      // Re-require per call: anticall/mode rewrite config.js + bust the
+      // require cache, but this module's captured `config` reference would
+      // keep serving the pre-toggle value until a restart.
+      let cfg = config;
+      try { cfg = require('./config'); } catch (e) { /* keep captured ref */ }
+      if (!cfg.defaultGroupSettings.anticall) return;
 
       for (const call of calls) {
         if (call.status !== 'offer') continue;

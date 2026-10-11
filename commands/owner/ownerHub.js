@@ -46,7 +46,7 @@ async function renderHub(sock, msg, from, note) {
   const body =
     `${note ? note + '\n\n' : ''}` +
     `*OWNER HUB*\n\n` +
-    `📵 Anticall: *${cfg.anticall ? 'ON' : 'OFF'}*\n` +
+    `📵 Anticall: *${cfg.defaultGroupSettings && cfg.defaultGroupSettings.anticall ? 'ON' : 'OFF'}*\n` +
     `🎛️ Mode: *${cfg.selfMode ? 'PRIVATE' : 'PUBLIC'}*\n` +
     `❤️ Autoreact: *${ar.enabled ? 'ON' : 'OFF'}* (${ar.mode || 'bot'})\n` +
     ` DM Blocker: *${dm}*\n\n` +
@@ -72,7 +72,7 @@ async function renderAnticall(sock, msg, from, note) {
     text:
       `${note ? note + '\n\n' : ''}` +
       `*📞 ANTICALL*\n\n` +
-      `Status: *${cfg.anticall ? 'ON ✅' : 'OFF ❌'}*\n\n` +
+      `Status: *${cfg.defaultGroupSettings && cfg.defaultGroupSettings.anticall ? 'ON ✅' : 'OFF ❌'}*\n\n` +
       `calls get auto-rejected & blocked when on\n` +
       `_or type ${prefix()}help if you get stuck_`,
     footer: cfg.botName || 'KAMI Bot',
