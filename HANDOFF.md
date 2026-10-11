@@ -27,6 +27,8 @@ Crew dashboard (Attend shortcut only), 14 admin mega-panels, WYR A/B buttons, la
 - `tests/{buttonHelper,againDispatch,buttonAudit,memberPicker}.test.js` — extend when adding buttons/picker cmds
 
 ## Known Gotchas (this arc)
+- **`header` in sendButtons is silently DROPPED (`28b31f6`)** — header'd native_flow messages relay fine (BTNSND path=flow logs) but the ENTIRE message (body+buttons) renders invisible on some clients. This made every `menu:back:main` send invisible while header-less sends worked. Never re-add a header to the interactive payload; regression test in buttonHelper.test.js
+- **`lastHandlerPromise =` assignment is load-bearing for tests** — 83d6c56's tap-trace commit dropped it while refactoring, racing every `await getLastHandlerPromise()` assert (picker test failed deterministically). Keep the assignment; tap-trace logging ([BTNSND]/[BTNTAP]) is fine to keep
 - **Rate limiter is process-global**: sendButtons 500ms/chat — tests rendering to the SAME jid must `await settle()` (560ms) BEFORE each render/tap, not after (test 3 burned this twice)
 - **nativeFlow rows hide ids in `buttonParamsJson`** — any mock/assertion must JSON.parse row params; top-level `.id` is undefined
 - **Lazy `require('../../utils/memberPicker')` inside command branches means `pick:*` isn't registered until first picker** — adminHub has a static require to fix this for the audit Phase A scanner; keep it
@@ -36,9 +38,10 @@ Crew dashboard (Attend shortcut only), 14 admin mega-panels, WYR A/B buttons, la
 - Never-commit: `__pycache__/`, `app.json`, `check.js`, `check_disk.py`, `upload_*.py`; restore `database/crew.json` before commit (tests dirty it; `ownerPromotedAdmins.json` is tracked — picker tests use fromMe:false to avoid promote's owner-protection DB write)
 
 ## Next Steps
-1. Live smoke (owner, group): `.menu` → 🛡️ Admin → Admin Hub → promote → picker lists non-admins → tap one → PROMOTED; repeat kick/demote/warnings; check Prev/Next pagination; tap Back → hub page 3; `.promote` typed (no tag) → picker opens; DM `.promote` → usage text
-2. Watch 24h: again: API-multiplication on joke/truth/dare (tighten cooldown 2s→5s if abused); picker sessions Map is TTL-only (10-min expiry, sweep interval .unref'd — no hard cap; fine at current scale)
-3. If dispatcher misfires: `validate()` rejects are silent by design
+1. **Verify the back-button fix live (`28b31f6`)**: `!menu` → tap a category → tap ⬅️ Back to Menu → main menu MUST now appear (was invisible due to header). Same for More → Anime/Textmaker → Back to More
+2. Live smoke (owner, group): `.menu` → 🛡️ Admin → Admin Hub → promote → picker lists non-admins → tap one → PROMOTED; repeat kick/demote/warnings; check Prev/Next pagination; tap Back → hub page 3; `.promote` typed (no tag) → picker opens; DM `.promote` → usage text
+3. Watch 24h: again: API-multiplication on joke/truth/dare (tighten cooldown 2s→5s if abused); picker sessions Map is TTL-only (10-min expiry, sweep interval .unref'd — no hard cap; fine at current scale)
+4. If dispatcher misfires: `validate()` rejects are silent by design
 
 ## Memory Keys
 - `project/buttons` — button-ification arc: allowlist dispatcher + hubs + picker
