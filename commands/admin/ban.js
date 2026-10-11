@@ -46,6 +46,8 @@ module.exports = {
           target = parseNumber(rawArg);
           if (!target) { extra.fail(); return extra.reply(`❌ ERROR\n\n_Invalid number_`); }
         } else {
+          const { openPicker } = require('../../utils/memberPicker');
+          if (await openPicker(sock, msg, extra.from, 'ban', { groupMetadata: extra.groupMetadata })) return;
           extra.fail();
           return extra.reply(`❌ ERROR\n\n_Tag, reply, or drop a number_\n\n_Example: ${prefix}ban 27833882383_`);
         }

@@ -29,6 +29,8 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
+        const { openPicker } = require('../../utils/memberPicker');
+        if (await openPicker(sock, msg, extra.from, 'warn', { groupMetadata: extra.groupMetadata })) return;
         extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +

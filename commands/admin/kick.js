@@ -46,6 +46,8 @@ module.exports = {
       }
 
       if (usersToKick.length === 0) {
+        const { openPicker } = require('../../utils/memberPicker');
+        if (await openPicker(sock, msg, extra.from, 'kick', { groupMetadata: extra.groupMetadata })) return;
         extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +

@@ -13,6 +13,9 @@
 const config = require('../../config');
 const { sendButtons, onButton, isOwnerJid } = require('../../utils/buttonHelper');
 const { passesGates } = require('../../utils/againDispatch');
+// Static require so pick:* handlers register at load (lazy require inside
+// route() would leave them missing until the first picker opens).
+require('../../utils/memberPicker');
 const { loadCommands } = require('../../utils/commandLoader');
 
 let _cmds = null;
@@ -45,6 +48,17 @@ const LABELS = {
 
 const BACK_MENU = { id: 'menu:admin', text: '⬅️ Back to Admin' };
 
+// Commands that target a specific person — the hub opens a member picker
+// instead of a usage message (see utils/memberPicker.js).
+const TARGET_CMDS = new Set(['promote', 'demote', 'kick', 'ban', 'warn', 'resetwarn', 'warnings']);
+
+function hubPageFor(name) {
+  if (PAGE1.includes(name)) return 'admin:hub';
+  if (PAGE2.includes(name)) return 'admin:hub:2';
+  if (PAGE3.includes(name)) return 'admin:hub:3';
+  return 'admin:hub';
+}
+
 async function route(sock, msg, from, name) {
   const cmd = getCmd(name);
   if (!cmd || typeof cmd.execute !== 'function') {
@@ -68,6 +82,19 @@ async function route(sock, msg, from, name) {
   }
   let groupMetadata = null;
   try { groupMetadata = await sock.groupMetadata(from); } catch (e) { /* DM or fetch fail — command handles */ }
+
+  // Target-taking commands → member picker (tap a person, not type a tag)
+  if (TARGET_CMDS.has(name)) {
+    const { openPicker } = require('../../utils/memberPicker');
+    const opened = await openPicker(sock, msg, from, name, {
+      groupMetadata,
+      backId: hubPageFor(name),
+      title: `*PICK SOMEONE*\n\n_action: ${LABELS[name] || name}_`,
+    });
+    if (opened) return;
+    // no metadata (DM?) — fall through to the command's own usage reply
+  }
+
   const extra = {
     reply: async (text, opts) => sock.sendMessage(from, typeof text === 'string' ? { text, ...(opts && opts.mentions ? { mentions: opts.mentions } : {}) } : text, { quoted: msg }),
     fail: () => {},

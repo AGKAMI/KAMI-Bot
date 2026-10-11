@@ -35,6 +35,8 @@ module.exports = {
       }
 
       if (!target) {
+        const { openPicker } = require('../../utils/memberPicker');
+        if (await openPicker(sock, msg, extra.from, 'promote', { groupMetadata: extra.groupMetadata })) return;
         extra.fail();
         return extra.reply(
           `❌ ERROR\n\n` +

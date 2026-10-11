@@ -30,6 +30,8 @@ module.exports = {
       } else if (ctx?.participant && ctx.stanzaId && ctx.quotedMessage) {
         target = ctx.participant;
       } else {
+        const { openPicker } = require('../../utils/memberPicker');
+        if (await openPicker(sock, msg, extra.from, 'resetwarn', { groupMetadata: extra.groupMetadata })) return;
         return extra.reply(`*✅ RESET WARN*\n\n_Tag or reply to the person you want reset_\n\n_Example: ${prefix}resetwarn @user_`);
       }
 

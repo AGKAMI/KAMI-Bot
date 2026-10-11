@@ -104,15 +104,26 @@ function mkSock(sent) {
       return { key: { id: 'm' + sent.length, remoteJid: jid } };
     },
     relayMessage: async (jid, message) => {
-      const cand = (message && message.interactiveMessage)
-        || (message && message.ephemeralMessage && message.ephemeralMessage.message && message.ephemeralMessage.message.interactiveMessage)
-        || null;
+      const findIm = (obj, d = 0) => {
+        if (!obj || typeof obj !== 'object' || d > 8) return null;
+        if (obj.body && obj.nativeFlowMessage) return obj;
+        for (const v of Object.values(obj)) {
+          const f = findIm(v, d + 1);
+          if (f) return f;
+        }
+        return null;
+      };
+      const im = findIm(message);
+      const rows = (im && im.nativeFlowMessage && im.nativeFlowMessage.buttons) || [];
+      const buttons = rows.map(r => {
+        try {
+          const p = JSON.parse(r.buttonParamsJson || '{}');
+          return { id: p.id, text: p.display_text, url: p.url };
+        } catch (e) { return {}; }
+      });
       sent.push({
         jid,
-        content: {
-          buttons: (cand && cand.nativeFlowMessage && cand.nativeFlowMessage.buttons) || [],
-          text: (cand && cand.body && cand.body.text) || '',
-        },
+        content: { buttons, text: (im && im.body && im.body.text) || '' },
         opts: { relayed: true },
       });
       return { key: { id: 'r' + sent.length } };
