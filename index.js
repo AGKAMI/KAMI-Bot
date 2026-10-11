@@ -207,6 +207,22 @@ function scheduleReconnect(delay, tag) {
   }, delay);
 }
 
+// Persistent connection-event log — the panel console buffer is tiny (~100 lines),
+// so every close/retry/wipe is also appended to disk for post-mortems when a
+// session dies. database/*.log is gitignored; capped at ~400 entries.
+const CONN_LOG = path.join(__dirname, 'database', 'connectionLog.log');
+function logConnEvent(event) {
+  try {
+    fs.appendFileSync(CONN_LOG, JSON.stringify({ t: new Date().toISOString(), ...event }) + '\n');
+    const st = fs.statSync(CONN_LOG);
+    if (st.size > 96 * 1024) {
+      const lines = fs.readFileSync(CONN_LOG, 'utf8').trim().split('\n');
+      fs.writeFileSync(CONN_LOG, lines.slice(-400).join('\n') + '\n');
+    }
+  } catch {}
+}
+let lastLoggedQr = null;
+
 // Main connection function
 async function startBot() {
   const sessionFolder = `./${config.sessionName}`;
@@ -329,6 +345,7 @@ async function startBot() {
     if (connection === 'open') {
       lastActivity = Date.now(); // Reset on open
       sessionRetryCount = 0; // Successful connect clears accumulated session-retry count
+      logConnEvent({ event: 'open' });
     } else if (connection === 'close') {
       clearInterval(watchdogInterval);
     }
@@ -348,11 +365,16 @@ async function startBot() {
         await QRCode.toFile(qrPath, qr, { width: 400, margin: 2 });
         console.log(`📸 QR saved to: ${qrPath} (download from panel Files tab if console is garbled)\n`);
       } catch (_) {}
+      if (qr !== lastLoggedQr) {
+        lastLoggedQr = qr;
+        logConnEvent({ event: 'qr' });
+      }
     }
 
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const errorMessage = lastDisconnect?.error?.message || 'Unknown error';
+      logConnEvent({ event: 'close', statusCode: statusCode ?? null, message: errorMessage });
 
       // 401 = loggedOut (session genuinely dead — the ONLY case allowed to delete it),
       // 440 / conflict = transient (another connection replaced ours, e.g. reconnect
@@ -363,15 +385,41 @@ async function startBot() {
       if (isLoggedOut || isTransient) {
         sessionRetryCount = (sessionRetryCount || 0) + 1;
         const retryDelay = Math.min(10000 * sessionRetryCount, 60000);
-        console.log(`⚠️ Session issue (${statusCode}) — retry ${sessionRetryCount}/5 in ${retryDelay / 1000}s...`);
+        console.log(`⚠️ Session issue (${statusCode}) — retry ${sessionRetryCount}/8 in ${retryDelay / 1000}s...`);
+        logConnEvent({ event: 'session-retry', attempt: sessionRetryCount, statusCode });
 
-        if (sessionRetryCount >= 5 && isLoggedOut) {
-          console.log('\n❌ Session logged out after 5 retries — clearing session files for fresh QR...');
+        if (sessionRetryCount >= 8 && isLoggedOut) {
+          console.log('\n❌ Session logged out after 8 retries — backing up + clearing session files for fresh QR...');
+          logConnEvent({ event: 'session-cleared', afterRetries: sessionRetryCount });
           try {
             const sessionPath = path.join(__dirname, config.sessionName);
             if (fs.existsSync(sessionPath)) {
-              fs.rmSync(sessionPath, { recursive: true, force: true });
-              console.log('🗑️  Session folder deleted. Restart to get a new QR code.\n');
+              // Back up first — if the 401 was a false kill, creds can be restored
+              // by hand (rename the .bak-<ts> folder back to <sessionName>)
+              let backedUp = false;
+              try {
+                const bakPath = `${sessionPath}.bak-${Date.now()}`;
+                fs.renameSync(sessionPath, bakPath);
+                backedUp = true;
+                console.log('💾 Session backed up to:', path.basename(bakPath));
+                // Prune old backups, keep newest 2
+                try {
+                  const parent = path.dirname(sessionPath);
+                  const base = path.basename(sessionPath);
+                  const baks = fs.readdirSync(parent)
+                    .filter(d => d.startsWith(base + '.bak-'))
+                    .sort();
+                  while (baks.length > 2) {
+                    fs.rmSync(path.join(parent, baks.shift()), { recursive: true, force: true });
+                  }
+                } catch {}
+              } catch (e) {
+                console.error('Backup failed:', e.message);
+              }
+              if (!backedUp) {
+                fs.rmSync(sessionPath, { recursive: true, force: true });
+              }
+              console.log('🗑️  Session cleared. Restart to get a new QR code.\n');
             }
           } catch (e) {
             console.error('Failed to clear session:', e.message);
@@ -379,9 +427,10 @@ async function startBot() {
           process.exit(1);
         }
 
-        if (sessionRetryCount >= 5) {
-          // Transient conflict exhausted 5 retries — session is still valid, keep it.
+        if (sessionRetryCount >= 8) {
+          // Transient conflict exhausted retries — session is still valid, keep it.
           console.log('⚠️ Repeated connection conflicts — session kept, retrying...');
+          logConnEvent({ event: 'conflict-retries-exhausted' });
           sessionRetryCount = 0;
         }
 
