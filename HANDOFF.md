@@ -37,7 +37,7 @@ Crew dashboard (Attend shortcut only), 14 admin mega-panels, WYR A/B buttons, la
 
 ## Next Steps
 1. Live smoke (owner, group): `.menu` → 🛡️ Admin → Admin Hub → promote → picker lists non-admins → tap one → PROMOTED; repeat kick/demote/warnings; check Prev/Next pagination; tap Back → hub page 3; `.promote` typed (no tag) → picker opens; DM `.promote` → usage text
-2. Watch 24h: again: API-multiplication on joke/truth/dare (tighten cooldown 2s→5s if abused); picker sessions map growth (10-min TTL + 10k cap enforced)
+2. Watch 24h: again: API-multiplication on joke/truth/dare (tighten cooldown 2s→5s if abused); picker sessions Map is TTL-only (10-min expiry, sweep interval .unref'd — no hard cap; fine at current scale)
 3. If dispatcher misfires: `validate()` rejects are silent by design
 
 ## Memory Keys
