@@ -1,57 +1,45 @@
 # HANDOFF
 
 ## Goal
-Hybrid button-ification of ALL command categories — minimize typing, maximize buttons ("go ahead and finish it all"). Three judge agents + final judge locked the plan (score 7.5/10). All 5 batches shipped: `34cfd69` (buttons) + `3291267` (carryover apply/start work).
+Hybrid button-ification of ALL command categories — minimize typing, maximize buttons. Batches shipped (`34cfd69`, `3291267`), then admin gating (`3250ef8`), button audit (`bdef088`), and finally the **member picker** (`7b1da4a`): admin target commands now open a tap-a-member list instead of demanding a tag/reply.
 
 ## Current State
-- Bot was CONNECTED on 27833882383 (prefix `!`) at last verify; this commit triggers auto-pull deploy — **confirm `KAMI BOT CONNECTED` in MCP logs after ~90s**
-- HEAD = `3291267`; prior arcs healthy (name-cache `8f11f82`, 401-fix `27aa6e1`, disk `8dd01d4`)
-- 204/204 command load sweep green; 17/17 unit tests (`tests/buttonHelper.test.js`, `tests/againDispatch.test.js`); syntax-clean on 22 touched files
-- **Soak SKIPPED** (judges recommended 48h after batch 1; owner chose single ship) — watch for: button-tap storms (500ms/chat rate limit), again: replay loops on external APIs (joke/truth/dare hit APIs every tap; 2s/chat cooldown in dispatcher mitigates), ownerHub config.js string-replace races
+- Bot CONNECTED on 27833882383 (prefix `!`) — `7b1da4a` auto-pulled, deploy verified via MCP logs
+- HEAD = `7b1da4a`; 30/30 tests green (`node --test-force-exit --test tests/*.test.js`); syntax-clean on all touched files
+- Prior arcs healthy (name-cache `8f11f82`, 401-fix `27aa6e1`, disk `8dd01d4`, buttons `34cfd69`/`3291267`, gates `3250ef8`, audit `bdef088`)
+- **Soak still SKIPPED** — watch for button-tap storms, again: replay loops on external APIs (2s/chat cooldown mitigates), ownerHub config.js string-replace races
 
-## What Shipped (all 5 batches)
-1. **Infra**: longest-prefix button dispatch + overlap boot warning (`utils/buttonHelper.js`); `requireOwner`/`isOwnerJid` shared owner gate; generic `again:` replay dispatcher (`utils/againDispatch.js`, allowlist + gate re-checks + 2s/chat cooldown); `.unref()` on buttonHelper cleanup + database.js flush intervals; group-guard sweep (11 admin files); F6 live-prefix (`menu.js getMainText()`)
-2. **Games/fun/anime**: rps chooser buttons (`games:rps:play:<choice>`); truth/dare no-arg chooser + alternating result row (`games:tod:play:`); dice/coinflip/slots/wyr result rows via `again:` ids; fun another-buttons (joke/truth/dare/meme/pies — pies encodes country in id); SFW anime cross-launcher (`utils/sfwAnime.js`: another+siblings+menu) — **NSFW anime typed-only permanently** (judge unanimity: consent/liability)
-3. **Owner**: `commands/owner/ownerHub.js` — `.ohub` + panels for anticall/mode/autoreact/dmblocker; handlers delegate to real execute() with swallowed reply → panel re-render, confirmation in header (F7); dmblocker on/off mutates DB directly (its execute sends unswallowable messages); approve/disapprove stays typed; every handler self-gates `isOwnerJid`
-4. **Admin**: `commands/admin/adminHub.js` — `.ahub` paginated router (3 pages, PAGE 9+nav), routes via `cmd.execute([], buildExtra)` to existing surfaces (no panel rebuilds); p3 = cta_url grouplink (live invite code) + GitHub + routed promote/demote/rules/groupstatus/uptime/help; admin-gated globally via existing `requireAdmin('admin')` on `admin:` prefix
-5. **Crew**: events list shows Attend buttons (`again:attend:<n>`, max 7 + refresh); attend toggle result has change-mind/all-events row; `events`+`attend` added to again ALLOW
+## What Shipped
+1. **Button infra** (`34cfd69`): longest-prefix dispatch + overlap warnings; `requireOwner`/`isOwnerJid`/`requireAdmin` shared gates; generic `again:` replay dispatcher (ALLOW + gates + 2s cooldown); `.unref()` intervals; group-guard sweep; F6 live-prefix in menus; NSFW anime typed-only permanently (judge unanimity)
+2. **Hubs** (`34cfd69`): `commands/owner/ownerHub.js` (`.ohub`, anticall/mode/autoreact/dmblocker, freshConfig per render); `commands/admin/adminHub.js` (`.ahub`, 4 pages ≤10 buttons incl nav — was 3 pages busting the slice(0,10) cap and dropping Back); crew events Attend buttons; menu launchers [🎛️ Owner Hub]/[🛡️ Admin Hub]
+3. **Admin gating** (`3250ef8`): `menu:admin` ADMINS ONLY gate (isAdminClicker: fromMe/owner/group-admin); hub `route()` re-checks via `passesGates`; kickcfg row hidden from non-admins + `requireOwner('kickcfg')`
+4. **Button audit** (`bdef088`, `tests/buttonAudit.test.js`): Phase A inventory scan (every literal/template button id must resolve; `pick:<dynamic>` now resolves via memberPicker static require); Phase B simulated taps (~37 safe ids, consumed/delivered/≤10 buttons); Phase B2 again: network ids validated not executed; Phase C forged-tap gates; Phase D cta_url validity. Mock extracts interactiveMessage recursively + parses `buttonParamsJson` (rows carry ids there, not top-level)
+5. **Member picker** (`7b1da4a`, `utils/memberPicker.js`): `openPicker(sock,msg,from,cmdName,{groupMetadata,backId,title})` — role-aware lists (promote→non-admins, demote→admins 👑, moderation→all; bot excluded), 7 members/page + ◀️ Prev + ▶️ Next + ⬅️ Back (≤10), 10-min TTL per-chat sessions (`pick:<nonce>:p:<n>`/`pick:<nonce>:u:<i>`), `requireAdmin('pick')` gate; on select injects synthetic `extendedTextMessage.contextInfo.mentionedJid=[member.jid]` and calls the real `cmd.execute` with a full extra (target cmds read mention from message contextInfo, NOT extra). Wired: adminHub `route()` TARGET_CMDS diverts to picker (falls back to usage on false); the 7 commands' no-target branches (`promote/demote/kick/ban/warn/resetwarn/warnings`) try picker first then usage text
 
-Menu integration: owner view → [🎛️ Owner Hub], admin view → [🛡️ Admin Hub] (both above Back).
-
-## Edge Register (judge-locked, 22 items) — key ones
-- Forged-tap security: global owner/admin gates in handleButtonResponse + every ownerHub handler self-gates
-- **Dispatcher re-checks groupOnly/adminOnly/ownerOnly** (edge #22, final-judge catch) — programmatic execute() bypasses handler.js gates
-- Arg-loss on replay: args encoded in button id + `^[a-z0-9]{1,20}$` whitelist
-- Stale/concurrent taps: 500ms/chat limiter + idempotent SET-ids
-- DM phantom rows: dmblocker panel reads live DB per render
-
-## Kill List (per judges — do NOT resurrect)
-Crew dashboard (Attend shortcut only), 14 admin mega-panels, WYR A/B buttons, launcher list views, setter panels, NSFW buttons, per-command Again handlers (generic dispatcher instead).
+## Kill List (do NOT resurrect)
+Crew dashboard (Attend shortcut only), 14 admin mega-panels, WYR A/B buttons, launcher list views, setter panels, NSFW buttons, per-command Again handlers, typed-target requirement for the 7 admin commands (picker is the primary path).
 
 ## Active Files
-- `utils/againDispatch.js` — ALLOW set (dice coinflip slots truthordare wouldyourather joke meme truth dare pies waifu neko random konachan events attend); adding a command = add to ALLOW + attach button row inside execute (so dispatcher re-invoke keeps buttons)
-- `utils/sfwAnime.js` — sendSfw/sfwRow for the 4 SFW anime commands
-- `commands/owner/ownerHub.js` — hub + 15 handlers (all `owner:hub:*`)
-- `commands/admin/adminHub.js` — 3-page router (`admin:hub*`, LABELS map, PAGE1/PAGE2 arrays)
-- `commands/general/menu.js` — special-cased owner/admin category views, getMainText()
-- `tests/{buttonHelper,againDispatch}.test.js` — extend when adding ALLOW entries
+- `utils/memberPicker.js` — picker core (`openPicker`, `membersFor`; lazy requires inside are fine, adminHub statically requires it so `pick:*` registers at load)
+- `commands/admin/adminHub.js` — 4-page router + TARGET_CMDS diversion + hubPageFor()
+- `commands/admin/{promote,demote,kick,ban,warn,resetwarn,warnings}.js` — picker-attempt in no-target branches
+- `utils/{buttonHelper,againDispatch}.test.js` hooks: `listButtonHandlers`, `getLastHandlerPromise`, `passesGates`
+- `tests/{buttonHelper,againDispatch,buttonAudit,memberPicker}.test.js` — extend when adding buttons/picker cmds
 
 ## Known Gotchas (this arc)
-- **Button audit (`bdef088`, `tests/buttonAudit.test.js`, 26/26 green)**: every button id must resolve to a handler; adminHub pages were busting the silent `slice(0,10)` cap (Back button dropped = dead-end) — now 4 pages ≤10 incl. nav; `npm test` uses `--test-force-exit` (loading all commands leaves intervals alive); again: dispatcher 2s/chat cooldown + sendButtons 500ms/chat rate limit both DROP rapid same-chat taps (audit uses unique chat jids)
-- **Admin button gate layers (`3250ef8`)**: `menu:admin` view gated (ADMINS ONLY, mirrors owner); `admin:*` ids globally gated via `requireAdmin('admin')`; hub `route()` re-checks TARGET flags via `passesGates` (kickcfg is ownerOnly — plain admins can't reach it, row hidden); `kickcfg:*` ids now `requireOwner('kickcfg')` + internal `ow()` per-handler gates
-- `node --test tests/` DIRECTORY ARG FAILS on Windows/Node 24 → npm test = explicit file list
-- Non-unref'd intervals hang test runs — kill stray node procs before rerunning
-- ownerHub overlap warnings on boot are EXPECTED (longest match wins) — ~25 lines, informational
-- anticall/mode rewrite config.js + bust require cache → ownerHub re-requires config per render (freshConfig)
-- attend "first event" fallback bakes `1` into the replay button — correct only while sort order stable (time-of-day sort, deterministic)
-- Never-commit: `__pycache__/`, `app.json`, `check.js`, `check_disk.py`, `upload_*.py`; restore `database/crew.json` before commit if test-ban.js ran
+- **Rate limiter is process-global**: sendButtons 500ms/chat — tests rendering to the SAME jid must `await settle()` (560ms) BEFORE each render/tap, not after (test 3 burned this twice)
+- **nativeFlow rows hide ids in `buttonParamsJson`** — any mock/assertion must JSON.parse row params; top-level `.id` is undefined
+- **Lazy `require('../../utils/memberPicker')` inside command branches means `pick:*` isn't registered until first picker** — adminHub has a static require to fix this for the audit Phase A scanner; keep it
+- Target commands read target from `msg.message.extendedTextMessage.contextInfo.mentionedJid` — picker MUST inject the synthetic message (extra.mentionedJid doesn't exist)
+- `node --test tests/` DIRECTORY ARG FAILS on Windows/Node 24 → npm test = glob; `--test-force-exit` required (loaded commands keep intervals alive); kill stray node procs before rerun
+- ownerHub overlap warnings on boot EXPECTED (~25 lines, longest match wins)
+- Never-commit: `__pycache__/`, `app.json`, `check.js`, `check_disk.py`, `upload_*.py`; restore `database/crew.json` before commit (tests dirty it; `ownerPromotedAdmins.json` is tracked — picker tests use fromMe:false to avoid promote's owner-protection DB write)
 
 ## Next Steps
-1. Verify MCP deploy: logs show `KAMI BOT CONNECTED`, state running (~90s after push)
-2. Live smoke (owner): `.ohub` → tap anticall On → panel shows ON; `.menu` → 👑 Owner → 🎛️ Owner Hub; `.menu` → 🛡️ Admin → Admin Hub → antilink; `.events` → Attend 1 → tapped again → out
-3. Watch 24h for again: API-multiplication (joke/truth/dare external calls) — if abused, tighten dispatcher cooldown 2s→5s
-4. If dispatcher misfires: `validate()` rejects are silent by design (non-allowlist taps do nothing)
+1. Live smoke (owner, group): `.menu` → 🛡️ Admin → Admin Hub → promote → picker lists non-admins → tap one → PROMOTED; repeat kick/demote/warnings; check Prev/Next pagination; tap Back → hub page 3; `.promote` typed (no tag) → picker opens; DM `.promote` → usage text
+2. Watch 24h: again: API-multiplication on joke/truth/dare (tighten cooldown 2s→5s if abused); picker sessions map growth (10-min TTL + 10k cap enforced)
+3. If dispatcher misfires: `validate()` rejects are silent by design
 
 ## Memory Keys
-- `project/buttons` — hybrid button-ification arc: allowlist dispatcher + hubs
+- `project/buttons` — button-ification arc: allowlist dispatcher + hubs + picker
 - `project/identity` — stack, entry points, deploy flow
