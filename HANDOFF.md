@@ -27,6 +27,7 @@ Crew dashboard (Attend shortcut only), 14 admin mega-panels, WYR A/B buttons, la
 - `tests/{buttonHelper,againDispatch,buttonAudit,memberPicker}.test.js` — extend when adding buttons/picker cmds
 
 ## Known Gotchas (this arc)
+- **Anticall lives at `config.defaultGroupSettings.anticall`** — there is NO top-level `config.anticall` (ownerHub's panel read `cfg.anticall` → always undefined → OFF forever, `5be7dc7` fixed the reads). The regex-write in anticall.js always hit the nested key correctly. Enforcement in handler.js `initializeAntiCall` now re-requires config per call — without that, the module-captured config reference served the pre-toggle value until restart
 - **`header` in sendButtons is silently DROPPED (`28b31f6`)** — header'd native_flow messages relay fine (BTNSND path=flow logs) but the ENTIRE message (body+buttons) renders invisible on some clients. This made every `menu:back:main` send invisible while header-less sends worked. Never re-add a header to the interactive payload; regression test in buttonHelper.test.js
 - **`lastHandlerPromise =` assignment is load-bearing for tests** — 83d6c56's tap-trace commit dropped it while refactoring, racing every `await getLastHandlerPromise()` assert (picker test failed deterministically). Keep the assignment; tap-trace logging ([BTNSND]/[BTNTAP]) is fine to keep
 - **Rate limiter is process-global**: sendButtons 500ms/chat — tests rendering to the SAME jid must `await settle()` (560ms) BEFORE each render/tap, not after (test 3 burned this twice)
