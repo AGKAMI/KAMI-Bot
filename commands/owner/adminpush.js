@@ -98,7 +98,14 @@ function collectAdmins(groupData) {
       let jid = adminDmJid(p);
       if (!jid) continue;
       jid = lidToPn.get(jid) || jid;
-      const entry = unique.get(jid) || { jid, label: adminLabel(p), teams: new Set() };
+      const entry = unique.get(jid) || {
+        jid,
+        label: adminLabel(p),
+        teams: new Set(),
+        // @lid with no phone number anywhere in the group data — WhatsApp
+        // often does not deliver DMs to raw LID addresses.
+        lidOnly: jid.endsWith('@lid'),
+      };
       entry.teams.add(g.abbrev);
       unique.set(jid, entry);
     }
@@ -289,15 +296,21 @@ module.exports = {
       const mediaProps = await A.buildMediaProps(mediaBuffer, type);
 
       // ── Build the send list: DMs first, then group posts ───
+      const doDm = delivery === 'dm' || delivery === 'both';
       const jobs = [];
-      if (delivery === 'dm' || delivery === 'both') {
+      if (doDm) {
         for (const a of adminList) {
           jobs.push({
             jid: a.jid,
             label: `${a.label} (${[...a.teams].join('/')})`,
             mentions: [],
             group: false,
+            lidOnly: a.lidOnly,
           });
+          console.log(
+            `[ADMINPUSH] DM target: ${a.label} → ${a.jid}` +
+            (a.lidOnly ? ' ⚠️ LID-ONLY (no phone number in group metadata)' : '')
+          );
         }
       }
       if (delivery === 'group' || delivery === 'both') {
@@ -312,15 +325,43 @@ module.exports = {
         }
       }
 
+      // ── Canary: prove the DM path BEFORE blasting the list ──
+      // A cheap text ping to whoever ran the command. If this fails,
+      // every admin DM would have failed too — abort instead of
+      // burning through the list (and so the operator gets an answer).
+      if (doDm && extra.sender) {
+        try {
+          await sock.sendMessage(extra.sender, {
+            text: `🛡️ *ADMIN PUSH canary*\n\nDM path OK — pushing to ${adminList.length} admin(s) now…`,
+          });
+        } catch (err) {
+          console.error(`[ADMINPUSH] canary DM failed (${extra.sender}):`, err.message);
+          extra.fail();
+          return extra.reply(
+            `❌ ERROR\n\nDM path is dead — canary to you failed: ${err.message}\n` +
+            `Aborted before DMing ${adminList.length} admin(s), ${voice.tag('err')}`
+          );
+        }
+      }
+
       // ── Send SEQUENTIALLY — one media encode at a time ─────
+      const results = [];
       for (let i = 0; i < jobs.length; i++) {
         const job = jobs[i];
         try {
           const nlCtx = job.group ? A.newsletterContext() : {};
           const content = buildContent(type, quoted, mediaBuffer, mediaProps, nlCtx);
           if (job.mentions.length) content.mentions = job.mentions;
-          await sock.sendMessage(job.jid, content);
+          const res = await sock.sendMessage(job.jid, content);
+          // proto.WebMessageInfo.Status.ERROR === 0 — WhatsApp accepted
+          // the call but rejected the message. Without this check the
+          // summary claims "Sent" for deliveries that never happened.
+          if (res?.status === 0) {
+            throw new Error('WhatsApp returned status ERROR');
+          }
+          results.push({ ...job, ok: true });
         } catch (err) {
+          results.push({ ...job, ok: false, err: err.message });
           failed.push(`${job.label}: ${err.message}`);
           console.error(`[ADMINPUSH] Failed → ${job.label} (${job.jid}):`, err.message);
         }
@@ -330,9 +371,11 @@ module.exports = {
       }
       mediaBuffer = null;
 
-      // ── Summary ───────────────────────────────────────────
+      // ── Summary — one line per recipient, so delivery is auditable ──
       const sent = jobs.length - failed.length;
       const teamNames = groups.map(g => g.abbrev).join(', ');
+      const dmResults = results.filter(r => !r.group);
+      const lidOnly = adminList.filter(a => a.lidOnly);
 
       const summary =
         `✅ *ADMIN PUSH COMPLETE*\n\n` +
@@ -342,6 +385,10 @@ module.exports = {
         `✅ Sent: *${sent}*\n` +
         (failed.length
           ? `❌ Failed: *${failed.length}*\n${failed.map(f => `  • ${f}`).join('\n')}\n`
+          : '') +
+        (dmResults.length ? `\n*DM deliveries:*\n${dmResults.map(r => `  ${r.ok ? '✅' : '❌ ' + r.err} ${r.label}${r.lidOnly ? ' ⚠️lid' : ''}`).join('\n')}\n` : '') +
+        (lidOnly.length
+          ? `\n⚠️ ${lidOnly.length} admin(s) have *no phone number* in group metadata (lid-only) — WhatsApp may not deliver DMs to them. Ask them to save your bot's number.`
           : '') +
         `\n_Slammed Society CPM_ ${voice.lead('neutral')}`;
 
