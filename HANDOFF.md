@@ -1,14 +1,14 @@
 # HANDOFF
 
 ## Goal
-Keep KAMI Bot alive on its 512MB panel box. Prior arcs: disk-full deadlock (fixed, live-verified), 401 conflict-wipe cascade (fixed, session re-scanned, survives restarts). This arc: adminpush silent-delivery mystery — made verifiable (canary + per-admin audit, `b178490`).
+Keep KAMI Bot alive on its 512MB panel box. Prior arcs: disk-full deadlock, 401 conflict-wipe cascade, adminpush silent-delivery — all fixed and live. This arc: stop every command leaking raw jid/lid into user-facing output — show display names instead (`8f11f82`).
 
 ## Current State
-- **Bot: running new code, CONNECTED** on 27833882383, prefix `!`, session survived the deploy restart (401-fix held)
-- Box HEAD = `b178490`, `bin/yt-dlp` = `-rwxr-xr-x` (exec bit now tracked in git: mode 100644→100755)
-- Prior arc still healthy: disk ~335MB/512MB, cleanup force-pass + 1-min sweep live (`8dd01d4`)
-- **adminpush diagnosis arc (`b178490`, deployed)**: user reported pushing to team admins delivered to nobody with no feedback. Three causes identified: (1) most likely they ran it during the 401 dead window — every send AND the summary reply failed; (2) the command counted any non-throwing `sendMessage` as "Sent" with zero delivery verification (WA `status===0` ERROR was ignored); (3) admins with no `phoneNumber` in group metadata get DMs to raw `@lid` addresses which WA often doesn't deliver. Also note: adminpush targets ONLY the 4 SECURITY_TEAMS admins by design — SSGENERAL admins are excluded
-- Fix shipped: canary DM to the operator before blasting the list (aborts with clear error if DM path dead), `res?.status===0` treated as failure, per-admin audit lines in summary, `lidOnly` flag + warning, `[ADMINPUSH] DM target:` console log. Tests: test-adminpush.js 15/15, checkall 236/0
+- **Bot: running new code, CONNECTED** on 27833882383, prefix `!`, session survives deploy restarts (401-fix held)
+- Box HEAD = `8f11f82`, `bin/yt-dlp` = `-rwxr-xr-x` (exec bit tracked in git: 100644→100755)
+- Prior arcs healthy: disk ~335MB/512MB (`8dd01d4`), 401 conflict-wipe fix (`27aa6e1`), adminpush audit/canary (`b178490`)
+- **name-display arc (`8f11f82`, deployed)**: user reported commands leak raw jid/lid (e.g. accept flow "already accepted by @62281337557223"). THREE root causes: (1) `extra.reply(text, { mentions })` SILENTLY DROPPED the options — reply helper only took `text`, so every @tag in the codebase rendered as raw digits; (2) `mention(processed.admin)` had no mentions array + admin stored as LID → unresolvable digits; (3) raw `jid.split('@')[0]` / `@${num}` leaks in many commands
+- Fix shipped: `utils/nameCache.js` learns pushName from every message (persisted `database/nameCache.json`, gitignored, capped 5000, 60s flush, `.unref()`); `mention()` returns cached name else `@digits`; `extra.reply` forwards opts; accept/deny/cancel/reroll/withdraw store+show `adminName`; swept roster/inactive/activity/demote(crew+admin)/poll/block/unblock/db/setname/setdesc/crewForms. Tests: nameCache 13/13, checkall 237/0, btn-dispatch 16/16, event/picker/ban green
 
 **Incident timeline (this arc):**
 1. User pasted console log: `.fb` → `spawn bin/yt-dlp EACCES`; `[DMBLOCKER] early check error: btnId is not defined` on every button tap; `⚠️ Session issue (401) — retry N/8` ending in crew-accept `Connection Closed` (428)
@@ -36,6 +36,9 @@ Keep KAMI Bot alive on its 512MB panel box. Prior arcs: disk-full deadlock (fixe
 - `rg` with glob `node_modules/.../Socket/*.js` on Windows → path error; quote or drop the glob
 
 ## Active Files
+- `utils/nameCache.js` — pushName cache: `remember/get/who/flush`; `mention()` in `utils/format.js` delegates to it; `handler.js` remembers sender name + `extra.reply` forwards opts + `extra.who`/`extra.pushName`
+- `database.js` — `trackProcessedApp` stores `adminName`/`applicantName`
+- `commands/crew/{accept,deny,cancel,reroll,withdraw}.js` — store+show display names
 - `index.js` — watchdog health-check (~322-350), wipe guard (~391), scheduleReconnect single-timer, logConnEvent
 - `handler.js:694` — isBtnTap fix in DM-blocker early check
 - `bin/yt-dlp` — mode 100755 in git index (Windows: `core.filemode=false` so never "fix" it by re-adding)
@@ -52,13 +55,16 @@ Keep KAMI Bot alive on its 512MB panel box. Prior arcs: disk-full deadlock (fixe
 - `deployments_searchLogs` scans ~59 lines post-incident — rely on connectionLog.log + file mtimes
 - Bot is at QR until owner scans; session backups exist as `kami_session.bak-<ts>` (newest 2) if a false-wipe ever needs manual restore
 - Disk arc gotchas still apply: 512MB cap, ~335MB baseline, boot force-pass, 1-min sweep, announce caps 50MB
+- **`extra.reply(text, opts)` now forwards opts** — before 8f11f82 it SILENTLY DROPPED `{mentions}` etc, so every @tag rendered as raw digits. Any code relying on the old 1-arg-only behaviour is unaffected (extra args are optional)
+- **`mention()` returns the cached display name when known, else `@digits`** — the @digits form only renders as a proper WhatsApp tag when paired with a `mentions` array; alone it's a last-resort digits label. `utils/nameCache.js` learns names from every incoming message (`msg.pushName`) — `database/nameCache.json` (gitignored, capped 5000 entries, 60s flush with `.unref()`)
+- **Two servers**: panel `08b6894d` ≠ live `b0665152…/u9mg7ylz` — SFTP/MCP = live, Pterodactyl API = dead box
 
 ## Next Steps
-1. Owner to test `!adminpush SSRS dm` (single team first) — new summary lists every recipient with ✅/❌ and lid-only warnings; canary DM must arrive first
-2. If canary fails: DM path dead → check connection (connectionLog.log) before anything else
-3. If canary works but specific admins fail: check the ❌ reasons in summary — `status ERROR` / lid-only = WhatsApp-side filtering; ask those admins to save the bot's number and message it once
-4. Optional: `.fb` should now hit yt-dlp directly (EACCES gone) — ask owner to test a facebook link
-5. Optional hardening (only if conflicts recur post-fix): add `sock.ev.process` backpressure logging; consider `DisconnectReason.restartRequired` (515) handling audit
+1. Ask owner to re-test the accept flow that showed `@62281337557223` — after the accepting admin has sent ANY message to the bot (warms the cache), it now shows their name; before warm-up it shows `user …223` or the digits only as last resort
+2. If canary DM fails on adminpush: DM path dead → check connection (connectionLog.log) before anything else
+3. Optional: `.fb` should now hit yt-dlp directly (EACCES gone) — ask owner to test a facebook link
+4. Optional hardening (only if conflicts recur post-fix): add `sock.ev.process` backpressure logging; consider `DisconnectReason.restartRequired` (515) handling audit
+5. Optional: kickcfg.js:263 still shows `@${k.digits}` (real phone digits, not LID) in the kick list — acceptable but could use nameCache if a jid is threaded through
 
 ## Memory Keys
-mcp__claude-flow__memory_search { query: "kami 401 conflict wipe watchdog health-check sendPresenceUpdate btnId dmblocker yt-dlp EACCES git filemode 100755 connectionLog baileys generics node.attrs.code adminpush canary status ERROR lidOnly phoneNumber silent drop", namespace: "project" }
+mcp__claude-flow__memory_search { query: "kami nameCache pushName display name mention jid lid raw digits extra.reply forward options mentions array accept deny cancel already accepted by 401 conflict wipe watchdog health-check yt-dlp EACCES git filemode adminpush canary status ERROR lidOnly silent drop", namespace: "project" }
