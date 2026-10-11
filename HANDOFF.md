@@ -1,12 +1,14 @@
 # HANDOFF
 
 ## Goal
-Keep KAMI Bot alive on its 512MB panel box. Prior arc: disk-full deadlock (fixed, live-verified). This arc: 401 session-kill cascade root-caused and fixed (`27aa6e1`) — bot is now sitting at QR awaiting the owner's re-scan.
+Keep KAMI Bot alive on its 512MB panel box. Prior arcs: disk-full deadlock (fixed, live-verified), 401 conflict-wipe cascade (fixed, session re-scanned, survives restarts). This arc: adminpush silent-delivery mystery — made verifiable (canary + per-admin audit, `b178490`).
 
 ## Current State
-- **Bot: running new code, showing QR** — the false 401-wipe already cleared the session before the fix landed; owner must re-scan (console QR or `qr.png` in panel Files tab)
-- Box HEAD = `27aa6e1`, `bin/yt-dlp` = `-rwxr-xr-x` (exec bit now tracked in git: mode 100644→100755)
+- **Bot: running new code, CONNECTED** on 27833882383, prefix `!`, session survived the deploy restart (401-fix held)
+- Box HEAD = `b178490`, `bin/yt-dlp` = `-rwxr-xr-x` (exec bit now tracked in git: mode 100644→100755)
 - Prior arc still healthy: disk ~335MB/512MB, cleanup force-pass + 1-min sweep live (`8dd01d4`)
+- **adminpush diagnosis arc (`b178490`, deployed)**: user reported pushing to team admins delivered to nobody with no feedback. Three causes identified: (1) most likely they ran it during the 401 dead window — every send AND the summary reply failed; (2) the command counted any non-throwing `sendMessage` as "Sent" with zero delivery verification (WA `status===0` ERROR was ignored); (3) admins with no `phoneNumber` in group metadata get DMs to raw `@lid` addresses which WA often doesn't deliver. Also note: adminpush targets ONLY the 4 SECURITY_TEAMS admins by design — SSGENERAL admins are excluded
+- Fix shipped: canary DM to the operator before blasting the list (aborts with clear error if DM path dead), `res?.status===0` treated as failure, per-admin audit lines in summary, `lidOnly` flag + warning, `[ADMINPUSH] DM target:` console log. Tests: test-adminpush.js 15/15, checkall 236/0
 
 **Incident timeline (this arc):**
 1. User pasted console log: `.fb` → `spawn bin/yt-dlp EACCES`; `[DMBLOCKER] early check error: btnId is not defined` on every button tap; `⚠️ Session issue (401) — retry N/8` ending in crew-accept `Connection Closed` (428)
@@ -52,10 +54,11 @@ Keep KAMI Bot alive on its 512MB panel box. Prior arc: disk-full deadlock (fixed
 - Disk arc gotchas still apply: 512MB cap, ~335MB baseline, boot force-pass, 1-min sweep, announce caps 50MB
 
 ## Next Steps
-1. **Tell owner: re-scan the QR** (console or panel Files → qr.png). Bot is otherwise healthy
-2. After re-scan: confirm `KAMI BOT CONNECTED` + connectionLog gets an `open` event; watch next 401 (if any) — with the fix it must NOT wipe, and a healthy-ping watchdog must NOT churn quiet periods
-3. Optional: `.fb` should now hit yt-dlp directly (EACCES gone) — ask owner to test a facebook link
-4. Optional hardening (only if conflicts recur post-fix): add `sock.ev.process` backpressure logging; consider `DisconnectReason.restartRequired` (515) handling audit
+1. Owner to test `!adminpush SSRS dm` (single team first) — new summary lists every recipient with ✅/❌ and lid-only warnings; canary DM must arrive first
+2. If canary fails: DM path dead → check connection (connectionLog.log) before anything else
+3. If canary works but specific admins fail: check the ❌ reasons in summary — `status ERROR` / lid-only = WhatsApp-side filtering; ask those admins to save the bot's number and message it once
+4. Optional: `.fb` should now hit yt-dlp directly (EACCES gone) — ask owner to test a facebook link
+5. Optional hardening (only if conflicts recur post-fix): add `sock.ev.process` backpressure logging; consider `DisconnectReason.restartRequired` (515) handling audit
 
 ## Memory Keys
-mcp__claude-flow__memory_search { query: "kami 401 conflict wipe watchdog health-check sendPresenceUpdate btnId dmblocker yt-dlp EACCES git filemode 100755 connectionLog baileys generics node.attrs.code", namespace: "project" }
+mcp__claude-flow__memory_search { query: "kami 401 conflict wipe watchdog health-check sendPresenceUpdate btnId dmblocker yt-dlp EACCES git filemode 100755 connectionLog baileys generics node.attrs.code adminpush canary status ERROR lidOnly phoneNumber silent drop", namespace: "project" }
