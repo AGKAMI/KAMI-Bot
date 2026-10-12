@@ -441,10 +441,25 @@ const getCrewEvent = (groupJid, eventId) => {
   return team?.events?.[eventId] || null;
 };
 
-// Get events for a specific group
+// Get events for a specific group — with a lazy expiry sweep: upcoming
+// events whose window passed (expiresAt = created + 48h, only set when
+// the host gave a time) flip to 'completed'. Records WITHOUT expiresAt
+// (legacy v1 events, timeless "now-now" cards) are never touched — they
+// die via result/remove like before. result-logged events keep their
+// own status — the sweep only reads 'upcoming'.
 const getCrewEvents = (groupJid) => {
   const team = getTeam(groupJid);
-  return team.events || {};
+  const events = team.events || {};
+  const now = Date.now();
+  let flipped = false;
+  for (const evt of Object.values(events)) {
+    if (evt.status === 'upcoming' && evt.expiresAt && now > evt.expiresAt) {
+      evt.status = 'completed';
+      flipped = true;
+    }
+  }
+  if (flipped) updateTeam(groupJid, team);
+  return team.events;
 };
 
 // Remove event from a specific group

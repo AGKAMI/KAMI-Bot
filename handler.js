@@ -14,6 +14,9 @@ const { bold, italic, mention, pick, line, greet, lekker, closer, SLANG, voice }
 const { buildImage } = require('./utils/imageText');
 const { handleButtonResponse, requireAdmin } = require('./utils/buttonHelper');
 const { hasActiveSession, getApplicantState, sendProgressiveResponse } = require('./commands/crew/applyInteractive');
+// Event wizard — static require so its onButton handlers register at boot
+// (lazy require would leave ewiz:/evrsvp: taps unroutable until first command)
+const eventWizard = require('./commands/crew/eventWizard');
 const { runWithReactions, stageEmoji, classifyReply } = require('./utils/progressReaction');
 const { updateBlockStatusSafe } = require('./utils/jidHelper');
 const nameCache = require('./utils/nameCache');
@@ -1196,6 +1199,17 @@ const handleMessage = async (sock, msg) => {
           }
         }
       }
+    }
+
+    // CPM event wizard — armed typed-text capture. Sits BEFORE the games
+    // so an armed step beats bomb/tictactoe input, and BEFORE the group
+    // protections (antibadword/antiflood/slowmode) so the host's draft
+    // text can never be deleted or throttled mid-build — those plugins
+    // exempt admins, but a host demoted mid-build loses the exemptions.
+    try {
+      if (await eventWizard.captureText(sock, msg, { from, sender, body, isGroup, pushName: msg.pushName })) return;
+    } catch (e) {
+      console.error('[EVWIZ] hook error:', e.message);
     }
 
      // Check for active bomb games (before prefix check) — skip if no active games

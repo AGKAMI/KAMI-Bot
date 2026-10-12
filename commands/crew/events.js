@@ -3,6 +3,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { sendButtons } = require('../../utils/buttonHelper');
 const { sortUpcoming } = require('./crewHelpers');
+const { serverByKey } = require('./cpmData');
 
 module.exports = {
   subName: 'events',
@@ -23,7 +24,7 @@ module.exports = {
 
     if (upcoming.length === 0) {
       return sock.sendMessage(jid, {
-        text: `❌ *ERROR*\n\nNo events coming up.\nMake one with: \`${prefix}event <name> <time>\``
+        text: `❌ *ERROR*\n\nNo events coming up.\nMake one with: \`${prefix}event\``
       });
     }
 
@@ -31,17 +32,26 @@ module.exports = {
 
     upcoming.forEach(([id, evt], index) => {
       const attendeeCount = evt.attendees ? evt.attendees.length : 0;
-      response += `*${index + 1}.* 🗓️ *${evt.name}*\n`;
-      response += `   ⏰ ${evt.time} · 👥 ${attendeeCount} going\n`;
+      // v1 legacy events only have name+time; v2 cards carry the works
+      response += `*${index + 1}.* 🗓️ *${evt.name}* — ${evt.time ? evt.time : '⚡ now-now'} · 👥 ${attendeeCount} going\n`;
+      const hostBits = [];
+      if (evt.host) hostBits.push(`👤 ${evt.host}`);
+      if (evt.cpmId) hostBits.push(`🆔 ${evt.cpmId}`);
+      if (hostBits.length) response += `   ${hostBits.join(' · ')}\n`;
+      const carBits = [];
+      const sv = evt.serverKey ? serverByKey(evt.serverKey) : null;
+      if (sv) carBits.push(`🌐 ${sv.flag} ${sv.name}`);
+      if (evt.carType) carBits.push(`🚗 ${evt.carType}`);
+      if (carBits.length) response += `   ${carBits.join(' · ')}\n`;
     });
 
-    response += `\n_tap to RSVP (taps again to cancel):_`;
+    response += `\n_tap ✅ to pull up — ${prefix}attend <nr> bails you out_`;
 
-    // Max 10 buttons — cap events shown as buttons at 7 (+ refresh + menu)
+    // Max 10 buttons — cap events shown as buttons at 7 (+ refresh)
     const shown = upcoming.slice(0, 7);
-    const buttons = shown.map(([, evt], i) => ({
-      id: `again:attend:${i + 1}`,
-      text: `✅ ${evt.name.slice(0, 18)} ${i + 1}`,
+    const buttons = shown.map(([id, evt], i) => ({
+      id: `evrsvp:in:${id}`,
+      text: `✅ ${i + 1}. ${evt.name.slice(0, 16)}`,
     }));
     buttons.push({ id: 'again:events', text: '🔄 Refresh' });
 
