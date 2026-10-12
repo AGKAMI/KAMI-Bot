@@ -224,6 +224,110 @@ function logConnEvent(event) {
 let lastLoggedQr = null;
 
 // Main connection function
+// ── Crew roster sync — groups are the source of truth ───────────────
+// Everyone sitting in a crew group (non-admin) belongs in that team's
+// crew roster, and anyone gone from the group comes out. Runs at boot
+// AND every 30 min so "they're in the group but not in the crew" never
+// happens between restarts. LID-safe: roster entries and participants
+// match through buildComparableIds variants + bare-digit fallback (a
+// phone-jid roster entry must NOT be pruned just because WhatsApp
+// reports the member as an @lid). Force-flushes the crew DB — sync
+// writes riding the debounced flush died on restarts.
+let _crewSyncTimer = null;
+async function syncCrewRosters(sock) {
+  const db = require('./database');
+  const { buildComparableIds } = require('./utils/jidHelper');
+  const crewData = db.getCrew();
+  const teamMap = crewData.teamMap || {};
+  let synced = 0;
+  let pruned = 0;
+
+  for (const [abbrev, info] of Object.entries(teamMap)) {
+    try {
+      const groupMeta = await sock.groupMetadata(info.jid);
+      if (!groupMeta || !groupMeta.participants) continue;
+
+      // Variant + digit sets for every current participant
+      const currentVariants = new Set();
+      const currentDigits = new Set();
+      for (const p of groupMeta.participants) {
+        if (!p.id) continue;
+        currentJidsAdd(currentVariants, currentDigits, p.id);
+      }
+
+      // Prune: roster members with NO variant/digit among participants —
+      // EXCEPT accepted ones: they were deliberately let in (invite may
+      // still be pending); pruning them re-creates the exact
+      // "accepted but not in crew" confusion this sync exists to kill
+      const members = db.getCrewMembers(info.jid) || {};
+      for (const memberJid of Object.keys(members)) {
+        if (memberJid === sock.user?.id) continue;
+        if (members[memberJid].accepted === true) continue;
+        const memberVariants = buildComparableIds(memberJid);
+        const memberNum = memberJid.split(':')[0].split('@')[0].replace(/\D/g, '');
+        const stillThere = memberVariants.some(v => currentVariants.has(v)) ||
+          (memberNum && currentDigits.has(memberNum));
+        if (!stillThere) {
+          db.removeCrewMember(info.jid, memberJid);
+          pruned++;
+          console.log(`[CREW SYNC] Pruned ${memberJid.split('@')[0]} (left ${abbrev})`);
+        }
+      }
+
+      // Add: current non-admin participants who aren't in the crew DB yet
+      for (const p of groupMeta.participants) {
+        const jid = p.id;
+        if (!jid) continue;
+        if (jid === sock.user?.id) continue;
+        if (p.admin) continue;
+
+        // Skip if already in crew DB — JID variants + phone-digit fallback
+        // covers LID/PN mismatch when mapping files are missing
+        const jidVariants = buildComparableIds(jid);
+        const alreadyInCrew = jidVariants.some(v => db.getCrewMember(info.jid, v));
+        if (alreadyInCrew) continue;
+
+        const incomingNum = jid.split(':')[0].split('@')[0].replace(/\D/g, '');
+        if (incomingNum) {
+          const teamMembers = db.getTeam(info.jid).members || {};
+          const phoneMatch = Object.keys(teamMembers).some(memberJid => {
+            const memberNum = memberJid.split(':')[0].split('@')[0].replace(/\D/g, '');
+            return memberNum && memberNum === incomingNum;
+          });
+          if (phoneMatch) continue;
+        }
+
+        db.addCrewMember(info.jid, jid, {
+          role: 'member',
+          joined: Date.now(),
+          addedBy: 'auto-sync',
+        });
+        synced++;
+      }
+    } catch (e) {
+      console.error(`[CREW SYNC] Error syncing ${abbrev}:`, e.message);
+    }
+  }
+
+  // Sync writes must survive restarts — never ride the debounced flush
+  try { db.flushCrew(); } catch (e) {}
+
+  if (synced > 0 || pruned > 0) {
+    console.log(`[CREW SYNC] +${synced} added, -${pruned} pruned across ${Object.keys(teamMap).length} teams`);
+  }
+  return { synced, pruned };
+}
+
+function currentJidsAdd(variantSet, digitSet, jid) {
+  variantSet.add(jid);
+  try {
+    const { buildComparableIds } = require('./utils/jidHelper');
+    for (const v of buildComparableIds(jid)) variantSet.add(v);
+  } catch (e) {}
+  const num = String(jid).split(':')[0].split('@')[0].replace(/\D/g, '');
+  if (num) digitSet.add(num);
+}
+
 async function startBot() {
   const sessionFolder = `./${config.sessionName}`;
   const sessionFile = path.join(sessionFolder, 'creds.json');
@@ -516,76 +620,20 @@ async function startBot() {
         console.log(`✅ Unblocked ${unblockAll.length} numbers on startup`);
       } catch (e) {}
 
-      // Crew sync — auto-add existing group members to crew DB
+      // Crew sync — groups are the source of truth for rosters.
+      // Runs now, then every 30 min (registered once across reconnects).
       try {
-        const db = require('./database');
-        const { buildComparableIds } = require('./utils/jidHelper');
-        const crewData = db.getCrew();
-        const teamMap = crewData.teamMap || {};
-        let synced = 0;
-        let pruned = 0;
-
-        for (const [abbrev, info] of Object.entries(teamMap)) {
-          try {
-            const groupMeta = await sock.groupMetadata(info.jid);
-            if (!groupMeta || !groupMeta.participants) continue;
-
-            const team = db.getTeam(info.jid);
-            const currentJids = new Set(groupMeta.participants.map(p => p.id).filter(Boolean));
-
-            // Prune: remove crew members who are no longer in the group
-            const members = db.getCrewMembers(info.jid) || {};
-            for (const memberJid of Object.keys(members)) {
-              if (memberJid === sock.user?.id) continue;
-              if (!currentJids.has(memberJid)) {
-                db.removeCrewMember(info.jid, memberJid);
-                pruned++;
-                console.log(`[CREW SYNC] Pruned ${memberJid.split('@')[0]} (left ${abbrev})`);
-              }
-            }
-
-            // Add: current non-admin participants who aren't in the crew DB yet
-            for (const p of groupMeta.participants) {
-              const jid = p.id;
-              if (!jid) continue;
-              if (jid === sock.user?.id) continue;
-              if (p.admin) continue;
-
-              // Skip if already in crew DB — use JID variants + phone number fallback
-              const jidVariants = buildComparableIds(jid);
-              const alreadyInCrew = jidVariants.some(v => db.getCrewMember(info.jid, v));
-              if (alreadyInCrew) continue;
-
-              // Phone number fallback — covers LID/PN mismatch when mapping files are missing
-              const incomingNum = jid.split(':')[0].split('@')[0].replace(/\D/g, '');
-              if (incomingNum) {
-                const teamMembers = db.getTeam(info.jid).members || {};
-                const phoneMatch = Object.keys(teamMembers).some(memberJid => {
-                  const memberNum = memberJid.split(':')[0].split('@')[0].replace(/\D/g, '');
-                  return memberNum && memberNum === incomingNum;
-                });
-                if (phoneMatch) continue;
-              }
-
-              db.addCrewMember(info.jid, jid, {
-                role: 'member',
-                joined: Date.now(),
-                addedBy: 'auto-sync',
-              });
-              synced++;
-            }
-          } catch (e) {
-            console.error(`[CREW SYNC] Error syncing ${abbrev}:`, e.message);
-          }
+        await syncCrewRosters(sock);
+        if (!_crewSyncTimer) {
+          _crewSyncTimer = setInterval(() => {
+            syncCrewRosters(sock).catch(e =>
+              console.error('[CREW SYNC] periodic run failed:', e.message));
+          }, 30 * 60 * 1000);
+          _crewSyncTimer.unref();
         }
-
-        if (synced > 0) {
-          console.log(`[CREW SYNC] Auto-added ${synced} existing members to crew DB`);
-        }
-        if (pruned > 0) {
-          console.log(`[CREW SYNC] Pruned ${pruned} members no longer in their teams`);
-        }
-      } catch (e) {}
+      } catch (e) {
+        console.error('[CREW SYNC] boot run failed:', e.message);
+      }
 
       // Team admin auto-detection — scan all crew groups for WhatsApp admins
       try {
