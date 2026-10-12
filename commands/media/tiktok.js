@@ -129,11 +129,35 @@ async function sendSlideshow(sock, chatId, images, title, msg, shouldStop) {
   }
 }
 
+// Browser headers for every tikwm call — the API 403s default-UA clients
+// (axios/x.y.z) from server/datacenter IPs. Verified working with this UA.
+const TIKWM_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+  'Referer': 'https://www.tikwm.com/',
+  'Accept': 'application/json, text/plain, */*',
+};
+
 async function methodTikwm(url) {
   const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`;
-  const { data } = await axios.get(apiUrl, { timeout: 20000 });
+  let data = null;
+  let lastMsg = '';
 
-  if (data?.code !== 0 || !data?.data) throw new Error('tikwm: invalid response');
+  // tikwm rate-limits ~1 req/s per IP — one retry after a pause covers
+  // the common 403/empty-body blip instead of falling through the chain
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 1500));
+    try {
+      const res = await axios.get(apiUrl, { timeout: 20000, headers: TIKWM_HEADERS });
+      data = res.data;
+      if (data?.code === 0 && data?.data) break;
+      lastMsg = data?.msg || `code ${data?.code}`;
+    } catch (e) {
+      lastMsg = e.message;
+      data = null;
+    }
+  }
+
+  if (!data || data.code !== 0 || !data.data) throw new Error(`tikwm: ${lastMsg || 'invalid response'}`);
 
   // Slideshow — has images array
   const images = data.data.images || [];
@@ -178,7 +202,22 @@ async function methodRuhend(url, timeoutMs = RUHEND_TIMEOUT_MS) {
 }
 
 async function methodTikcdn(url) {
-  const videoId = extractVideoId(url);
+  let videoId = extractVideoId(url);
+  // Short links (vm/vt.tiktok.com/xxx) hide the numeric id — follow the
+  // redirect chain to the canonical /video/<digits> page first
+  if (!videoId && /(?:vm|vt)\.tiktok\.com\//i.test(url)) {
+    try {
+      const res = await axios.get(url, {
+        timeout: 15000,
+        maxRedirects: 5,
+        responseType: 'text',
+        maxContentLength: 1024 * 1024,
+        headers: { 'User-Agent': TIKWM_HEADERS['User-Agent'] },
+      });
+      const finalUrl = (res.request && res.request.res && res.request.res.responseUrl) || '';
+      videoId = extractVideoId(finalUrl);
+    } catch (e) { /* fall through to the throw below */ }
+  }
   if (!videoId) throw new Error('tikcdn: could not extract video ID');
 
   const videoUrl = `https://tikcdn.io/ssstik/${videoId}`;
