@@ -103,7 +103,57 @@ onButton('evrsvp:', async (sock, msg, from, sender, btnId) => {
   }
 });
 
+// ── Unpin sweep ──────────────────────────────────────────────
+// The DB lazy-sweep flips ended events to 'completed', but the WhatsApp
+// pin lives 7 days regardless — a 2-hour meet's card would sit pinned
+// all week. Every 5 min this walks all crews: getCrewEvents() reuses
+// the lazy expiry flip (no duplicated endAt logic), then any completed
+// event still holding a pin gets UNPIN_FOR_ALL (type 2). Records
+// published before pinnedMsgId existed are skipped — nothing to target.
+// Failed unpins (bot lost admin, message deleted) retry 3x then give
+// up silently rather than nagging the console forever.
+const UNPIN_SWEEP_MS = 5 * 60 * 1000;
+const UNPIN_MAX_TRIES = 3;
+
+async function sweepExpiredPins(sock) {
+  for (const [gid, team] of Object.entries(database.getAllTeams() || {})) {
+    if (!team?.events || !Object.keys(team.events).length) continue;
+    const events = database.getCrewEvents(gid); // lazy-flips ended → completed
+    let dirty = false;
+    for (const [eventId, evt] of Object.entries(events)) {
+      if (evt.status !== 'completed') continue;
+      if (!evt.pinnedMsgId || evt.unpinnedAt) continue;
+      if ((evt.unpinTries || 0) >= UNPIN_MAX_TRIES) continue;
+      try {
+        await sock.sendMessage(gid, {
+          pin: { type: 2, key: { remoteJid: gid, id: evt.pinnedMsgId, fromMe: true } },
+        });
+        evt.unpinnedAt = Date.now();
+        dirty = true;
+        console.log(`[EVWIZ] unpinned ${eventId} in ${gid} (event ended)`);
+      } catch (e) {
+        evt.unpinTries = (evt.unpinTries || 0) + 1;
+        dirty = true;
+        console.error(`[EVWIZ] unpin failed for ${eventId} (try ${evt.unpinTries}/${UNPIN_MAX_TRIES}):`, e.message);
+      }
+    }
+    if (dirty) database.updateTeam(gid, team);
+  }
+}
+
+let _unpinTimer = null;
+function startEventUnpinSweep(sock) {
+  if (_unpinTimer) return; // registered once across reconnects (crew-sync pattern)
+  const run = () => sweepExpiredPins(sock).catch(e =>
+    console.error('[EVWIZ] unpin sweep failed:', e.message));
+  run();
+  _unpinTimer = setInterval(run, UNPIN_SWEEP_MS);
+  _unpinTimer.unref();
+}
+
 module.exports = {
   renderEventCard,
   resolveEventById,
+  sweepExpiredPins,
+  startEventUnpinSweep,
 };

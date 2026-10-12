@@ -651,7 +651,15 @@ async function startBot() {
           _crewSyncTimer.unref();
         }
       } catch (e) {
-        console.error('[CREW SYNC] scheduling failed:', e.message);
+        console.error('[CREW SYNC] boot run failed:', e.message);
+      }
+
+      // Event unpin sweep — ended meets release their pinned cards.
+      // startEventUnpinSweep self-guards (registered once across reconnects).
+      try {
+        require('./commands/crew/eventRsvp').startEventUnpinSweep(sock);
+      } catch (e) {
+        console.error('[EVWIZ] unpin sweep boot failed:', e.message);
       }
 
       // Team admin auto-detection — scan all crew groups for WhatsApp admins

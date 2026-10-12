@@ -7,13 +7,12 @@
  * whole crew + auto-pins 7d). Legacy `!event <name> <HH:MM>` keeps
  * working — event.js routes to it before starting the wizard.
  *
- * Renders live in eventRender.js, card + evrsvp in eventRsvp.js
- * (≤500-line house rule). Rulings: requireAdmin('ewiz') NO trailing
- * colon; per-(group, sender) sessions, restart replaces own draft;
- * reply-bound capture (stanzaId === s.lastStepId); host auto-RSVP;
- * RAM-only drafts; publish = write → card (mention) → pin → confirm;
- * evrsvp ids explicit, crew-wide; expiresAt 48h timed-only, endAt
- * retires ended events via the DB sweep; capture hook BEFORE games.
+ * Renders in eventRender.js, card + evrsvp + unpin sweep in eventRsvp.js.
+ * Rulings: requireAdmin('ewiz') NO trailing colon; per-(group, sender)
+ * sessions; reply-bound capture (stanzaId === s.lastStepId); host
+ * auto-RSVP; RAM-only drafts; publish = write → card → pin (key stored
+ * for the unpin sweep) → confirm; evrsvp ids explicit, crew-wide;
+ * expiresAt 48h timed-only, endAt retires events via the DB sweep.
  */
 
 const config = require('../../config');
@@ -107,8 +106,7 @@ async function startWizard(sock, msg, extra) {
   const sender = msg.key.participant || msg.key.remoteJid;
   const groupJid = extra?.from || chatJid;
 
-  // Same host restarting replaces their own draft silently. Different
-  // hosts coexist: per-(group, sender) sessions, nonce-routed taps.
+  // Restart replaces the host's own draft; other hosts coexist (nonce-routed)
   const { s: own } = _lookup(chatJid, sender);
   if (own) sessions.delete(own.nonce);
 
@@ -157,10 +155,8 @@ async function cancelWizardFor(sock, msg, extra) {
   return cancelWizard(sock, s, chatJid, msg);
 }
 
-// Publish: DB first (a card-send failure still leaves a working event —
-// the typed `!attend EV-XXXXX` path covers it), then the card (hidden
-// mention of the whole crew), then the 7-day pin, then the confirm.
-// Latch stops double-taps double-writing.
+// Publish: DB first (a card-send failure still leaves a working event),
+// then card (hidden mention), 7-day pin, confirm. Latch stops double-taps.
 async function publishEvent(sock, s) {
   if (s.publishing) return;
   s.publishing = true;
@@ -195,10 +191,15 @@ async function publishEvent(sock, s) {
     console.error('[EVWIZ] card send failed:', cardErr.message);
   }
 
-  // Pin for 7 days — the bot must be group admin, else warn and carry on
+  // Pin 7d (bot must be group admin); persist the card id for the unpin sweep
   if (cardMsg && cardMsg.key) {
     try {
       await sock.sendMessage(s.groupJid, { pin: { type: 1, time: PIN_SECONDS, key: cardMsg.key } });
+      const team = database.getTeam(s.groupJid);
+      if (team?.events?.[eventId]) {
+        team.events[eventId].pinnedMsgId = cardMsg.key.id;
+        database.updateTeam(s.groupJid, team);
+      }
       console.log(`[EVWIZ] pinned ${eventId} for ${PIN_SECONDS}s`);
     } catch (pinErr) {
       console.error('[EVWIZ] pin failed (bot admin?):', pinErr.message);
@@ -230,11 +231,9 @@ async function _strikeOut(sock, s, reason) {
 }
 
 /**
- * Called from handler.js BEFORE the games and group protections.
- * Consumes the host's typed answer when a step is armed AND the message
- * is a reply to the current step message — anyone else's chat (and the
- * host's own non-reply messages) flows through. Returns true when the
- * message was consumed (handler must return).
+ * Called from handler.js BEFORE the games and group protections. Consumes
+ * the host's typed answer only when a step is armed AND the message replies
+ * to the current step — other chat flows through. True = consumed (return).
  */
 async function captureText(sock, msg, ctx) {
   try {

@@ -219,6 +219,8 @@ test('full build: template → host → id → server → car → time → durat
   // Record persisted with the v2 fields
   const team = database.getTeam(GROUP);
   const [evId, ev] = Object.entries(team.events).find(([, e]) => e.name === 'STANCE MEET') || [];
+  assert.ok(ev.pinnedMsgId, 'pin target persisted for the unpin sweep');
+  assert.strictEqual(ev.pinnedMsgId, pin.key.id, 'stored id matches the pinned card');
   assert.ok(evId && evId.startsWith('EV-'), 'EV-XXXXX id');
   assert.strictEqual(ev.host, 'AG KAMI');
   assert.strictEqual(ev.cpmId, 'VR401128');
@@ -306,6 +308,69 @@ test('jump overlay: range tap lands on the page containing that range', async ()
   assert.strictEqual(s.serverPage, expected, 'lands on the T–Z page');
   assert.match(sock.sent.at(-1).content.text, new RegExp(`Page ${expected + 1}/${pages.length}`));
   eventWizard.sessions.delete(s.nonce);
+});
+
+// ── Unpin sweep (event ends → pin released) ────────────────────────────
+test('unpin sweep: completed event with a pin target gets unpinned once', async () => {
+  const { sweepExpiredPins } = require('../commands/crew/eventRsvp');
+  database.addCrewEvent(GROUP, 'EV-UNPIN', {
+    name: 'ENDED MEET', status: 'completed', attendees: [],
+    pinnedMsgId: 'UNPIN-TARGET-1', endAt: Date.now() - 60_000,
+  });
+  // Legacy record without pinnedMsgId — nothing to unpin, must be skipped
+  database.addCrewEvent(GROUP, 'EV-NOKEY', {
+    name: 'LEGACY MEET', status: 'completed', attendees: [],
+    endAt: Date.now() - 60_000,
+  });
+
+  const sock = mkSock();
+  await sweepExpiredPins(sock);
+  const unpin = sock.sent
+    .map(x => x.content && x.content.pin)
+    .find(p => p && p.type === 2 && p.key && p.key.id === 'UNPIN-TARGET-1');
+  assert.ok(unpin, 'UNPIN_FOR_ALL sent for the pinned card');
+  assert.strictEqual(unpin.key.remoteJid, GROUP, 'targets the owning group');
+  const evt = database.getCrewEvent(GROUP, 'EV-UNPIN');
+  assert.ok(evt.unpinnedAt, 'marked unpinned');
+
+  // Second sweep must not re-unpin (or touch the legacy record)
+  const sock2 = mkSock();
+  await sweepExpiredPins(sock2);
+  const dup = sock2.sent.filter(x => x.content && x.content.pin && x.content.pin.type === 2);
+  assert.strictEqual(dup.length, 0, 'never unpins twice');
+
+  database.removeCrewEvent(GROUP, 'EV-UNPIN');
+  database.removeCrewEvent(GROUP, 'EV-NOKEY');
+});
+
+test('unpin sweep: failed unpin retries 3x then gives up', async () => {
+  const { sweepExpiredPins } = require('../commands/crew/eventRsvp');
+  database.addCrewEvent(GROUP, 'EV-FAIL', {
+    name: 'STUBBORN MEET', status: 'completed', attendees: [],
+    pinnedMsgId: 'UNPIN-FAIL-1', endAt: Date.now() - 60_000,
+  });
+  const failSock = mkSock();
+  failSock.sendMessage = async () => { throw new Error('mock: lost admin'); };
+
+  for (let i = 0; i < 4; i++) await sweepExpiredPins(failSock);
+  const evt = database.getCrewEvent(GROUP, 'EV-FAIL');
+  assert.strictEqual(evt.unpinTries, 3, 'gives up after 3 tries');
+  assert.ok(!evt.unpinnedAt, 'never marked unpinned');
+
+  database.removeCrewEvent(GROUP, 'EV-FAIL');
+});
+
+test('unpin sweep: upcoming events are never touched', async () => {
+  const { sweepExpiredPins } = require('../commands/crew/eventRsvp');
+  database.addCrewEvent(GROUP, 'EV-LIVE', {
+    name: 'LIVE MEET', status: 'upcoming', attendees: [],
+    pinnedMsgId: 'UNPIN-LIVE-1', endAt: Date.now() + 60 * 60 * 1000,
+  });
+  const sock = mkSock();
+  await sweepExpiredPins(sock);
+  assert.ok(!sock.sent.some(x => x.content && x.content.pin), 'no unpin for a live event');
+  assert.ok(!database.getCrewEvent(GROUP, 'EV-LIVE').unpinnedAt);
+  database.removeCrewEvent(GROUP, 'EV-LIVE');
 });
 
 // ── Reply-bound capture ────────────────────────────────────────────────
