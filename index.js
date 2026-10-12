@@ -234,13 +234,14 @@ let lastLoggedQr = null;
 // reports the member as an @lid). Force-flushes the crew DB — sync
 // writes riding the debounced flush died on restarts.
 let _crewSyncTimer = null;
-async function syncCrewRosters(sock) {
+async function syncCrewRosters(sock, _retry = 0) {
   const db = require('./database');
   const { buildComparableIds } = require('./utils/jidHelper');
   const crewData = db.getCrew();
   const teamMap = crewData.teamMap || {};
   let synced = 0;
   let pruned = 0;
+  let teamErrors = 0;
 
   for (const [abbrev, info] of Object.entries(teamMap)) {
     try {
@@ -306,7 +307,20 @@ async function syncCrewRosters(sock) {
       }
     } catch (e) {
       console.error(`[CREW SYNC] Error syncing ${abbrev}:`, e.message);
+      teamErrors++;
     }
+  }
+
+  // Boot runs can fire before the socket can serve groupMetadata — if
+  // EVERY team errored, retry after 60s (max 3) before giving up
+  const teamCount = Object.keys(teamMap).length;
+  if (teamCount > 0 && teamErrors === teamCount && _retry < 3) {
+    console.log(`[CREW SYNC] all ${teamCount} teams errored — retrying in 60s (attempt ${_retry + 2}/4)`);
+    setTimeout(() => {
+      syncCrewRosters(sock, _retry + 1).catch(e =>
+        console.error('[CREW SYNC] retry failed:', e.message));
+    }, 60 * 1000).unref();
+    return { synced, pruned, teamErrors, retried: true };
   }
 
   // Sync writes must survive restarts — never ride the debounced flush
@@ -621,9 +635,14 @@ async function startBot() {
       } catch (e) {}
 
       // Crew sync — groups are the source of truth for rosters.
-      // Runs now, then every 30 min (registered once across reconnects).
+      // First run 60s after connect (the socket can't serve groupMetadata
+      // the instant 'open' fires), then every 30 min (registered once
+      // across reconnects).
       try {
-        await syncCrewRosters(sock);
+        setTimeout(() => {
+          syncCrewRosters(sock).catch(e =>
+            console.error('[CREW SYNC] boot run failed:', e.message));
+        }, 60 * 1000).unref();
         if (!_crewSyncTimer) {
           _crewSyncTimer = setInterval(() => {
             syncCrewRosters(sock).catch(e =>
@@ -632,7 +651,7 @@ async function startBot() {
           _crewSyncTimer.unref();
         }
       } catch (e) {
-        console.error('[CREW SYNC] boot run failed:', e.message);
+        console.error('[CREW SYNC] scheduling failed:', e.message);
       }
 
       // Team admin auto-detection — scan all crew groups for WhatsApp admins
