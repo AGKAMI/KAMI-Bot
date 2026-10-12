@@ -2,16 +2,7 @@ const database = require('../../database');
 
 const config = require('../../config');
 const { sendButtons } = require('../../utils/buttonHelper');
-
-// Same time-of-day sort used by attend.js — keep both in sync.
-// Missing status = upcoming (events written before status was persisted).
-const sortUpcoming = (allEvents) => Object.entries(allEvents)
-  .filter(([, evt]) => !evt.status || evt.status === 'upcoming')
-  .sort((a, b) => {
-    const timeA = a[1].time.split(':').map(Number);
-    const timeB = b[1].time.split(':').map(Number);
-    return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
-  });
+const { sortUpcoming } = require('./crewHelpers');
 
 module.exports = {
   subName: 'events',

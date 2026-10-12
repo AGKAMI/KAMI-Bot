@@ -25,7 +25,7 @@ module.exports = {
     const time = args[args.length - 1];
     const name = args.slice(0, -1).join(' ');
 
-    if (!/^\d{1,2}:\d{2}$/.test(time)) {
+    if (!/^([01]?\d|2[0-3]):[0-5]\d$/.test(time)) {
       return sock.sendMessage(jid, {
         text: `❌ *ERROR*\n\nTime must be *HH:MM*\nExample: *20:30*\n\nYou sent: *${time}*`
       });

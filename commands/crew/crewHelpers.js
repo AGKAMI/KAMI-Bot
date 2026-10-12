@@ -52,4 +52,18 @@ function resolveUser(args, mentionedJid, contextInfo) {
   return { jid: null, args, method: 'none' };
 }
 
-module.exports = { phoneToJid, resolveUser };
+// Shared upcoming-event sort — THE one copy (events.js and attend.js used
+// to duplicate this with a "keep both in sync" apology comment). Timeless
+// v2 events (time skipped = "starting now") sort FIRST via the '00:00'
+// fallback; `String()` guards v2 records that store time: null — the old
+// `evt.time.split` threw a TypeError on those. Missing status = upcoming
+// (events written before status was persisted).
+const sortUpcoming = (allEvents) => Object.entries(allEvents || {})
+  .filter(([, evt]) => !evt.status || evt.status === 'upcoming')
+  .sort((a, b) => {
+    const timeA = String(a[1].time || '00:00').split(':').map(Number);
+    const timeB = String(b[1].time || '00:00').split(':').map(Number);
+    return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+  });
+
+module.exports = { phoneToJid, resolveUser, sortUpcoming };

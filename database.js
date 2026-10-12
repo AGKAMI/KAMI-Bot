@@ -415,6 +415,10 @@ const getCrewMembers = (groupJid) => {
 };
 
 // Add event to a specific group
+// Known fields are written explicitly, then `data` is spread so richer
+// records (v2 event cards: host, cpmId, server, carType, expiresAt…)
+// survive the write. The old whitelist silently dropped everything else —
+// it was already eating event.js's `createdAt` today.
 const addCrewEvent = (groupJid, eventId, data) => {
   const team = getTeam(groupJid);
   if (!team.events) team.events = {};
@@ -425,9 +429,16 @@ const addCrewEvent = (groupJid, eventId, data) => {
     attendees: data.attendees || [],
     status: data.status || 'upcoming',
     results: data.results ?? null,
-    created: Date.now()
+    created: data.created ?? Date.now(),
+    ...data,
   };
   return updateTeam(groupJid, team);
+};
+
+// Get one event by id (null when absent)
+const getCrewEvent = (groupJid, eventId) => {
+  const team = getTeam(groupJid);
+  return team?.events?.[eventId] || null;
 };
 
 // Get events for a specific group
@@ -1358,6 +1369,7 @@ module.exports = {
   getCrewMembers,
   addCrewEvent,
   getCrewEvents,
+  getCrewEvent,
   removeCrewEvent,
   addApplicant,
     getApplicants,

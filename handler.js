@@ -291,7 +291,7 @@ setInterval(() => {
     }
   }
   if (changed) saveTempAllowed();
-}, 60 * 60 * 1000);
+}, 60 * 60 * 1000).unref();
 
 // Mark a user as temporarily allowed (called from start.js button handlers)
 const allowTempDm = (jid) => {
@@ -650,16 +650,19 @@ const handleMessage = async (sock, msg) => {
     // Clear per-message admin cache (avoids 8x redundant network calls)
     clearAdminCache();
 
+    // System message filter FIRST — even button-shaped messages from
+    // broadcast/status/newsletter jids must never reach button handlers
+    // (the open evrsvp:/again: prefixes would otherwise try to reply to
+    // a broadcast jid)
+    if (isSystemJid(from)) {
+      return; // Silently ignore system messages
+    }
+
     if (!msg.message) {
       // Button taps might not have msg.message — check anyway
           if (await handleButtonResponse(sock, msg, async (sender, from) => (await isAdmin(sock, sender, from)) || isOwner(sender) || msg.key.fromMe)) return;
       return;
     }
-    
-        // System message filter - ignore broadcast/status/newsletter messages
-        if (isSystemJid(from)) {
-          return; // Silently ignore system messages
-        }
 
         // Interactive button responses — route to registered button handlers
         // BEFORE the DM blocker / prefix gate so button presses always work.

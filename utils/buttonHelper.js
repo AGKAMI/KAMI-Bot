@@ -288,7 +288,16 @@ function onButton(id, handler) {
  */
 async function handleButtonResponse(sock, msg, isAdmin) {
   try {
-    const m = msg.message;
+    // Unwrap disappearing-message/viewOnce shells FIRST — groups with
+    // disappearing messages ON wrap every message (taps included), and a
+    // raw msg.message read never sees the tap format inside. Without this
+    // every button in those groups is dead (same chain as handler.js
+    // getMessageContent).
+    let m = msg.message;
+    if (m?.ephemeralMessage) m = m.ephemeralMessage.message;
+    if (m?.viewOnceMessageV2) m = m.viewOnceMessageV2.message;
+    if (m?.viewOnceMessage) m = m.viewOnceMessage.message;
+    if (m?.documentWithCaptionMessage) m = m.documentWithCaptionMessage.message;
     if (!m) return false;
 
     // Fast path: skip entirely if this message isn't a button tap at all
