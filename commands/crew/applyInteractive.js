@@ -182,10 +182,10 @@ async function sendReview(sock, session) {
   text += `━━━━━━━━━━━━━━━━\n\n`;
   text += `Tap a button below:`;
 
-  // 3 buttons max: Change Answer | Confirm | Cancel
+  // 3 buttons max: Change Answer | Submit (bot reviews — the ONLY path) | Cancel
   const buttons = [
     { id: `cwiz:pick:${session.teamKey}:${session.appUid}`, text: '✏️ Change Answer' },
-    { id: `cwiz:submit:${session.teamKey}:${session.appUid}`, text: '✅ Confirm & Send' },
+    { id: `cwiz:submit:${session.teamKey}:${session.appUid}`, text: '🤖 Submit for Review' },
     { id: `cwiz:cancel:${session.teamKey}:${session.appUid}`, text: '🚫 Cancel' },
   ];
 
@@ -317,11 +317,11 @@ async function submitApplication(sock, session) {
     `━━━━━━━━━━━━━━━━\n` +
     `✅ *APPLICATION SUBMITTED*\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
-    `🏢 Team: *${session.teamKey}* — ${team?.label || session.teamKey}\n` +
+    `🏢 Team: *${getTeamDisplayName(session.teamKey)}*\n` +
     `🆔 App ID: *${session.appUid}*\n\n` +
     (adminMsg === false
       ? `⚠️ _Couldn't ping the team admins automatically — but your application is safe._\n\n`
-      : `📲 _Your application went out to all ${session.teamKey} admins_\n\n`) +
+      : `⏳ _Your application is now under review by the admins of *${getTeamDisplayName(session.teamKey)}*_\n\n`) +
     `⏳ Keep this App ID — an admin will accept or reject you, hey.\n\n` +
     `_${voice.greetOpen()}, good luck!_`;
 
@@ -395,19 +395,10 @@ onButton('cwiz:submit:', async (sock, msg, from, sender, btnId) => {
   if (!session || session.stage !== 'review') return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
 
-  // Show review choice: admin review or bot review
-  await sendButtons(sock, from, {
-    text:
-      `━━━━━━━━━━━━━━━━\n` +
-      `*HOW SHOULD WE REVIEW?*\n` +
-      `━━━━━━━━━━━━━━━━\n\n` +
-      `Choose how your application gets reviewed, boet:`,
-    footer: `${getTeamDisplayName(teamKey)} Application`,
-    buttons: [
-      { id: `cwiz:adminreview:${teamKey}:${appUid}`, text: '📋 Send to Admins' },
-      { id: `cwiz:botreview:${teamKey}:${appUid}`, text: '🤖 Bot Review' },
-    ],
-  });
+  // ONE submit path — the bot does the review. Applicants can't choose
+  // their reviewer anymore: admins only take over when the score is too
+  // low for the bot to grade (inside runBotReview).
+  await runBotReview(sock, session);
 });
 
 // Admin review — current behavior
@@ -425,16 +416,13 @@ onButton('cwiz:adminreview:', async (sock, msg, from, sender, btnId) => {
   await submitApplication(sock, session);
 });
 
-// Bot review — auto-evaluate answers with scoring
-onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
-  const parts = btnId.replace('cwiz:botreview:', '').split(':');
-  const teamKey = parts[0];
-  const appUid = parts[1];
-
-  const session = await getSessionOrExpired(sock, from);
-  if (!session) return;
-  if (session.teamKey !== teamKey || session.appUid !== appUid) return;
-  if (session.stage !== 'review') return;
+// Bot review — the ONLY review path. Grades the answers: pass (70%+) =
+// bot auto-approves; skipped-heavy or borderline (50-69%) = too low for
+// the bot to grade, handed to that team's admins with the applicant told
+// their application is under review by them.
+async function runBotReview(sock, session) {
+  const teamKey = session.teamKey;
+  const appUid = session.appUid;
 
   const questions = session.questions;
   const team = TEAMS[teamKey];
@@ -482,13 +470,13 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
 
   // Decision thresholds
   if (skippedCount >= 3) {
-    await sock.sendMessage(from, {
+    await sock.sendMessage(session.jid, {
       text:
         `━━━━━━━━━━━━━━━━\n` +
         `🤖 *BOT REVIEW*\n` +
         `━━━━━━━━━━━━━━━━\n\n` +
         `⚠️ You skipped ${skippedCount} questions\n\n` +
-        `_Sending it to the admins for a manual look instead._`,
+        `_Score too low for me to grade — handing it to the *${getTeamDisplayName(teamKey)}* admins._`,
     });
     session.stage = 'done';
     await submitApplication(sock, session);
@@ -496,8 +484,9 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
   }
 
   if (percentage < 50) {
-    // Reject — needs improvement
-    await sendButtons(sock, from, {
+    // Reject — needs improvement. The bot DID review it; applicants fix
+    // and resubmit — they can't route themselves to admins anymore.
+    await sendButtons(sock, session.jid, {
       text:
         `━━━━━━━━━━━━━━━━\n` +
         `🤖 *BOT REVIEW*\n` +
@@ -506,26 +495,26 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
         `Score: *${totalScore}/${maxScore}* (${percentage}%)\n\n` +
         `Issues:\n` +
         issues.map(i => `• ${i}`).join('\n') +
-        `\n\n_Try sharpening your answers, or send it to the admins for a manual look._`,
+        `\n\n_Sharpen those answers and run it through me again, boet._`,
       footer: `${getTeamDisplayName(teamKey)} Application`,
       buttons: [
         { id: `cwiz:pick:${teamKey}:${appUid}`, text: '✏️ Improve Answers' },
-        { id: `cwiz:adminreview:${teamKey}:${appUid}`, text: '📋 Send to Admins' },
+        { id: `cwiz:cancel:${teamKey}:${appUid}`, text: '🚫 Cancel' },
       ],
     });
     return;
   }
 
   if (percentage < 70) {
-    // Borderline — send to admins
-    await sock.sendMessage(from, {
+    // Borderline — too low for the bot to grade confidently
+    await sock.sendMessage(session.jid, {
       text:
         `━━━━━━━━━━━━━━━━\n` +
         `🤖 *BOT REVIEW*\n` +
         `━━━━━━━━━━━━━━━━\n\n` +
         `⏳ *Borderline application*\n\n` +
         `Score: *${totalScore}/${maxScore}* (${percentage}%)\n\n` +
-        `_Sending to admins for manual review._`,
+        `_Too close to call — your application is going to the *${getTeamDisplayName(teamKey)}* admins for a manual look._`,
     });
     session.stage = 'done';
     await submitApplication(sock, session);
@@ -596,10 +585,34 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
     `_An admin will pull you into the group now-now_\n\n` +
     `_${voice.greetOpen()}, welcome to the squad!_`;
 
-  await sock.sendMessage(from, { text: confirm });
+  await sock.sendMessage(session.jid, { text: confirm });
 
   // Cleanup
-  sessions.delete(from);
+  sessions.delete(session.jid);
+}
+
+// Stale-tap compat: old choice screens still have these buttons out in the
+// wild — both route into the bot review now, so nobody can bypass it
+onButton('cwiz:adminreview:', async (sock, msg, from, sender, btnId) => {
+  const parts = btnId.replace('cwiz:adminreview:', '').split(':');
+  const teamKey = parts[0];
+  const appUid = parts[1];
+
+  const session = await getSessionOrExpired(sock, from);
+  if (!session || session.stage !== 'review') return;
+  if (session.teamKey !== teamKey || session.appUid !== appUid) return;
+  await runBotReview(sock, session);
+});
+
+onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
+  const parts = btnId.replace('cwiz:botreview:', '').split(':');
+  const teamKey = parts[0];
+  const appUid = parts[1];
+
+  const session = await getSessionOrExpired(sock, from);
+  if (!session || session.stage !== 'review') return;
+  if (session.teamKey !== teamKey || session.appUid !== appUid) return;
+  await runBotReview(sock, session);
 });
 
 // Cancel application from review screen
