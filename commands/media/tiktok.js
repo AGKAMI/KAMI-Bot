@@ -1,11 +1,17 @@
 /**
  * TikTok Downloader - Download TikTok videos without watermark
- * Fallbacks: embed page (v45 CDN) -> tikwm API -> ruhend-scraper -> tikcdn direct
+ * Fallbacks: tikcdn direct (ssstik) -> embed page (v45 CDN) -> tikwm API -> ruhend-scraper
  *
- * Why embed-first: from bot-hosting datacenter IPs, tikwm 403s and TikTok's
- * v16-webapp-prime CDN is behind an Akamai IP-reputation ACL (Reference #18).
- * The embed player page (tiktok.com/embed/v2/<id>) serves signed URLs on
- * v45.tiktokcdn-eu.com, which is NOT behind that ACL — verified 200/3.3MB.
+ * Why tikcdn-first (2026-10-12, probed live from deployment b0665152):
+ *  - tikcdn.io/ssstik/<id> serves the real mp4 (~200-8MB, no auth, no
+ *    Referer requirement) — the only provider that works from datacenter
+ *    IPs without a key. Placeholder clips are content-hash rejected and
+ *    fall through to the next provider.
+ *  - the embed player page (tiktok.com/embed/v2/<id>) now 400s from every
+ *    vantage — TikTok changed the contract; kept as a fallback in case it
+ *    returns.
+ *  - tikwm 403s the datacenter IP again (even curl/default-UA, both GET
+ *    and POST) — ruhend rides tikwm's backend, so both are last-resort.
  */
 
 const axios = require('axios');
@@ -317,10 +323,10 @@ module.exports = {
 
       const run = (async () => {
         const methods = [
+          { name: 'tikcdn', fn: () => methodTikcdn(url) },
           { name: 'embed', fn: () => methodEmbed(url) },
           { name: 'tikwm', fn: () => methodTikwm(url) },
-          { name: 'ruhend', fn: () => methodRuhend(url) },
-          { name: 'tikcdn', fn: () => methodTikcdn(url) }
+          { name: 'ruhend', fn: () => methodRuhend(url) }
         ];
 
         let success = false;
