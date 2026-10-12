@@ -1,48 +1,50 @@
 # HANDOFF
 
 ## Goal
-CPM `!event` wizard corrections (final-judge synthesis + user's 5 rulings + 5 new requirements): JAPANESE server, host auto-RSVP, Jump overlay, duration/end-time step, 7-day pin, hidden mentions, word-first card labels, reply-bound capture, evrsvp id-explicit RSVP.
+CPM `!event` wizard lifecycle: build → post (card + 7d pin + hidden mentions) → RSVP → **auto-unpin when the meet ends**. Wizard corrections arc (`ae1ec3b`) + unpin sweep (`95af7ab`).
 
 ## Current State
-- Bot CONNECTED on 27833882383 (prefix `!`) — `ae1ec3b` auto-pulled, deploy verified via MCP restart logs (state `running`)
-- HEAD = `ae1ec3b` (feat(events): wizard corrections); 46/46 tests green (`node --test --test-force-exit tests/*.test.js`)
-- eventWizard.js trimmed to exactly 500 lines (header doc condensed after the 510-line overage)
-- Temp debug files cleaned (`_repro.js` deleted, DBG lines removed from eventWizard.js)
-- Known quirk: suite intermittently appeared to hang during debugging — was entangled with in-flight DBG instrumentation edits; clean tree passes repro 3/3 and full suite 46/46
+- Bot CONNECTED on 27833882383 (prefix `!`) — `95af7ab` auto-pulled, deploy verified via MCP logs (`KAMI BOT CONNECTED`, state `running`) AND `files_read` confirmed `sweepExpiredPins` is on the server
+- HEAD = `95af7ab` (feat(events): auto-unpin); 49/49 tests green (`node --test --test-force-exit tests/*.test.js`)
+- eventWizard.js = 499 lines (under the 500 cap after pin-persistence addition + doc trims)
+- Another session landed `1aa9594` (crew boot sync delayed 60s + all-teams-errored retry) — on top of `ae1ec3b`, below this arc
 
-## What Shipped (`ae1ec3b`, 7 files)
-1. **cpmData.js**: JAPANESE (🇯🇵) inserted JAMAICAN→JAPANESE→JORDANIAN; FILIPINO moved to F-slot (FAROESE→FILIPINO→FINNISH); PAGE_SIZE 7→6; SERVER_RANGES (6 jump ranges), pageForKey(), fmtDuration(); 84 servers, 14 pages, strict A–Z (locked by test)
-2. **eventRsvp.js** (NEW, 109 lines): renderEventCard (word-first labels, ID stays `🆔:` emoji-only, time-range line, `👥 N going so far`), resolveEventById (cross-group), evrsvp onButton (LID-deduped, idempotent in/out)
-3. **eventRender.js** (NEW, 306 lines): sendStep (M3 sync-reserve debounce + lastStepId capture), step renders [1/7]–[7/7] incl. renderJumpStep/renderDurationStep, renderEditPicker (has Duration row), draftToRecord (endTime/durationMins/endAt/expiresAt), recomputeEndTime, minsUntil
-4. **eventWizard.js** (REWRITTEN, 500 lines): sessions/lookup/TTL sweep, startWizard (lastStepId seeded), publishEvent (host auto-RSVP `attendees=[hostJid]` → card w/ hidden mentions → pin 7d `PIN_SECONDS=604800` → EVENT LIVE confirm), captureText reply-bound (`stanzaId === s.lastStepId`; endtime branch; strikes; window re-arm), ewiz: onButton (jumps/jump/jumpb, dur/durc/dskip, tskip→duration, editf:duration, tplc/carc update lastStepId)
-5. **attend.js** (REWRITTEN): case-insensitive EV-id match, unmatched arg → ERROR (no silent first-event fallback), buildComparableIds LID dedupe, buttons re-encoded to `evrsvp:in/out:<id>`
-6. **buttonHelper.js**: interactiveMsg now carries `contextInfo: { mentionedJid }` when mentions passed (commented with revert note); sendButtons already returned the sent message + accepted mentions on text paths
-7. **tests/eventWizard.test.js** (REWRITTEN, 388 lines): reply-bound textMsg helper, mentions/pin/duration/jump/cpmData-lock/full-build/duration-flow/jump-overlay/strikes/legacy tests; snapshots+restores crew.json in test.after
+## What Shipped
+### `ae1ec3b` — wizard corrections (7 files)
+JAPANESE server, FILIPINO F-slot, PAGE_SIZE 6, SERVER_RANGES jump overlay, host auto-RSVP, 7d pin, hidden mentions, word-first labels (ID stays `🆔:`), reply-bound capture, duration/end-time step, evrsvp id-explicit, eventRender.js/eventRsvp.js extracted. Full detail in commit message.
 
-## Gotchas Hit This Session
-- `database/crew.json` is NO LONGER tracked (commit `1cb7250` untracked live DB files — git auto-pull was wiping the crew roster) — `git checkout -- database/crew.json` now errors with pathspec; tests self-restore via test.after instead
+### `95af7ab` — auto-unpin when meet ends (4 files)
+1. **eventWizard.js** publishEvent: after successful pin, persists `team.events[eventId].pinnedMsgId = cardMsg.key.id` via getTeam→mutate→updateTeam (live-cache semantics)
+2. **eventRsvp.js** (159 lines): `sweepExpiredPins(sock)` — walks `getAllTeams()`, calls `getCrewEvents(gid)` (reuses the DB lazy `upcoming→completed` flip, no duplicated endAt logic), then for each `status==='completed'` evt with `pinnedMsgId` and no `unpinnedAt` (and `unpinTries < 3`): sends `{ pin: { type: 2, key: { remoteJid, id, fromMe: true } } }` (UNPIN_FOR_ALL), marks `unpinnedAt` or bumps `unpinTries`; persists via updateTeam. `startEventUnpinSweep(sock)` — self-guarding 5-min interval (`.unref()`), same once-across-reconnects pattern as crew sync
+3. **index.js**: wired right after the crew-sync block, try/catch boot
+4. **tests/eventWizard.test.js** (453 lines): happy-path asserts `pinnedMsgId` persisted + matches pin key id; 3 new sweep tests (unpins once + never twice, legacy record without key skipped, 3-retry cap, upcoming events untouched)
+
+## Gotchas Hit
 - bot-hosting MCP `deployments_power` takes `action` (start|stop|restart|kill), NOT `signal`
+- MCP restart can return `ok: false, reason: "A sync is already running…"` — the sync restarts the app itself; wait ~45s then check logs
+- `files_get` is NOT an MCP tool — it's `files_read` (path param)
 - PowerShell pipe backpressure: `Select-Object -First N` on node output stalls the child — redirect to file instead
 - `node --test tests/` (directory arg) fails on Windows/Node 24 — always glob `tests/*.test.js`
-- Debugging note: a hang-at-publish symptom during instrumented runs did NOT reproduce on clean tree (repro 3/3, suite 46/46) — if it resurfaces, suspect timer interactions with DBG probes, not publishEvent itself
+- `database/crew.json` NO LONGER tracked (commit `1cb7250`) — tests self-restore via test.after
+- Live-cache DB semantics: mutate the object from getTeam/getAllTeams/getCrewEvents then `updateTeam(gid, team)`; addCrewEvent spreads into a NEW record so post-hoc mutation of the local `data` object is lost
 
 ## Kill List (do NOT resurrect)
-Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, setter panels, NSFW buttons, per-command Again handlers, positional RSVP buttons (`again:attend:1/2`), silent first-event fallback in attend.js.
+Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, setter panels, NSFW buttons, per-command Again handlers, positional RSVP buttons, silent first-event fallback.
 
 ## Active Files
-- `commands/crew/eventWizard.js` — wizard orchestrator (exactly 500 lines; do not add without extracting)
-- `commands/crew/eventRender.js` — all step renders + draftToRecord
-- `commands/crew/eventRsvp.js` — card renderer + evrsvp handler
-- `commands/crew/cpmData.js` — 84-server table, pages, jump ranges, TIME_RE, normalizeCpmId
-- `commands/crew/attend.js` — typed attend path (evrsvp buttons)
-- `utils/buttonHelper.js` — contextInfo mentions edit (line ~250)
-- `tests/eventWizard.test.js` — reply-bound suite
-- `tests/buttonAudit.test.js` — Phase A auto-scans sources; `evrsvp:` resolves via registration, `again:attend:*` probes still valid
+- `commands/crew/eventWizard.js` — wizard orchestrator (499 lines; extract before adding more)
+- `commands/crew/eventRsvp.js` — card renderer + evrsvp handler + unpin sweep
+- `commands/crew/eventRender.js` — step renders + draftToRecord
+- `commands/crew/cpmData.js` — 84-server table, pages, jump ranges
+- `commands/crew/attend.js` — typed attend path
+- `index.js` — crew sync + unpin sweep wiring (~line 625-645)
+- `tests/eventWizard.test.js` — reply-bound + sweep suite
+- `utils/buttonHelper.js` — contextInfo mentions
 
 ## Next Steps
-- User smoke-test in a real group: `!event` → build → post → verify card pin appears, crew got silent mention, buttons render, `evrsvp:` in/out works, `!attend EV-XXXXX` works
-- Watch first live publish for Baileys pin-API quirks (`sock.sendMessage(jid, { pin: { type:1, time, key } })` — v7 has no pinMessage method)
-- If pin fails in production (bot not admin), the try/catch warns and carries on — expected behavior, not a bug
+- User smoke-test in a real group: `!event` → build → post → pin appears + silent mention → `evrsvp:` in/out → after `endAt` passes (or result logged), within 5 min the sweep unpins the card
+- Legacy events (published before this deploy) have no `pinnedMsgId` — they will NOT auto-unpin; unpin those manually if needed
+- Watch first live unpin for Baileys quirks (type 2 key shape); failures retry 3x over 15 min then give up silently (logged)
 
 ## Memory Keys
-mcp__claude-flow__memory_search { query: "event wizard cpm eventRsvp evrsvp pin mentions", namespace: "project" }
+mcp__claude-flow__memory_search { query: "event wizard unpin sweep pinnedMsgId evrsvp pin", namespace: "project" }
