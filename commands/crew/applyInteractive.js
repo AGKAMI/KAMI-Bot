@@ -560,14 +560,20 @@ async function runBotReview(sock, session) {
         `👤 ${mention(session.applicantJid)}\n` +
         `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
         `🆔 App ID: *${appUid}*\n\n` +
-        `_Answers passed the checks. Use ${config.prefix || '.'}crew accept ${appUid} to finalise._`;
+        `_Answers passed the checks — tap ✅ to finalise, no typing needed._`;
 
       const targets = admins.length > 0 ? admins : [teamGroupJid];
       for (const target of targets) {
         try {
-          await sock.sendMessage(target, {
+          await sendButtons(sock, target, {
             text: botNotice,
+            footer: `${getTeamDisplayName(teamKey)} Applications`,
             mentions: [session.applicantJid],
+            buttons: [
+              { id: `crew:accept:${appUid}`, text: `✅ Accept ${appUid}` },
+              { id: `crew:deny:${appUid}`, text: `❌ Deny ${appUid}` },
+              { id: `crew:pending:${teamKey}`, text: '📋 View Pending' },
+            ],
           });
         } catch (e) {}
       }
