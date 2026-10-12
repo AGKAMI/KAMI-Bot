@@ -3,6 +3,9 @@
  * with a mock sock. crew.json is snapshotted and restored around the
  * suite (tests dirty it — same convention as the picker arc).
  *
+ * Reply-bound capture: typed answers must quote the current step message
+ * (contextInfo.stanzaId === s.lastStepId) — textMsg() threads the id.
+ *
  * Run: node --test --test-force-exit tests/eventWizard.test.js
  */
 
@@ -20,6 +23,7 @@ const { handleButtonResponse, getLastHandlerPromise } = require('../utils/button
 const eventWizard = require('../commands/crew/eventWizard');
 const eventCmd = require('../commands/crew/event');
 const database = require('../database');
+const cpmData = require('../commands/crew/cpmData');
 
 const GROUP = '120363000000000001@g.us';
 const HOST = '27800000001@s.whatsapp.net';
@@ -47,7 +51,15 @@ function mkSock() {
         try { const p = JSON.parse(r.buttonParamsJson || '{}'); return { id: p.id, text: p.display_text }; }
         catch (e) { return {}; }
       });
-      sent.push({ jid, content: { buttons, text: (im && im.body && im.body.text) || '' }, opts: { relayed: true } });
+      sent.push({
+        jid,
+        content: {
+          buttons,
+          text: (im && im.body && im.body.text) || '',
+          mentions: (im && im.contextInfo && im.contextInfo.mentionedJid) || [],
+        },
+        opts: { relayed: true },
+      });
       return { key: { id: 'r' + sent.length } };
     },
     async groupMetadata() { return { participants: [{ id: HOST, admin: 'admin' }, { id: OTHER, admin: null }] }; },
@@ -70,10 +82,23 @@ async function tap(sock, btnId, { isAdmin = true, participant } = {}) {
   return consumed;
 }
 
-const textMsg = (body, sender) => ({
+// Reply-bound: pass the session (reads s.lastStepId) or an explicit stanza
+const textMsg = (body, sender, sOrStanza) => ({
   key: { remoteJid: GROUP, participant: sender || HOST, fromMe: false },
   pushName: 'test',
-  message: { conversation: body },
+  message: {
+    extendedTextMessage: {
+      text: body,
+      contextInfo: {
+        stanzaId: typeof sOrStanza === 'string' ? sOrStanza : (sOrStanza && sOrStanza.lastStepId) || 'STALE',
+        mentionedJid: [],
+      },
+    },
+  },
+});
+
+const ctx = (body, sender, isGroup = true) => ({
+  from: GROUP, sender: sender || HOST, body, isGroup,
 });
 
 const settle = () => new Promise(r => setTimeout(r, 750)); // > render debounce + 500ms cooldown
@@ -82,6 +107,24 @@ test.after(() => {
   // Restore crew.json — tests may have written events into it
   if (CREW_SNAPSHOT !== null) fs.writeFileSync(CREW_DB, CREW_SNAPSHOT);
   else if (fs.existsSync(CREW_DB)) fs.unlinkSync(CREW_DB);
+});
+
+// ── cpmData locks ─────────────────────────────────────────────────────
+test('cpmData: 84 servers, A–Z, JAPANESE + FILIPINO in slot, 6/page', () => {
+  const keys = cpmData.SERVERS.map(s => s.key);
+  assert.strictEqual(keys.length, 84, '84 servers (user 83 + JAPANESE)');
+  assert.strictEqual(keys.at(-1), 'OTHER', 'OTHER rides last');
+  const sorted = keys.filter(k => k !== 'OTHER').slice().sort();
+  assert.deepStrictEqual(sorted, keys.filter(k => k !== 'OTHER'), 'strict A–Z');
+  const jp = cpmData.SERVERS[keys.indexOf('JAPANESE')];
+  assert.strictEqual(jp.flag, '🇯🇵', 'JAPANESE carries the JP flag');
+  assert.strictEqual(keys[keys.indexOf('JAPANESE') - 1], 'JAMAICAN');
+  assert.strictEqual(keys[keys.indexOf('JAPANESE') + 1], 'JORDANIAN');
+  assert.strictEqual(keys[keys.indexOf('FILIPINO') - 1], 'FAROESE', 'FILIPINO in the F-slot');
+  assert.strictEqual(keys[keys.indexOf('FILIPINO') + 1], 'FINNISH');
+  assert.strictEqual(cpmData.PAGE_SIZE, 6, '6 rows make room for the Jump button');
+  assert.strictEqual(cpmData.buildServerPages().length, 14, '14 pages at 6/page');
+  assert.strictEqual(cpmData.SERVER_RANGES.length, 6, '6 jump ranges');
 });
 
 // ── Gates ──────────────────────────────────────────────────────────────
@@ -100,7 +143,7 @@ test('stale ewiz taps (unknown nonce) get the gone-nudge, never silence', async 
 });
 
 // ── Wizard happy path ──────────────────────────────────────────────────
-test('full build: template → host → id → server → car → skip time → post', async () => {
+test('full build: template → host → id → server → car → time → duration → post', async () => {
   const sock = mkSock();
 
   // Start (bare !event → startWizard)
@@ -116,23 +159,24 @@ test('full build: template → host → id → server → car → skip time → 
   await settle();
   assert.ok(sock.sent.at(-1).content.text.includes('HOST'), 'host prompt after title');
 
-  // Host via typed capture
-  const ate = await eventWizard.captureText(sock, textMsg('AG KAMI'), { from: GROUP, sender: HOST, body: 'AG KAMI', isGroup: true });
+  // Host via typed capture (reply-bound)
+  const ate = await eventWizard.captureText(sock, textMsg('AG KAMI', HOST, s), ctx('AG KAMI'));
   assert.strictEqual(ate, true, 'host text consumed');
   await settle();
   assert.ok(sock.sent.at(-1).content.text.includes('ROOM ID'), 'id prompt after host');
 
-  // Garbage ID → strike; good ID → advance
-  assert.strictEqual(await eventWizard.captureText(sock, textMsg('not an id!!'), { from: GROUP, sender: HOST, body: 'not an id!!', isGroup: true }), true);
+  // Garbage ID → strike; good ID → advance (replies quote the strike msg)
+  assert.strictEqual(await eventWizard.captureText(sock, textMsg('not an id!!', HOST, s), ctx('not an id!!')), true);
   await settle();
   assert.match(sock.sent.at(-1).content.text, /VR401128/, 're-ask shows the ID example');
-  assert.strictEqual(await eventWizard.captureText(sock, textMsg('vr 401128'), { from: GROUP, sender: HOST, body: 'vr 401128', isGroup: true }), true);
+  assert.strictEqual(await eventWizard.captureText(sock, textMsg('vr 401128', HOST, s), ctx('vr 401128')), true);
   await settle();
   assert.ok(sock.sent.at(-1).content.text.includes('SERVER'), 'server prompt after id');
 
   // Server: page 1 has 🇿🇦 pinned, tap it
   const srvMsg = sock.sent.at(-1);
   assert.ok(srvMsg.content.buttons[0].text.includes('AFRIKAANS'), 'home server pinned first');
+  assert.ok(srvMsg.content.buttons.some(b => String(b.id).includes(':jumps')), 'Jump button present');
   await tap(sock, srvMsg.content.buttons[0].id);
   await settle();
   assert.ok(sock.sent.at(-1).content.text.includes('CAR TYPE'), 'car prompt after server');
@@ -142,25 +186,37 @@ test('full build: template → host → id → server → car → skip time → 
   await settle();
   assert.ok(sock.sent.at(-1).content.text.includes('TIME'), 'time prompt after car');
 
-  // Skip time
+  // Skip time → DURATION step (not review)
   await tap(sock, `ewiz:${nonce}:tskip`);
   await settle();
-  assert.ok(sock.sent.at(-1).content.text.includes('REVIEW'), 'review after time skip');
+  assert.ok(sock.sent.at(-1).content.text.includes('DURATION'), 'duration step after time skip');
   assert.ok(!sock.sent.at(-1).content.text.includes('⏰:'), 'no time line on skipped-time preview');
 
-  // Post
+  // Skip duration → review
+  await tap(sock, `ewiz:${nonce}:dskip`);
+  await settle();
+  assert.ok(sock.sent.at(-1).content.text.includes('REVIEW'), 'review after duration skip');
+
+  // Post → card (hidden mention + evrsvp) + pin
   await tap(sock, `ewiz:${nonce}:post`);
   await settle();
   const card = sock.sent.find(x => (x.content.buttons || []).some(b => String(b.id || '').startsWith('evrsvp:in:')));
   assert.ok(card, 'card posted with evrsvp buttons');
   assert.match(card.content.text, /STANCE MEET/);
-  assert.match(card.content.text, /AG KAMI/);
-  assert.match(card.content.text, /VR401128/);
-  assert.match(card.content.text, /AFRIKAANS/);
-  assert.ok(card.content.buttons.some(b => String(b.id).startsWith('evrsvp:in:')), 'card carries evrsvp buttons');
+  assert.match(card.content.text, /Host 👤: AG KAMI/, 'word-first host label');
+  assert.match(card.content.text, /🆔: VR401128/, 'ID stays emoji-only');
+  assert.match(card.content.text, /Server 🌐: 🇿🇦 AFRIKAANS/);
+  assert.match(card.content.text, /Cars 🚗: Any Stance Car/);
+  assert.ok(!card.content.text.includes('⏰:'), 'no time line when both skipped');
+  assert.match(card.content.text, /👥 1 going so far/, 'host auto-RSVP seeds the count');
+  assert.deepStrictEqual(card.content.mentions.slice().sort(), [HOST, OTHER].sort(), 'hidden mention tags the whole crew');
+  const pin = sock.sent.map(x => x.content && x.content.pin).find(Boolean);
+  assert.ok(pin, 'pin sent after the card');
+  assert.strictEqual(pin.type, 1, 'pin action');
+  assert.strictEqual(pin.time, 7 * 24 * 60 * 60, '7-day pin');
   assert.strictEqual([...eventWizard.sessions.values()].length, 0, 'session closed after post');
 
-  // Record persisted with the v2 fields (the old whitelist would've eaten them)
+  // Record persisted with the v2 fields
   const team = database.getTeam(GROUP);
   const [evId, ev] = Object.entries(team.events).find(([, e]) => e.name === 'STANCE MEET') || [];
   assert.ok(evId && evId.startsWith('EV-'), 'EV-XXXXX id');
@@ -169,16 +225,105 @@ test('full build: template → host → id → server → car → skip time → 
   assert.strictEqual(ev.serverKey, 'AFRIKAANS');
   assert.strictEqual(ev.carType, 'Any Stance Car');
   assert.strictEqual(ev.time, null, 'skipped time stored as null');
+  assert.strictEqual(ev.endTime, null);
+  assert.strictEqual(ev.endAt, null, 'no duration → no endAt');
   assert.strictEqual(ev.expiresAt, null, 'timeless events never lazily expire');
   assert.strictEqual(ev.createdBy, HOST);
+  assert.deepStrictEqual(ev.attendees, [HOST], 'host seeded as the first attendee');
 
-  // RSVP round-trip on the live id
+  // RSVP round-trip on the live id — host already in, OTHER joins then leaves
   const rsvpSock = mkSock();
   await tap(rsvpSock, `evrsvp:in:${evId}`, { isAdmin: false, participant: OTHER });
   assert.match(rsvpSock.sent[0].content.text, /Locked in for \*STANCE MEET\*/, 'RSVP confirm');
-  assert.strictEqual(database.getCrewEvent(GROUP, evId).attendees.length, 1);
+  assert.strictEqual(database.getCrewEvent(GROUP, evId).attendees.length, 2, 'host + OTHER');
   await tap(rsvpSock, `evrsvp:out:${evId}`, { isAdmin: false, participant: OTHER });
-  assert.strictEqual(database.getCrewEvent(GROUP, evId).attendees.length, 0, 'RSVP out removes');
+  assert.strictEqual(database.getCrewEvent(GROUP, evId).attendees.length, 1, 'OTHER out, host remains');
+});
+
+// ── Duration flow ──────────────────────────────────────────────────────
+test('duration: 20:30 + 2hr preset → end 22:30, endAt stored, card shows range', async () => {
+  const sock = mkSock();
+  await eventWizard.startWizard(sock, tapMsg('x'), { from: GROUP, sender: HOST });
+  await settle();
+  const s = [...eventWizard.sessions.values()].find(x => x.chatJid === GROUP);
+  const nonce = s.nonce;
+
+  await tap(sock, `ewiz:${nonce}:tpl:STANCE`);
+  await settle();
+  await eventWizard.captureText(sock, textMsg('AG KAMI', HOST, s), ctx('AG KAMI'));
+  await settle();
+  await eventWizard.captureText(sock, textMsg('VR401128', HOST, s), ctx('VR401128'));
+  await settle();
+  await tap(sock, `ewiz:${nonce}:srv:AFRIKAANS`);
+  await settle();
+  await tap(sock, `ewiz:${nonce}:car:0`);
+  await settle();
+  await eventWizard.captureText(sock, textMsg('20:30', HOST, s), ctx('20:30'));
+  await settle();
+  assert.ok(sock.sent.at(-1).content.text.includes('DURATION'), 'duration step after typed time');
+  await tap(sock, `ewiz:${nonce}:dur:120`);
+  await settle();
+  assert.match(sock.sent.at(-1).content.text, /20:30 – 22:30/, 'review shows the range');
+  await tap(sock, `ewiz:${nonce}:post`);
+  await settle();
+
+  const card = sock.sent.find(x => (x.content.buttons || []).some(b => String(b.id || '').startsWith('evrsvp:in:')));
+  assert.match(card.content.text, /Time ⏰: 20:30 – 22:30/, 'card time line carries both ends');
+  const team = database.getTeam(GROUP);
+  const ev = Object.values(team.events).find(e => e.name === 'STANCE MEET' && e.time === '20:30');
+  assert.ok(ev, 'record with the typed time');
+  assert.strictEqual(ev.endTime, '22:30');
+  assert.strictEqual(ev.durationMins, 120);
+  assert.ok(ev.endAt > Date.now(), 'endAt in the future');
+  assert.ok(ev.expiresAt, 'timed events keep the 48h window too');
+  eventWizard.sessions.delete(s.nonce);
+});
+
+// ── Jump overlay ───────────────────────────────────────────────────────
+test('jump overlay: range tap lands on the page containing that range', async () => {
+  const sock = mkSock();
+  await eventWizard.startWizard(sock, tapMsg('x'), { from: GROUP, sender: HOST });
+  await settle();
+  const s = [...eventWizard.sessions.values()].find(x => x.chatJid === GROUP);
+  const nonce = s.nonce;
+  await tap(sock, `ewiz:${nonce}:tpl:STANCE`);
+  await settle();
+  await eventWizard.captureText(sock, textMsg('AG KAMI', HOST, s), ctx('AG KAMI'));
+  await settle();
+  await eventWizard.captureText(sock, textMsg('VR401128', HOST, s), ctx('VR401128'));
+  await settle(); // now on the server step
+
+  await tap(sock, `ewiz:${nonce}:jumps`);
+  await settle();
+  const jumpMsg = sock.sent.at(-1);
+  assert.match(jumpMsg.content.text, /JUMP TO/);
+  assert.strictEqual(jumpMsg.content.buttons.length, 8, '6 ranges + back + cancel');
+
+  await tap(sock, `ewiz:${nonce}:jump:5`); // T–Z
+  await settle();
+  const pages = cpmData.buildServerPages();
+  const expected = cpmData.pageForKey(pages, 'TAJIK');
+  assert.strictEqual(s.serverPage, expected, 'lands on the T–Z page');
+  assert.match(sock.sent.at(-1).content.text, new RegExp(`Page ${expected + 1}/${pages.length}`));
+  eventWizard.sessions.delete(s.nonce);
+});
+
+// ── Reply-bound capture ────────────────────────────────────────────────
+test('captureText: non-replies and stale-quote replies are never consumed', async () => {
+  const sock = mkSock();
+  await eventWizard.startWizard(sock, tapMsg('x'), { from: GROUP, sender: HOST });
+  await settle();
+  const s = [...eventWizard.sessions.values()].find(x => x.chatJid === GROUP);
+  s.awaiting = 'host'; s.awaitingSince = Date.now();
+
+  // Host chatting in the group WITHOUT replying to the step — ignored
+  assert.strictEqual(await eventWizard.captureText(sock, textMsg('anyone else hosting?', HOST, 'OLD-MSG-999'), ctx('anyone else hosting?')), false);
+  // Replying to a STALE message (not the current step) — ignored
+  assert.strictEqual(await eventWizard.captureText(sock, textMsg('AG KAMI', HOST, 'OLD-MSG-999'), ctx('AG KAMI')), false);
+  // Replying to the CURRENT step — consumed
+  assert.strictEqual(await eventWizard.captureText(sock, textMsg('AG KAMI', HOST, s), ctx('AG KAMI')), true);
+
+  eventWizard.sessions.delete(s.nonce);
 });
 
 test('captureText ignores prefixed text and strangers', async () => {
@@ -189,12 +334,12 @@ test('captureText ignores prefixed text and strangers', async () => {
   const s = [...eventWizard.sessions.values()].find(x => x.chatJid === GROUP);
   s.awaiting = 'host'; s.awaitingSince = Date.now();
 
-  // Prefixed text falls through (commands still work mid-build) — live prefix read
-  assert.strictEqual(await eventWizard.captureText(sock, textMsg(`${P}menu`), { from: GROUP, sender: HOST, body: `${P}menu`, isGroup: true }), false);
+  // Prefixed text falls through (commands still work mid-build)
+  assert.strictEqual(await eventWizard.captureText(sock, textMsg(`${P}menu`, HOST, s), ctx(`${P}menu`)), false);
   // A stranger's text is never stolen
-  assert.strictEqual(await eventWizard.captureText(sock, textMsg('hi', OTHER), { from: GROUP, sender: OTHER, body: 'hi', isGroup: true }), false);
+  assert.strictEqual(await eventWizard.captureText(sock, textMsg('hi', OTHER, s), ctx('hi', OTHER)), false);
   // DMs never capture
-  assert.strictEqual(await eventWizard.captureText(sock, textMsg('hi'), { from: '27812345678@s.whatsapp.net', sender: HOST, body: 'hi', isGroup: false }), false);
+  assert.strictEqual(await eventWizard.captureText(sock, textMsg('hi', HOST, s), { from: '27812345678@s.whatsapp.net', sender: HOST, body: 'hi', isGroup: false }), false);
 
   eventWizard.sessions.delete(s.nonce);
 });
@@ -206,7 +351,7 @@ test('three bad answers scrap the build', async () => {
   const s = [...eventWizard.sessions.values()].find(x => x.chatJid === GROUP);
   s.awaiting = 'id'; s.awaitingSince = Date.now();
   for (let i = 0; i < 3; i++) {
-    await eventWizard.captureText(sock, textMsg('garbage!!'), { from: GROUP, sender: HOST, body: 'garbage!!', isGroup: true });
+    await eventWizard.captureText(sock, textMsg('garbage!!', HOST, s), ctx('garbage!!'));
     await settle();
   }
   assert.strictEqual([...eventWizard.sessions.values()].length, 0, 'auto-cancelled after 3 strikes');

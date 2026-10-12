@@ -1,43 +1,36 @@
 /**
  * CPM Event Card Wizard — interactive builder for crew meet events.
  *
- * `!event` (bare) opens a step machine IN-GROUP (the DM blocker makes DM
- * wizards impossible for crew admins): TITLE (7 templates + custom) →
- * HOST 👤 → ROOM ID 🆔 → SERVER 🌐 (paginated, 🇿🇦 pinned page 1) →
- * CAR TYPE 🚗 (per-template presets + custom) → TIME ⏰ (optional) →
- * REVIEW → POST. Legacy `!event <name> <HH:MM>` keeps working — the
- * command file routes to it before starting the wizard.
+ * `!event` (bare) opens a step machine IN-GROUP: TITLE → HOST 👤 →
+ * ROOM ID 🆔 → SERVER 🌐 (paginated + jump, 🇿🇦 pinned) → CAR TYPE 🚗 →
+ * TIME ⏰ (optional) → DURATION ⏱️ → REVIEW → POST (card hidden-tags the
+ * whole crew + auto-pins 7d). Legacy `!event <name> <HH:MM>` keeps
+ * working — event.js routes to it before starting the wizard.
  *
- * Precedents cloned from applyInteractive.js (session Map + TTL + stage
- * guards) and memberPicker.js (nonce'd button ids + pagination).
- *
- * Rulings baked in (planner/judge pipeline 2026-10-12):
- *  - `requireAdmin('ewiz')` — NO trailing colon (buttonHelper.js:69 checks
- *    `btnId.startsWith(prefix + ':')`; 'ewiz:' would never match).
- *  - Sessions are per-(group, sender) — joint hosts coexist; the same
- *    sender restarting replaces their own draft; 60s per-group start
- *    throttle stops restart spam.
- *  - RAM-only drafts, zero DB writes before the publish latch.
- *  - Publish order: write event first, then send the card (a failed card
- *    send still leaves a working event — `!attend EV-XXXXX` covers it).
- *  - RSVP ids are explicit (`evrsvp:in:<id>`), never positional — and
- *    `evrsvp:` is NOT admin-gated: the whole crew RSVPs.
- *  - expiresAt = created + 48h, ONLY when a time was set — timeless
- *    "now-now" events die via result/remove, never lazily.
- *  - The capture hook sits BEFORE bomb/tictactoe so an armed step beats
- *    game input, and before antibadword/antiflood/slowmode so a
- *    demoted-mid-build host's text can't be eaten by the gauntlet.
+ * Renders live in eventRender.js, card + evrsvp in eventRsvp.js
+ * (≤500-line house rule). Rulings: requireAdmin('ewiz') NO trailing
+ * colon; per-(group, sender) sessions, restart replaces own draft;
+ * reply-bound capture (stanzaId === s.lastStepId); host auto-RSVP;
+ * RAM-only drafts; publish = write → card (mention) → pin → confirm;
+ * evrsvp ids explicit, crew-wide; expiresAt 48h timed-only, endAt
+ * retires ended events via the DB sweep; capture hook BEFORE games.
  */
 
 const config = require('../../config');
 const database = require('../../database');
-const { sendButtons, onButton, requireAdmin } = require('../../utils/buttonHelper');
+const { onButton, requireAdmin } = require('../../utils/buttonHelper');
 const { buildComparableIds } = require('../../utils/jidHelper');
 const { voice } = require('../../utils/format');
 const {
   TEMPLATES, DEFAULT_CAR_OPTIONS, buildServerPages, serverByKey,
-  templateByKey, normalizeCpmId, sanitizeEventText, TIME_RE,
+  templateByKey, normalizeCpmId, sanitizeEventText, TIME_RE, SERVER_RANGES, pageForKey,
 } = require('./cpmData');
+const {
+  sendStep, minsUntil, recomputeEndTime, draftToRecord,
+  renderTitleStep, renderHostStep, renderIdStep, renderServerStep, renderJumpStep,
+  renderCarStep, renderTimeStep, renderDurationStep, renderReviewStep, renderEditPicker,
+} = require('./eventRender');
+const { renderEventCard, resolveEventById } = require('./eventRsvp');
 
 // Forged taps bounce at the router (buttonHelper choke point)
 requireAdmin('ewiz');
@@ -45,16 +38,14 @@ requireAdmin('ewiz');
 // ── Tunables ─────────────────────────────────────────────────
 const SESSION_TTL = 30 * 60 * 1000;   // draft dies after 30 min
 const TEXT_WINDOW = 3 * 60 * 1000;    // armed typed-capture window
-const RENDER_DEBOUNCE = 700;          // beats the 500ms interactive cooldown
-const EXPIRY_WINDOW = 48 * 60 * 60 * 1000; // events with a time expire 48h after creation
 const ID_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const PIN_SECONDS = 7 * 24 * 60 * 60; // auto-pin the card for 7 days
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const prefix = () => config.prefix || '.';
 
 // ── Session store (RAM only — restarts cost one re-run) ──────
 const sessions = new Map();           // nonce → session
-const _groupStarts = new Map();       // groupJid → last start ts
 
 const jidsMatch = (a, b) => {
   if (!a || !b) return false;
@@ -110,214 +101,13 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000).unref();
 
-// ── Render helpers ──────────────────────────────────────────
-async function sendStep(sock, s, payload, quoted) {
-  const wait = RENDER_DEBOUNCE - (Date.now() - (s.lastRenderAt || 0));
-  if (wait > 0) await sleep(wait);
-  s.lastRenderAt = Date.now();
-  return sendButtons(sock, s.chatJid, {
-    footer: config.botName || 'KAMI Bot',
-    ...payload,
-  }, quoted);
-}
-
-const CANCEL_BTN = (s) => ({ id: `ewiz:${s.nonce}:cancel`, text: '🚫 Cancel' });
-
-// ── Step renders ─────────────────────────────────────────────
-async function renderTitleStep(sock, s) {
-  s.step = 'title';
-  s.awaiting = null;
-  const buttons = TEMPLATES.map(t => ({
-    id: `ewiz:${s.nonce}:tpl:${t.key}`,
-    text: `${t.emoji} ${t.label}`,
-  }));
-  buttons.push({ id: `ewiz:${s.nonce}:tplc`, text: '✍️ Custom title' });
-  buttons.push(CANCEL_BTN(s));
-  return sendStep(sock, s, {
-    text:
-      `━━━ 📅 *NEW EVENT* [1/6] ━━━\n\n` +
-      `Aweh 👑 What we running? Pick the type, or ✍️ for your own vibe.\n\n` +
-      `_Type ${prefix()}event cancel to scrap it_`,
-    buttons,
-  });
-}
-
-async function renderHostStep(sock, s) {
-  s.step = 'host';
-  s.awaiting = 'host';
-  s.awaitingSince = Date.now();
-  return sendStep(sock, s, {
-    text:
-      `━━━ 👤 *HOST* [2/6] ━━━\n\n` +
-      `Who's hosting this one?\n\n` +
-      `_Reply to this message or just type it here — I'm listening 👂 (3 min)_`,
-    buttons: [
-      { id: `ewiz:${s.nonce}:hostme`, text: '👤 Use my name' },
-      CANCEL_BTN(s),
-    ],
-  });
-}
-
-async function renderIdStep(sock, s) {
-  s.step = 'id';
-  s.awaiting = 'id';
-  s.awaitingSince = Date.now();
-  return sendStep(sock, s, {
-    text:
-      `━━━ 🆔 *ROOM ID* [3/6] ━━━\n\n` +
-      `Drop the CPM player ID the lads use to join your lobby — like *VR401128*.\n\n` +
-      `_Type it here (3 min)_`,
-    buttons: [CANCEL_BTN(s)],
-  });
-}
-
-async function renderServerStep(sock, s) {
-  s.step = 'server';
-  s.awaiting = null;
-  const pages = buildServerPages();
-  if (s.serverPage >= pages.length) s.serverPage = 0;
-  const rows = pages[s.serverPage];
-  const buttons = rows.map(sv => ({
-    id: `ewiz:${s.nonce}:srv:${sv.key}`,
-    text: `${sv.flag} ${sv.name}`,
-  }));
-  if (s.serverPage > 0) buttons.push({ id: `ewiz:${s.nonce}:pg:${s.serverPage - 1}`, text: '◀️ Prev' });
-  if (s.serverPage < pages.length - 1) buttons.push({ id: `ewiz:${s.nonce}:pg:${s.serverPage + 1}`, text: 'Next ▶️' });
-  buttons.push(CANCEL_BTN(s));
-  return sendStep(sock, s, {
-    text:
-      `━━━ 🌐 *SERVER* [4/6] — Page ${s.serverPage + 1}/${pages.length} ━━━\n\n` +
-      `Which server we linking on? 🇿🇦 pinned right here for home advantage hey.`,
-    buttons,
-  });
-}
-
-async function renderCarStep(sock, s) {
-  s.step = 'car';
-  s.awaiting = null;
-  const tpl = s.draft.templateKey ? templateByKey(s.draft.templateKey) : null;
-  const options = (tpl ? tpl.carOptions : DEFAULT_CAR_OPTIONS).slice(0, 7);
-  const buttons = options.map((opt, i) => ({
-    id: `ewiz:${s.nonce}:car:${i}`,
-    text: `🚗 ${opt}`,
-  }));
-  buttons.push({ id: `ewiz:${s.nonce}:carc`, text: '✍️ Custom' });
-  buttons.push(CANCEL_BTN(s));
-  return sendStep(sock, s, {
-    text:
-      `━━━ 🚗 *CAR TYPE* [5/6] ━━━\n\n` +
-      `What must the lads bring?${tpl ? ` _(${tpl.label})_` : ''}`,
-    buttons,
-  });
-}
-
-async function renderTimeStep(sock, s) {
-  s.step = 'time';
-  s.awaiting = 'time';
-  s.awaitingSince = Date.now();
-  return sendStep(sock, s, {
-    text:
-      `━━━ ⏰ *TIME* [6/6] ━━━\n\n` +
-      `What time we linking? 24hr like *20:30* — or skip if it's a now-now thing.\n\n` +
-      `_Type it here (3 min), or "skip"_`,
-    buttons: [
-      { id: `ewiz:${s.nonce}:tskip`, text: '⏭️ Skip — now-now' },
-      CANCEL_BTN(s),
-    ],
-  });
-}
-
-// ── Card + review ────────────────────────────────────────────
-function draftToRecord(s) {
-  const title = String(s.draft.title || '').toUpperCase();
-  const hasTime = !!s.draft.time;
-  return {
-    name: title,
-    time: hasTime ? s.draft.time : null,
-    createdBy: s.hostJid,
-    attendees: [],
-    status: 'upcoming',
-    results: null,
-    created: Date.now(),
-    host: s.draft.host || null,
-    cpmId: s.draft.cpmId || null,
-    serverKey: s.draft.serverKey || null,
-    carType: s.draft.carType || null,
-    customCar: !!s.draft.customCar,
-    templateKey: s.draft.templateKey || null,
-    expiresAt: hasTime ? Date.now() + EXPIRY_WINDOW : null,
-    postedAt: Date.now(),
-  };
-}
-
-/**
- * The event card — the owner's mock, line-for-line. Shared by the wizard
- * (post + review preview) and anything else that re-renders a card.
- */
-function renderEventCard(eventId, evt, attendeeCount) {
-  const sv = evt.serverKey ? serverByKey(evt.serverKey) : null;
-  let text =
-    `━━━━━━━━━━━━━━━━\n` +
-    `${evt.templateKey && templateByKey(evt.templateKey) ? templateByKey(evt.templateKey).emoji : '🏁'} *${evt.name}*\n` +
-    `━━━━━━━━━━━━━━━━\n\n`;
-  if (evt.host) text += `👤: ${evt.host}\n`;
-  if (evt.cpmId) text += `🆔: ${evt.cpmId}\n`;
-  if (sv) text += `🌐: ${sv.flag} ${sv.name}\n`;
-  if (evt.carType) text += `🚗: ${evt.carType}\n`;
-  if (evt.time) text += `⏰: ${evt.time}\n`;
-  text += `\n👥 ${attendeeCount} going so far\n`;
-  // Off-template custom car — the host's call, but flag it
-  if (evt.templateKey && evt.customCar) {
-    const tpl = templateByKey(evt.templateKey);
-    if (tpl && !tpl.carOptions.includes(evt.carType)) {
-      text += `\n_⚠️ off-template rule, host's call_\n`;
-    }
-  }
-  text += `\n_Tap ✅ if you're pulling — or ${prefix()}attend ${eventId}_`;
-  return text;
-}
-
-async function renderReviewStep(sock, s) {
-  s.step = 'review';
-  s.awaiting = null;
-  const evt = draftToRecord(s);
-  const preview = renderEventCard('…', evt, 0);
-  return sendStep(sock, s, {
-    text: `✅ *REVIEW — LOOK LEKKE?*\n\n${preview}\n\n_Tap ✅ and it's live._`,
-    buttons: [
-      { id: `ewiz:${s.nonce}:post`, text: '✅ Post it' },
-      { id: `ewiz:${s.nonce}:edit`, text: '✏️ Edit a field' },
-      CANCEL_BTN(s),
-    ],
-  });
-}
-
-async function renderEditPicker(sock, s) {
-  s.step = 'editpick';
-  s.awaiting = null;
-  return sendStep(sock, s, {
-    text: `✏️ *EDIT WHICH PART?*`,
-    buttons: [
-      { id: `ewiz:${s.nonce}:editf:title`,  text: '🏁 Title' },
-      { id: `ewiz:${s.nonce}:editf:host`,   text: '👤 Host' },
-      { id: `ewiz:${s.nonce}:editf:id`,     text: '🆔 ID' },
-      { id: `ewiz:${s.nonce}:editf:server`, text: '🌐 Server' },
-      { id: `ewiz:${s.nonce}:editf:car`,    text: '🚗 Cars' },
-      { id: `ewiz:${s.nonce}:editf:time`,   text: '⏰ Time' },
-      { id: `ewiz:${s.nonce}:back`,         text: '◀️ Back to review' },
-      CANCEL_BTN(s),
-    ],
-  });
-}
-
 // ── Step entry / cancel / publish ────────────────────────────
 async function startWizard(sock, msg, extra) {
   const chatJid = msg.key.remoteJid;
   const sender = msg.key.participant || msg.key.remoteJid;
   const groupJid = extra?.from || chatJid;
 
-  // Same host restarting replaces their own draft silently (restart spam
-  // self-heals — each start renders one debounced title step). Different
+  // Same host restarting replaces their own draft silently. Different
   // hosts coexist: per-(group, sender) sessions, nonce-routed taps.
   const { s: own } = _lookup(chatJid, sender);
   if (own) sessions.delete(own.nonce);
@@ -337,6 +127,7 @@ async function startWizard(sock, msg, extra) {
     strikes: 0,
     startedAt: Date.now(),
     lastRenderAt: 0,
+    lastStepId: null,
     publishing: false,
   };
   sessions.set(s.nonce, s);
@@ -367,20 +158,33 @@ async function cancelWizardFor(sock, msg, extra) {
 }
 
 // Publish: DB first (a card-send failure still leaves a working event —
-// the typed `!attend EV-XXXXX` path covers it), then the card, then the
-// confirm. Latch stops double-taps double-writing.
+// the typed `!attend EV-XXXXX` path covers it), then the card (hidden
+// mention of the whole crew), then the 7-day pin, then the confirm.
+// Latch stops double-taps double-writing.
 async function publishEvent(sock, s) {
   if (s.publishing) return;
   s.publishing = true;
   const eventId = genEventId(s.groupJid);
   const evt = draftToRecord(s);
+  evt.attendees = [s.hostJid]; // host auto-RSVP — they're hosting, they're pulling up
   database.addCrewEvent(s.groupJid, eventId, evt);
   sessions.delete(s.nonce);
   console.log(`[EVWIZ] published ${eventId} in ${s.groupJid} (${evt.name})`);
 
+  // Hidden mention — everyone gets pinged, no @ shows in the text
+  let mentions = [];
   try {
-    await sendStep(sock, s, {
-      text: renderEventCard(eventId, evt, 0),
+    const meta = await sock.groupMetadata(s.groupJid);
+    mentions = (meta.participants || []).map(p => p.id).filter(Boolean);
+  } catch (e) {
+    console.error('[EVWIZ] groupMetadata failed (no mention):', e.message);
+  }
+
+  let cardMsg = null;
+  try {
+    cardMsg = await sendStep(sock, s, {
+      text: renderEventCard(eventId, evt, evt.attendees.length),
+      mentions,
       buttons: [
         { id: `evrsvp:in:${eventId}`, text: '✅ I\'M IN' },
         { id: `evrsvp:out:${eventId}`, text: '❌ I\'M OUT' },
@@ -390,6 +194,17 @@ async function publishEvent(sock, s) {
   } catch (cardErr) {
     console.error('[EVWIZ] card send failed:', cardErr.message);
   }
+
+  // Pin for 7 days — the bot must be group admin, else warn and carry on
+  if (cardMsg && cardMsg.key) {
+    try {
+      await sock.sendMessage(s.groupJid, { pin: { type: 1, time: PIN_SECONDS, key: cardMsg.key } });
+      console.log(`[EVWIZ] pinned ${eventId} for ${PIN_SECONDS}s`);
+    } catch (pinErr) {
+      console.error('[EVWIZ] pin failed (bot admin?):', pinErr.message);
+    }
+  }
+
   try {
     await sleep(700);
     await sock.sendMessage(s.chatJid, {
@@ -407,15 +222,19 @@ async function _strikeOut(sock, s, reason) {
   if (s.strikes >= 3) {
     return cancelWizard(sock, s, s.chatJid, null);
   }
-  return sock.sendMessage(s.chatJid, {
+  const sent = await sock.sendMessage(s.chatJid, {
     text: `⚠️ ${reason}\n\n_${3 - s.strikes} ${s.strikes === 2 ? 'try' : 'tries'} left before I scrap this build, boet_`,
   });
+  if (sent && sent.key && sent.key.id) s.lastStepId = sent.key.id; // the fix-reply owns the next answer
+  return sent;
 }
 
 /**
  * Called from handler.js BEFORE the games and group protections.
- * Consumes the host's typed answer when a step is armed. Returns true
- * when the message was consumed (handler must return).
+ * Consumes the host's typed answer when a step is armed AND the message
+ * is a reply to the current step message — anyone else's chat (and the
+ * host's own non-reply messages) flows through. Returns true when the
+ * message was consumed (handler must return).
  */
 async function captureText(sock, msg, ctx) {
   try {
@@ -435,12 +254,18 @@ async function captureText(sock, msg, ctx) {
       return false;
     }
     if (!s.awaiting) return false;
+
+    // Reply-bound capture — only answers quoted to the CURRENT step count
+    const stanzaId = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
+    if (!s.lastStepId || stanzaId !== s.lastStepId) return false;
+
     if (Date.now() - s.awaitingSince > TEXT_WINDOW) {
       // window closed — re-arm by re-rendering the same step
       s.awaitingSince = Date.now();
-      await sock.sendMessage(ctx.from, {
+      const sent = await sock.sendMessage(ctx.from, {
         text: `👂 Still on *${s.awaiting}* — go again, I'm listening (3 min back on the clock).`,
       }, { quoted: msg });
+      if (sent && sent.key && sent.key.id) s.lastStepId = sent.key.id;
       return true;
     }
 
@@ -462,6 +287,16 @@ async function captureText(sock, msg, ctx) {
       } else if (TIME_RE.test(body)) {
         s.draft.time = body; ok = true;
       } else { await _strikeOut(sock, s, 'Time must be 24hr *HH:MM* — like *20:30* — or "skip".'); return true; }
+      recomputeEndTime(s); // duration may already exist from an edit
+    } else if (s.awaiting === 'endtime') {
+      const lower = body.toLowerCase();
+      if (lower === 'skip' || lower === 'none') {
+        s.draft.endTime = null; s.draft.durationMins = null; ok = true;
+      } else if (TIME_RE.test(body)) {
+        s.draft.endTime = body;
+        if (!s.draft.time) s.draft.durationMins = minsUntil(body); // now-now: show "(Xh)" on the card
+        ok = true;
+      } else { await _strikeOut(sock, s, 'End time must be 24hr *HH:MM* — like *22:30* — or "skip".'); return true; }
     } else if (s.awaiting === 'title') {
       const v = sanitizeEventText(body, 32);
       if (v) { s.draft.title = v; s.draft.templateKey = null; ok = true; }
@@ -487,7 +322,7 @@ async function captureText(sock, msg, ctx) {
       case 'host':  await renderIdStep(sock, s); return true;
       case 'id':    await renderServerStep(sock, s); return true;
       case 'car':   await renderTimeStep(sock, s); return true;
-      case 'time':  await renderReviewStep(sock, s); return true;
+      case 'time':  await renderDurationStep(sock, s); return true;
       default:      await renderReviewStep(sock, s); return true;
     }
   } catch (e) {
@@ -507,7 +342,6 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
 
     // Stale taps after cancel/restart/expiry — never silent-dead
     if (!s) {
-      // Only nudge once per chat per burst (avoid tap-spam echo storms)
       return sock.sendMessage(from, {
         text: `⚠️ That build is gone — expired, cancelled or restarted. Run ${prefix()}event to start fresh.`,
       });
@@ -535,12 +369,15 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
         if (s.returnTo === 'review') { s.returnTo = null; return renderReviewStep(sock, s); }
         return renderHostStep(sock, s);
       }
-      case 'tplc':
+      case 'tplc': {
         s.awaiting = 'title';
         s.awaitingSince = Date.now();
-        return sock.sendMessage(from, {
+        const sent = await sock.sendMessage(from, {
           text: `✍️ Reply with your title, boet — I'll CAPS and bold it for the card (3 min).`,
         }, { quoted: msg });
+        if (sent && sent.key && sent.key.id) s.lastStepId = sent.key.id;
+        return;
+      }
 
       case 'hostme':
         s.draft.host = sanitizeEventText(s.hostName, 40) || 'Host';
@@ -560,6 +397,17 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
         s.serverPage = page;
         return renderServerStep(sock, s);
       }
+      case 'jumps':
+        return renderJumpStep(sock, s);
+      case 'jump': {
+        const ri = parseInt(arg, 10);
+        const r = SERVER_RANGES[ri];
+        if (!r) return;
+        s.serverPage = pageForKey(buildServerPages(), r.fromKey);
+        return renderServerStep(sock, s);
+      }
+      case 'jumpb':
+        return renderServerStep(sock, s);
 
       case 'car': {
         const tpl = s.draft.templateKey ? templateByKey(s.draft.templateKey) : null;
@@ -571,16 +419,43 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
         if (s.returnTo === 'review') { s.returnTo = null; return renderReviewStep(sock, s); }
         return renderTimeStep(sock, s);
       }
-      case 'carc':
+      case 'carc': {
         s.awaiting = 'car';
         s.awaitingSince = Date.now();
-        return sock.sendMessage(from, {
+        const sent = await sock.sendMessage(from, {
           text: `🚗 Reply with the car rule — like *Audi only* or *Golf GTIs only* (3 min).`,
         }, { quoted: msg });
+        if (sent && sent.key && sent.key.id) s.lastStepId = sent.key.id;
+        return;
+      }
 
       case 'tskip':
         s.draft.time = null;
+        recomputeEndTime(s);
         if (s.returnTo === 'review') { s.returnTo = null; return renderReviewStep(sock, s); }
+        return renderDurationStep(sock, s);
+
+      case 'dur': {
+        const mins = parseInt(arg, 10);
+        if (![30, 60, 120, 180].includes(mins)) return;
+        s.draft.durationMins = mins;
+        recomputeEndTime(s);
+        s.returnTo = null;
+        return renderReviewStep(sock, s);
+      }
+      case 'durc': {
+        s.awaiting = 'endtime';
+        s.awaitingSince = Date.now();
+        const sent = await sock.sendMessage(from, {
+          text: `⏱️ Reply with the end time, boet — 24hr like *22:30* (3 min).`,
+        }, { quoted: msg });
+        if (sent && sent.key && sent.key.id) s.lastStepId = sent.key.id;
+        return;
+      }
+      case 'dskip':
+        s.draft.durationMins = null;
+        s.draft.endTime = null;
+        s.returnTo = null;
         return renderReviewStep(sock, s);
 
       case 'post':
@@ -598,6 +473,7 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
           case 'server': s.serverPage = 0; return renderServerStep(sock, s);
           case 'car':    return renderCarStep(sock, s);
           case 'time':   return renderTimeStep(sock, s);
+          case 'duration': return renderDurationStep(sock, s);
           default: s.returnTo = null; return renderReviewStep(sock, s);
         }
       }
@@ -610,63 +486,6 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
     }
   } catch (e) {
     console.error('[EVWIZ] tap error:', e.message);
-  }
-});
-
-// ── RSVP — explicit event ids, NOT positional, crew-wide ─────
-function resolveEventById(eventId, preferredGroupJid) {
-  if (preferredGroupJid && String(preferredGroupJid).endsWith('@g.us')) {
-    const team = database.getTeam(preferredGroupJid);
-    if (team?.events?.[eventId]) return { groupJid: preferredGroupJid, team };
-  }
-  // Forwarded cards / DM taps — event ids are unique, search everywhere
-  for (const [gid, team] of Object.entries(database.getAllTeams() || {})) {
-    if (team?.events?.[eventId]) return { groupJid: gid, team };
-  }
-  return null;
-}
-
-onButton('evrsvp:', async (sock, msg, from, sender, btnId) => {
-  try {
-    const [action, eventId] = btnId.slice('evrsvp:'.length).split(':');
-    if ((action !== 'in' && action !== 'out') || !eventId) return;
-
-    const found = resolveEventById(eventId, from);
-    if (!found) {
-      return sock.sendMessage(from, {
-        text: `⚠️ That event is gone, hey — check ${prefix()}events for what's coming up.`,
-      });
-    }
-    const evt = found.team.events[eventId];
-    if (evt.status && evt.status !== 'upcoming') {
-      return sock.sendMessage(from, { text: `❌ *${evt.name}* is done and dusted, boet.` });
-    }
-    if (!Array.isArray(evt.attendees)) evt.attendees = [];
-
-    // LID-safe dedupe — the same human tapping from phone and LID jids
-    // must not double-count (pre-existing attend.js bug class)
-    const variants = buildComparableIds(sender);
-    const isAttending = evt.attendees.some(a => buildComparableIds(a).some(v => variants.includes(v)));
-
-    if (action === 'in') {
-      if (!isAttending) {
-        evt.attendees.push(sender);
-        database.updateTeam(found.groupJid, found.team);
-      }
-      return sock.sendMessage(from, {
-        text: `✅ Locked in for *${evt.name}*${evt.time ? ` at *${evt.time}*` : ''} — *${evt.attendees.length}* going so far`,
-      });
-    } else {
-      if (isAttending) {
-        evt.attendees = evt.attendees.filter(a => !buildComparableIds(a).some(v => variants.includes(v)));
-        database.updateTeam(found.groupJid, found.team);
-      }
-      return sock.sendMessage(from, {
-        text: `👋 You're out of *${evt.name}* — *${evt.attendees.length}* still going`,
-      });
-    }
-  } catch (e) {
-    console.error('[EVWIZ] rsvp error:', e.message);
   }
 });
 

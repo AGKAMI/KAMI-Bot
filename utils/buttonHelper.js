@@ -217,6 +217,11 @@ async function sendButtons(sock, jid, opts, quoted) {
   const interactiveMsg = {
     body: { text: image ? btnBody : text },
     ...(footer ? { footer: { text: footer } } : {}),
+    // Hidden mentions — event cards tag the whole crew without an @ in
+    // the text. Added 2026-10-12 (event wizard); if a client chokes on
+    // contextInfo here, delete this one line — plain-text paths carry
+    // mentions regardless.
+    ...(mentions && mentions.length ? { contextInfo: { mentionedJid: mentions } } : {}),
     nativeFlowMessage: { buttons: rows },
   };
 

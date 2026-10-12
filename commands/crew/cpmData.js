@@ -42,6 +42,7 @@ const SERVERS = [
   { key: 'ENGLISH',        flag: '🇬🇧', name: 'ENGLISH' },
   { key: 'ESTONIAN',       flag: '🇪🇪', name: 'ESTONIAN' },
   { key: 'FAROESE',        flag: '🇫🇴', name: 'FAROESE' },
+  { key: 'FILIPINO',       flag: '🇵🇭', name: 'FILIPINO' },
   { key: 'FINNISH',        flag: '🇫🇮', name: 'FINNISH' },
   { key: 'FRENCH',         flag: '🇫🇷', name: 'FRENCH' },
   { key: 'GEORGIAN',       flag: '🇬🇪', name: 'GEORGIAN' },
@@ -57,6 +58,7 @@ const SERVERS = [
   { key: 'IRISH',          flag: '🇮🇪', name: 'IRISH' },
   { key: 'ITALIAN',        flag: '🇮🇹', name: 'ITALIAN' },
   { key: 'JAMAICAN',       flag: '🇯🇲', name: 'JAMAICAN' },
+  { key: 'JAPANESE',       flag: '🇯🇵', name: 'JAPANESE' },
   { key: 'JORDANIAN',      flag: '🇯🇴', name: 'JORDANIAN' },
   { key: 'KAZAKH',         flag: '🇰🇿', name: 'KAZAKH' },
   { key: 'KOREAN',         flag: '🇰🇷', name: 'KOREAN' },
@@ -72,7 +74,6 @@ const SERVERS = [
   { key: 'NIGERIAN',       flag: '🇳🇬', name: 'NIGERIAN' },
   { key: 'NORWEGIAN',      flag: '🇳🇴', name: 'NORWEGIAN' },
   { key: 'PAKISTANI',      flag: '🇵🇰', name: 'PAKISTANI' },
-  { key: 'FILIPINO',       flag: '🇵🇭', name: 'FILIPINO' },
   { key: 'POLISH',         flag: '🇵🇱', name: 'POLISH' },
   { key: 'PORTUGUESE',     flag: '🇵🇹', name: 'PORTUGUESE' },
   { key: 'QATARI',         flag: '🇶🇦', name: 'QATARI' },
@@ -98,10 +99,10 @@ const SERVERS = [
 ];
 
 // Server picker layout: AFRIKAANS pinned page 1 slot 1 (home server —
-// 90% of meets), then A–Z pages of 7, OTHER riding at the end of the
-// last page. 7 rows + Prev + Next + Cancel = 10 buttons max, so the
+// 90% of meets), then A–Z pages, OTHER riding at the end of the last
+// page. 6 rows + Prev + Next + Jump + Cancel = 10 buttons max, so the
 // buttonHelper slice(0,10) can never drop navigation.
-const PAGE_SIZE = 7;
+const PAGE_SIZE = 6;
 
 function buildServerPages() {
   const [home, ...rest] = SERVERS.filter(s => s.key !== 'OTHER');
@@ -116,6 +117,23 @@ function buildServerPages() {
 
 function serverByKey(key) {
   return SERVERS.find(s => s.key === key) || null;
+}
+
+// Jump-overlay ranges — A–Z clusters, each landing within one page.
+const SERVER_RANGES = [
+  { label: 'A–B', fromKey: 'AFRIKAANS' },
+  { label: 'C–E', fromKey: 'CAMBODIAN' },
+  { label: 'F–J', fromKey: 'FAROESE' },
+  { label: 'K–M', fromKey: 'KAZAKH' },
+  { label: 'N–S', fromKey: 'NIGERIAN' },
+  { label: 'T–Z', fromKey: 'TAJIK' },
+];
+
+// Page index containing the first server at/after fromKey
+function pageForKey(pages, fromKey) {
+  const flat = pages.flat();
+  const idx = flat.findIndex(sv => sv && sv.key >= fromKey);
+  return idx < 0 ? 0 : Math.floor(idx / PAGE_SIZE);
 }
 
 // ── Title templates ─────────────────────────────────────────
@@ -176,15 +194,25 @@ function sanitizeEventText(raw, maxLen = 32) {
 // 24-hour HH:MM — strict (rejects 99:99 and 23:60)
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
+// Duration display: 30 → "30 min", 60 → "1 hr", 120 → "2 hr"
+function fmtDuration(mins) {
+  if (!mins || mins <= 0) return null;
+  if (mins % 60 === 0) return mins === 60 ? '1 hr' : `${mins / 60} hr`;
+  return `${mins} min`;
+}
+
 module.exports = {
   SERVERS,
   TEMPLATES,
   DEFAULT_CAR_OPTIONS,
   PAGE_SIZE,
+  SERVER_RANGES,
   buildServerPages,
   serverByKey,
+  pageForKey,
   templateByKey,
   normalizeCpmId,
   sanitizeEventText,
+  fmtDuration,
   TIME_RE,
 };

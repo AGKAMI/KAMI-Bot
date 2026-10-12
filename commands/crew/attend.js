@@ -2,6 +2,7 @@ const database = require('../../database');
 
 const config = require('../../config');
 const { sendButtons } = require('../../utils/buttonHelper');
+const { buildComparableIds } = require('../../utils/jidHelper');
 const { sortUpcoming } = require('./crewHelpers');
 
 module.exports = {
@@ -9,7 +10,7 @@ module.exports = {
   name: 'attend',
   category: 'crew',
   description: 'RSVP to a crew event — toggles you in/out',
-  usage: '.attend [number] · no number = first/only event',
+  usage: '.attend [number|EV-id] · no number = first/only event',
   adminOnly: false,
   groupOnly: true,
 
@@ -28,7 +29,10 @@ module.exports = {
       });
     }
 
-    // Resolve which event: number from .events list, bare ID, or the only/first one
+    // Resolve which event: number from .events list, bare ID
+    // (case-insensitive — EV-abc12 == ev-ABC12), or the only/first one.
+    // A given-but-unmatched arg is an ERROR — never silently fall back
+    // to the first event (judges' M2: typo'd id toggling the wrong meet).
     let eventId;
     const arg = args && args[0];
 
@@ -40,8 +44,15 @@ module.exports = {
         });
       }
       eventId = upcoming[idx][0];
-    } else if (arg && allEvents[arg]) {
-      eventId = arg; // old-style evt_xxx ID still works
+    } else if (arg) {
+      const want = String(arg).toUpperCase();
+      const hit = Object.keys(allEvents).find(id => String(id).toUpperCase() === want);
+      if (!hit) {
+        return sock.sendMessage(jid, {
+          text: `❌ *ERROR*\n\nNo event with that ID.\nSee them with: \`${prefix}events\``
+        });
+      }
+      eventId = hit;
     } else {
       eventId = upcoming[0][0]; // no arg → first/only event
     }
@@ -65,17 +76,20 @@ module.exports = {
       event.attendees = [];
     }
 
-    const isAttending = event.attendees.includes(sender);
+    // LID-safe — same human on phone + LID jids never double-counts
+    // (matches the evrsvp card path; was a bare includes() before)
+    const variants = buildComparableIds(sender);
+    const isAttending = event.attendees.some(a => buildComparableIds(a).some(v => variants.includes(v)));
     const count = () => event.attendees.length;
 
     if (isAttending) {
-      event.attendees = event.attendees.filter(a => a !== sender);
+      event.attendees = event.attendees.filter(a => !buildComparableIds(a).some(v => variants.includes(v)));
       database.updateTeam(jid, team);
       return sendButtons(sock, jid, {
         text: `✅ You're out of *${event.name}* (${count()} going)`,
         footer: config.botName || 'KAMI Bot',
         buttons: [
-          { id: `again:attend:${args && args[0] ? args[0] : '1'}`, text: '↩️ Get back in' },
+          { id: `evrsvp:in:${eventId}`, text: '↩️ Get back in' },
           { id: 'again:events', text: '📅 All events' },
         ],
       }, msg);
@@ -87,7 +101,7 @@ module.exports = {
       text: `✅ You're locked in for *${event.name}* at *${event.time}* (${count()} going)`,
       footer: config.botName || 'KAMI Bot',
       buttons: [
-        { id: `again:attend:${args && args[0] ? args[0] : '1'}`, text: '↩️ Change my mind' },
+        { id: `evrsvp:out:${eventId}`, text: '↩️ Change my mind' },
         { id: 'again:events', text: '📅 All events' },
       ],
     }, msg);

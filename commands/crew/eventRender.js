@@ -1,0 +1,306 @@
+/**
+ * Event wizard renders — extracted from eventWizard.js (≤500-line rule).
+ * Step prompts, server/jump pickers, duration, review, edit picker, and
+ * draftToRecord. Session mutation (step/awaiting/draft fields) is by
+ * reference — the wizard owns lifecycle, this file owns pixels.
+ *
+ * sendStep notes:
+ *  - lastRenderAt is reserved SYNCHRONOUSLY before the debounce sleep —
+ *    assigning it after the sleep let two concurrent renders wake
+ *    together and trip buttonHelper's 500ms cooldown (degraded
+ *    plain-text step; judges' A3/M3).
+ *  - lastStepId captures the bot message id — typed answers are only
+ *    consumed when the host REPLIES to that exact step message.
+ */
+
+const config = require('../../config');
+const { sendButtons } = require('../../utils/buttonHelper');
+const {
+  TEMPLATES, DEFAULT_CAR_OPTIONS, buildServerPages,
+  SERVER_RANGES, pageForKey, templateByKey,
+} = require('./cpmData');
+const { renderEventCard } = require('./eventRsvp');
+
+const RENDER_DEBOUNCE = 700; // beats the 500ms interactive cooldown
+const EXPIRY_WINDOW = 48 * 60 * 60 * 1000; // timed events expire 48h after creation
+const sleep = (ms) => new Promise(r => setTimeout(r => ms));
+const prefix = () => config.prefix || '.';
+
+async function sendStep(sock, s, payload, quoted) {
+  const now = Date.now();
+  const wait = RENDER_DEBOUNCE - (now - (s.lastRenderAt || 0));
+  s.lastRenderAt = wait > 0 ? now + wait : now; // reserve the slot NOW
+  if (wait > 0) await sleep(wait);
+  const sent = await sendButtons(sock, s.chatJid, {
+    footer: config.botName || 'KAMI Bot',
+    ...payload,
+  }, quoted);
+  if (sent && sent.key && sent.key.id) s.lastStepId = sent.key.id;
+  return sent;
+}
+
+const CANCEL_BTN = (s) => ({ id: `ewiz:${s.nonce}:cancel`, text: '🚫 Cancel' });
+
+// ── Time helpers ─────────────────────────────────────────────
+const hhmmOnDay = (hhmm, ref) => {
+  const [h, m] = String(hhmm).split(':').map(Number);
+  const d = new Date(ref);
+  d.setHours(h, m, 0, 0);
+  return d.getTime();
+};
+
+// Minutes from now until the next occurrence of HH:MM (same-day or overnight)
+function minsUntil(hhmm) {
+  const [h, m] = String(hhmm).split(':').map(Number);
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  let delta = (h * 60 + m - nowMins + 1440) % 1440;
+  if (delta === 0) delta = 1440;
+  return delta;
+}
+
+// Keep the displayed end time in sync whenever time or duration changes
+function recomputeEndTime(s) {
+  const t = s.draft.time;
+  const mins = s.draft.durationMins;
+  if (t && mins) {
+    let tot = (Number(t.split(':')[0]) * 60 + Number(t.split(':')[1]) + mins) % 1440;
+    s.draft.endTime =
+      String(Math.floor(tot / 60)).padStart(2, '0') + ':' + String(tot % 60).padStart(2, '0');
+  } else if (!t && mins) {
+    s.draft.endTime = null; // card shows "now-now (Xh)" from durationMins
+  }
+  // t && !mins → keep a custom-picked endTime as-is
+}
+
+// ── Step renders ─────────────────────────────────────────────
+async function renderTitleStep(sock, s) {
+  s.step = 'title';
+  s.awaiting = null;
+  const buttons = TEMPLATES.map(t => ({
+    id: `ewiz:${s.nonce}:tpl:${t.key}`,
+    text: `${t.emoji} ${t.label}`,
+  }));
+  buttons.push({ id: `ewiz:${s.nonce}:tplc`, text: '✍️ Custom title' });
+  buttons.push(CANCEL_BTN(s));
+  return sendStep(sock, s, {
+    text:
+      `━━━ 📅 *NEW EVENT* [1/7] ━━━\n\n` +
+      `Aweh 👑 What we running? Pick the type, or ✍️ for your own vibe.\n\n` +
+      `_Type ${prefix()}event cancel to scrap it_`,
+    buttons,
+  });
+}
+
+async function renderHostStep(sock, s) {
+  s.step = 'host';
+  s.awaiting = 'host';
+  s.awaitingSince = Date.now();
+  return sendStep(sock, s, {
+    text:
+      `━━━ 👤 *HOST* [2/7] ━━━\n\n` +
+      `Who's hosting this one?\n\n` +
+      `_Reply to this message with the name (3 min)_`,
+    buttons: [
+      { id: `ewiz:${s.nonce}:hostme`, text: '👤 Use my name' },
+      CANCEL_BTN(s),
+    ],
+  });
+}
+
+async function renderIdStep(sock, s) {
+  s.step = 'id';
+  s.awaiting = 'id';
+  s.awaitingSince = Date.now();
+  return sendStep(sock, s, {
+    text:
+      `━━━ 🆔 *ROOM ID* [3/7] ━━━\n\n` +
+      `Drop the CPM player ID the lads use to join your lobby — like *VR401128*.\n\n` +
+      `_Reply to this message (3 min)_`,
+    buttons: [CANCEL_BTN(s)],
+  });
+}
+
+async function renderServerStep(sock, s) {
+  s.step = 'server';
+  s.awaiting = null;
+  const pages = buildServerPages();
+  if (s.serverPage >= pages.length) s.serverPage = 0;
+  const rows = pages[s.serverPage];
+  const buttons = rows.map(sv => ({
+    id: `ewiz:${s.nonce}:srv:${sv.key}`,
+    text: `${sv.flag} ${sv.name}`,
+  }));
+  if (s.serverPage > 0) buttons.push({ id: `ewiz:${s.nonce}:pg:${s.serverPage - 1}`, text: '◀️ Prev' });
+  if (s.serverPage < pages.length - 1) buttons.push({ id: `ewiz:${s.nonce}:pg:${s.serverPage + 1}`, text: 'Next ▶️' });
+  if (pages.length > 1) buttons.push({ id: `ewiz:${s.nonce}:jumps`, text: '⏩ Jump' });
+  buttons.push(CANCEL_BTN(s));
+  return sendStep(sock, s, {
+    text:
+      `━━━ 🌐 *SERVER* [4/7] — Page ${s.serverPage + 1}/${pages.length} ━━━\n\n` +
+      `Which server we linking on? 🇿🇦 pinned right here for home advantage hey.`,
+    buttons,
+  });
+}
+
+async function renderJumpStep(sock, s) {
+  s.step = 'jump';
+  s.awaiting = null;
+  const buttons = SERVER_RANGES.map((r, i) => ({
+    id: `ewiz:${s.nonce}:jump:${i}`,
+    text: `🔤 ${r.label}`,
+  }));
+  buttons.push({ id: `ewiz:${s.nonce}:jumpb`, text: '◀️ Servers' });
+  buttons.push(CANCEL_BTN(s));
+  return sendStep(sock, s, {
+    text:
+      `━━━ 🌐 *JUMP TO* ━━━\n\n` +
+      `_Pick a range — I'll land you on the right page._`,
+    buttons,
+  });
+}
+
+async function renderCarStep(sock, s) {
+  s.step = 'car';
+  s.awaiting = null;
+  const tpl = s.draft.templateKey ? templateByKey(s.draft.templateKey) : null;
+  const options = (tpl ? tpl.carOptions : DEFAULT_CAR_OPTIONS).slice(0, 7);
+  const buttons = options.map((opt, i) => ({
+    id: `ewiz:${s.nonce}:car:${i}`,
+    text: `🚗 ${opt}`,
+  }));
+  buttons.push({ id: `ewiz:${s.nonce}:carc`, text: '✍️ Custom' });
+  buttons.push(CANCEL_BTN(s));
+  return sendStep(sock, s, {
+    text:
+      `━━━ 🚗 *CAR TYPE* [5/7] ━━━\n\n` +
+      `What must the lads bring?${tpl ? ` _(${tpl.label})_` : ''}`,
+    buttons,
+  });
+}
+
+async function renderTimeStep(sock, s) {
+  s.step = 'time';
+  s.awaiting = 'time';
+  s.awaitingSince = Date.now();
+  return sendStep(sock, s, {
+    text:
+      `━━━ ⏰ *TIME* [6/7] ━━━\n\n` +
+      `What time we linking? 24hr like *20:30* — or skip if it's a now-now thing.\n\n` +
+      `_Reply to this message (3 min), or "skip" — duration is next_`,
+    buttons: [
+      { id: `ewiz:${s.nonce}:tskip`, text: '⏭️ Skip — now-now' },
+      CANCEL_BTN(s),
+    ],
+  });
+}
+
+async function renderDurationStep(sock, s) {
+  s.step = 'duration';
+  s.awaiting = null;
+  return sendStep(sock, s, {
+    text:
+      `━━━ ⏱️ *DURATION* [7/7] ━━━\n\n` +
+      `How long we rolling? An end time keeps the lobby honest.\n\n` +
+      `_Or skip — the card runs without an end time._`,
+    buttons: [
+      { id: `ewiz:${s.nonce}:dur:30`, text: '⏱️ 30 min' },
+      { id: `ewiz:${s.nonce}:dur:60`, text: '⏱️ 1 hr' },
+      { id: `ewiz:${s.nonce}:dur:120`, text: '⏱️ 2 hr' },
+      { id: `ewiz:${s.nonce}:dur:180`, text: '⏱️ 3 hr' },
+      { id: `ewiz:${s.nonce}:durc`, text: '✍️ Custom end' },
+      { id: `ewiz:${s.nonce}:dskip`, text: '⏭️ Skip' },
+      CANCEL_BTN(s),
+    ],
+  });
+}
+
+async function renderReviewStep(sock, s) {
+  s.step = 'review';
+  s.awaiting = null;
+  const evt = draftToRecord(s);
+  const preview = renderEventCard('…', evt, 0);
+  return sendStep(sock, s, {
+    text: `✅ *REVIEW — LOOK LEKKE?*\n\n${preview}\n\n_Tap ✅ and it's live._`,
+    buttons: [
+      { id: `ewiz:${s.nonce}:post`, text: '✅ Post it' },
+      { id: `ewiz:${s.nonce}:edit`, text: '✏️ Edit a field' },
+      CANCEL_BTN(s),
+    ],
+  });
+}
+
+async function renderEditPicker(sock, s) {
+  s.step = 'editpick';
+  s.awaiting = null;
+  return sendStep(sock, s, {
+    text: `✏️ *EDIT WHICH PART?*`,
+    buttons: [
+      { id: `ewiz:${s.nonce}:editf:title`,   text: '🏁 Title' },
+      { id: `ewiz:${s.nonce}:editf:host`,     text: '👤 Host' },
+      { id: `ewiz:${s.nonce}:editf:id`,       text: '🆔 ID' },
+      { id: `ewiz:${s.nonce}:editf:server`,   text: '🌐 Server' },
+      { id: `ewiz:${s.nonce}:editf:car`,      text: '🚗 Cars' },
+      { id: `ewiz:${s.nonce}:editf:time`,     text: '⏰ Time' },
+      { id: `ewiz:${s.nonce}:editf:duration`, text: '⏱️ Duration' },
+      { id: `ewiz:${s.nonce}:back`,           text: '◀️ Back to review' },
+      CANCEL_BTN(s),
+    ],
+  });
+}
+
+// ── Draft → DB record ────────────────────────────────────────
+// endAt: timed events = start epoch with end possibly wrapping past
+// midnight; timeless-with-duration = now + duration. The database sweep
+// flips 'upcoming' → 'completed' past expiresAt (48h, timed only) or
+// endAt, so a 2-hour now-now meet retires itself.
+function draftToRecord(s) {
+  const title = String(s.draft.title || '').toUpperCase();
+  const hasTime = !!s.draft.time;
+  const now = Date.now();
+  let endAt = null;
+  if (hasTime && s.draft.endTime) {
+    const startAt = hhmmOnDay(s.draft.time, now);
+    endAt = hhmmOnDay(s.draft.endTime, now);
+    if (endAt <= startAt) endAt += 24 * 60 * 60 * 1000;
+  } else if (!hasTime && s.draft.durationMins) {
+    endAt = now + s.draft.durationMins * 60 * 1000;
+  }
+  return {
+    name: title,
+    time: hasTime ? s.draft.time : null,
+    endTime: s.draft.endTime || null,
+    durationMins: s.draft.durationMins || null,
+    endAt,
+    createdBy: s.hostJid,
+    attendees: [],
+    status: 'upcoming',
+    results: null,
+    created: now,
+    host: s.draft.host || null,
+    cpmId: s.draft.cpmId || null,
+    serverKey: s.draft.serverKey || null,
+    carType: s.draft.carType || null,
+    customCar: !!s.draft.customCar,
+    templateKey: s.draft.templateKey || null,
+    expiresAt: hasTime ? now + EXPIRY_WINDOW : null,
+    postedAt: now,
+  };
+}
+
+module.exports = {
+  sendStep,
+  minsUntil,
+  recomputeEndTime,
+  draftToRecord,
+  renderTitleStep,
+  renderHostStep,
+  renderIdStep,
+  renderServerStep,
+  renderJumpStep,
+  renderCarStep,
+  renderTimeStep,
+  renderDurationStep,
+  renderReviewStep,
+  renderEditPicker,
+};
