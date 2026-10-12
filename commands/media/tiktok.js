@@ -1,9 +1,15 @@
 /**
  * TikTok Downloader - Download TikTok videos without watermark
- * Fallbacks: tikwm API -> ruhend-scraper -> tikcdn direct
+ * Fallbacks: embed page (v45 CDN) -> tikwm API -> ruhend-scraper -> tikcdn direct
+ *
+ * Why embed-first: from bot-hosting datacenter IPs, tikwm 403s and TikTok's
+ * v16-webapp-prime CDN is behind an Akamai IP-reputation ACL (Reference #18).
+ * The embed player page (tiktok.com/embed/v2/<id>) serves signed URLs on
+ * v45.tiktokcdn-eu.com, which is NOT behind that ACL — verified 200/3.3MB.
  */
 
 const axios = require('axios');
+const crypto = require('crypto');
 const { ttdl } = require('ruhend-scraper');
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
@@ -53,6 +59,14 @@ async function sendVideo(sock, chatId, videoUrl, title, msg) {
     const res = await dlAxios.get(videoUrl);
     const buf = Buffer.from(res.data);
     if (buf.length < 1000) throw new Error('Buffer too small');
+    // tikcdn sometimes serves a ~4MB "THIS APP IS OFFLINE — go to ssstik.io"
+    // promo clip instead of the real video. It's a valid mp4, so size/parse
+    // checks pass — only a content hash catches it. Reject → caller falls
+    // through to the next provider instead of delivering the wrong video.
+    if (isPlaceholder(buf)) {
+      console.error('[TT] provider served the tikcdn anti-leech placeholder — rejecting');
+      return false;
+    }
 
     const botName = config.botName.toUpperCase();
     const caption = title
@@ -201,10 +215,21 @@ async function methodRuhend(url, timeoutMs = RUHEND_TIMEOUT_MS) {
   return { type: 'video', videoUrl, title: result.title || null };
 }
 
-async function methodTikcdn(url) {
+// tikcdn anti-leech placeholder: AI-generated robot-with-sign clip
+// ("THIS APP IS OFFLINE. CONTINUE ON SSSTIK.IO…"), 4,089,113 bytes.
+// md5 observed 2026-10-12 on deployment b0665152 from the live box.
+const PLACEHOLDER_MD5 = new Set([
+  '905a30c73f68e8b14152f1123336b083',
+]);
+
+function isPlaceholder(buf) {
+  return PLACEHOLDER_MD5.has(crypto.createHash('md5').update(buf).digest('hex'));
+}
+
+// Shared: vm/vt short links hide the numeric id — follow redirects to the
+// canonical /video/<digits> page first.
+async function resolveCanonicalId(url) {
   let videoId = extractVideoId(url);
-  // Short links (vm/vt.tiktok.com/xxx) hide the numeric id — follow the
-  // redirect chain to the canonical /video/<digits> page first
   if (!videoId && /(?:vm|vt)\.tiktok\.com\//i.test(url)) {
     try {
       const res = await axios.get(url, {
@@ -214,10 +239,49 @@ async function methodTikcdn(url) {
         maxContentLength: 1024 * 1024,
         headers: { 'User-Agent': TIKWM_HEADERS['User-Agent'] },
       });
-      const finalUrl = (res.request && res.request.res && res.request.res.responseUrl) || '';
-      videoId = extractVideoId(finalUrl);
-    } catch (e) { /* fall through to the throw below */ }
+      videoId = extractVideoId((res.request && res.request.res && res.request.res.responseUrl) || '');
+    } catch (e) { /* caller throws */ }
   }
+  return videoId;
+}
+
+// Pull the signed v45 CDN URL out of an embed-player page. Handles both
+// raw HTML form (slashes literal, query params as HTML entities) and
+// JSON-escaped form (unicode-slash escape sequences).
+function extractEmbedUrl(html) {
+  if (!html || typeof html !== 'string') return null;
+  const raw = html.match(/https:\/\/v45\.tiktokcdn-eu\.com[^"']*\/video\/tos\/[^"']+/);
+  const escaped = html.match(/https:\\u002F\\u002Fv45\.tiktokcdn-eu\.com[^"]*video\\u002Ftos\\u002F[^"]+/);
+  const hit = raw || escaped;
+  if (!hit) return null;
+  return hit[0]
+    .replace(/\\u002F/g, '/')
+    .replace(/&amp;/g, '&')
+    .replace(/\\u0026/g, '&');
+}
+
+async function methodEmbed(url) {
+  const videoId = await resolveCanonicalId(url);
+  if (!videoId) throw new Error('embed: could not extract video ID');
+
+  const pageUrl = `https://www.tiktok.com/embed/v2/${videoId}`;
+  const res = await axios.get(pageUrl, {
+    timeout: 20000,
+    responseType: 'text',
+    maxContentLength: 2 * 1024 * 1024,
+    headers: {
+      'User-Agent': TIKWM_HEADERS['User-Agent'],
+      'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
+    },
+  });
+  const videoUrl = extractEmbedUrl(res.data);
+  if (!videoUrl) throw new Error('embed: no CDN URL in embed page');
+
+  return { type: 'video', videoUrl, title: null };
+}
+
+async function methodTikcdn(url) {
+  const videoId = await resolveCanonicalId(url);
   if (!videoId) throw new Error('tikcdn: could not extract video ID');
 
   const videoUrl = `https://tikcdn.io/ssstik/${videoId}`;
@@ -253,6 +317,7 @@ module.exports = {
 
       const run = (async () => {
         const methods = [
+          { name: 'embed', fn: () => methodEmbed(url) },
           { name: 'tikwm', fn: () => methodTikwm(url) },
           { name: 'ruhend', fn: () => methodRuhend(url) },
           { name: 'tikcdn', fn: () => methodTikcdn(url) }
@@ -330,6 +395,11 @@ module.exports = {
     sendVideo,
     sendSlideshow,
     methodTikwm,
+    methodEmbed,
+    methodTikcdn,
+    extractEmbedUrl,
+    isPlaceholder,
+    resolveCanonicalId,
     RUHEND_TIMEOUT_MS,
     URL_SEND_TIMEOUT_MS,
     WATCHDOG_MS,
