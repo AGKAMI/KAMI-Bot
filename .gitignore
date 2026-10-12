@@ -46,3 +46,7 @@ build/
 
 # Logs
 *.log
+
+database/crew.json
+database/ownerAddedMembers.json
+database/ownerPromotedAdmins.json
