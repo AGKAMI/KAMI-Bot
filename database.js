@@ -114,6 +114,27 @@ const flushAll = () => {
   _dirty.clear();
 };
 
+// Force-flush ONE db file to disk RIGHT NOW, bypassing the 2s debounce.
+// Critical writes (crew rosters on accept/deny) use this — accept-time
+// roster writes were silently lost across every process lifetime (audit
+// trail proved accepts happened while the roster stayed empty), and a
+// restart landing inside the debounce window eats them by design.
+const flushDB = (filePath) => {
+  const data = _cache.get(filePath);
+  if (data === undefined) return false;
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    _dirty.delete(filePath);
+    return true;
+  } catch (e) {
+    console.error(`[DB] flushDB FAILED: ${path.basename(filePath)}: ${e.message}`);
+    return false;
+  }
+};
+
+// Convenience: force-flush the crew DB (rosters, applicants, events)
+const flushCrew = () => flushDB(CREW_DB);
+
 // Force re-read from disk (for external edits)
 const reloadDB = (filePath) => {
   _cache.delete(filePath);
@@ -443,17 +464,20 @@ const getCrewEvent = (groupJid, eventId) => {
 
 // Get events for a specific group — with a lazy expiry sweep: upcoming
 // events whose window passed (expiresAt = created + 48h, only set when
-// the host gave a time) flip to 'completed'. Records WITHOUT expiresAt
-// (legacy v1 events, timeless "now-now" cards) are never touched — they
-// die via result/remove like before. result-logged events keep their
-// own status — the sweep only reads 'upcoming'.
+// the host gave a time) or whose END time passed (endAt — covers timed
+// meets after hours and timeless "now-now (2h)" wizard events) flip to
+// 'completed'. Records WITHOUT expiresAt AND endAt (legacy v1 events)
+// are never touched — they die via result/remove like before.
+// result-logged events keep their own status — the sweep only reads
+// 'upcoming'.
 const getCrewEvents = (groupJid) => {
   const team = getTeam(groupJid);
   const events = team.events || {};
   const now = Date.now();
   let flipped = false;
   for (const evt of Object.values(events)) {
-    if (evt.status === 'upcoming' && evt.expiresAt && now > evt.expiresAt) {
+    if (evt.status !== 'upcoming') continue;
+    if ((evt.expiresAt && now > evt.expiresAt) || (evt.endAt && now > evt.endAt)) {
       evt.status = 'completed';
       flipped = true;
     }
@@ -1474,5 +1498,7 @@ module.exports = {
 
   // Cache management
   flushAll,
+  flushDB,
+  flushCrew,
   reloadDB,
 };

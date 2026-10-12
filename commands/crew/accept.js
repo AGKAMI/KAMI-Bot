@@ -220,6 +220,13 @@ module.exports = {
         role: role,
       });
 
+      // Force-flush the crew DB — the roster write MUST survive. The
+      // debounced 2s flush silently lost accept-time roster writes across
+      // every process lifetime (audit entries proved accepts happened
+      // while rosters stayed empty; only the group-participant sync
+      // backfilled them later).
+      database.flushCrew();
+
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
 

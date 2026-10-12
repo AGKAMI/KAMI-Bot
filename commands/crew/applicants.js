@@ -141,14 +141,17 @@ module.exports = {
         `Use \`${prefix}crew accept <UID>\` to hire\n` +
         `Use \`${prefix}crew deny <UID> <reason>\` to reject`;
 
-      // Add quick buttons for the first pending applicant
-      const firstUid = entries[0]?.[0];
-      const firstApp = entries[0]?.[1];
-      const buttons = firstUid ? [
-        { id: `crew:accept:${firstUid}`, text: `✅ Accept ${firstUid}` },
-        { id: `crew:deny:${firstUid}`, text: `❌ Deny ${firstUid}` },
-        { id: `crew:pending:${teamLabel}`, text: `🔄 Refresh` },
-      ] : [];
+      // Per-applicant buttons — accept/deny for up to 4 apps + refresh
+      // = 9 buttons (native-flow cap 10). Apps past 4 stay list-only;
+      // their App IDs in the text still work with the typed commands.
+      const buttons = [];
+      for (const [uid] of entries.slice(0, 4)) {
+        buttons.push({ id: `crew:accept:${uid}`, text: `✅ ${uid}` });
+        buttons.push({ id: `crew:deny:${uid}`, text: `❌ ${uid}` });
+      }
+      if (buttons.length) {
+        buttons.push({ id: `crew:pending:${teamLabel}`, text: `📋 Refresh` });
+      }
 
       if (buttons.length > 0) {
         await sendButtons(sock, extra.from, {

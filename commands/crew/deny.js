@@ -111,6 +111,10 @@ module.exports = {
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
 
+      // Force-flush the crew DB — deny state must survive restarts
+      // (same lost-write class as the accept roster bug)
+      database.flushCrew();
+
       // DM the applicant the denial message + an Apply-again button
       try {
         await sendButtons(sock, applicantJid, {
