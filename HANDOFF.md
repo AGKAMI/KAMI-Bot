@@ -1,25 +1,29 @@
 # HANDOFF
 
 ## Goal
-CPM `!event` wizard lifecycle: build → post (card + 7d pin + hidden mentions) → RSVP → **auto-unpin when the meet ends**. Wizard corrections arc (`ae1ec3b`) + unpin sweep (`95af7ab`).
+CPM `!event` wizard lifecycle: build → post (card + 24h pin + hidden mentions) → RSVP → **auto-unpin when the meet ends**. Plus `!tt` TikTok downloader repairs. Arcs: wizard (`ae1ec3b`), unpin (`95af7ab`), pin-shape+labels+mentions+tt (`4833795`).
 
 ## Current State
-- Bot CONNECTED on 27833882383 (prefix `!`) — `95af7ab` auto-pulled, deploy verified via MCP logs (`KAMI BOT CONNECTED`, state `running`) AND `files_read` confirmed `sweepExpiredPins` is on the server
-- HEAD = `95af7ab` (feat(events): auto-unpin); 49/49 tests green (`node --test --test-force-exit tests/*.test.js`)
-- eventWizard.js = 499 lines (under the 500 cap after pin-persistence addition + doc trims)
-- Another session landed `1aa9594` (crew boot sync delayed 60s + all-teams-errored retry) — on top of `ae1ec3b`, below this arc
+- Bot CONNECTED on 27833882383 (prefix `!`) — `4833795` auto-pulled, restart `ok:true` + `KAMI BOT CONNECTED` + `files_read` verified every fix on the server
+- HEAD = `4833795` (fix(events,tt)); 49/49 tests green (`node --test --test-force-exit tests/*.test.js`)
+- eventWizard.js = exactly 500 lines
+- Concurrent session activity this arc: `ff24bdb` (pin 7d→24h), `5b315fe`+`e74e212` (tt mobile-feed API `tikapi` + new placeholder md5) — all absorbed
 
 ## What Shipped
-### `ae1ec3b` — wizard corrections (7 files)
-JAPANESE server, FILIPINO F-slot, PAGE_SIZE 6, SERVER_RANGES jump overlay, host auto-RSVP, 7d pin, hidden mentions, word-first labels (ID stays `🆔:`), reply-bound capture, duration/end-time step, evrsvp id-explicit, eventRender.js/eventRsvp.js extracted. Full detail in commit message.
+### `4833795` — pin shape fix, card labels, attendee mentions, tt chain (5 files)
+1. **eventWizard.js** publishEvent pin: Baileys v7 expects `{ pin: <messageKey>, type: 1, time }` — pin IS the key, type sits TOP-LEVEL. The old nested `{ pin: { type, time, key } }` silently no-ops (that's why the message never pinned). Same fix in **eventRsvp.js** unpin sweep (`{ pin: key, type: 2 }`)
+2. **eventRsvp.js** renderEventCard: labels now `*HOST* 👤:`, `*ID* 🆔:`, `*SERVER* 🌐:`, `*CARS* 🚗:`, `*TIME* ⏰:` (ALL-CAPS bold). GOING line = `👥 *GOING (N):* @name @name` with live mentions (mention() from format.js). RSVP in/out confirms also tag the tapper with mentions array
+3. **events.js** list: per-event GOING line tags attendees, mentions array passed to sendButtons
+4. **media/tiktok.js**: chain reordered `tikapi → embed → tikwm → ruhend → tikcdn`. Embed page is BACK (200 + signed v45 CDN URL — verified live from the box via shell); tikcdn is DEAD (204 empty, was serving the "THIS APP IS OFFLINE" placeholder). Placeholder rejection hardened (md5 set + exact-size backstop 4089113/2882204); unchecked Baileys URL-send fallback blocked for tikcdn hosts (that's how the promo clip shipped)
+5. **tests/eventWizard.test.js**: updated for new labels/pin shape/GOING line/RSVP confirm format
 
-### `95af7ab` — auto-unpin when meet ends (4 files)
-1. **eventWizard.js** publishEvent: after successful pin, persists `team.events[eventId].pinnedMsgId = cardMsg.key.id` via getTeam→mutate→updateTeam (live-cache semantics)
-2. **eventRsvp.js** (159 lines): `sweepExpiredPins(sock)` — walks `getAllTeams()`, calls `getCrewEvents(gid)` (reuses the DB lazy `upcoming→completed` flip, no duplicated endAt logic), then for each `status==='completed'` evt with `pinnedMsgId` and no `unpinnedAt` (and `unpinTries < 3`): sends `{ pin: { type: 2, key: { remoteJid, id, fromMe: true } } }` (UNPIN_FOR_ALL), marks `unpinnedAt` or bumps `unpinTries`; persists via updateTeam. `startEventUnpinSweep(sock)` — self-guarding 5-min interval (`.unref()`), same once-across-reconnects pattern as crew sync
-3. **index.js**: wired right after the crew-sync block, try/catch boot
-4. **tests/eventWizard.test.js** (453 lines): happy-path asserts `pinnedMsgId` persisted + matches pin key id; 3 new sweep tests (unpins once + never twice, legacy record without key skipped, 3-retry cap, upcoming events untouched)
+### Earlier arcs
+- `ae1ec3b` — wizard corrections (JAPANESE, jump overlay, duration step, hidden mentions, reply-bound capture)
+- `95af7ab` — unpin sweep (pinnedMsgId persisted at publish; 5-min sweep flips ended events and UNPIN_FOR_ALLs, 3-retry cap, legacy records skipped)
 
 ## Gotchas Hit
+- **Baileys v7 pin shape**: `{ pin: <messageKey>, type: 1|2, time? }` — pin IS the message key, type sits TOP-LEVEL. Nested `{ pin: { type, key } }` silently no-ops (no error, no pin). `senderTimestampMs` is set by the lib
+- **tiktok provider rotation** (probed live from the box via `deployments_shell`): tikcdn → 204/placeholder-dead; embed → BACK (200 + signed v45 URL); tikwm → 403s datacenter IPs. Always re-probe from the box, not from local dev — IP reputation differs
 - bot-hosting MCP `deployments_power` takes `action` (start|stop|restart|kill), NOT `signal`
 - MCP restart can return `ok: false, reason: "A sync is already running…"` — the sync restarts the app itself; wait ~45s then check logs
 - `files_get` is NOT an MCP tool — it's `files_read` (path param)
@@ -40,11 +44,13 @@ Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, sett
 - `index.js` — crew sync + unpin sweep wiring (~line 625-645)
 - `tests/eventWizard.test.js` — reply-bound + sweep suite
 - `utils/buttonHelper.js` — contextInfo mentions
+- `commands/media/tiktok.js` — provider chain (tikapi/embed/tikwm/ruhend/tikcdn) + placeholder guards
 
 ## Next Steps
-- User smoke-test in a real group: `!event` → build → post → pin appears + silent mention → `evrsvp:` in/out → after `endAt` passes (or result logged), within 5 min the sweep unpins the card
+- User smoke-test in a real group: `!event` → build → post → **pin now actually sticks** (v7 shape fixed) + crew tagged + card shows caps labels + GOING line → `evrsvp:` in/out confirms tag the person → after `endAt` passes, sweep unpins within 5 min
+- User smoke-test `!tt <url>` — should deliver the real video via tikapi or embed; the ssstik placeholder can no longer ship (blocked at both hash/size and URL-fallback layers)
 - Legacy events (published before this deploy) have no `pinnedMsgId` — they will NOT auto-unpin; unpin those manually if needed
-- Watch first live unpin for Baileys quirks (type 2 key shape); failures retry 3x over 15 min then give up silently (logged)
+- If pin still fails live, check bot is group admin — the try/catch logs `[EVWIZ] pin failed (bot admin?)` and carries on
 
 ## Memory Keys
-mcp__claude-flow__memory_search { query: "event wizard unpin sweep pinnedMsgId evrsvp pin", namespace: "project" }
+mcp__claude-flow__memory_search { query: "event wizard pin Baileys v7 shape unpin sweep GOING mentions tt tikcdn placeholder embed", namespace: "project" }
