@@ -7,6 +7,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
+const { fmtDate } = require('../../utils/sast');
 
 module.exports = {
   name: 'stats',
@@ -87,7 +88,7 @@ module.exports = {
 
     // Last active
     const lastActiveStr = activity.lastActive
-      ? new Date(activity.lastActive).toLocaleDateString('en-ZA')
+      ? fmtDate(activity.lastActive)
       : 'Never';
 
     // Inactivity status

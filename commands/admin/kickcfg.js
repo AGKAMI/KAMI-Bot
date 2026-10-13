@@ -6,6 +6,7 @@
 
 const config = require('../../config');
 const kickSettings = require('../../utils/kickSettings');
+const { fmtDate } = require('../../utils/sast');
 const { sendButtons, onButton, requireOwner } = require('../../utils/buttonHelper');
 // Global tap gate — kickcfg is ownerOnly; reject at handleButtonResponse
 // before any handler runs (handlers also self-gate via ow()).
@@ -263,7 +264,7 @@ const buildGroupScreenText = (name, g, eff) => {
   if (g.kickList.length) {
     lines.push('', `*Due for kick:*`);
     for (const k of g.kickList.slice(0, 20)) {
-      lines.push(`→ @${k.digits} (flagged ${new Date(k.flaggedAt).toLocaleDateString()})`);
+      lines.push(`→ @${k.digits} (flagged ${fmtDate(k.flaggedAt)})`);
     }
     if (g.kickList.length > 20) lines.push(`… +${g.kickList.length - 20} more`);
   }

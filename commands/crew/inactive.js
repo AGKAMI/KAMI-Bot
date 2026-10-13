@@ -7,6 +7,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG, voice, mention } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
+const { fmtDate } = require('../../utils/sast');
 
 module.exports = {
   name: 'inactive',
@@ -82,14 +83,14 @@ module.exports = {
       // Show cached display name — never raw jid/lid digits
       const label = mention(jid);
       const lastActiveStr = data.lastActive
-        ? new Date(data.lastActive).toLocaleDateString('en-ZA')
+        ? fmtDate(data.lastActive)
         : 'Never';
       const inactiveDays = data.lastActive
         ? Math.floor((Date.now() - data.lastActive) / (24 * 60 * 60 * 1000))
         : '?';
 
       text += `• ${label} — *${data.role}*\n`;
-      text += `  📅 Joined: ${data.joined ? new Date(data.joined).toLocaleDateString('en-ZA') : '?'}\n`;
+      text += `  📅 Joined: ${data.joined ? fmtDate(data.joined) : '?'}\n`;
       text += `  💬 Messages: ${data.totalMessages}\n`;
       text += `  ⏰ Last active: ${lastActiveStr} (${inactiveDays}d ago)\n\n`;
 

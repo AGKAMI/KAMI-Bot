@@ -538,7 +538,7 @@ test('date flow: month → day pages → future date, endAt lands on that date',
   const team = database.getTeam(GROUP);
   const ev = Object.values(team.events).find(e => e.name === 'STANCE MEET' && e.eventDate === iso);
   assert.ok(ev, 'record carries the picked date');
-  assert.strictEqual(ev.endAt, new Date(ry, rm - 1, 15, 22, 30).getTime(), 'endAt lands on the event date at the end time');
+  assert.strictEqual(ev.endAt, Date.UTC(ry, rm - 1, 15, 22, 30) - 2 * 60 * 60 * 1000, 'endAt lands on the event date at the end time (SAST epoch)');
   assert.strictEqual(ev.expiresAt, ev.endAt + 48 * 60 * 60 * 1000, 'expiresAt rides endAt + 48h, not now + 48h');
   eventWizard.sessions.delete(s.nonce);
 });

@@ -4,6 +4,7 @@
 
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const { fmtDate } = require('../../utils/sast');
 
 /**
  * Extract invite code from WhatsApp channel link
@@ -122,8 +123,7 @@ module.exports = {
         }
         
         if (meta.creationTime) {
-          const date = new Date(meta.creationTime * 1000);
-          infoText += `\n📅 *Created:* ${date.toLocaleDateString()}`;
+          infoText += `\n📅 *Created:* ${fmtDate(meta.creationTime * 1000)}`;
         }
         
         if (meta.image) {

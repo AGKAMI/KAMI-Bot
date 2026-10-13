@@ -6,6 +6,7 @@
 const snipeStore = require('../../utils/snipeStore');
 const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
+const { fmtDateTime } = require('../../utils/sast');
 const SnipeStoreClass = snipeStore.constructor;
 const typeEmoji = SnipeStoreClass.typeEmoji;
 
@@ -102,7 +103,7 @@ module.exports = {
     const timeAgo = getTimeAgo(entry.time);
     const senderNum = entry.sender;
     const emoji = typeEmoji(entry.type);
-    const date = new Date(entry.time).toLocaleString('en-ZA', {
+    const date = fmtDateTime(entry.time, {
       day: '2-digit',
       month: 'short',
       year: 'numeric',

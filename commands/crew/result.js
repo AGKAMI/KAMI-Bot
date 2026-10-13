@@ -1,5 +1,6 @@
 const { bold, pick, SLANG } = require('../../utils/format');
 const database = require('../../database');
+const { fmtDateTime } = require('../../utils/sast');
 
 const config = require('../../config');
 module.exports = {
@@ -54,7 +55,7 @@ module.exports = {
         `🏎️ *Event:* ${event.name}\n` +
         `⏰ *Time:* ${event.time}\n` +
         `👥 *Attending:* ${event.attendees ? event.attendees.length : 0}\n` +
-        `📅 *Completed:* ${new Date().toLocaleString()}\n\n` +
+        `📅 *Completed:* ${fmtDateTime(Date.now())}\n\n` +
         `_Lekka one, mfowethu! 🏎️💨_`
     });
   }

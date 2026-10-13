@@ -3,6 +3,7 @@
  */
 
 const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
+const { fmtDate } = require('../../utils/sast');
 
 module.exports = {
     name: 'groupinfo',
@@ -29,7 +30,7 @@ module.exports = {
                 text += `🔒 *Settings*\n`;
                 text += `🔒 *Restrict:* ${metadata.restrict ? '✅' : '❌'}\n`;
                 text += `📢 *Announce:* ${metadata.announce ? '✅' : '❌'}\n`;
-                text += `📅 *Created:* ${new Date(metadata.creation * 1000).toLocaleDateString()}\n\n`;
+                text += `📅 *Created:* ${fmtDate(metadata.creation * 1000)}\n\n`;
                 text += `👑 *Admins List*\n`;
         
                 admins.forEach((admin, index) => {

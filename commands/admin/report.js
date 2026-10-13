@@ -4,6 +4,7 @@
 
 const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
+const { fmtDateTime } = require('../../utils/sast');
 
 const reportStore = new Map();
 const reportCounters = new Map();
@@ -198,13 +199,13 @@ module.exports = {
                 groupReports.shift();
             }
 
-            const reportTime = new Date().toLocaleString('en-US', {
+            const reportTime = fmtDateTime(Date.now(), {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: true,
                 month: 'short',
                 day: 'numeric'
-            });
+            }, 'en-US');
 
             const reporterLine = isAnonymous
                 ? `👤 Reported by: Anonymous`

@@ -7,6 +7,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { fmtDate, fmtTime } = require('../../utils/sast');
 
 module.exports = {
   name: 'warnings',
@@ -74,12 +75,12 @@ module.exports = {
 
       // List each warning with details
       warnings.warnings.forEach((w, i) => {
-        const date = new Date(w.date).toLocaleDateString('en-ZA', {
+        const date = fmtDate(w.date, {
           day: '2-digit',
           month: 'short',
           year: 'numeric'
         });
-        const time = new Date(w.date).toLocaleTimeString('en-ZA', {
+        const time = fmtTime(w.date, {
           hour: '2-digit',
           minute: '2-digit'
         });

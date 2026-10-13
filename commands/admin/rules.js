@@ -7,6 +7,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, voice } = require('../../utils/format');
+const { fmtTime } = require('../../utils/sast');
 const prefix = config.prefix || '.';
 
 module.exports = {
@@ -62,7 +63,7 @@ module.exports = {
 
     const groupName = extra.groupMetadata?.subject || 'This Group';
     const memberCount = extra.groupMetadata?.participants?.length || 0;
-    const now = new Date().toLocaleTimeString('en-ZA', {
+    const now = fmtTime(Date.now(), {
       hour: '2-digit',
       minute: '2-digit'
     });

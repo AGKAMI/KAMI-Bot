@@ -17,6 +17,13 @@ process.env.PUPPETEER_SKIP_DOWNLOAD = 'true';
 process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = 'true';
 process.env.PUPPETEER_CACHE_DIR = process.env.PUPPETEER_CACHE_DIR || '/tmp/puppeteer_cache_disabled';
 
+// Container clock is UTC — set SAST before any require so unaudited
+// local-time code (leaderboard cutoffs, Date#toLocaleString stragglers)
+// still reads South African wall clock. Verified live on the box: honored
+// (prints GMT+0200). Windows dev/tests ignore it — utils/sast.js stays
+// TZ-independent for those. First line of defense, not the only one.
+process.env.TZ = 'Africa/Johannesburg';
+
 const { initializeTempSystem } = require('./utils/tempManager');
 const { startCleanup } = require('./utils/cleanup');
 console.log('🔧 Initializing KAMI Bot...\n');

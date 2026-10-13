@@ -9,6 +9,7 @@ const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
 const { TEAMS } = require('./crewForms');
+const { fmtDateTime } = require('../../utils/sast');
 
 const ACTION_EMOJI = {
   'accepted': '✅',
@@ -73,7 +74,7 @@ module.exports = {
         const adminDisplay = app.admin === 'system'
           ? 'system'
           : app.admin ? mention(app.admin) : '—';
-        const time = app.processedAt ? new Date(app.processedAt).toLocaleString('en-ZA') : '—';
+        const time = app.processedAt ? fmtDateTime(app.processedAt) : '—';
 
         lines.push(
           `${emoji} *${uid}* — ${app.action.toUpperCase()}\n` +

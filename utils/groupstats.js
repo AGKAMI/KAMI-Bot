@@ -1,6 +1,7 @@
 // utils/groupStats.js
 const fs = require('fs');
 const path = require('path');
+const { todayISO, parts } = require('./sast');
 
 const DB_PATH = path.join(__dirname, '../database/groupStats.json');
 
@@ -47,8 +48,11 @@ function flushPending() {
 }
 
 function addMessage(groupId, senderId) {
-    const today = new Date().toISOString().slice(0, 10);
-    const hour = new Date().getHours().toString();
+    // SAST date/hour buckets — the container runs UTC, so toISOString()
+    // and getHours() would file mid-evening SA messages under the wrong
+    // day/hour (and roll "today" backwards during 00:00–01:59 SAST)
+    const today = todayISO();
+    const hour = parts().hours.toString();
     const key = `${groupId}|${today}`;
 
     if (!pendingWrites[key]) {
@@ -70,7 +74,7 @@ function addMessage(groupId, senderId) {
 function getStats(groupId) {
     flushPending();
     const db = loadDB();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayISO();
     if (!db[groupId] || !db[groupId][today]) return null;
     return db[groupId][today];
 }

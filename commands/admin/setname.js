@@ -4,6 +4,7 @@
 
 const { bold, pick, SLANG, voice, mention } = require('../../utils/format');
 const database = require('../../database');
+const { fmtTime } = require('../../utils/sast');
 
 const config = require('../../config');
 module.exports = {
@@ -54,7 +55,7 @@ module.exports = {
 
       const senderNum = extra.sender.split('@')[0];
       const memberCount = extra.groupMetadata?.participants?.length || 0;
-      const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const currentTime = fmtTime(Date.now(), { hour: '2-digit', minute: '2-digit', hour12: true }, 'en-US');
       const currentName = extra.groupMetadata?.subject || 'Unknown';
 
       let resolved = newName

@@ -20,6 +20,7 @@ const eventWizard = require('./commands/crew/eventWizard');
 const { runWithReactions, stageEmoji, classifyReply } = require('./utils/progressReaction');
 const { updateBlockStatusSafe } = require('./utils/jidHelper');
 const nameCache = require('./utils/nameCache');
+const { fmtDate, fmtTime } = require('./utils/sast');
 
 // All admin command buttons are admin-only
 requireAdmin('admin');
@@ -2327,13 +2328,13 @@ const handleGroupUpdate = async (sock, update) => {
           const groupName = groupMetadata.subject || 'the group';
           const groupDesc = groupMetadata.desc || 'No description';
           
-          // Get current time string
+          // Get current time string (SAST — the container clock is UTC)
           const now = new Date();
-          const timeString = now.toLocaleTimeString('en-US', { 
+          const timeString = fmtTime(now, { 
             hour: '2-digit', 
             minute: '2-digit',
             hour12: true 
-          });
+          }, 'en-US');
           
           // Resolve display name (username > contact name > formatted phone)
           let displayName;
@@ -2344,7 +2345,7 @@ const handleGroupUpdate = async (sock, update) => {
           }
           
           // Create formatted welcome message
-          const joinedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          const joinedDate = fmtDate(Date.now(), { month: 'long', day: 'numeric', year: 'numeric' }, 'en-US');
           const welcomeMsg = [
             `*New Member*`,
             `Welcome ${mention(participantJid)} to *${groupName}*`,
@@ -2405,7 +2406,7 @@ const handleGroupUpdate = async (sock, update) => {
           // Build the image
           if (bgBuffer) {
             const ws = groupSettings.welcomeStyle || {};
-            const joinedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            const joinedDate = fmtDate(Date.now(), { month: 'long', day: 'numeric', year: 'numeric' }, 'en-US');
             const textLines = [
               { text: 'New Member', size: ws.fontSize || 56, bold: true, color: ws.textColor || '#ffffff' },
               { text: `Welcome to ${groupName}`, size: ws.subFontSize || 36, color: '#ffffff' },
@@ -2482,7 +2483,7 @@ const handleGroupUpdate = async (sock, update) => {
           } catch (e) { /* no pic */ }
           
           // Create goodbye text
-          const leftDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          const leftDate = fmtDate(Date.now(), { month: 'long', day: 'numeric', year: 'numeric' }, 'en-US');
           const goodbyeMsg = [
             `*Goodbye*`,
             `Farewell ${mention(participantJid)} from *${groupName}*`,
@@ -2535,7 +2536,7 @@ const handleGroupUpdate = async (sock, update) => {
           // Build the image
           if (bgBuffer) {
             const gs = groupSettings.goodbyeStyle || {};
-            const leftDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            const leftDate = fmtDate(Date.now(), { month: 'long', day: 'numeric', year: 'numeric' }, 'en-US');
             const textLines = [
               { text: 'Goodbye', size: gs.fontSize || 56, bold: true, color: gs.textColor || '#ffffff' },
               { text: `Farewell from ${groupName}`, size: gs.subFontSize || 36, color: '#ffffff' },

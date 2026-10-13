@@ -6,6 +6,7 @@
 const database = require('../../database');
 const { bold, pick, SLANG, voice } = require('../../utils/format');
 const nameCache = require('../../utils/nameCache');
+const { fmtDateTime } = require('../../utils/sast');
 const fs = require('fs');
 const path = require('path');
 
@@ -255,7 +256,7 @@ async function backupDb(sock, msg, extra) {
   }
 
   await sock.sendMessage(extra.from, {
-    text: `✅ SUCCESS\n\n🗄️ BACKUP COMPLETE\n\n📁 ${backedUp} tables are backed up\n📂 Location: database/backups/\n⏰ ${new Date().toLocaleString('en-ZA')}`
+    text: `✅ SUCCESS\n\n🗄️ BACKUP COMPLETE\n\n📁 ${backedUp} tables are backed up\n📂 Location: database/backups/\n⏰ ${fmtDateTime(Date.now())}`
   }, { quoted: msg });
 }
 

@@ -7,6 +7,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
+const { fmtDate } = require('../../utils/sast');
 
 const getRoleEmoji = (role, roles) => {
   const idx = roles.indexOf(role);
@@ -162,7 +163,7 @@ module.exports = {
             : `👤 MEMBER ADDED\n\n`) +
           `${roleEmoji} ${mention(target)}\n\n` +
           `🏷️ Role: ${bold(role)}\n` +
-          `📅 Joined: ${new Date().toLocaleDateString('en-ZA')}\n\n` +
+          `📅 Joined: ${fmtDate(Date.now())}\n\n` +
           (ownerVIP
             ? `_The owner personally added this one. Show respect._ 👑`
             : groupAddFailed

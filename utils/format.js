@@ -8,6 +8,7 @@
 
 const config = require('../config');
 const nameCache = require('./nameCache');
+const { fmtTime } = require('./sast');
 
 // ─── WhatsApp Formatting Helpers ──────────────────────────────────────────────
 
@@ -131,7 +132,7 @@ const templates = {
       '',
       `- 👤 ${bold('Welcome to')} ${group}`,
       `- 💀 ${bold('Member')} #${memberCount}`,
-      `- ⏰ ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`,
+      `- ⏰ ${fmtTime(Date.now(), { hour: '2-digit', minute: '2-digit', hour12: true }, 'en-US')}`,
       '',
       SEP,
       '',

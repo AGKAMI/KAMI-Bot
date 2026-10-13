@@ -11,6 +11,7 @@
 
 const database = require('../database');
 const config = require('../config');
+const { fmtDate } = require('./sast');
 
 // ── Progression Thresholds ────────────────────────────────
 // Ratio: 2.74 msgs/day — leader at 365 days
@@ -474,7 +475,7 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGro
       kicked++;
       kickedByGroup.set(groupJid, (kickedByGroup.get(groupJid) || 0) + 1);
 
-      const when = new Date(flaggedAt).toLocaleDateString();
+      const when = fmtDate(flaggedAt);
       console.log(`[INACTIVE-CHECK] AUTO-KICKED ${_digits(targetId)} from ${teamInfo.key || groupJid} (flagged ${when})`);
       await sock.sendMessage(groupJid, {
         text:

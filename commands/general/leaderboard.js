@@ -4,6 +4,7 @@
  */
 
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
+const { todayISO, isoDaysAgo, isoMonthsAgo } = require('../../utils/sast');
 const fs = require('fs');
 const path = require('path');
 
@@ -22,22 +23,20 @@ function aggregateStats(groupId, period) {
     const db = loadDB();
     if (!db[groupId]) return null;
 
-    const now = new Date();
-    const today = now.toISOString().slice(0, 10);
+    // Date keys come from utils/groupstats — SAST calendar dates, so the
+    // cutoffs must be SAST too (toISOString() is always UTC and would
+    // drop today's bucket during 00:00–02:00 SAST)
+    const today = todayISO();
     const dates = Object.keys(db[groupId]);
 
     let filtered;
     if (period === 'today') {
         filtered = dates.filter(d => d === today);
     } else if (period === 'week') {
-        const weekAgo = new Date(now);
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        const cutoff = weekAgo.toISOString().slice(0, 10);
+        const cutoff = isoDaysAgo(7);
         filtered = dates.filter(d => d >= cutoff);
     } else if (period === 'month') {
-        const monthAgo = new Date(now);
-        monthAgo.setMonth(monthAgo.getMonth() - 1);
-        const cutoff = monthAgo.toISOString().slice(0, 10);
+        const cutoff = isoMonthsAgo(1);
         filtered = dates.filter(d => d >= cutoff);
     } else {
         filtered = dates;

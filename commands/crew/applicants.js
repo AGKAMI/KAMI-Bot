@@ -9,6 +9,7 @@ const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { TEAMS } = require('./crewForms');
 const { sendButtons } = require('../../utils/buttonHelper');
+const { fmtDate } = require('../../utils/sast');
 
 module.exports = {
   subName: 'applicants',
@@ -119,7 +120,7 @@ module.exports = {
 
       for (const [uid, app] of entries) {
         const teamDisplay = TEAMS[app.team]?.label || app.team || '—';
-        const date = new Date(app.appliedAt).toLocaleDateString('en-ZA');
+        const date = fmtDate(app.appliedAt);
         const hasAnswers = app.answers ? '✅' : '⏳';
 
         lines.push(

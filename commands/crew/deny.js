@@ -11,6 +11,7 @@ const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { buildDeniedMessage } = require('./crewForms');
 const { sendButtons } = require('../../utils/buttonHelper');
 const nameCache = require('../../utils/nameCache');
+const { fmtDateTime } = require('../../utils/sast');
 
 module.exports = {
   subName: 'deny',
@@ -38,7 +39,7 @@ module.exports = {
         // Check if it was already processed
         const processed = database.getProcessedApp(uid);
         if (processed) {
-          const time = new Date(processed.processedAt).toLocaleString('en-ZA');
+          const time = fmtDateTime(processed.processedAt);
           // Display name — mention() with no mentions array renders a raw lid
           const byWho = processed.adminName || nameCache.who(processed.admin);
           if (processed.action === 'accepted') {

@@ -9,6 +9,7 @@ const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
 const { TEAMS } = require('./crewForms');
+const { fmtDate } = require('../../utils/sast');
 
 module.exports = {
   subName: 'pending',
@@ -90,7 +91,7 @@ module.exports = {
 
         for (const { uid, app } of apps) {
           const hasAnswers = app.answers ? '✅' : '⏳';
-          const date = new Date(app.appliedAt).toLocaleDateString('en-ZA');
+          const date = fmtDate(app.appliedAt);
           const daysAgo = Math.floor((Date.now() - app.appliedAt) / (1000 * 60 * 60 * 24));
 
           let line = `  🆔 *${uid}* — ${app.jid ? mention(app.jid) : 'unknown'} — ${hasAnswers} — ${date}`;

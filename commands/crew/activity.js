@@ -1,6 +1,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { mention } = require('../../utils/format');
+const { fmtTime } = require('../../utils/sast');
 
 module.exports = {
   name: 'activity',
@@ -94,7 +95,7 @@ module.exports = {
       if (recent.length > 0) {
         text += `\n📜 *RECENT COMMANDS*\n`;
         for (const e of recent.slice(-5)) {
-          const time = new Date(e.timestamp).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+          const time = fmtTime(e.timestamp);
           text += `  \`${time}\` ${e.command}${e.args ? ' ' + e.args : ''}\n`;
         }
       }
@@ -132,7 +133,7 @@ module.exports = {
       text += `🛡️ *PROTECTION EVENTS:* ${protections.length}\n`;
       for (const p of protections.slice(-3)) {
         const targetLabel = p.target ? mention(p.target) : 'unknown';
-        const time = new Date(p.timestamp).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+        const time = fmtTime(p.timestamp);
         text += `  \`${time}\` ${p.action} ${targetLabel} → ${p.result}\n`;
       }
     }

@@ -14,6 +14,7 @@ const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { TEAMS, buildHiredMessage } = require('./crewForms');
 const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
 const nameCache = require('../../utils/nameCache');
+const { fmtDateTime } = require('../../utils/sast');
 
 // Dynamic emoji mapping — first role gets 👤, last gets 👑
 const getRoleEmoji = (role, roles) => {
@@ -50,7 +51,7 @@ module.exports = {
         // Check if it was already processed
         const processed = database.getProcessedApp(uid);
         if (processed) {
-          const time = new Date(processed.processedAt).toLocaleString('en-ZA');
+          const time = fmtDateTime(processed.processedAt);
           // Show the admin's display name — mention() renders a raw lid
           // with no mentions array, which is unreadable.
           const byWho = processed.adminName || nameCache.who(processed.admin);

@@ -15,6 +15,7 @@
 
 const config = require('../../config');
 const { sendButtons } = require('../../utils/buttonHelper');
+const { epochOf, minutesUntil, parts } = require('../../utils/sast');
 const {
   TEMPLATES, DEFAULT_CAR_OPTIONS, buildServerPages,
   SERVER_RANGES, pageForKey, templateByKey,
@@ -23,7 +24,7 @@ const {
 const { renderEventCard } = require('./eventRsvp');
 
 const RENDER_DEBOUNCE = 700; // beats the 500ms interactive cooldown
-const EXPIRY_WINDOW = 48 * 60 * 60 * 1000; // timed events expire 48h after creation
+const EXPIRY_WINDOW = 48 * 60 * 60 * 1000; // timed events retire endAt + 48h
 const sleep = (ms) => new Promise(r => setTimeout(r => ms));
 const prefix = () => config.prefix || '.';
 
@@ -43,29 +44,9 @@ async function sendStep(sock, s, payload, quoted) {
 const CANCEL_BTN = (s) => ({ id: `ewiz:${s.nonce}:cancel`, text: '🚫 Cancel' });
 
 // ── Time helpers ─────────────────────────────────────────────
-const hhmmOnDay = (hhmm, ref) => {
-  const [h, m] = String(hhmm).split(':').map(Number);
-  const d = new Date(ref);
-  d.setHours(h, m, 0, 0);
-  return d.getTime();
-};
-
-// 'YYYY-MM-DD' → local Date — new Date('YYYY-MM-DD') is UTC midnight
-// and drifts a day in west-of-UTC zones
-const parseLocalDate = (iso) => {
-  const [y, m, d] = String(iso).split('-').map(Number);
-  return new Date(y, m - 1, d);
-};
-
-// Minutes from now until the next occurrence of HH:MM (same-day or overnight)
-function minsUntil(hhmm) {
-  const [h, m] = String(hhmm).split(':').map(Number);
-  const now = new Date();
-  const nowMins = now.getHours() * 60 + now.getMinutes();
-  let delta = (h * 60 + m - nowMins + 1440) % 1440;
-  if (delta === 0) delta = 1440;
-  return delta;
-}
+// minsUntil reads SAST via utils/sast — the container clock is UTC, so
+// "now" for a South African host is 2h ahead of the server's getters
+const minsUntil = minutesUntil;
 
 // Keep the displayed end time in sync whenever time or duration changes
 function recomputeEndTime(s) {
@@ -259,7 +240,7 @@ async function sendDayPage(sock, s, month1, page, dim) {
 // The year a picked month lives in: this year's copy, or next year's when
 // this year's first-of-month already passed (Dec → picking JAN = next year)
 function resolveYearForMonth(month1) {
-  const y = new Date().getFullYear();
+  const y = parts().year; // SAST year — container UTC must not decide it
   const thisYear = `${y}-${String(month1).padStart(2, '0')}-01`;
   return thisYear < todayISO() ? y + 1 : y;
 }
@@ -350,12 +331,14 @@ function draftToRecord(s) {
   const title = String(s.draft.title || '').toUpperCase();
   const hasTime = !!s.draft.time;
   const now = Date.now();
-  const eventDate = s.draft.eventDate || null;
-  const dayRef = eventDate ? parseLocalDate(eventDate) : now;
+  const eventDate = s.draft.eventDate || todayISO();
   let endAt = null;
   if (hasTime && s.draft.endTime) {
-    const startAt = hhmmOnDay(s.draft.time, dayRef);
-    endAt = hhmmOnDay(s.draft.endTime, dayRef);
+    // epochOf is SAST-anchored: a host typing 20:30 means 20:30 in SA,
+    // never 20:30 on the container's UTC clock (which would put endAt —
+    // and the unpin sweep — 2h late)
+    const startAt = epochOf(eventDate, s.draft.time);
+    endAt = epochOf(eventDate, s.draft.endTime);
     if (endAt <= startAt) endAt += 24 * 60 * 60 * 1000;
   } else if (!hasTime && s.draft.durationMins) {
     endAt = now + s.draft.durationMins * 60 * 1000;

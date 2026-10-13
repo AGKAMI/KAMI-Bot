@@ -3,6 +3,7 @@
  */
 
 const { bold, pick, SLANG, voice } = require('../../utils/format');
+const { fmtDate } = require('../../utils/sast');
 
 module.exports = {
   name: 'members',
@@ -40,7 +41,7 @@ module.exports = {
         `- 🧑 ${bold('Humans:')} ${humans}`,
         '',
         `- 📛 ${bold('Group:')} ${groupMetadata.subject || 'Unknown'}`,
-        `- 📝 ${bold('Created:')} ${groupMetadata.creation ? new Date(groupMetadata.creation * 1000).toLocaleDateString('en-ZA') : 'Unknown'}`,
+        `- 📝 ${bold('Created:')} ${groupMetadata.creation ? fmtDate(groupMetadata.creation * 1000) : 'Unknown'}`,
         "",
         `_${voice.open()} — ${total} member${total > 1 ? 's' : ''} strong_`
       ].join('\n');
