@@ -59,8 +59,8 @@ module.exports = {
           `❌ ERROR\n\n` +
           `Tag or reply to somebody\n\n` +
           `Usage:\n` +
-          `• .demote @user\n` +
-          `• Reply with .demote`
+          `• ${config.prefix || '.'}demote @user\n` +
+          `• Reply with ${config.prefix || '.'}demote`
         );
       }
 

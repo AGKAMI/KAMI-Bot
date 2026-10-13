@@ -419,7 +419,7 @@ module.exports = {
         : (args[0] || '').trim();
 
       if (!url || !TIKTOK_REGEX.test(url)) {
-        return extra.reply(`📝 _${voice.lead('neutral')}, send a TikTok link after the command_\n\n*.tt <tiktok url>*`);
+        return extra.reply(`📝 _${voice.lead('neutral')}, send a TikTok link after the command_\n\n*${config.prefix || '.'}tt <tiktok url>*`);
       }
 
       const run = (async () => {

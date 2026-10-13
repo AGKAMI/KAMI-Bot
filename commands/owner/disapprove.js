@@ -28,7 +28,7 @@ module.exports = {
   reactions: { received: '👎', done: '✅' },
   aliases: ['unapprove'],
   category: 'owner',
-  description: 'Remove a number from the approved list (inverse of .approve)',
+  description: 'Remove a number from the approved list (inverse of the approve command)',
   usage: '.disapprove <number — any format>',
   ownerOnly: true,
 

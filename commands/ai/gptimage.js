@@ -7,6 +7,7 @@ const axios = require('axios');
 const FormData = require('form-data');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { webp2png } = require('../../utils/webp2mp4');
+const config = require('../../config');
 const sharp = require('sharp');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
@@ -26,9 +27,9 @@ module.exports = {
         return await extra.reply(
           '📷 _kiff, gpt image editor_\n\n' +
           '_reply to an image or sticker with a prompt to edit it_\n\n' +
-          `_Usage: ${extra.prefix || '.'}gptimage <your prompt>_\n\n` +
+          `_Usage: ${config.prefix || '.'}gptimage <your prompt>_\n\n` +
           '_Example: Reply to an image with:_\n' +
-          `_${extra.prefix || '.'}gptimage change the background to a beach_`
+          `_${config.prefix || '.'}gptimage change the background to a beach_`
         );
       }
       
@@ -38,7 +39,7 @@ module.exports = {
         extra.fail();
         return await extra.reply(
           `❌ _${voice.openErr()} — give me a prompt hey_\n\n` +
-          `_Usage: ${extra.prefix || '.'}gptimage <your prompt>_\n\n` +
+          `_Usage: ${config.prefix || '.'}gptimage <your prompt>_\n\n` +
           '_Example: change the background to a beach_'
         );
       }

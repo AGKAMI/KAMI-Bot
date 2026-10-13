@@ -146,7 +146,7 @@ module.exports = {
       ];
       if (!patterns.some((p) => p.test(url))) {
         extra.fail();
-        return await extra.reply(`❌ _${voice.openErr()}, invalid Facebook link_\n_use:_ .fb <facebook video link>`);
+        return await extra.reply(`❌ _${voice.openErr()}, invalid Facebook link_\n_use:_ ${config.prefix || '.'}fb <facebook video link>`);
       }
 
       // Everything below is bounded (yt-dlp/API have their own timeouts,

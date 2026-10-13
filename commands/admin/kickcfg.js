@@ -309,7 +309,7 @@ const sendGroupPicker = async (sock, msg, to, page = 0, cachedEntries = null, fa
     }
   }
   if (!entries.length) {
-    return sock.sendMessage(to, { text: '⚠️ No crew groups registered — map one with `.crew setteam` first.' });
+    return sock.sendMessage(to, { text: `⚠️ No crew groups registered — map one with \`${config.prefix || '.'}crew setteam\` first.` });
   }
 
   const pages = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));

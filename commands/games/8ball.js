@@ -1,3 +1,4 @@
+const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const answers = [
   'It is certain','It is decidedly so','Without a doubt','Yes definitely',
@@ -14,7 +15,7 @@ module.exports = {
   aliases: ['magic8ball', 'eightball'],
   execute: async (sock, msg, args, ctx) => {
     const q = args.join(' ');
-    if (!q) { ctx.fail(); return ctx.reply(`❌ _${voice.openErr()} — usage: .8ball <yes/no question>_`); }
+    if (!q) { ctx.fail(); return ctx.reply(`❌ _${voice.openErr()} — usage: ${config.prefix || '.'}8ball <yes/no question>_`); }
     const ans = answers[Math.floor(Math.random() * answers.length)];
     await ctx.reply('🎱 ' + ans);
   }

@@ -47,7 +47,7 @@ module.exports = {
           `🔒 *GROUP LOCKED*`,
           '',
           `- This group is locked`,
-          `- Only admins can open it with .unlock`
+          `- Only admins can open it with ${prefix}unlock`
         ].join('\n');
         return await extra.reply(text);
       }

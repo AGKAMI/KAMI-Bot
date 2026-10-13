@@ -44,11 +44,11 @@ module.exports = {
           return await sock.sendMessage(chatId, {
             text: `*TRANSLATOR*\n\n` +
             `Usage:\n` +
-            `1. Reply to a message with: ${prefix}translate <lang> or .trt <lang>\n` +
-            `2. Or type: ${prefix}translate <text> <lang> or .trt <text> <lang>\n\n` +
+            `1. Reply to a message with: ${prefix}translate <lang> or ${prefix}trt <lang>\n` +
+            `2. Or type: ${prefix}translate <text> <lang> or ${prefix}trt <text> <lang>\n\n` +
             `Example:\n` +
             `${prefix}translate hello fr\n` +
-            `.trt hello fr\n\n` +
+            `${prefix}trt hello fr\n\n` +
             `Language codes:\n` +
             `fr - French, es - Spanish, de - German, it - Italian\n` +
             `pt - Portuguese, ru - Russian, ja - Japanese, ko - Korean\n` +

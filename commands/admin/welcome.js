@@ -3,6 +3,7 @@
  */
 
 const db = require('../../database');
+const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
@@ -25,7 +26,7 @@ module.exports = {
         const groupSettings = db.getGroupSettings(groupId);
         const isOn = groupSettings.welcome;
         const status = isOn ? '✅ Enabled' : '❌ Disabled';
-        const statusText = `👋 WELCOME MESSAGES\n\n*Status*: ${status}\n*Message*: ${groupSettings.welcomeMessage}\n\n📱 *Usage*: .welcome on/off\n💡 *Customize*: .setwelcome <message>`;
+        const statusText = `👋 WELCOME MESSAGES\n\n*Status*: ${status}\n*Message*: ${groupSettings.welcomeMessage}\n\n📱 *Usage*: ${config.prefix || '.'}welcome on/off\n💡 *Customize*: ${config.prefix || '.'}setwelcome <message>`;
         return sendButtons(sock, groupId, {
           text: statusText,
           footer: 'Welcome Settings',

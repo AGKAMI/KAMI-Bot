@@ -3,6 +3,7 @@
  */
 
 const database = require('../../database');
+const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
@@ -50,7 +51,7 @@ module.exports = {
       if (opt === 'set') {
         if (args.length < 2) {
           extra.fail();
-          return extra.reply(`❌ ERROR\n\nGive an action: .antilink set delete | kick | warn`);
+          return extra.reply(`❌ ERROR\n\nGive an action: ${config.prefix || '.'}antilink set delete | kick | warn`);
         }
         
         const setAction = args[1].toLowerCase();
@@ -74,7 +75,7 @@ module.exports = {
       }
       
       extra.fail();
-      return extra.reply(`❌ ERROR\n\nUse .antilink for usage`);
+      return extra.reply(`❌ ERROR\n\nUse ${config.prefix || '.'}antilink for usage`);
       
     } catch (error) {
       extra.fail();

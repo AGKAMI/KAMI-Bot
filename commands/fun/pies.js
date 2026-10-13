@@ -43,7 +43,7 @@ module.exports = {
       if (!country) {
         extra.fail();
         return await extra.reply(
-          `❌ _${voice.openErr()} — usage: .pies <country>_\n\n_Countries: ${VALID_COUNTRIES.join(', ')}_`
+          `❌ _${voice.openErr()} — usage: ${prefix}pies <country>_\n\n_Countries: ${VALID_COUNTRIES.join(', ')}_`
         );
       }
       

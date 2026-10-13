@@ -3,6 +3,7 @@
  */
 
 const APIs = require('../../utils/api');
+const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 module.exports = {
@@ -16,7 +17,7 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply(`⚠️ *WARNING*\n💡 Give me a website link hey\n\n📝 *Example:* *.ssweb https://github.com*`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Give me a website link hey\n\n📝 *Example:* *${config.prefix || '.'}ssweb https://github.com*`);
       }
       
       let url = args.join(' ');

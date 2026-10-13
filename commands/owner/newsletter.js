@@ -78,13 +78,13 @@ module.exports = {
                    args.join(' ');
       
       if (!text || text.trim().length === 0) {
-        return extra.reply(`*📰 NEWSLETTER*\n\n❌ ${voice.openErr()} — need a whatsapp channel link\n\n💡 Example: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
+        return extra.reply(`*📰 NEWSLETTER*\n\n❌ ${voice.openErr()} — need a whatsapp channel link\n\n💡 Example: ${prefix}newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
       }
       
       let link = text.replace(/^\.(newsletter|nl|channel|channelinfo)\s+/i, '').trim() || args.join(' ').trim();
       
       if (!link || link.length === 0) {
-        return extra.reply(`*📰 NEWSLETTER*\n\n❌ ${voice.openErr()} — need a whatsapp channel link\n\n💡 Example: .newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
+        return extra.reply(`*📰 NEWSLETTER*\n\n❌ ${voice.openErr()} — need a whatsapp channel link\n\n💡 Example: ${prefix}newsletter https://whatsapp.com/channel/0029VaAbCdEfGhIJkL`);
       }
       
       // Try to extract invite code first (works with or without full URL)

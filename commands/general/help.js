@@ -55,13 +55,17 @@ module.exports = {
         textmaker: '✨ Text Maker',
       };
 
+      const rawUsage = cmd.usage || cmd.name;
+      let usageText = rawUsage.replace(/(^|[\s|(])\./g, (m, p) => p + prefix);
+      if (!usageText.startsWith(prefix)) usageText = usageText.startsWith('<') ? `${prefix}${cmd.name} ${usageText}` : `${prefix}${usageText}`;
+
       const text = [
         `📋 *${prefix}${cmd.name}*`,
         ``,
         `📝 *Description:* ${cmd.description || 'No description'}`,
         `📂 *Category:* ${categoryMeta[cmd.category] || cmd.category}`,
         `🔗 *Aliases:* ${aliases}`,
-        `📖 *Usage:* ${(cmd.usage || `${prefix}${cmd.name}`).replace(/^\./, prefix)}`,
+        `📖 *Usage:* ${usageText}`,
         ``,
         `💡 _Tip: ${prefix}menu has everything, check it shame._`
       ].join('\n');

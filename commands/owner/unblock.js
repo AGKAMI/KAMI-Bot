@@ -50,7 +50,7 @@ module.exports = {
             target = ctx.participant;
           } else {
             extra.fail();
-            return extra.reply(`❌ ERROR\n\n_Tag, reply, or drop a number_\n\n_Examples:_\n.unblock 27833882383\n.unblock 083 388 2383\n.unblock me`);
+            return extra.reply(`❌ ERROR\n\n_Tag, reply, or drop a number_\n\n_Examples:_\n${config.prefix || '.'}unblock 27833882383\n${config.prefix || '.'}unblock 083 388 2383\n${config.prefix || '.'}unblock me`);
           }
         }
       }

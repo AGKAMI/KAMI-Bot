@@ -1,3 +1,4 @@
+const config = require('../../config');
 const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
 const state = new Map();
 module.exports = {
@@ -10,18 +11,18 @@ module.exports = {
     const sub = (args[0] || '').toLowerCase();
     if (sub === 'start') {
       state.set(ctx.from, { players: [], turn: 0 });
-      return ctx.reply(`🎲 ludo helper is on!\n.ludo join | .ludo turn | .ludo score | .ludo stop`);
+      return ctx.reply(`🎲 ludo helper is on!\n${config.prefix || '.'}ludo join | ${config.prefix || '.'}ludo turn | ${config.prefix || '.'}ludo score | ${config.prefix || '.'}ludo stop`);
     }
     if (sub === 'join') {
       const g = state.get(ctx.from);
-      if (!g) { ctx.fail(); return ctx.reply(`❌ _use .ludo start first_`); }
+      if (!g) { ctx.fail(); return ctx.reply(`❌ _use ${config.prefix || '.'}ludo start first_`); }
       if (g.players.includes(ctx.sender)) return ctx.reply(`already joined, ${voice.tag('neutral')}`);
       g.players.push(ctx.sender);
       return ctx.reply(`${mention(ctx.sender)} joined, ${voice.tag('affirm')}`);
     }
     if (sub === 'turn' || sub === 'roll') {
       const g = state.get(ctx.from);
-      if (!g) { ctx.fail(); return ctx.reply(`❌ _use .ludo start first_`); }
+      if (!g) { ctx.fail(); return ctx.reply(`❌ _use ${config.prefix || '.'}ludo start first_`); }
       if (g.players.length < 2) { ctx.fail(); return ctx.reply(`❌ _${voice.openErr()} — need 2+ players_`); }
       const current = g.players[g.turn % g.players.length];
       if (ctx.sender !== current) { ctx.fail(); return ctx.reply(`❌ _not your turn — current: ${mention(current)}_`); }
@@ -40,6 +41,6 @@ module.exports = {
       state.delete(ctx.from);
       return ctx.reply(`${voice.lead('neutral')}, ludo helper stopped!`);
     }
-    return ctx.reply('Ludo commands: .ludo start | .ludo join | .ludo turn | .ludo score | .ludo stop');
+    return ctx.reply(`Ludo commands: ${config.prefix || '.'}ludo start | ${config.prefix || '.'}ludo join | ${config.prefix || '.'}ludo turn | ${config.prefix || '.'}ludo score | ${config.prefix || '.'}ludo stop`);
   }
 };

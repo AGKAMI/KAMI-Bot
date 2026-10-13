@@ -1,3 +1,4 @@
+const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const chains = new Map();
 module.exports = {
@@ -11,7 +12,7 @@ module.exports = {
     const sub = (args[0] || '').toLowerCase();
     if (sub === 'start' || sub === 'new') {
       chains.set(ctx.from, { last: null, count: 0 });
-      return ctx.reply(`🔁 word chain is on!\n.word <word> to play. Last letter starts the next word.`);
+      return ctx.reply(`🔁 word chain is on!\n${config.prefix || '.'}word <word> to play. Last letter starts the next word.`);
     }
     if (sub === 'stop') {
       chains.delete(ctx.from);
@@ -23,9 +24,9 @@ module.exports = {
       return ctx.reply(`Words in chain: ${g.count}`);
     }
     const word = args.join(' ');
-    if (!word) { ctx.fail(); return ctx.reply(`❌ _${voice.openErr()} — use: .chain start | .chain <word> | .chain stop | .chain score_`); }
+    if (!word) { ctx.fail(); return ctx.reply(`❌ _${voice.openErr()} — use: ${config.prefix || '.'}chain start | ${config.prefix || '.'}chain <word> | ${config.prefix || '.'}chain stop | ${config.prefix || '.'}chain score_`); }
     const g = chains.get(ctx.from);
-    if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game — use .chain start_`); }
+    if (!g) { ctx.fail(); return ctx.reply(`❌ _no active game — use ${config.prefix || '.'}chain start_`); }
     if (g.last && !word.toLowerCase().startsWith(g.last)) {
       ctx.fail();
       return ctx.reply(`❌ _word must start with "${g.last}"!_`);

@@ -453,7 +453,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
 
     const urlMatch = text.match(/https?:\/\/\S+/);
     if (!urlMatch) {
-      return extra.reply(`📝 _${voice.lead('neutral')}, send me an Instagram post or reel link_\n\n_Usage:_\n.igs <url>\n.igsc <url>`);
+      return extra.reply(`📝 _${voice.lead('neutral')}, send me an Instagram post or reel link_\n\n_Usage:_\n${config.prefix || '.'}igs <url>\n${config.prefix || '.'}igsc <url>`);
     }
 
     // Everything below is bounded: igdl by IGDL_TIMEOUT_MS, buffer fetch

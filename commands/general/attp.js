@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { writeExifVid } = require('../../utils/exif');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
+const config = require('../../config');
 
 module.exports = {
   name: 'attp',
@@ -19,7 +20,7 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply(`⚠️ *WARNING*\n💡 Give me some text, hey\n\n📝 *Example:* ${bold(extra.prefix || '.' + 'attp Hello World')}`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Give me some text, hey\n\n📝 *Example:* ${bold((config.prefix || '.') + 'attp Hello World')}`);
       }
       
       const text = args.join(' ');

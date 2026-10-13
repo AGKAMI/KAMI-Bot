@@ -3,6 +3,7 @@
  */
 
 const db = require('../../database');
+const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
@@ -25,7 +26,7 @@ module.exports = {
         const groupSettings = db.getGroupSettings(groupId);
         const isOn = groupSettings.goodbye;
         const status = isOn ? '✅ Enabled' : '❌ Disabled';
-        const statusText = `👋 GOODBYE MESSAGES\n\n*Status*: ${status}\n*Message*: ${groupSettings.goodbyeMessage}\n\n📱 *Usage*: .goodbye on/off\n💡 *Customize*: .setgoodbye <message>`;
+        const statusText = `👋 GOODBYE MESSAGES\n\n*Status*: ${status}\n*Message*: ${groupSettings.goodbyeMessage}\n\n📱 *Usage*: ${config.prefix || '.'}goodbye on/off\n💡 *Customize*: ${config.prefix || '.'}setgoodbye <message>`;
         return sendButtons(sock, groupId, {
           text: statusText,
           footer: 'Goodbye Settings',
