@@ -18,6 +18,7 @@ const { sendButtons } = require('../../utils/buttonHelper');
 const {
   TEMPLATES, DEFAULT_CAR_OPTIONS, buildServerPages,
   SERVER_RANGES, pageForKey, templateByKey,
+  MONTHS, daysInMonth, todayISO, fmtCardDate,
 } = require('./cpmData');
 const { renderEventCard } = require('./eventRsvp');
 
@@ -47,6 +48,13 @@ const hhmmOnDay = (hhmm, ref) => {
   const d = new Date(ref);
   d.setHours(h, m, 0, 0);
   return d.getTime();
+};
+
+// 'YYYY-MM-DD' → local Date — new Date('YYYY-MM-DD') is UTC midnight
+// and drifts a day in west-of-UTC zones
+const parseLocalDate = (iso) => {
+  const [y, m, d] = String(iso).split('-').map(Number);
+  return new Date(y, m - 1, d);
 };
 
 // Minutes from now until the next occurrence of HH:MM (same-day or overnight)
@@ -85,7 +93,7 @@ async function renderTitleStep(sock, s) {
   buttons.push(CANCEL_BTN(s));
   return sendStep(sock, s, {
     text:
-      `━━━ 📅 *NEW EVENT* [1/7] ━━━\n\n` +
+      `━━━ 📅 *NEW EVENT* [1/8] ━━━\n\n` +
       `Aweh 👑 What we running? Pick the type, or ✍️ for your own vibe.\n\n` +
       `_Type ${prefix()}event cancel to scrap it_`,
     buttons,
@@ -98,7 +106,7 @@ async function renderHostStep(sock, s) {
   s.awaitingSince = Date.now();
   return sendStep(sock, s, {
     text:
-      `━━━ 👤 *HOST* [2/7] ━━━\n\n` +
+      `━━━ 👤 *HOST* [2/8] ━━━\n\n` +
       `Who's hosting this one?\n\n` +
       `_Reply to this message with the name (3 min)_`,
     buttons: [
@@ -114,7 +122,7 @@ async function renderIdStep(sock, s) {
   s.awaitingSince = Date.now();
   return sendStep(sock, s, {
     text:
-      `━━━ 🆔 *ROOM ID* [3/7] ━━━\n\n` +
+      `━━━ 🆔 *ROOM ID* [3/8] ━━━\n\n` +
       `Drop the CPM player ID the lads use to join your lobby — like *VR401128*.\n\n` +
       `_Reply to this message (3 min)_`,
     buttons: [CANCEL_BTN(s)],
@@ -137,7 +145,7 @@ async function renderServerStep(sock, s) {
   buttons.push(CANCEL_BTN(s));
   return sendStep(sock, s, {
     text:
-      `━━━ 🌐 *SERVER* [4/7] — Page ${s.serverPage + 1}/${pages.length} ━━━\n\n` +
+      `━━━ 🌐 *SERVER* [4/8] — Page ${s.serverPage + 1}/${pages.length} ━━━\n\n` +
       `Which server we linking on? 🇿🇦 pinned right here for home advantage hey.`,
     buttons,
   });
@@ -173,25 +181,106 @@ async function renderCarStep(sock, s) {
   buttons.push(CANCEL_BTN(s));
   return sendStep(sock, s, {
     text:
-      `━━━ 🚗 *CAR TYPE* [5/7] ━━━\n\n` +
+      `━━━ 🚗 *CAR TYPE* [5/8] ━━━\n\n` +
       `What must the lads bring?${tpl ? ` _(${tpl.label})_` : ''}`,
     buttons,
   });
+}
+
+// ── Date step (month → day pickers, no year) ────────────────
+// Default is today — set at wizard start — so every event knows its
+// date even when the host skips straight past this step.
+async function renderDateStep(sock, s) {
+  s.step = 'date';
+  s.awaiting = null;
+  const page = s.datePage || 0;
+  const rows = MONTHS.map((name, i) => ({ name, num: i + 1 })).slice(page * 6, page * 6 + 6);
+  const buttons = rows.map(mo => ({
+    id: `ewiz:${s.nonce}:mo:${mo.num}`,
+    text: `📅 ${mo.name}`,
+  }));
+  if (page > 0) buttons.push({ id: `ewiz:${s.nonce}:mpg:${page - 1}`, text: '◀️ Prev' });
+  if (page < 1) buttons.push({ id: `ewiz:${s.nonce}:mpg:${page + 1}`, text: 'Next ▶️' });
+  buttons.push({ id: `ewiz:${s.nonce}:dtoday`, text: '⏭️ Skip — today' });
+  buttons.push(CANCEL_BTN(s));
+  const today = fmtCardDate(todayISO());
+  const cur = s.draft.eventDate && s.draft.eventDate !== todayISO() ? ` — currently *${fmtCardDate(s.draft.eventDate)}*` : '';
+  return sendStep(sock, s, {
+    text:
+      `━━━ 📆 *DATE* [6/8] — Page ${page + 1}/2 ━━━\n\n` +
+      `Which day we rolling? Tap the month first, then the day.\n` +
+      `Default is *today* (${today})${cur}.`,
+    buttons,
+  });
+}
+
+// Day stage for the picked month — day count is that month's real length
+// in the year the date resolves to (Feb 29 clamps to 28 in non-leap years
+// via resolveEventDate). No Skip here: back-to-months covers a wrong
+// month, and the default already lives on the month stage.
+async function renderDayStage(sock, s, month1) {
+  s.step = 'date';
+  s.awaiting = null;
+  s.dayMonth = month1;
+  const dim = daysInMonth(resolveYearForMonth(month1), month1);
+  return sendDayPage(sock, s, month1, 0, dim);
+}
+
+// Day pages live here — 6 days + Prev/Next + Months + Cancel ≤ 10 buttons
+async function renderDayPageStep(sock, s, page) {
+  const month1 = s.dayMonth;
+  if (!month1) return renderDateStep(sock, s);
+  const dim = daysInMonth(resolveYearForMonth(month1), month1);
+  return sendDayPage(sock, s, month1, page, dim);
+}
+
+async function sendDayPage(sock, s, month1, page, dim) {
+  s.dayPage = page;
+  const totalPages = Math.ceil(dim / 6);
+  if (page >= totalPages) page = s.dayPage = totalPages - 1;
+  const buttons = [];
+  const from = page * 6 + 1;
+  const to = Math.min(dim, page * 6 + 6);
+  for (let d = from; d <= to; d++) {
+    buttons.push({ id: `ewiz:${s.nonce}:dy:${d}`, text: `📆 ${d}` });
+  }
+  if (page > 0) buttons.push({ id: `ewiz:${s.nonce}:dpg:${page - 1}`, text: '◀️ Prev' });
+  if (page < totalPages - 1) buttons.push({ id: `ewiz:${s.nonce}:dpg:${page + 1}`, text: 'Next ▶️' });
+  buttons.push({ id: `ewiz:${s.nonce}:dmonths`, text: '◀️ Months' });
+  buttons.push(CANCEL_BTN(s));
+  return sendStep(sock, s, {
+    text:
+      `━━━ 📆 *DATE* [6/8] — ${MONTHS[month1 - 1].toUpperCase()} · Page ${page + 1}/${totalPages} ━━━\n\n` +
+      `Which day?`,
+    buttons,
+  });
+}
+
+// The year a picked month lives in: this year's copy, or next year's when
+// this year's first-of-month already passed (Dec → picking JAN = next year)
+function resolveYearForMonth(month1) {
+  const y = new Date().getFullYear();
+  const thisYear = `${y}-${String(month1).padStart(2, '0')}-01`;
+  return thisYear < todayISO() ? y + 1 : y;
 }
 
 async function renderTimeStep(sock, s) {
   s.step = 'time';
   s.awaiting = 'time';
   s.awaitingSince = Date.now();
+  const future = !!(s.draft.eventDate && s.draft.eventDate > todayISO());
+  const buttons = [];
+  if (!future) buttons.push({ id: `ewiz:${s.nonce}:tskip`, text: '⏭️ Skip — now-now' });
+  buttons.push(CANCEL_BTN(s));
   return sendStep(sock, s, {
     text:
-      `━━━ ⏰ *TIME* [6/7] ━━━\n\n` +
-      `What time we linking? 24hr like *20:30* — or skip if it's a now-now thing.\n\n` +
-      `_Reply to this message (3 min), or "skip" — duration is next_`,
-    buttons: [
-      { id: `ewiz:${s.nonce}:tskip`, text: '⏭️ Skip — now-now' },
-      CANCEL_BTN(s),
-    ],
+      `━━━ ⏰ *TIME* [7/8] ━━━\n\n` +
+      (future
+        ? `What time we linking on *${fmtCardDate(s.draft.eventDate)}*? 24hr like *20:30*.\n\n` +
+          `_A scheduled meet needs a time — no now-now on a future date._\n\n_Reply to this message (3 min)_`
+        : `What time we linking? 24hr like *20:30* — or skip if it's a now-now thing.\n\n` +
+          `_Reply to this message (3 min), or "skip" — duration is next_`),
+    buttons,
   });
 }
 
@@ -200,7 +289,7 @@ async function renderDurationStep(sock, s) {
   s.awaiting = null;
   return sendStep(sock, s, {
     text:
-      `━━━ ⏱️ *DURATION* [7/7] ━━━\n\n` +
+      `━━━ ⏱️ *DURATION* [8/8] ━━━\n\n` +
       `How long we rolling? An end time keeps the lobby honest.\n\n` +
       `_Or skip — the card runs without an end time._`,
     buttons: [
@@ -241,6 +330,7 @@ async function renderEditPicker(sock, s) {
       { id: `ewiz:${s.nonce}:editf:id`,       text: '🆔 ID' },
       { id: `ewiz:${s.nonce}:editf:server`,   text: '🌐 Server' },
       { id: `ewiz:${s.nonce}:editf:car`,      text: '🚗 Cars' },
+      { id: `ewiz:${s.nonce}:editf:date`,     text: '📆 Date' },
       { id: `ewiz:${s.nonce}:editf:time`,     text: '⏰ Time' },
       { id: `ewiz:${s.nonce}:editf:duration`, text: '⏱️ Duration' },
       { id: `ewiz:${s.nonce}:back`,           text: '◀️ Back to review' },
@@ -251,17 +341,21 @@ async function renderEditPicker(sock, s) {
 
 // ── Draft → DB record ────────────────────────────────────────
 // endAt: timed events = start epoch with end possibly wrapping past
-// midnight; timeless-with-duration = now + duration. The database sweep
-// flips 'upcoming' → 'completed' past expiresAt (48h, timed only) or
-// endAt, so a 2-hour now-now meet retires itself.
+// midnight, computed ON THE EVENT DATE (a Friday meet ends Friday, not
+// today); timeless-with-duration = now + duration. expiresAt rides
+// endAt + 48h so a scheduled meet isn't lazily retired days early —
+// the sweep flips 'upcoming' → 'completed' past either marker, so a
+// 2-hour now-now meet still retires itself.
 function draftToRecord(s) {
   const title = String(s.draft.title || '').toUpperCase();
   const hasTime = !!s.draft.time;
   const now = Date.now();
+  const eventDate = s.draft.eventDate || null;
+  const dayRef = eventDate ? parseLocalDate(eventDate) : now;
   let endAt = null;
   if (hasTime && s.draft.endTime) {
-    const startAt = hhmmOnDay(s.draft.time, now);
-    endAt = hhmmOnDay(s.draft.endTime, now);
+    const startAt = hhmmOnDay(s.draft.time, dayRef);
+    endAt = hhmmOnDay(s.draft.endTime, dayRef);
     if (endAt <= startAt) endAt += 24 * 60 * 60 * 1000;
   } else if (!hasTime && s.draft.durationMins) {
     endAt = now + s.draft.durationMins * 60 * 1000;
@@ -271,6 +365,7 @@ function draftToRecord(s) {
     time: hasTime ? s.draft.time : null,
     endTime: s.draft.endTime || null,
     durationMins: s.draft.durationMins || null,
+    eventDate,
     endAt,
     createdBy: s.hostJid,
     attendees: [],
@@ -283,7 +378,7 @@ function draftToRecord(s) {
     carType: s.draft.carType || null,
     customCar: !!s.draft.customCar,
     templateKey: s.draft.templateKey || null,
-    expiresAt: hasTime ? now + EXPIRY_WINDOW : null,
+    expiresAt: hasTime ? (endAt ? endAt + EXPIRY_WINDOW : now + EXPIRY_WINDOW) : null,
     postedAt: now,
   };
 }
@@ -299,6 +394,9 @@ module.exports = {
   renderServerStep,
   renderJumpStep,
   renderCarStep,
+  renderDateStep,
+  renderDayStage,
+  renderDayPageStep,
   renderTimeStep,
   renderDurationStep,
   renderReviewStep,

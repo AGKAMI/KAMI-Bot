@@ -201,6 +201,49 @@ function fmtDuration(mins) {
   return `${mins} min`;
 }
 
+// ── Event date helpers (wizard DATE step, card, list, sort) ──
+// No year picker — the host picks month + day; the year resolves to the
+// next occurrence of that date (picking JAN in December = next January).
+// ISO strings sort lexicographically, so 'YYYY-MM-DD' doubles as the
+// storage + comparison format.
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const pad2 = (n) => String(n).padStart(2, '0');
+
+const daysInMonth = (year, month1) => new Date(year, month1, 0).getDate(); // month1 = 1-12
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+// Resolve a picked month/day to a concrete 'YYYY-MM-DD'. Feb 29 clamps to
+// 28 in non-leap years; a date already passed this year rolls to next year
+// (an upcoming event can't live in the past). Year shows on the card only
+// when it differs from the current year.
+function resolveEventDate(month1, day) {
+  const m = Math.min(12, Math.max(1, month1 | 0));
+  let year = new Date().getFullYear();
+  const dim = daysInMonth(year, m);
+  const d = Math.min(dim, Math.max(1, day | 0));
+  const today = todayISO();
+  let iso = `${year}-${pad2(m)}-${pad2(d)}`;
+  if (iso < today) iso = `${year + 1}-${pad2(m)}-${pad2(d)}`;
+  return iso;
+}
+
+// 'YYYY-MM-DD' → 'Thu 17 Oct' (+ year when it isn't the current one).
+// Parsed field-by-field — new Date('YYYY-MM-DD') is UTC midnight and
+// drifts a day in west-of-UTC zones.
+function fmtCardDate(iso) {
+  if (!iso) return null;
+  const [y, m, d] = String(iso).split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const wd = WEEKDAYS[new Date(y, m - 1, d).getDay()];
+  const yr = y !== new Date().getFullYear() ? ` ${y}` : '';
+  return `${wd} ${d} ${MONTHS[m - 1]}${yr}`;
+}
+
 module.exports = {
   SERVERS,
   TEMPLATES,
@@ -215,4 +258,9 @@ module.exports = {
   sanitizeEventText,
   fmtDuration,
   TIME_RE,
+  MONTHS,
+  daysInMonth,
+  todayISO,
+  resolveEventDate,
+  fmtCardDate,
 };

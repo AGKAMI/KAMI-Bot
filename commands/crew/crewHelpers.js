@@ -3,6 +3,7 @@
  */
 
 const config = require('../../config');
+const { todayISO } = require('./cpmData');
 
 // Convert phone number to WhatsApp JID
 function phoneToJid(phone) {
@@ -53,14 +54,19 @@ function resolveUser(args, mentionedJid, contextInfo) {
 }
 
 // Shared upcoming-event sort — THE one copy (events.js and attend.js used
-// to duplicate this with a "keep both in sync" apology comment). Timeless
-// v2 events (time skipped = "starting now") sort FIRST via the '00:00'
-// fallback; `String()` guards v2 records that store time: null — the old
-// `evt.time.split` threw a TypeError on those. Missing status = upcoming
-// (events written before status was persisted).
+// to duplicate this with a "keep both in sync" apology comment). Sorts by
+// (eventDate, time) so next week's meet never floats above tomorrow's;
+// legacy no-date records sort as today (their original behavior). Timeless
+// v2 events (time skipped = "starting now") sort FIRST within their day via
+// the '00:00' fallback; `String()` guards v2 records that store time: null
+// — the old `evt.time.split` threw a TypeError on those. Missing status =
+// upcoming (events written before status was persisted).
 const sortUpcoming = (allEvents) => Object.entries(allEvents || {})
   .filter(([, evt]) => !evt.status || evt.status === 'upcoming')
   .sort((a, b) => {
+    const dateA = a[1].eventDate || todayISO();
+    const dateB = b[1].eventDate || todayISO();
+    if (dateA !== dateB) return dateA < dateB ? -1 : 1;
     const timeA = String(a[1].time || '00:00').split(':').map(Number);
     const timeB = String(b[1].time || '00:00').split(':').map(Number);
     return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);

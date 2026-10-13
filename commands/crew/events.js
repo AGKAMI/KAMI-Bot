@@ -4,7 +4,7 @@ const config = require('../../config');
 const { sendButtons } = require('../../utils/buttonHelper');
 const { mention } = require('../../utils/format');
 const { sortUpcoming } = require('./crewHelpers');
-const { serverByKey } = require('./cpmData');
+const { serverByKey, fmtCardDate } = require('./cpmData');
 
 module.exports = {
   subName: 'events',
@@ -35,7 +35,8 @@ module.exports = {
     upcoming.forEach(([id, evt], index) => {
       const going = Array.isArray(evt.attendees) ? evt.attendees : [];
       // v1 legacy events only have name+time; v2 cards carry the works
-      response += `*${index + 1}.* 🗓️ *${evt.name}* — ${evt.time ? evt.time : '⚡ now-now'} · 👥 ${going.length} going\n`;
+      const when = [evt.eventDate ? fmtCardDate(evt.eventDate) : null, evt.time || (evt.eventDate ? null : '⚡ now-now')].filter(Boolean).join(' · ');
+      response += `*${index + 1}.* 🗓️ *${evt.name}* — ${when} · 👥 ${going.length} going\n`;
       if (going.length) {
         mentions.push(...going);
         response += `   ${going.map(a => mention(a)).join(' ')}\n`;

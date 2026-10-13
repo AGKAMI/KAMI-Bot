@@ -17,7 +17,7 @@ const database = require('../../database');
 const { onButton } = require('../../utils/buttonHelper');
 const { buildComparableIds } = require('../../utils/jidHelper');
 const { mention } = require('../../utils/format');
-const { serverByKey, templateByKey, fmtDuration } = require('./cpmData');
+const { serverByKey, templateByKey, fmtDuration, fmtCardDate } = require('./cpmData');
 
 const prefix = () => config.prefix || '.';
 
@@ -31,6 +31,7 @@ function renderEventCard(eventId, evt, attendeeCount) {
   if (evt.cpmId) text += `*ID* 🆔: ${evt.cpmId}\n`;
   if (sv) text += `*SERVER* 🌐: ${sv.flag} ${sv.name}\n`;
   if (evt.carType) text += `*CARS* 🚗: ${evt.carType}\n`;
+  if (evt.eventDate) text += `*DATE* 📅: ${fmtCardDate(evt.eventDate)}\n`;
   if (evt.time) {
     text += `*TIME* ⏰: ${evt.time}${evt.endTime ? ` – ${evt.endTime}` : ''}\n`;
   } else if (evt.durationMins) {
@@ -94,7 +95,7 @@ onButton('evrsvp:', async (sock, msg, from, sender, btnId) => {
         database.updateTeam(found.groupJid, found.team);
       }
       return sock.sendMessage(from, {
-        text: `✅ ${mention(sender)} locked in for *${evt.name}*${evt.time ? ` at *${evt.time}*` : ''} — *${evt.attendees.length}* going so far`,
+        text: `✅ ${mention(sender)} locked in for *${evt.name}*${evt.eventDate ? ` on *${fmtCardDate(evt.eventDate)}*` : ''}${evt.time ? ` at *${evt.time}*` : ''} — *${evt.attendees.length}* going so far`,
         mentions: [sender],
       });
     } else {

@@ -3,16 +3,17 @@
  *
  * `!event` (bare) opens a step machine IN-GROUP: TITLE → HOST 👤 →
  * ROOM ID 🆔 → SERVER 🌐 (paginated + jump, 🇿🇦 pinned) → CAR TYPE 🚗 →
- * TIME ⏰ (optional) → DURATION ⏱️ → REVIEW → POST (card hidden-tags the
- * whole crew + auto-pins 24h). Legacy `!event <name> <HH:MM>` keeps
- * working — event.js routes to it before starting the wizard.
+ * DATE 📆 (month → day pickers, no year; defaults to today) → TIME ⏰
+ * (optional, required on future dates) → DURATION ⏱️ → REVIEW → POST
+ * (card hidden-tags the whole crew + auto-pins 24h). Legacy
+ * `!event <name> <HH:MM>` keeps working — event.js routes to it first.
  *
  * Renders in eventRender.js, card + evrsvp + unpin sweep in eventRsvp.js.
  * Rulings: requireAdmin('ewiz') NO trailing colon; per-(group, sender)
  * sessions; reply-bound capture (stanzaId === s.lastStepId); host
  * auto-RSVP; RAM-only drafts; publish = write → card → pin (key stored
  * for the unpin sweep) → confirm; evrsvp ids explicit, crew-wide;
- * expiresAt 48h timed-only, endAt retires events via the DB sweep.
+ * expiresAt = endAt(+48h) timed-only, endAt retires via the DB sweep.
  */
 
 const config = require('../../config');
@@ -23,11 +24,13 @@ const { voice } = require('../../utils/format');
 const {
   TEMPLATES, DEFAULT_CAR_OPTIONS, buildServerPages, serverByKey,
   templateByKey, normalizeCpmId, sanitizeEventText, TIME_RE, SERVER_RANGES, pageForKey,
+  todayISO, resolveEventDate,
 } = require('./cpmData');
 const {
   sendStep, minsUntil, recomputeEndTime, draftToRecord,
   renderTitleStep, renderHostStep, renderIdStep, renderServerStep, renderJumpStep,
-  renderCarStep, renderTimeStep, renderDurationStep, renderReviewStep, renderEditPicker,
+  renderCarStep, renderDateStep, renderDayStage, renderDayPageStep,
+  renderTimeStep, renderDurationStep, renderReviewStep, renderEditPicker,
 } = require('./eventRender');
 const { renderEventCard, resolveEventById } = require('./eventRsvp');
 
@@ -118,9 +121,12 @@ async function startWizard(sock, msg, extra) {
     hostName: msg.pushName || '',
     step: 'title',
     serverPage: 0,
+    datePage: 0,
+    dayMonth: null,
+    dayPage: 0,
     awaiting: null,
     awaitingSince: 0,
-    draft: {},
+    draft: { eventDate: todayISO() }, // default = today, pickers just override
     returnTo: null,
     strikes: 0,
     startedAt: Date.now(),
@@ -231,6 +237,24 @@ async function _strikeOut(sock, s, reason) {
   return sent;
 }
 
+// Arm a typed-capture step: set `s.awaiting` first, then call — the fresh
+// lastStepId makes the reply-bound (tplc/carc/durc shared shape)
+async function _arm(sock, from, msg, s, awaiting, promptText) {
+  s.awaiting = awaiting;
+  s.awaitingSince = Date.now();
+  const sent = await sock.sendMessage(from, { text: promptText }, { quoted: msg });
+  if (sent && sent.key && sent.key.id) s.lastStepId = sent.key.id;
+  return sent;
+}
+
+const _expiredNotice = (sock, from) => sock.sendMessage(from, {
+  text: `⏰ *EVENT BUILD EXPIRED*\n\nThat draft got old, boet — run ${prefix()}event again.`,
+});
+
+// A future-date meet can't be "now-now" — endAt for timeless events is
+// now-relative, so skipping time on a scheduled date would corrupt it
+const _isFutureDate = (s) => !!(s.draft.eventDate && s.draft.eventDate > todayISO());
+
 /**
  * Called from handler.js BEFORE the games and group protections. Consumes
  * the host's typed answer only when a step is armed AND the message replies
@@ -246,9 +270,7 @@ async function captureText(sock, msg, ctx) {
     const { s, expired } = _lookup(ctx.from, ctx.sender);
     if (!s) {
       if (expired) {
-        await sock.sendMessage(ctx.from, {
-          text: `⏰ *EVENT BUILD EXPIRED*\n\nThat draft got old, boet — run ${prefix()}event again.`,
-        }, { quoted: msg });
+        await _expiredNotice(sock, ctx.from);
         return true;
       }
       return false;
@@ -283,6 +305,11 @@ async function captureText(sock, msg, ctx) {
     } else if (s.awaiting === 'time') {
       const lower = body.toLowerCase();
       if (lower === 'skip' || lower === 'none' || lower === 'now' || lower === 'now-now') {
+        if (_isFutureDate(s)) {
+          // no strike — legit answer, just not allowed on a scheduled date
+          await renderTimeStep(sock, s);
+          return true;
+        }
         s.draft.time = null; ok = true;
       } else if (TIME_RE.test(body)) {
         s.draft.time = body; ok = true;
@@ -321,7 +348,7 @@ async function captureText(sock, msg, ctx) {
       case 'title': await renderHostStep(sock, s); return true;
       case 'host':  await renderIdStep(sock, s); return true;
       case 'id':    await renderServerStep(sock, s); return true;
-      case 'car':   await renderTimeStep(sock, s); return true;
+      case 'car':   await renderDateStep(sock, s); return true;
       case 'time':  await renderDurationStep(sock, s); return true;
       default:      await renderReviewStep(sock, s); return true;
     }
@@ -351,9 +378,7 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
     // Lazy TTL on taps — expired builds get one nudge, never silence
     if (Date.now() - s.startedAt > SESSION_TTL) {
       sessions.delete(s.nonce);
-      return sock.sendMessage(from, {
-        text: `⏰ *EVENT BUILD EXPIRED*\n\nThat draft got old, boet — run ${prefix()}event again.`,
-      });
+      return _expiredNotice(sock, from);
     }
 
     switch (action) {
@@ -369,15 +394,9 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
         if (s.returnTo === 'review') { s.returnTo = null; return renderReviewStep(sock, s); }
         return renderHostStep(sock, s);
       }
-      case 'tplc': {
-        s.awaiting = 'title';
-        s.awaitingSince = Date.now();
-        const sent = await sock.sendMessage(from, {
-          text: `✍️ Reply with your title, boet — I'll CAPS and bold it for the card (3 min).`,
-        }, { quoted: msg });
-        if (sent && sent.key && sent.key.id) s.lastStepId = sent.key.id;
-        return;
-      }
+      case 'tplc':
+        return _arm(sock, from, msg, s, 'title',
+          `✍️ Reply with your title, boet — I'll CAPS and bold it for the card (3 min).`);
 
       case 'hostme':
         s.draft.host = sanitizeEventText(s.hostName, 40) || 'Host';
@@ -417,19 +436,46 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
         s.draft.carType = options[idx];
         s.draft.customCar = false;
         if (s.returnTo === 'review') { s.returnTo = null; return renderReviewStep(sock, s); }
+        return renderDateStep(sock, s);
+      }
+      case 'carc':
+        return _arm(sock, from, msg, s, 'car',
+          `🚗 Reply with the car rule — like *Audi only* or *Golf GTIs only* (3 min).`);
+
+      // ── DATE step: month → day pickers (default = today) ──
+      case 'mo': {
+        const mo = parseInt(arg, 10);
+        if (isNaN(mo) || mo < 1 || mo > 12) return;
+        return renderDayStage(sock, s, mo);
+      }
+      case 'dy': {
+        const day = parseInt(arg, 10);
+        const mo = s.dayMonth;
+        if (isNaN(day) || !mo) return;
+        s.draft.eventDate = resolveEventDate(mo, day);
+        if (s.returnTo === 'review') { s.returnTo = null; return renderReviewStep(sock, s); }
         return renderTimeStep(sock, s);
       }
-      case 'carc': {
-        s.awaiting = 'car';
-        s.awaitingSince = Date.now();
-        const sent = await sock.sendMessage(from, {
-          text: `🚗 Reply with the car rule — like *Audi only* or *Golf GTIs only* (3 min).`,
-        }, { quoted: msg });
-        if (sent && sent.key && sent.key.id) s.lastStepId = sent.key.id;
-        return;
+      case 'mpg': {
+        const page = parseInt(arg, 10);
+        if (isNaN(page) || page < 0 || page > 1) return;
+        s.datePage = page;
+        return renderDateStep(sock, s);
       }
+      case 'dpg': {
+        const page = parseInt(arg, 10);
+        if (isNaN(page) || page < 0) return;
+        return renderDayPageStep(sock, s, page);
+      }
+      case 'dmonths':
+        return renderDateStep(sock, s);
+      case 'dtoday':
+        s.draft.eventDate = todayISO();
+        if (s.returnTo === 'review') { s.returnTo = null; return renderReviewStep(sock, s); }
+        return renderTimeStep(sock, s);
 
       case 'tskip':
+        if (_isFutureDate(s)) return renderTimeStep(sock, s);
         s.draft.time = null;
         recomputeEndTime(s);
         if (s.returnTo === 'review') { s.returnTo = null; return renderReviewStep(sock, s); }
@@ -443,15 +489,9 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
         s.returnTo = null;
         return renderReviewStep(sock, s);
       }
-      case 'durc': {
-        s.awaiting = 'endtime';
-        s.awaitingSince = Date.now();
-        const sent = await sock.sendMessage(from, {
-          text: `⏱️ Reply with the end time, boet — 24hr like *22:30* (3 min).`,
-        }, { quoted: msg });
-        if (sent && sent.key && sent.key.id) s.lastStepId = sent.key.id;
-        return;
-      }
+      case 'durc':
+        return _arm(sock, from, msg, s, 'endtime',
+          `⏱️ Reply with the end time, boet — 24hr like *22:30* (3 min).`);
       case 'dskip':
         s.draft.durationMins = null;
         s.draft.endTime = null;
@@ -472,6 +512,7 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
           case 'id':     return renderIdStep(sock, s);
           case 'server': s.serverPage = 0; return renderServerStep(sock, s);
           case 'car':    return renderCarStep(sock, s);
+          case 'date':   s.datePage = 0; return renderDateStep(sock, s);
           case 'time':   return renderTimeStep(sock, s);
           case 'duration': return renderDurationStep(sock, s);
           default: s.returnTo = null; return renderReviewStep(sock, s);

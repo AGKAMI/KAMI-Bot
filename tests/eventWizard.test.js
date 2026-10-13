@@ -181,10 +181,17 @@ test('full build: template → host → id → server → car → time → durat
   await settle();
   assert.ok(sock.sent.at(-1).content.text.includes('CAR TYPE'), 'car prompt after server');
 
-  // Car: first preset (Any Stance Car)
+  // Car: first preset (Any Stance Car) → DATE step (month stage)
   await tap(sock, sock.sent.at(-1).content.buttons[0].id);
   await settle();
-  assert.ok(sock.sent.at(-1).content.text.includes('TIME'), 'time prompt after car');
+  assert.ok(sock.sent.at(-1).content.text.includes('DATE'), 'date prompt after car');
+  assert.ok(sock.sent.at(-1).content.buttons.some(b => String(b.id).includes(':mo:1')), 'month buttons present');
+  assert.ok(sock.sent.at(-1).content.buttons.some(b => String(b.id).includes(':dtoday')), 'skip-today button present');
+
+  // Skip date (default = today) → TIME step
+  await tap(sock, `ewiz:${nonce}:dtoday`);
+  await settle();
+  assert.ok(sock.sent.at(-1).content.text.includes('TIME'), 'time prompt after date');
 
   // Skip time → DURATION step (not review)
   await tap(sock, `ewiz:${nonce}:tskip`);
@@ -207,6 +214,7 @@ test('full build: template → host → id → server → car → time → durat
   assert.match(card.content.text, /\*ID\* 🆔: VR401128/, 'ID label caps+bold, value verbatim');
   assert.match(card.content.text, /\*SERVER\* 🌐: 🇿🇦 AFRIKAANS/);
   assert.match(card.content.text, /\*CARS\* 🚗: Any Stance Car/);
+  assert.ok(card.content.text.includes(`*DATE* 📅: ${cpmData.fmtCardDate(cpmData.todayISO())}`), 'card carries the default (today) date line');
   assert.ok(!card.content.text.includes('*TIME* ⏰:'), 'no time line when both skipped');
   assert.match(card.content.text, /👥 \*GOING \(1\):\* @27800000001/, 'going line tags the host');
   assert.deepStrictEqual(card.content.mentions.slice().sort(), [HOST, OTHER].sort(), 'hidden mention tags the whole crew');
@@ -227,6 +235,7 @@ test('full build: template → host → id → server → car → time → durat
   assert.strictEqual(ev.cpmId, 'VR401128');
   assert.strictEqual(ev.serverKey, 'AFRIKAANS');
   assert.strictEqual(ev.carType, 'Any Stance Car');
+  assert.strictEqual(ev.eventDate, cpmData.todayISO(), 'default date (today) persisted');
   assert.strictEqual(ev.time, null, 'skipped time stored as null');
   assert.strictEqual(ev.endTime, null);
   assert.strictEqual(ev.endAt, null, 'no duration → no endAt');
@@ -262,6 +271,8 @@ test('duration: 20:30 + 2hr preset → end 22:30, endAt stored, card shows range
   await settle();
   await tap(sock, `ewiz:${nonce}:car:0`);
   await settle();
+  await tap(sock, `ewiz:${nonce}:dtoday`); // default date — today
+  await settle();
   await eventWizard.captureText(sock, textMsg('20:30', HOST, s), ctx('20:30'));
   await settle();
   assert.ok(sock.sent.at(-1).content.text.includes('DURATION'), 'duration step after typed time');
@@ -276,6 +287,7 @@ test('duration: 20:30 + 2hr preset → end 22:30, endAt stored, card shows range
   const team = database.getTeam(GROUP);
   const ev = Object.values(team.events).find(e => e.name === 'STANCE MEET' && e.time === '20:30');
   assert.ok(ev, 'record with the typed time');
+  assert.strictEqual(ev.eventDate, cpmData.todayISO(), 'date defaults to today');
   assert.strictEqual(ev.endTime, '22:30');
   assert.strictEqual(ev.durationMins, 120);
   assert.ok(ev.endAt > Date.now(), 'endAt in the future');
@@ -451,4 +463,196 @@ test('legacy rejects impossible times (99:99)', async () => {
   assert.strictEqual(live.length, 1, 'restart replaces the draft, never duplicates');
   assert.strictEqual(live[0].step, 'title', 'fresh draft restarts at the title step');
   eventWizard.sessions.delete(live[0].nonce);
+});
+
+// ── Date helpers (pure) ────────────────────────────────────────────────
+test('date helpers: leap-aware day counts, year rollover, Feb 29 clamp', () => {
+  assert.strictEqual(cpmData.daysInMonth(2027, 2), 28, 'non-leap Feb');
+  assert.strictEqual(cpmData.daysInMonth(2024, 2), 29, 'leap Feb');
+  assert.strictEqual(cpmData.daysInMonth(2026, 12), 31, 'Dec always 31');
+
+  // A past month/day this year resolves to NEXT year (upcoming ≠ past)
+  const jan = cpmData.resolveEventDate(1, 5);
+  assert.match(jan, /^\d{4}-01-05$/, 'Jan 5 keeps its shape');
+  assert.ok(jan > cpmData.todayISO(), 'Jan 5 rolls forward when this year\'s copy passed');
+
+  // Feb 29 clamps to 28 in non-leap years, never throws
+  assert.match(cpmData.resolveEventDate(2, 29), /-02-28$/, 'Feb 29 clamps to 28');
+
+  // Card label: current year bare, other years carry the year
+  const [cy] = cpmData.todayISO().split('-');
+  assert.match(cpmData.fmtCardDate(`${cy}-12-25`), /Thu|Fri|Sat|Sun|Mon|Tue|Wed 25 Dec$/, 'current-year date has no year suffix');
+  assert.strictEqual(cpmData.fmtCardDate('2027-02-28').includes('2027'), true, 'other-year date carries the year');
+  assert.strictEqual(cpmData.fmtCardDate(null), null, 'null-safe');
+});
+
+// ── DATE step: month → day → future date endAt ─────────────────────────
+test('date flow: month → day pages → future date, endAt lands on that date', async () => {
+  const sock = mkSock();
+  await eventWizard.startWizard(sock, tapMsg('x'), { from: GROUP, sender: HOST });
+  await settle();
+  const s = [...eventWizard.sessions.values()].find(x => x.chatJid === GROUP);
+  const nonce = s.nonce;
+
+  await tap(sock, `ewiz:${nonce}:tpl:STANCE`);
+  await settle();
+  await eventWizard.captureText(sock, textMsg('AG KAMI', HOST, s), ctx('AG KAMI'));
+  await settle();
+  await eventWizard.captureText(sock, textMsg('VR401128', HOST, s), ctx('VR401128'));
+  await settle();
+  await tap(sock, `ewiz:${nonce}:srv:AFRIKAANS`);
+  await settle();
+  await tap(sock, `ewiz:${nonce}:car:0`);
+  await settle();
+  assert.ok(sock.sent.at(-1).content.text.includes('DATE'), 'date step after car');
+
+  // Pick NEXT month → day stage shows that month's real day count
+  const now = new Date();
+  const nextMo = now.getMonth() + 2 > 12 ? now.getMonth() - 10 : now.getMonth() + 2;
+  await tap(sock, `ewiz:${nonce}:mo:${nextMo}`);
+  await settle();
+  const iso = cpmData.resolveEventDate(nextMo, 15);
+  const [ry, rm] = iso.split('-').map(Number);
+  const dim = cpmData.daysInMonth(ry, nextMo);
+  assert.match(sock.sent.at(-1).content.text, new RegExp(`Page 1/${Math.ceil(dim / 6)}`), 'day pages sized to the month');
+  assert.strictEqual(sock.sent.at(-1).content.buttons.filter(b => String(b.id).includes(':dy:')).length, Math.min(6, dim), 'first page shows up to 6 days');
+
+  // Day 15 lives on page 3 (days 13-18) — page there, then tap it
+  await tap(sock, `ewiz:${nonce}:dpg:2`);
+  await settle();
+  await tap(sock, `ewiz:${nonce}:dy:15`);
+  await settle();
+  assert.ok(sock.sent.at(-1).content.text.includes('TIME'), 'time step after the day pick');
+  assert.ok(!sock.sent.at(-1).content.buttons.some(b => String(b.id).includes('tskip')), 'no now-now skip on a future date');
+  assert.match(sock.sent.at(-1).content.text, /scheduled meet needs a time/, 'future date demands a time');
+
+  // Typed time + 2hr → endAt on the EVENT DATE at 22:30, not today
+  await eventWizard.captureText(sock, textMsg('20:30', HOST, s), ctx('20:30'));
+  await settle();
+  await tap(sock, `ewiz:${nonce}:dur:120`);
+  await settle();
+  assert.match(sock.sent.at(-1).content.text, new RegExp(`\\*DATE\\* 📅: ${cpmData.fmtCardDate(iso)}`), 'review shows the picked date');
+  await tap(sock, `ewiz:${nonce}:post`);
+  await settle();
+
+  const team = database.getTeam(GROUP);
+  const ev = Object.values(team.events).find(e => e.name === 'STANCE MEET' && e.eventDate === iso);
+  assert.ok(ev, 'record carries the picked date');
+  assert.strictEqual(ev.endAt, new Date(ry, rm - 1, 15, 22, 30).getTime(), 'endAt lands on the event date at the end time');
+  assert.strictEqual(ev.expiresAt, ev.endAt + 48 * 60 * 60 * 1000, 'expiresAt rides endAt + 48h, not now + 48h');
+  eventWizard.sessions.delete(s.nonce);
+});
+
+// ── Future date rejects now-now ────────────────────────────────────────
+test('future date: tskip and typed "skip" bounce back to the time step', async () => {
+  const sock = mkSock();
+  await eventWizard.startWizard(sock, tapMsg('x'), { from: GROUP, sender: HOST });
+  await settle();
+  const s = [...eventWizard.sessions.values()].find(x => x.chatJid === GROUP);
+  const nonce = s.nonce;
+
+  await tap(sock, `ewiz:${nonce}:tpl:STANCE`);
+  await settle();
+  await eventWizard.captureText(sock, textMsg('AG KAMI', HOST, s), ctx('AG KAMI'));
+  await settle();
+  await eventWizard.captureText(sock, textMsg('VR401128', HOST, s), ctx('VR401128'));
+  await settle();
+  await tap(sock, `ewiz:${nonce}:srv:AFRIKAANS`);
+  await settle();
+  await tap(sock, `ewiz:${nonce}:car:0`);
+  await settle();
+  const now = new Date();
+  const nextMo = now.getMonth() + 2 > 12 ? now.getMonth() - 10 : now.getMonth() + 2;
+  await tap(sock, `ewiz:${nonce}:mo:${nextMo}`);
+  await settle();
+  await tap(sock, `ewiz:${nonce}:dy:20`);
+  await settle();
+  assert.strictEqual(s.step, 'time', 'landed on the time step');
+
+  // Button skip — bounced
+  await tap(sock, `ewiz:${nonce}:tskip`);
+  await settle();
+  assert.strictEqual(s.step, 'time', 'tskip rejected on a future date');
+  assert.ok(!s.draft.time, 'no time set by the bounce');
+
+  // Typed skip — consumed but bounced, no strike
+  assert.strictEqual(await eventWizard.captureText(sock, textMsg('skip', HOST, s), ctx('skip')), true, 'typed skip consumed');
+  await settle();
+  assert.strictEqual(s.step, 'time', 'typed skip rejected on a future date');
+  assert.strictEqual(s.strikes, 0, 'bounce is not a strike');
+
+  // A real time sails through
+  assert.strictEqual(await eventWizard.captureText(sock, textMsg('21:00', HOST, s), ctx('21:00')), true);
+  await settle();
+  assert.strictEqual(s.step, 'duration', 'typed time advances');
+  eventWizard.sessions.delete(s.nonce);
+});
+
+// ── Edit picker Date row ───────────────────────────────────────────────
+test('edit: Date row jumps to months, picking lands on review with the new date', async () => {
+  const sock = mkSock();
+  await eventWizard.startWizard(sock, tapMsg('x'), { from: GROUP, sender: HOST });
+  await settle();
+  const s = [...eventWizard.sessions.values()].find(x => x.chatJid === GROUP);
+  const nonce = s.nonce;
+
+  // Walk to review with the today default
+  await tap(sock, `ewiz:${nonce}:tpl:STANCE`);
+  await settle();
+  await eventWizard.captureText(sock, textMsg('AG KAMI', HOST, s), ctx('AG KAMI'));
+  await settle();
+  await eventWizard.captureText(sock, textMsg('VR401128', HOST, s), ctx('VR401128'));
+  await settle();
+  await tap(sock, `ewiz:${nonce}:srv:AFRIKAANS`);
+  await settle();
+  await tap(sock, `ewiz:${nonce}:car:0`);
+  await settle();
+  await tap(sock, `ewiz:${nonce}:dtoday`);
+  await settle();
+  await tap(sock, `ewiz:${nonce}:tskip`);
+  await settle();
+  await tap(sock, `ewiz:${nonce}:dskip`);
+  await settle();
+  assert.ok(sock.sent.at(-1).content.text.includes('REVIEW'));
+
+  // Edit → Date row present (10-button cap exactly)
+  await tap(sock, `ewiz:${nonce}:edit`);
+  await settle();
+  const editMsg = sock.sent.at(-1);
+  assert.strictEqual(editMsg.content.buttons.length, 10, 'edit picker hits the 10-button cap');
+  assert.ok(editMsg.content.buttons.some(b => String(b.id).includes('editf:date')), 'Date row present');
+
+  // Jump to months → pick Dec 20 → straight back to review with the new date
+  await tap(sock, `ewiz:${nonce}:editf:date`);
+  await settle();
+  assert.ok(sock.sent.at(-1).content.text.includes('DATE'), 'month stage after the Date row');
+  await tap(sock, `ewiz:${nonce}:mo:12`);
+  await settle();
+  assert.ok(sock.sent.at(-1).content.text.includes('DEC'), 'December day stage');
+  await tap(sock, `ewiz:${nonce}:dy:20`);
+  await settle();
+  const iso = cpmData.resolveEventDate(12, 20);
+  assert.ok(sock.sent.at(-1).content.text.includes('REVIEW'), 'back on review after the edit');
+  assert.ok(sock.sent.at(-1).content.text.includes(cpmData.fmtCardDate(iso)), 'review shows the edited date');
+  assert.strictEqual(s.draft.eventDate, iso, 'draft carries the edited date');
+  eventWizard.sessions.delete(s.nonce);
+});
+
+// ── sortUpcoming by (date, time) ───────────────────────────────────────
+test('sortUpcoming: future dates never float above today, legacy sorts as today', () => {
+  const { sortUpcoming } = require('../commands/crew/crewHelpers');
+  const today = cpmData.todayISO();
+  const [ty, tm, td] = today.split('-').map(Number);
+  const d2 = new Date(ty, tm - 1, td + 2);
+  const iso2 = `${d2.getFullYear()}-${String(d2.getMonth() + 1).padStart(2, '0')}-${String(d2.getDate()).padStart(2, '0')}`;
+  const sorted = sortUpcoming({
+    LATER:   { time: '01:00', eventDate: iso2, attendees: [] },
+    TONIGHT: { time: '23:00', eventDate: today, attendees: [] },
+    LEGACY:  { time: '10:00', attendees: [] },
+  });
+  assert.deepStrictEqual(
+    sorted.map(([id]) => id),
+    ['LEGACY', 'TONIGHT', 'LATER'],
+    'today first (by time), the future date last despite its earlier clock time'
+  );
 });
