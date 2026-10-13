@@ -157,6 +157,59 @@ const TIKWM_HEADERS = {
   'Accept': 'application/json, text/plain, */*',
 };
 
+// TikTok's own mobile feed API — no signing required with device params.
+// Serves the no-watermark play_addr on the v16m-default CDN family, which
+// is NOT the Akamai-blocked v16-webapp-prime. Rate-limits ~1 req/s per IP
+// (429 on rapid repeats): per-host single retry after a backoff covers it.
+const TIKAPI_HOSTS = [
+  'api16-normal-c-useast1a.tiktokv.com',
+  'api22-normal-c-useast2a.tiktokv.com',
+];
+const MOBILE_UA = 'com.zhiliaoapp.musically/2023009040 (Linux; U; Android 9; en; ASUS_Z01QD; Build/PI;)';
+
+async function methodTikApi(url) {
+  const videoId = await resolveCanonicalId(url);
+  if (!videoId) throw new Error('tikapi: could not extract video ID');
+
+  let aweme = null;
+  let lastMsg = 'no attempts';
+  outer:
+  for (const host of TIKAPI_HOSTS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 4000)); // 429 backoff
+      try {
+        const api = `https://${host}/aweme/v1/feed/?aweme_id=${videoId}` +
+          `&iid=7318518857994389254&device_id=7318517321748022790&channel=googleplay` +
+          `&app_name=musical_ly&version_code=300904&device_platform=android` +
+          `&device_type=ASUS_Z01QD&os_version=9`;
+        const res = await axios.get(api, { timeout: 20000, headers: { 'User-Agent': MOBILE_UA } });
+        const list = res.data && res.data.aweme_list;
+        if (Array.isArray(list) && list.length > 0 && String(list[0].aweme_id) === videoId) {
+          aweme = list[0];
+          break outer;
+        }
+        lastMsg = (res.data && res.data.notice) || 'empty aweme_list';
+      } catch (e) {
+        lastMsg = e.response ? `HTTP ${e.response.status}` : e.message;
+      }
+    }
+  }
+  if (!aweme) throw new Error(`tikapi: ${lastMsg}`);
+
+  // Slideshow posts — image cards instead of a video
+  const images = (aweme.images || [])
+    .map(im => (im.url_list || []).find(u => typeof u === 'string' && u.startsWith('http')))
+    .filter(Boolean);
+  if (images.length > 0) {
+    return { type: 'slideshow', images, title: aweme.desc || null };
+  }
+
+  const play = ((aweme.video && aweme.video.play_addr && aweme.video.play_addr.url_list) || [])
+    .find(u => typeof u === 'string' && u.startsWith('http'));
+  if (!play) throw new Error('tikapi: no play_addr in aweme');
+  return { type: 'video', videoUrl: play, title: aweme.desc || null };
+}
+
 async function methodTikwm(url) {
   const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`;
   let data = null;
@@ -222,10 +275,14 @@ async function methodRuhend(url, timeoutMs = RUHEND_TIMEOUT_MS) {
 }
 
 // tikcdn anti-leech placeholder: AI-generated robot-with-sign clip
-// ("THIS APP IS OFFLINE. CONTINUE ON SSSTIK.IO…"), 4,089,113 bytes.
-// md5 observed 2026-10-12 on deployment b0665152 from the live box.
+// ("THIS APP IS OFFLINE. CONTINUE ON SSSTIK.IO…"). Two encodings observed
+// from the live box: 4,089,113 bytes (2026-10-12 morning) and 2,882,204
+// bytes / md5 17536d03… (2026-10-12 evening — the shorter cut users got
+// delivered as a "working" video). Content-hash reject → chain falls
+// through to the next provider.
 const PLACEHOLDER_MD5 = new Set([
   '905a30c73f68e8b14152f1123336b083',
+  '17536d037e61774f5511bd1c0619c7e4',
 ]);
 
 function isPlaceholder(buf) {
@@ -323,6 +380,7 @@ module.exports = {
 
       const run = (async () => {
         const methods = [
+          { name: 'tikapi', fn: () => methodTikApi(url) },
           { name: 'tikcdn', fn: () => methodTikcdn(url) },
           { name: 'embed', fn: () => methodEmbed(url) },
           { name: 'tikwm', fn: () => methodTikwm(url) },
@@ -401,6 +459,7 @@ module.exports = {
     sendVideo,
     sendSlideshow,
     methodTikwm,
+    methodTikApi,
     methodEmbed,
     methodTikcdn,
     extractEmbedUrl,
