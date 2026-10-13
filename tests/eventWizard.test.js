@@ -213,7 +213,7 @@ test('full build: template → host → id → server → car → time → durat
   const pin = sock.sent.map(x => x.content && x.content.pin).find(Boolean);
   assert.ok(pin, 'pin sent after the card');
   assert.strictEqual(pin.type, 1, 'pin action');
-  assert.strictEqual(pin.time, 7 * 24 * 60 * 60, '7-day pin');
+  assert.strictEqual(pin.time, 24 * 60 * 60, '24h pin');
   assert.strictEqual([...eventWizard.sessions.values()].length, 0, 'session closed after post');
 
   // Record persisted with the v2 fields

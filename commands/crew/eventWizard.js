@@ -4,7 +4,7 @@
  * `!event` (bare) opens a step machine IN-GROUP: TITLE → HOST 👤 →
  * ROOM ID 🆔 → SERVER 🌐 (paginated + jump, 🇿🇦 pinned) → CAR TYPE 🚗 →
  * TIME ⏰ (optional) → DURATION ⏱️ → REVIEW → POST (card hidden-tags the
- * whole crew + auto-pins 7d). Legacy `!event <name> <HH:MM>` keeps
+ * whole crew + auto-pins 24h). Legacy `!event <name> <HH:MM>` keeps
  * working — event.js routes to it before starting the wizard.
  *
  * Renders in eventRender.js, card + evrsvp + unpin sweep in eventRsvp.js.
@@ -38,7 +38,7 @@ requireAdmin('ewiz');
 const SESSION_TTL = 30 * 60 * 1000;   // draft dies after 30 min
 const TEXT_WINDOW = 3 * 60 * 1000;    // armed typed-capture window
 const ID_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const PIN_SECONDS = 7 * 24 * 60 * 60; // auto-pin the card for 7 days
+const PIN_SECONDS = 24 * 60 * 60; // auto-pin the card for 24 hours
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const prefix = () => config.prefix || '.';
@@ -156,7 +156,7 @@ async function cancelWizardFor(sock, msg, extra) {
 }
 
 // Publish: DB first (a card-send failure still leaves a working event),
-// then card (hidden mention), 7-day pin, confirm. Latch stops double-taps.
+// then card (hidden mention), 24h pin, confirm. Latch stops double-taps.
 async function publishEvent(sock, s) {
   if (s.publishing) return;
   s.publishing = true;
@@ -191,7 +191,7 @@ async function publishEvent(sock, s) {
     console.error('[EVWIZ] card send failed:', cardErr.message);
   }
 
-  // Pin 7d (bot must be group admin); persist the card id for the unpin sweep
+  // Pin 24h (bot must be group admin); persist the card id for the unpin sweep
   if (cardMsg && cardMsg.key) {
     try {
       await sock.sendMessage(s.groupJid, { pin: { type: 1, time: PIN_SECONDS, key: cardMsg.key } });

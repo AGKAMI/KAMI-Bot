@@ -105,8 +105,8 @@ onButton('evrsvp:', async (sock, msg, from, sender, btnId) => {
 
 // ── Unpin sweep ──────────────────────────────────────────────
 // The DB lazy-sweep flips ended events to 'completed', but the WhatsApp
-// pin lives 7 days regardless — a 2-hour meet's card would sit pinned
-// all week. Every 5 min this walks all crews: getCrewEvents() reuses
+// pin lasts 24h regardless — a 2-hour meet's card would sit pinned
+// until it expired. Every 5 min this walks all crews: getCrewEvents() reuses
 // the lazy expiry flip (no duplicated endAt logic), then any completed
 // event still holding a pin gets UNPIN_FOR_ALL (type 2). Records
 // published before pinnedMsgId existed are skipped — nothing to target.
