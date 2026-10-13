@@ -180,16 +180,17 @@ async function methodTikApi(url) {
 
   let aweme = null;
   let lastMsg = 'no attempts';
+  let saw429 = false;
   outer:
   for (const host of TIKAPI_HOSTS) {
     for (let attempt = 0; attempt < 2; attempt++) {
-      if (attempt > 0) await new Promise(r => setTimeout(r, 4000)); // 429 backoff
+      if (attempt > 0 || (host !== TIKAPI_HOSTS[0])) await new Promise(r => setTimeout(r, 8000)); // 429 backoff
       try {
         const api = `https://${host}/aweme/v1/feed/?aweme_id=${videoId}` +
           `&iid=7318518857994389254&device_id=7318517321748022790&channel=googleplay` +
           `&app_name=musical_ly&version_code=300904&device_platform=android` +
           `&device_type=ASUS_Z01QD&os_version=9`;
-        const res = await axios.get(api, { timeout: 20000, headers: { 'User-Agent': MOBILE_UA } });
+        const res = await axios.get(api, { timeout: 12000, headers: { 'User-Agent': MOBILE_UA } });
         const list = (res.data && res.data.aweme_list) || [];
         // The endpoint sometimes returns a recommendation feed alongside
         // (or instead of) the requested item — scan for OUR aweme_id
@@ -198,13 +199,15 @@ async function methodTikApi(url) {
           aweme = hit;
           break outer;
         }
+        saw429 = false;
         lastMsg = list.length ? 'requested video not in returned feed' : 'empty aweme_list';
       } catch (e) {
         lastMsg = e.response ? `HTTP ${e.response.status}` : e.message;
+        if (e.response && e.response.status === 429) saw429 = true;
       }
     }
   }
-  if (!aweme) throw new Error(`tikapi: ${lastMsg}`);
+  if (!aweme) throw new Error(saw429 ? 'tikapi: rate limited (429) — the box IP burned its TikTok API window, retry in a few minutes' : `tikapi: ${lastMsg}`);
 
   // Slideshow posts — image cards instead of a video
   const images = (aweme.images || [])
