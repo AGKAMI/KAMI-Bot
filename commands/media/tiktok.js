@@ -1,17 +1,18 @@
 /**
  * TikTok Downloader - Download TikTok videos without watermark
- * Fallbacks: tikcdn direct (ssstik) -> embed page (v45 CDN) -> tikwm API -> ruhend-scraper
+ * Fallbacks: embed page (v45 CDN) -> tikwm API -> ruhend-scraper -> tikcdn direct
  *
- * Why tikcdn-first (2026-10-12, probed live from deployment b0665152):
- *  - tikcdn.io/ssstik/<id> serves the real mp4 (~200-8MB, no auth, no
- *    Referer requirement) — the only provider that works from datacenter
- *    IPs without a key. Placeholder clips are content-hash rejected and
- *    fall through to the next provider.
- *  - the embed player page (tiktok.com/embed/v2/<id>) now 400s from every
- *    vantage — TikTok changed the contract; kept as a fallback in case it
- *    returns.
- *  - tikwm 403s the datacenter IP again (even curl/default-UA, both GET
- *    and POST) — ruhend rides tikwm's backend, so both are last-resort.
+ * Why embed-first (2026-10-13, probed live from deployment b0665152):
+ *  - the embed player page (tiktok.com/embed/v2/<id>) is BACK — 200s with
+ *    a signed v45.tiktokcdn-eu.com URL in the HTML (the 400s we saw
+ *    2026-10-12 were temporary). No key, no auth, works from datacenter IPs.
+ *  - tikwm 403s the datacenter IP (even curl/default-UA, GET and POST) —
+ *    ruhend rides tikwm's backend, so both are mid-chain last resorts.
+ *  - tikcdn.io/ssstik/<id> is DEAD: 204 empty body now, and before that
+ *    it served a ~4MB "THIS APP IS OFFLINE — go to ssstik.io" anti-leech
+ *    placeholder clip. Kept last as a hail-mary; the buffer path hash-
+ *    rejects the placeholder and the unchecked URL-send fallback is
+ *    blocked for tikcdn hosts so the promo clip can never ship.
  */
 
 const axios = require('axios');
@@ -183,12 +184,15 @@ async function methodTikApi(url) {
           `&app_name=musical_ly&version_code=300904&device_platform=android` +
           `&device_type=ASUS_Z01QD&os_version=9`;
         const res = await axios.get(api, { timeout: 20000, headers: { 'User-Agent': MOBILE_UA } });
-        const list = res.data && res.data.aweme_list;
-        if (Array.isArray(list) && list.length > 0 && String(list[0].aweme_id) === videoId) {
-          aweme = list[0];
+        const list = (res.data && res.data.aweme_list) || [];
+        // The endpoint sometimes returns a recommendation feed alongside
+        // (or instead of) the requested item — scan for OUR aweme_id
+        const hit = list.find(a => a && String(a.aweme_id) === videoId);
+        if (hit) {
+          aweme = hit;
           break outer;
         }
-        lastMsg = (res.data && res.data.notice) || 'empty aweme_list';
+        lastMsg = list.length ? 'requested video not in returned feed' : 'empty aweme_list';
       } catch (e) {
         lastMsg = e.response ? `HTTP ${e.response.status}` : e.message;
       }
