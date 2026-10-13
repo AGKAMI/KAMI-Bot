@@ -16,6 +16,7 @@ const config = require('../../config');
 const database = require('../../database');
 const { onButton } = require('../../utils/buttonHelper');
 const { buildComparableIds } = require('../../utils/jidHelper');
+const { mention } = require('../../utils/format');
 const { serverByKey, templateByKey, fmtDuration } = require('./cpmData');
 
 const prefix = () => config.prefix || '.';
@@ -26,16 +27,22 @@ function renderEventCard(eventId, evt, attendeeCount) {
     `━━━━━━━━━━━━━━━━\n` +
     `${evt.templateKey && templateByKey(evt.templateKey) ? templateByKey(evt.templateKey).emoji : '🏁'} *${evt.name}*\n` +
     `━━━━━━━━━━━━━━━━\n\n`;
-  if (evt.host) text += `Host 👤: ${evt.host}\n`;
-  if (evt.cpmId) text += `🆔: ${evt.cpmId}\n`;
-  if (sv) text += `Server 🌐: ${sv.flag} ${sv.name}\n`;
-  if (evt.carType) text += `Cars 🚗: ${evt.carType}\n`;
+  if (evt.host) text += `*HOST* 👤: ${evt.host}\n`;
+  if (evt.cpmId) text += `*ID* 🆔: ${evt.cpmId}\n`;
+  if (sv) text += `*SERVER* 🌐: ${sv.flag} ${sv.name}\n`;
+  if (evt.carType) text += `*CARS* 🚗: ${evt.carType}\n`;
   if (evt.time) {
-    text += `Time ⏰: ${evt.time}${evt.endTime ? ` – ${evt.endTime}` : ''}\n`;
+    text += `*TIME* ⏰: ${evt.time}${evt.endTime ? ` – ${evt.endTime}` : ''}\n`;
   } else if (evt.durationMins) {
-    text += `Time ⏰: now-now (${fmtDuration(evt.durationMins)})\n`;
+    text += `*TIME* ⏰: now-now (${fmtDuration(evt.durationMins)})\n`;
   }
-  text += `\n👥 ${attendeeCount} going so far\n`;
+  // Tag who's pulling up — @renders tap the person, mentions array makes it live
+  const going = Array.isArray(evt.attendees) ? evt.attendees : [];
+  if (going.length) {
+    text += `\n👥 *GOING (${going.length}):* ${going.map(a => mention(a)).join(' ')}\n`;
+  } else {
+    text += `\n👥 ${attendeeCount} going so far\n`;
+  }
   // Off-template custom car — the host's call, but flag it
   if (evt.templateKey && evt.customCar) {
     const tpl = templateByKey(evt.templateKey);
@@ -87,7 +94,8 @@ onButton('evrsvp:', async (sock, msg, from, sender, btnId) => {
         database.updateTeam(found.groupJid, found.team);
       }
       return sock.sendMessage(from, {
-        text: `✅ Locked in for *${evt.name}*${evt.time ? ` at *${evt.time}*` : ''} — *${evt.attendees.length}* going so far`,
+        text: `✅ ${mention(sender)} locked in for *${evt.name}*${evt.time ? ` at *${evt.time}*` : ''} — *${evt.attendees.length}* going so far`,
+        mentions: [sender],
       });
     } else {
       if (isAttending) {
@@ -95,7 +103,8 @@ onButton('evrsvp:', async (sock, msg, from, sender, btnId) => {
         database.updateTeam(found.groupJid, found.team);
       }
       return sock.sendMessage(from, {
-        text: `👋 You're out of *${evt.name}* — *${evt.attendees.length}* still going`,
+        text: `👋 ${mention(sender)} is out of *${evt.name}* — *${evt.attendees.length}* still going`,
+        mentions: [sender],
       });
     }
   } catch (e) {
@@ -125,8 +134,10 @@ async function sweepExpiredPins(sock) {
       if (!evt.pinnedMsgId || evt.unpinnedAt) continue;
       if ((evt.unpinTries || 0) >= UNPIN_MAX_TRIES) continue;
       try {
+        // Baileys v7: pin IS the message key, type sits top-level
         await sock.sendMessage(gid, {
-          pin: { type: 2, key: { remoteJid: gid, id: evt.pinnedMsgId, fromMe: true } },
+          pin: { remoteJid: gid, id: evt.pinnedMsgId, fromMe: true },
+          type: 2,
         });
         evt.unpinnedAt = Date.now();
         dirty = true;

@@ -2,6 +2,7 @@ const database = require('../../database');
 
 const config = require('../../config');
 const { sendButtons } = require('../../utils/buttonHelper');
+const { mention } = require('../../utils/format');
 const { sortUpcoming } = require('./crewHelpers');
 const { serverByKey } = require('./cpmData');
 
@@ -29,11 +30,16 @@ module.exports = {
     }
 
     let response = `📅 *UPCOMING EVENTS*\n\n`;
+    const mentions = [];
 
     upcoming.forEach(([id, evt], index) => {
-      const attendeeCount = evt.attendees ? evt.attendees.length : 0;
+      const going = Array.isArray(evt.attendees) ? evt.attendees : [];
       // v1 legacy events only have name+time; v2 cards carry the works
-      response += `*${index + 1}.* 🗓️ *${evt.name}* — ${evt.time ? evt.time : '⚡ now-now'} · 👥 ${attendeeCount} going\n`;
+      response += `*${index + 1}.* 🗓️ *${evt.name}* — ${evt.time ? evt.time : '⚡ now-now'} · 👥 ${going.length} going\n`;
+      if (going.length) {
+        mentions.push(...going);
+        response += `   ${going.map(a => mention(a)).join(' ')}\n`;
+      }
       const hostBits = [];
       if (evt.host) hostBits.push(`👤 ${evt.host}`);
       if (evt.cpmId) hostBits.push(`🆔 ${evt.cpmId}`);
@@ -59,6 +65,7 @@ module.exports = {
       text: response,
       footer: config.botName || 'KAMI Bot',
       buttons,
+      mentions,
     }, msg);
   }
 };

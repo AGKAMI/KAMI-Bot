@@ -203,24 +203,25 @@ test('full build: template → host → id → server → car → time → durat
   const card = sock.sent.find(x => (x.content.buttons || []).some(b => String(b.id || '').startsWith('evrsvp:in:')));
   assert.ok(card, 'card posted with evrsvp buttons');
   assert.match(card.content.text, /STANCE MEET/);
-  assert.match(card.content.text, /Host 👤: AG KAMI/, 'word-first host label');
-  assert.match(card.content.text, /🆔: VR401128/, 'ID stays emoji-only');
-  assert.match(card.content.text, /Server 🌐: 🇿🇦 AFRIKAANS/);
-  assert.match(card.content.text, /Cars 🚗: Any Stance Car/);
-  assert.ok(!card.content.text.includes('⏰:'), 'no time line when both skipped');
-  assert.match(card.content.text, /👥 1 going so far/, 'host auto-RSVP seeds the count');
+  assert.match(card.content.text, /\*HOST\* 👤: AG KAMI/, 'bold caps host label');
+  assert.match(card.content.text, /\*ID\* 🆔: VR401128/, 'ID label caps+bold, value verbatim');
+  assert.match(card.content.text, /\*SERVER\* 🌐: 🇿🇦 AFRIKAANS/);
+  assert.match(card.content.text, /\*CARS\* 🚗: Any Stance Car/);
+  assert.ok(!card.content.text.includes('*TIME* ⏰:'), 'no time line when both skipped');
+  assert.match(card.content.text, /👥 \*GOING \(1\):\* @27800000001/, 'going line tags the host');
   assert.deepStrictEqual(card.content.mentions.slice().sort(), [HOST, OTHER].sort(), 'hidden mention tags the whole crew');
-  const pin = sock.sent.map(x => x.content && x.content.pin).find(Boolean);
-  assert.ok(pin, 'pin sent after the card');
-  assert.strictEqual(pin.type, 1, 'pin action');
-  assert.strictEqual(pin.time, 24 * 60 * 60, '24h pin');
+  const pinMsg = sock.sent.find(x => x.content && x.content.pin);
+  assert.ok(pinMsg, 'pin sent after the card');
+  assert.strictEqual(pinMsg.content.type, 1, 'PIN_FOR_ALL sits top-level (Baileys v7 shape)');
+  assert.strictEqual(pinMsg.content.time, 24 * 60 * 60, '24h pin');
+  assert.ok(pinMsg.content.pin.id, 'pin carries the card message key');
   assert.strictEqual([...eventWizard.sessions.values()].length, 0, 'session closed after post');
 
   // Record persisted with the v2 fields
   const team = database.getTeam(GROUP);
   const [evId, ev] = Object.entries(team.events).find(([, e]) => e.name === 'STANCE MEET') || [];
   assert.ok(ev.pinnedMsgId, 'pin target persisted for the unpin sweep');
-  assert.strictEqual(ev.pinnedMsgId, pin.key.id, 'stored id matches the pinned card');
+  assert.strictEqual(ev.pinnedMsgId, pinMsg.content.pin.id, 'stored id matches the pinned card');
   assert.ok(evId && evId.startsWith('EV-'), 'EV-XXXXX id');
   assert.strictEqual(ev.host, 'AG KAMI');
   assert.strictEqual(ev.cpmId, 'VR401128');
@@ -236,7 +237,8 @@ test('full build: template → host → id → server → car → time → durat
   // RSVP round-trip on the live id — host already in, OTHER joins then leaves
   const rsvpSock = mkSock();
   await tap(rsvpSock, `evrsvp:in:${evId}`, { isAdmin: false, participant: OTHER });
-  assert.match(rsvpSock.sent[0].content.text, /Locked in for \*STANCE MEET\*/, 'RSVP confirm');
+  assert.match(rsvpSock.sent[0].content.text, /@27800000002 locked in for \*STANCE MEET\*/, 'RSVP confirm tags the person');
+  assert.deepStrictEqual(rsvpSock.sent[0].content.mentions, [OTHER], 'confirm mentions array carries the tapper');
   assert.strictEqual(database.getCrewEvent(GROUP, evId).attendees.length, 2, 'host + OTHER');
   await tap(rsvpSock, `evrsvp:out:${evId}`, { isAdmin: false, participant: OTHER });
   assert.strictEqual(database.getCrewEvent(GROUP, evId).attendees.length, 1, 'OTHER out, host remains');
@@ -270,7 +272,7 @@ test('duration: 20:30 + 2hr preset → end 22:30, endAt stored, card shows range
   await settle();
 
   const card = sock.sent.find(x => (x.content.buttons || []).some(b => String(b.id || '').startsWith('evrsvp:in:')));
-  assert.match(card.content.text, /Time ⏰: 20:30 – 22:30/, 'card time line carries both ends');
+  assert.match(card.content.text, /\*TIME\* ⏰: 20:30 – 22:30/, 'card time line carries both ends');
   const team = database.getTeam(GROUP);
   const ev = Object.values(team.events).find(e => e.name === 'STANCE MEET' && e.time === '20:30');
   assert.ok(ev, 'record with the typed time');
@@ -325,18 +327,17 @@ test('unpin sweep: completed event with a pin target gets unpinned once', async 
 
   const sock = mkSock();
   await sweepExpiredPins(sock);
-  const unpin = sock.sent
-    .map(x => x.content && x.content.pin)
-    .find(p => p && p.type === 2 && p.key && p.key.id === 'UNPIN-TARGET-1');
-  assert.ok(unpin, 'UNPIN_FOR_ALL sent for the pinned card');
-  assert.strictEqual(unpin.key.remoteJid, GROUP, 'targets the owning group');
+  const unpinMsg = sock.sent.find(x => x.content && x.content.pin && x.content.type === 2);
+  assert.ok(unpinMsg, 'UNPIN_FOR_ALL sent for the pinned card');
+  assert.strictEqual(unpinMsg.content.pin.id, 'UNPIN-TARGET-1', 'targets the pinned card');
+  assert.strictEqual(unpinMsg.content.pin.remoteJid, GROUP, 'targets the owning group');
   const evt = database.getCrewEvent(GROUP, 'EV-UNPIN');
   assert.ok(evt.unpinnedAt, 'marked unpinned');
 
   // Second sweep must not re-unpin (or touch the legacy record)
   const sock2 = mkSock();
   await sweepExpiredPins(sock2);
-  const dup = sock2.sent.filter(x => x.content && x.content.pin && x.content.pin.type === 2);
+  const dup = sock2.sent.filter(x => x.content && x.content.pin && x.content.type === 2);
   assert.strictEqual(dup.length, 0, 'never unpins twice');
 
   database.removeCrewEvent(GROUP, 'EV-UNPIN');

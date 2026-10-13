@@ -1,15 +1,18 @@
 /**
  * TikTok Downloader - Download TikTok videos without watermark
- * Fallbacks: embed page (v45 CDN) -> tikwm API -> ruhend-scraper -> tikcdn direct
+ * Fallbacks: tikapi (mobile feed) -> embed page (v45 CDN) -> tikwm API
+ *            -> ruhend-scraper -> tikcdn direct
  *
- * Why embed-first (2026-10-13, probed live from deployment b0665152):
+ * Why this order (probed live from deployment b0665152, 2026-10-13):
+ *  - tikapi: TikTok's own mobile feed API — no sign, no watermark,
+ *    play_addr straight from the aweme. Primary when it answers.
  *  - the embed player page (tiktok.com/embed/v2/<id>) is BACK — 200s with
  *    a signed v45.tiktokcdn-eu.com URL in the HTML (the 400s we saw
  *    2026-10-12 were temporary). No key, no auth, works from datacenter IPs.
  *  - tikwm 403s the datacenter IP (even curl/default-UA, GET and POST) —
  *    ruhend rides tikwm's backend, so both are mid-chain last resorts.
  *  - tikcdn.io/ssstik/<id> is DEAD: 204 empty body now, and before that
- *    it served a ~4MB "THIS APP IS OFFLINE — go to ssstik.io" anti-leech
+ *    it served the "THIS APP IS OFFLINE — go to ssstik.io" anti-leech
  *    placeholder clip. Kept last as a hail-mary; the buffer path hash-
  *    rejects the placeholder and the unchecked URL-send fallback is
  *    blocked for tikcdn hosts so the promo clip can never ship.
@@ -88,7 +91,10 @@ async function sendVideo(sock, chatId, videoUrl, title, msg) {
     return true;
   } catch (e) {
     console.error('[TT] buffer download failed:', e.message);
-    // Fallback: send via URL directly
+    // Fallback: send via URL directly — Baileys streams it, so no hash
+    // check is possible. Never do this for tikcdn (the placeholder host):
+    // that's how the "THIS APP IS OFFLINE" clip shipped unchecked.
+    if (/tikcdn\.io/i.test(videoUrl)) return false;
     try {
       const botName = config.botName.toUpperCase();
       const caption = title
@@ -283,13 +289,16 @@ async function methodRuhend(url, timeoutMs = RUHEND_TIMEOUT_MS) {
 // from the live box: 4,089,113 bytes (2026-10-12 morning) and 2,882,204
 // bytes / md5 17536d03… (2026-10-12 evening — the shorter cut users got
 // delivered as a "working" video). Content-hash reject → chain falls
-// through to the next provider.
+// through to the next provider. Size check backstops a future re-encode
+// that rotates the md5 — the clip ships byte-identical per variant.
 const PLACEHOLDER_MD5 = new Set([
   '905a30c73f68e8b14152f1123336b083',
   '17536d037e61774f5511bd1c0619c7e4',
 ]);
+const PLACEHOLDER_SIZES = new Set([4089113, 2882204]);
 
 function isPlaceholder(buf) {
+  if (PLACEHOLDER_SIZES.has(buf.length)) return true;
   return PLACEHOLDER_MD5.has(crypto.createHash('md5').update(buf).digest('hex'));
 }
 
@@ -385,10 +394,10 @@ module.exports = {
       const run = (async () => {
         const methods = [
           { name: 'tikapi', fn: () => methodTikApi(url) },
-          { name: 'tikcdn', fn: () => methodTikcdn(url) },
           { name: 'embed', fn: () => methodEmbed(url) },
           { name: 'tikwm', fn: () => methodTikwm(url) },
-          { name: 'ruhend', fn: () => methodRuhend(url) }
+          { name: 'ruhend', fn: () => methodRuhend(url) },
+          { name: 'tikcdn', fn: () => methodTikcdn(url) }
         ];
 
         let success = false;

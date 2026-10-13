@@ -191,10 +191,11 @@ async function publishEvent(sock, s) {
     console.error('[EVWIZ] card send failed:', cardErr.message);
   }
 
-  // Pin 24h (bot must be group admin); persist the card id for the unpin sweep
+  // Pin 24h (bot must be group admin); persist the card id for the unpin sweep.
+  // Baileys v7: pin IS the message key, type sits TOP-LEVEL — nested no-ops.
   if (cardMsg && cardMsg.key) {
     try {
-      await sock.sendMessage(s.groupJid, { pin: { type: 1, time: PIN_SECONDS, key: cardMsg.key } });
+      await sock.sendMessage(s.groupJid, { pin: cardMsg.key, type: 1, time: PIN_SECONDS });
       const team = database.getTeam(s.groupJid);
       if (team?.events?.[eventId]) {
         team.events[eventId].pinnedMsgId = cardMsg.key.id;
