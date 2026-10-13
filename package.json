@@ -15,6 +15,7 @@
     "@bochilteam/scraper": "^5.0.1",
     "@vitalets/google-translate-api": "^9.2.1",
     "@whiskeysockets/baileys": "7.0.0-rc13",
+    "https-proxy-agent": "^7.0.6",
     "axios": "^1.15.2",
     "canvas": "^3.2.3",
     "cheerio": "^1.2.0",

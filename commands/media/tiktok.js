@@ -25,6 +25,33 @@ const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { withTimeout } = require('../../utils/withTimeout');
 
+// ── Optional proxy for TikTok metadata APIs ─────────────────
+// Datacenter IPs get 403/429'd by tikwm and rate-boxed by TikTok's API
+// edge. Set TT_PROXY_URL in the panel env (http://user:pass@host:port)
+// and ONLY the small JSON metadata calls route through it — the video
+// bytes still download DIRECT from TikTok's CDN (which isn't blocked),
+// so proxy bandwidth stays at kilobytes per download.
+let _proxyAgent = null;
+let _proxyTried = false;
+function getProxyAgent() {
+  if (_proxyTried) return _proxyAgent;
+  _proxyTried = true;
+  const url = process.env.TT_PROXY_URL;
+  if (!url) return null;
+  try {
+    const { HttpsProxyAgent } = require('https-proxy-agent');
+    _proxyAgent = new HttpsProxyAgent(url);
+    console.log('[TT] proxy enabled for metadata calls');
+  } catch (e) {
+    console.error('[TT] TT_PROXY_URL set but agent init failed:', e.message);
+  }
+  return _proxyAgent;
+}
+function apiAxiosConfig(extra = {}) {
+  const agent = getProxyAgent();
+  return agent ? { ...extra, httpsAgent: agent, httpAgent: agent, proxy: false } : extra;
+}
+
 const processedMessages = new Map(); // id → timestamp
 
 // Periodic sweep every 5 min
@@ -190,7 +217,7 @@ async function methodTikApi(url) {
           `&iid=7318518857994389254&device_id=7318517321748022790&channel=googleplay` +
           `&app_name=musical_ly&version_code=300904&device_platform=android` +
           `&device_type=ASUS_Z01QD&os_version=9`;
-        const res = await axios.get(api, { timeout: 12000, headers: { 'User-Agent': MOBILE_UA } });
+        const res = await axios.get(api, { timeout: 12000, headers: { 'User-Agent': MOBILE_UA }, ...apiAxiosConfig() });
         const list = (res.data && res.data.aweme_list) || [];
         // The endpoint sometimes returns a recommendation feed alongside
         // (or instead of) the requested item — scan for OUR aweme_id
@@ -232,9 +259,9 @@ async function methodTikwm(url) {
   // the common 403/empty-body blip instead of falling through the chain
   for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 1500));
-    try {
-      const res = await axios.get(apiUrl, { timeout: 20000, headers: TIKWM_HEADERS });
-      data = res.data;
+      try {
+        const res = await axios.get(apiUrl, { timeout: 20000, headers: TIKWM_HEADERS, ...apiAxiosConfig() });
+        data = res.data;
       if (data?.code === 0 && data?.data) break;
       lastMsg = data?.msg || `code ${data?.code}`;
     } catch (e) {
@@ -317,6 +344,7 @@ async function resolveCanonicalId(url) {
         responseType: 'text',
         maxContentLength: 1024 * 1024,
         headers: { 'User-Agent': TIKWM_HEADERS['User-Agent'] },
+        ...apiAxiosConfig(),
       });
       videoId = extractVideoId((res.request && res.request.res && res.request.res.responseUrl) || '');
     } catch (e) { /* caller throws */ }
