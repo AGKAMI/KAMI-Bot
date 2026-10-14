@@ -27,9 +27,13 @@ module.exports = {
         return sendButtons(sock, extra.from, {
           text: statusText,
           footer: 'Antilink Settings',
-          buttons: isOn
-            ? [{ id: 'admin:antilink:off', text: '🚫 Disable Antilink' }]
-            : [{ id: 'admin:antilink:set:warn', text: '🛡️ Enable + Warn' }, { id: 'admin:antilink:set:delete', text: '🗑️ Enable + Delete' }, { id: 'admin:antilink:set:kick', text: '👢 Enable + Kick' }],
+          buttons: [
+            { id: 'admin:antilink:on', text: '✅ Enable' },
+            { id: 'admin:antilink:off', text: '🚫 Disable' },
+            { id: 'admin:antilink:set:warn', text: '🛡️ Action: Warn' },
+            { id: 'admin:antilink:set:delete', text: '🗑️ Action: Delete' },
+            { id: 'admin:antilink:set:kick', text: '👢 Action: Kick' },
+          ],
         }, { quoted: msg });
       }
       
