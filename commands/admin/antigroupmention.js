@@ -28,9 +28,13 @@ module.exports = {
         return sendButtons(sock, extra.from, {
           text: statusText,
           footer: 'Antigroupmention Settings',
-          buttons: isOn
-            ? [{ id: 'admin:antigroupmention:off', text: '🚫 Disable Antigroupmention' }]
-            : [{ id: 'admin:antigroupmention:set:warn', text: '🛡️ Enable + Warn' }, { id: 'admin:antigroupmention:set:delete', text: '🗑️ Enable + Delete' }, { id: 'admin:antigroupmention:set:kick', text: '👢 Enable + Kick' }],
+          buttons: [
+            { id: 'admin:antigroupmention:on', text: '✅ Enable' },
+            { id: 'admin:antigroupmention:off', text: '🚫 Disable' },
+            { id: 'admin:antigroupmention:set:warn', text: '🛡️ Action: Warn' },
+            { id: 'admin:antigroupmention:set:delete', text: '🗑️ Action: Delete' },
+            { id: 'admin:antigroupmention:set:kick', text: '👢 Action: Kick' },
+          ],
         }, { quoted: msg });
       }
       

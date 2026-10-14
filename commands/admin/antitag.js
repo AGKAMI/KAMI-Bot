@@ -29,9 +29,12 @@ module.exports = {
         return sendButtons(sock, extra.from, {
           text: statusText,
           footer: 'Antitag Settings',
-          buttons: isOn
-            ? [{ id: 'admin:antitag:off', text: '🚫 Disable Antitag' }]
-            : [{ id: 'admin:antitag:set:delete', text: '🗑️ Enable + Delete' }, { id: 'admin:antitag:set:kick', text: '👢 Enable + Kick' }],
+          buttons: [
+            { id: 'admin:antitag:on', text: '✅ Enable' },
+            { id: 'admin:antitag:off', text: '🚫 Disable' },
+            { id: 'admin:antitag:set:delete', text: '🗑️ Action: Delete' },
+            { id: 'admin:antitag:set:kick', text: '👢 Action: Kick' },
+          ],
         }, { quoted: msg });
       }
       

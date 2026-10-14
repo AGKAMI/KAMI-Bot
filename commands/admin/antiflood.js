@@ -31,9 +31,10 @@ module.exports = {
         return sendButtons(sock, extra.from, {
           text: statusText,
           footer: 'Antiflood Settings',
-          buttons: isOn
-            ? [{ id: 'admin:antiflood:off', text: '🚫 Disable Protection' }]
-            : [{ id: 'admin:antiflood:on', text: '🛡️ Enable Protection' }],
+          buttons: [
+            { id: 'admin:antiflood:on', text: '🛡️ Enable Protection' },
+            { id: 'admin:antiflood:off', text: '🚫 Disable Protection' },
+          ],
         }, { quoted: msg });
       }
 

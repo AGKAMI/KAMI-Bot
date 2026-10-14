@@ -31,9 +31,10 @@ module.exports = {
         return sendButtons(sock, extra.from, {
           text: statusText,
           footer: 'Antibadword Settings',
-          buttons: isOn
-            ? [{ id: 'admin:antibadword:off', text: '🚫 Disable Filter' }]
-            : [{ id: 'admin:antibadword:on', text: '🛡️ Enable Filter' }],
+          buttons: [
+            { id: 'admin:antibadword:on', text: '🛡️ Enable Filter' },
+            { id: 'admin:antibadword:off', text: '🚫 Disable Filter' },
+          ],
         }, { quoted: msg });
       }
 

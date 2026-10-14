@@ -36,9 +36,11 @@ module.exports = {
         return sendButtons(sock, extra.from, {
           text: statusText,
           footer: 'Slowmode Settings',
-          buttons: isOn
-            ? [{ id: 'admin:slowmode:off', text: '🚫 Disable Slowmode' }]
-            : [{ id: 'admin:slowmode:10s', text: '⏱️ Set 10s' }, { id: 'admin:slowmode:30s', text: '⏱️ Set 30s' }],
+          buttons: [
+            { id: 'admin:slowmode:10s', text: '⏱️ Set 10s' },
+            { id: 'admin:slowmode:30s', text: '⏱️ Set 30s' },
+            { id: 'admin:slowmode:off', text: '🚫 Disable Slowmode' },
+          ],
         }, { quoted: msg });
       }
 

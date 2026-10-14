@@ -30,9 +30,10 @@ module.exports = {
         return sendButtons(sock, groupId, {
           text: statusText,
           footer: 'Goodbye Settings',
-          buttons: isOn
-            ? [{ id: 'admin:goodbye:off', text: '🚫 Disable Goodbye' }]
-            : [{ id: 'admin:goodbye:on', text: '👋 Enable Goodbye' }],
+          buttons: [
+            { id: 'admin:goodbye:on', text: '👋 Enable Goodbye' },
+            { id: 'admin:goodbye:off', text: '🚫 Disable Goodbye' },
+          ],
         }, { quoted: msg });
       }
       

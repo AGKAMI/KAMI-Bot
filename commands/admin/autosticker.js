@@ -34,9 +34,10 @@ module.exports = {
         return sendButtons(sock, extra.from, {
           text: statusText,
           footer: 'Autosticker Settings',
-          buttons: isOn
-            ? [{ id: 'admin:autosticker:off', text: '🚫 Disable Autosticker' }]
-            : [{ id: 'admin:autosticker:on', text: '📌 Enable Autosticker' }],
+          buttons: [
+            { id: 'admin:autosticker:on', text: '📌 Enable Autosticker' },
+            { id: 'admin:autosticker:off', text: '🚫 Disable Autosticker' },
+          ],
         }, { quoted: msg });
       }
       
