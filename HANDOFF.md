@@ -4,13 +4,16 @@
 Keep KAMI Bot shipping autonomously. Completed arcs: CPM `!event` wizard lifecycle (build → post → RSVP → **auto-unpin**), `!tt` repairs, **full SAST time sweep** (`011a519`), **universal-prefix sweep** (`a52b9fd`), **production console-log bug sweep** (`fc195c5` — stale-sock timers, recruit-tier promotions, mention leak into role names), **user-reported trio** (`3a10543` — global welcome image, KSSPS/KSSMP invite swap, 256MB memory guard), and **reconnect-resilience sweep** (`6081675` — dead-socket crew-sync retry, prune-safe team-admin sync).
 
 ## Current State
-- Bot CONNECTED on 27833882383 (prefix `!`) — `6081675` auto-pulled at restart, verified on server: `git log` = `6081675`, `CREW_SYNC_TRANSIENT`/`Skipping prune` in `index.js`, prefix-aware kickcfg hint in `autoProgression.js:455`
-- HEAD = `6081675` (fix(crew): no-retry on dead socket…); **61/61 tests green** (`node --test --test-force-exit tests/*.test.js`)
+- Bot CONNECTED on 27833882383 (prefix `!`) — `5cdb595` auto-pulled at restart, verified on server: `git log` = `5cdb595`, `/photo/` regex live in `commands/media/tiktok.js:94`
+- HEAD = `5cdb595` (fix(tt): extract aweme id from /photo/ links…); **64/64 tests green** (`node --test --test-force-exit tests/*.test.js`, +3 extractVideoId tests)
 - Memory guard + `[MEM]` telemetry live and healthy: steady **131–138MB/256MB** across reconnects (heap 57-64MB, ext 12-14MB) — was 239-254MB before `3a10543`
 - SAST sweep `011a519` + console sweep `fc195c5` deployed/verified; eventWizard.js = 493 lines (500 cap)
 - Concurrent session activity absorbed through `5565c8d` (tt backoff / TT_PROXY_URL)
 
 ## What Shipped
+### `5cdb595` — TikTok slideshow fix (2 files, +21/−2)
+User report: slideshows (photo-mode posts) always failed with "couldn't download the video, try a different link" while regular videos worked. Box logs showed the exact failure: every ID-based provider died with `could not extract video ID`, then tikwm 403 + ruhend (rides tikwm backend) invalid-JSON. Root cause: **slideshows are shared as `/photo/<id>` URLs** (photo mode) but `extractVideoId` only matched `/video/<id>` — so tikapi (primary, handles `aweme.images` as slideshow) could never even fetch the aweme. tikwm was the only no-ID slideshow source and it 403s the datacenter IP. Fix: regex now `\/(?:video|photo)\/(\d+)` (same aweme_id both shapes); exposed `extractVideoId` in `_internals` + 3 tests. Works via tikapi → sendSlideshow as before.
+
 ### `6081675` — reconnect-resilience sweep (2 files, +57/−16)
 Source: user's console dump showing WhatsApp flapping (Connection Terminated + two 503s). Memory telemetry confirmed healthy (131-138MB stable). Three bugs:
 
@@ -46,6 +49,7 @@ NOT bugs (by design, no code change): mass-kill guard holding 39 kicks until own
 `6b73efb` wizard DATE step · `4833795` Baileys v7 pin shape + labels/mentions/tt · `ae1ec3b` wizard corrections · `95af7ab` unpin sweep
 
 ## Gotchas Hit
+- **TikTok slideshows share `/photo/<id>` URLs, not `/video/<id>`** — same aweme_id, same feed API; any ID-extraction regex must match both (`/\/(?:video|photo)\/(\d+)/`). tikwm/ruhend (the no-ID slideshow fallbacks) 403 the datacenter IP, so tikapi is the ONLY working slideshow source from the box
 - **Destructive syncs must never run on partial/empty scan data** — `pruneTeamAdmins({})` after failed `groupMetadata` scans deleted 9 admins in one flap; gate ANY destructive reconcile on `scanFailures === 0`, keep the additive side ungated
 - **Retry timers against a dead socket just torch the ladder** — check `sock.ws?.readyState === 1` before scheduling crew-sync retries; the next `'open'` event re-runs the boot sync anyway. Transient network errors get their own no-penalty counter (`CREW_SYNC_TRANSIENT`), capped separately from real failures
 - **WhatsApp flaps 503/Terminated for minutes at a time** — reconnects re-run the full boot path each 'open' (unblock 9, engine start, store clean, crew boot sync +60s); the error walls during flaps were retry storms, not new bugs — after `6081675` a dead socket logs ONE "waiting for reconnect" line
@@ -82,6 +86,7 @@ Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, sett
 - Any NEW reply with a command example must use `config.prefix || '.'`, never a literal `.`
 
 ## Next Steps
+- Smoke: `!tt <slideshow link>` (a `/photo/` URL) must now deliver images via tikapi→sendSlideshow; regular `/video/` links unchanged
 - After the next reconnect flap: crew sync must log either success or ONE "socket not open — waiting for reconnect" line (no more 5× Connection Closed walls / attempt 2/4→4/4 storms); team-admin sync must log "Skipping prune — N/M group scans failed" instead of pruning
 - The 9 pruned team admins (from the pre-fix flap) self-heal on the next clean scan — confirm `[TEAM ADMIN SYNC] Auto-detected N team admins` re-appears after a stable reconnect; if not, owner re-runs a manual team-admin add
 - Watch `[MEM]` telemetry over the next day — steady ~131-138MB so far; guard fires only at ≥245MB×2 samples (panel relaunches); if restarts fire often, profile the real grower (Baileys stores vs external buffers) before raising thresholds
@@ -97,3 +102,4 @@ Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, sett
 mcp__claude-flow__memory_search { query: "stale sock reconnect timers crew sync unpin sweep recruit tier roleIndex mention token strip roles mass kill guard kickcfg preview", namespace: "project" }
 mcp__claude-flow__memory_search { query: "KSSPS KSSMP invite swap jid verification global welcome image sharp cache memory guard cgroup 256MB", namespace: "project" }
 mcp__claude-flow__memory_search { query: "team admin prune failed scans connection closed retry ladder dead socket readyState transient no penalty 503 flap", namespace: "project" }
+mcp__claude-flow__memory_search { query: "tiktok slideshow photo mode /photo/ url aweme id extraction tikapi tikwm 403 datacenter", namespace: "project" }
