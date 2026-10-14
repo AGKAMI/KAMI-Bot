@@ -87,7 +87,11 @@ const URL_SEND_TIMEOUT_MS = 60000;
 const WATCHDOG_MS = Number(process.env.TT_WATCHDOG_MS) || 180000;
 
 function extractVideoId(url) {
-  const match = url.match(/\/video\/(\d+)/);
+  // /video/ and /photo/ — photo-mode posts (slideshows) share /photo/<id>
+  // links but use the SAME aweme_id in the feed API. Matching only /video/
+  // made every slideshow fail ID extraction at tikapi/embed/tikcdn while
+  // tikwm (the only no-ID slideshow source) 403s the datacenter IP.
+  const match = url.match(/\/(?:video|photo)\/(\d+)/);
   return match ? match[1] : null;
 }
 
@@ -509,6 +513,7 @@ module.exports = {
     extractEmbedUrl,
     isPlaceholder,
     resolveCanonicalId,
+    extractVideoId,
     RUHEND_TIMEOUT_MS,
     URL_SEND_TIMEOUT_MS,
     WATCHDOG_MS,

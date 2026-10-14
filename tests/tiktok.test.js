@@ -4,7 +4,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 
 const { _internals } = require('../commands/media/tiktok');
-const { extractEmbedUrl, isPlaceholder } = _internals;
+const { extractEmbedUrl, isPlaceholder, extractVideoId } = _internals;
 
 test('extractEmbedUrl: raw v45 URL, decodes HTML entities', () => {
   const html = '<script>{"playAddr":"https://v45.tiktokcdn-eu.com/aaa/bbb/video/tos/alisg/x/?a=1&amp;bti=ODsz&amp;&amp;policy=2&signature=abc"}</script>';
@@ -34,4 +34,18 @@ test('extractEmbedUrl: no video URL -> null', () => {
 
 test('isPlaceholder: real content is not the anti-leech clip', () => {
   assert.equal(isPlaceholder(Buffer.from('definitely not a tiktok placeholder video')), false);
+});
+
+test('extractVideoId: /video/ links', () => {
+  assert.equal(extractVideoId('https://www.tiktok.com/@user/video/7412345678901234567'), '7412345678901234567');
+});
+
+test('extractVideoId: /photo/ links (slideshows share photo-mode URLs)', () => {
+  assert.equal(extractVideoId('https://www.tiktok.com/@user/photo/7412345678901234567'), '7412345678901234567');
+  assert.equal(extractVideoId('https://www.tiktok.com/@user/photo/7412345678901234567?is_from_webapp=1'), '7412345678901234567');
+});
+
+test('extractVideoId: no numeric id -> null', () => {
+  assert.equal(extractVideoId('https://www.tiktok.com/@user'), null);
+  assert.equal(extractVideoId(''), null);
 });
