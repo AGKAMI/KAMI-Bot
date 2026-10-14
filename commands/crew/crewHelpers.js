@@ -25,7 +25,12 @@ function phoneToJid(phone) {
 function resolveUser(args, mentionedJid, contextInfo) {
   // Method 1: @mention (explicit tag)
   if (mentionedJid && mentionedJid.length > 0) {
-    return { jid: mentionedJid[0], args, method: 'mention' };
+    // WhatsApp keeps the raw "@123456" token in the message text — strip
+    // leading mention tokens so they never leak into role names
+    // (`.crew role @user Constable` used to store "@123456 Constable")
+    const rest = [...args];
+    while (rest.length && /^@\d{4,}$/.test(rest[0])) rest.shift();
+    return { jid: mentionedJid[0], args: rest, method: 'mention' };
   }
   // Method 2: phone number (may be split across multiple args like +27 64 841 5504)
   if (args.length > 0 && /^[\d+\s()-]+$/.test(args[0])) {

@@ -24,7 +24,24 @@ const PROMOTION_THRESHOLDS = [
 ];
 
 const getThresholds = (index) => {
-  return PROMOTION_THRESHOLDS[index] || PROMOTION_THRESHOLDS[PROMOTION_THRESHOLDS.length - 1];
+  // Recruit tier (index -1, role 'member' on ladders that don't spell it
+  // out) uses the entry threshold — never PROMOTION_THRESHOLDS[-1] which
+  // is undefined and would silently fall through to the TOP threshold.
+  return PROMOTION_THRESHOLDS[Math.max(0, index)] || PROMOTION_THRESHOLDS[PROMOTION_THRESHOLDS.length - 1];
+};
+
+// Map a stored role to its ladder index. Returns:
+//   -1  recruit tier — 'member'/empty on a ladder that doesn't list 'member'
+//       (SSRS/KSSPS/KSSMP/KSSMS ladders start at their first real rank)
+//   >=0 exact ladder index (case-insensitive)
+//   -2  unknown custom role — not promotable
+const _roleIndex = (role, ranks) => {
+  const norm = String(role || '').trim().toLowerCase();
+  if (!norm || norm === 'member') {
+    return ranks.some(r => r.toLowerCase() === 'member') ? ranks.findIndex(r => r.toLowerCase() === 'member') : -1;
+  }
+  const idx = ranks.findIndex(r => r.toLowerCase() === norm);
+  return idx === -1 ? -2 : idx;
 };
 
 // How often to run (in ms) — default every hour
@@ -62,6 +79,8 @@ const checkGroup = async (sock, groupJid, teamKey) => {
 
   const { buildComparableIds } = require('../utils/jidHelper');
 
+  let unknownRoles = 0;
+
   for (const [memberJid, data] of Object.entries(allActivity)) {
     const memberNum = memberJid.split(':')[0].split('@')[0].replace(/\D/g, '');
 
@@ -89,10 +108,11 @@ const checkGroup = async (sock, groupJid, teamKey) => {
       }
     }
 
-    // Find current rank in hierarchy (case-insensitive match)
-    const currentRankIndex = ranks.findIndex(r => r.toLowerCase() === data.role?.toLowerCase());
-    if (currentRankIndex === -1) {
-      console.log(`[AUTO-PROGRESSION] SKIP ${memberNum} — role "${data.role}" not in ranks`);
+    // Find current rank in hierarchy — 'member' is the recruit tier even
+    // when the team's ladder doesn't list it (see _roleIndex)
+    const currentRankIndex = _roleIndex(data.role, ranks);
+    if (currentRankIndex === -2) {
+      unknownRoles++;
       continue;
     }
     if (currentRankIndex >= ranks.length - 1) continue;
@@ -105,7 +125,9 @@ const checkGroup = async (sock, groupJid, teamKey) => {
 
     const { minMessages, minDaysActive } = getThresholds(currentRankIndex);
 
-    if (data.totalMessages > 0 || data.daysActive > 0) {
+    // Only log members at least halfway to either bar — the full CHECK
+    // dump was ~50 lines/cycle of 1-msg members nobody acts on
+    if (data.totalMessages * 2 >= minMessages || data.daysActive * 2 >= minDaysActive) {
       console.log(`[AUTO-PROGRESSION] CHECK ${memberNum}: role="${data.role}" msgs=${data.totalMessages}/${minMessages} days=${data.daysActive}/${minDaysActive} lastPromoted=${lastPromoted || 'NONE'}`);
     }
 
@@ -118,8 +140,8 @@ const checkGroup = async (sock, groupJid, teamKey) => {
         if (!member) continue;
 
         // Double-check: verify current role in DB still matches (prevent double-promote)
-        const dbRoleIndex = ranks.findIndex(r => r.toLowerCase() === member.role?.toLowerCase());
-        if (dbRoleIndex === -1 || dbRoleIndex >= ranks.length - 1) continue;
+        const dbRoleIndex = _roleIndex(member.role, ranks);
+        if (dbRoleIndex === -2 || dbRoleIndex >= ranks.length - 1) continue;
         if (member.role?.toLowerCase() === nextRank.toLowerCase()) continue;
 
         // ── Set in-memory cooldown FIRST (immediate protection) ──
@@ -176,6 +198,10 @@ const checkGroup = async (sock, groupJid, teamKey) => {
         console.error(`[AUTO-PROGRESSION] Failed to promote ${memberJid}:`, e.message);
       }
     }
+  }
+
+  if (unknownRoles > 0) {
+    console.log(`[AUTO-PROGRESSION] ${teamKey}: ${unknownRoles} member(s) skipped — custom role not in ladder`);
   }
 
   return promotions;
@@ -304,6 +330,7 @@ const MAX_NOTICES_PER_CYCLE = 5;
 // owner views Preview (settings shrunk / stats reset protection).
 const MASS_DUE_THRESHOLD = 10;
 const MASS_ACK_TTL = 12 * 60 * 60 * 1000; // preview acknowledges for 12h
+let _lastHoldCount = 0; // only re-log the ⚠️ when the due count changes
 
 // Identity across LID/PN variants — one person, one entry.
 const { buildComparableIds } = require('./jidHelper');
@@ -421,9 +448,15 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGro
   const holdKicks = eligible.length >= MASS_DUE_THRESHOLD && !ackFresh;
 
   if (holdKicks) {
-    console.log(
-      `[INACTIVE-CHECK] ⚠️ ${eligible.length} members due at once — kicks HELD until owner runs .kickcfg preview (mass-kill guard)`
-    );
+    // Same count as last cycle → owner already saw the warning, stay quiet
+    if (eligible.length !== _lastHoldCount) {
+      _lastHoldCount = eligible.length;
+      console.log(
+        `[INACTIVE-CHECK] ⚠️ ${eligible.length} members due at once — kicks HELD until owner runs .kickcfg preview (mass-kill guard)`
+      );
+    }
+  } else {
+    _lastHoldCount = 0;
   }
 
   // Safe bookkeeping: clear flags that can never lead to a kick

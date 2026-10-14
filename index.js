@@ -241,6 +241,10 @@ let lastLoggedQr = null;
 // reports the member as an @lid). Force-flushes the crew DB — sync
 // writes riding the debounced flush died on restarts.
 let _crewSyncTimer = null;
+// Latest connected socket. Reconnects build a NEW sock object — the 30-min
+// interval is registered once, so it must read this live reference or every
+// periodic run after a reconnect dies with "Connection Closed" forever.
+let _crewSyncSock = null;
 async function syncCrewRosters(sock, _retry = 0) {
   const db = require('./database');
   const { buildComparableIds } = require('./utils/jidHelper');
@@ -324,7 +328,7 @@ async function syncCrewRosters(sock, _retry = 0) {
   if (teamCount > 0 && teamErrors === teamCount && _retry < 3) {
     console.log(`[CREW SYNC] all ${teamCount} teams errored — retrying in 60s (attempt ${_retry + 2}/4)`);
     setTimeout(() => {
-      syncCrewRosters(sock, _retry + 1).catch(e =>
+      syncCrewRosters(_crewSyncSock || sock, _retry + 1).catch(e =>
         console.error('[CREW SYNC] retry failed:', e.message));
     }, 60 * 1000).unref();
     return { synced, pruned, teamErrors, retried: true };
@@ -646,13 +650,14 @@ async function startBot() {
       // the instant 'open' fires), then every 30 min (registered once
       // across reconnects).
       try {
+        _crewSyncSock = sock;
         setTimeout(() => {
           syncCrewRosters(sock).catch(e =>
             console.error('[CREW SYNC] boot run failed:', e.message));
         }, 60 * 1000).unref();
         if (!_crewSyncTimer) {
           _crewSyncTimer = setInterval(() => {
-            syncCrewRosters(sock).catch(e =>
+            syncCrewRosters(_crewSyncSock || sock).catch(e =>
               console.error('[CREW SYNC] periodic run failed:', e.message));
           }, 30 * 60 * 1000);
           _crewSyncTimer.unref();

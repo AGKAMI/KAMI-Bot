@@ -144,9 +144,16 @@ async function sweepExpiredPins(sock) {
         dirty = true;
         console.log(`[EVWIZ] unpinned ${eventId} in ${gid} (event ended)`);
       } catch (e) {
-        evt.unpinTries = (evt.unpinTries || 0) + 1;
+        // Transient network failures must not burn the retry cap — a
+        // 3-try window during one disconnect used to strand the pin
+        // forever. Retry next sweep with no penalty instead.
+        const transient = /connection closed|timed? ?out|socket|rate.?limit/i.test(e.message || '');
+        if (!transient) evt.unpinTries = (evt.unpinTries || 0) + 1;
         dirty = true;
-        console.error(`[EVWIZ] unpin failed for ${eventId} (try ${evt.unpinTries}/${UNPIN_MAX_TRIES}):`, e.message);
+        console.error(
+          `[EVWIZ] unpin failed for ${eventId} (try ${evt.unpinTries || 0}/${UNPIN_MAX_TRIES}${transient ? ', transient — not counted' : ''}):`,
+          e.message
+        );
       }
     }
     if (dirty) database.updateTeam(gid, team);
@@ -154,9 +161,11 @@ async function sweepExpiredPins(sock) {
 }
 
 let _unpinTimer = null;
+let _unpinSock = null; // refreshed on every reconnect — see _crewSyncSock in index.js
 function startEventUnpinSweep(sock) {
-  if (_unpinTimer) return; // registered once across reconnects (crew-sync pattern)
-  const run = () => sweepExpiredPins(sock).catch(e =>
+  _unpinSock = sock; // always refresh — reconnects create a new socket
+  if (_unpinTimer) return; // timer registered once across reconnects (crew-sync pattern)
+  const run = () => sweepExpiredPins(_unpinSock).catch(e =>
     console.error('[EVWIZ] unpin sweep failed:', e.message));
   run();
   _unpinTimer = setInterval(run, UNPIN_SWEEP_MS);

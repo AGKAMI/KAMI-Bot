@@ -39,7 +39,7 @@ module.exports = {
         return extra.reply(`❌ ERROR\n\n${mention(target)} isn't in this crew, hey`);
       }
 
-      const newRole = resolved.args.join(' ').trim();
+      const newRole = resolved.args.join(' ').trim().toLowerCase();
       if (!newRole) {
         return extra.reply(`❌ ERROR\n\nGive me a role name`);
       }
