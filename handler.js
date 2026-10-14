@@ -2366,6 +2366,7 @@ const handleGroupUpdate = async (sock, update) => {
           let bgBuffer = null;
           const groupJidSafe = id.replace(/[^a-zA-Z0-9]/g, '_');
           const customWelcomePath = path.join(__dirname, `utils/images/welcome/${groupJidSafe}.jpg`);
+          const globalWelcomePath = path.join(__dirname, 'utils/images/welcome/global.jpg');
           const fallbackWelcomePath = path.join(__dirname, 'utils/welcome_image.jpg');
           
           // Security groups always use group PP — skip custom image
@@ -2384,8 +2385,10 @@ const handleGroupUpdate = async (sock, update) => {
               }
             }
           } else {
-            // Other groups: per-group custom image > global fallback > group pic > fallback
-            if (fs.existsSync(customWelcomePath)) {
+            // Non-crew groups: global image set via !setwelcomeimage > per-group override > static default > group pic > fallback
+            if (fs.existsSync(globalWelcomePath)) {
+              bgBuffer = fs.readFileSync(globalWelcomePath);
+            } else if (fs.existsSync(customWelcomePath)) {
               bgBuffer = fs.readFileSync(customWelcomePath);
             } else if (fs.existsSync(fallbackWelcomePath)) {
               bgBuffer = fs.readFileSync(fallbackWelcomePath);

@@ -12,8 +12,8 @@ module.exports = {
   reactions: { received: '📸', generating: '🖼️', done: '🎊' },
   aliases: ['setwelcomeimg'],
   category: 'admin',
-  description: 'Set a custom welcome image (reply to an image/sticker)',
-  usage: '.setwelcomeimage (reply to image)',
+  description: 'Set the global welcome image (all non-crew groups)',
+  usage: '!setwelcomeimage (reply to image)',
   groupOnly: true,
   ownerOnly: true, adminOnly: false,
 
@@ -53,13 +53,14 @@ module.exports = {
         finalBuffer = await sharp(mediaBuffer).jpeg({ quality: 90 }).toBuffer();
       }
 
-      const groupJid = extra.from.replace(/[^a-zA-Z0-9]/g, '_');
+      // Saved as the GLOBAL welcome image — applied to every group that
+      // isn't a crew group. Crew groups always use their group PP.
       const imagesDir = path.join(__dirname, '../../utils/images/welcome');
       if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
-      const imagePath = path.join(imagesDir, `${groupJid}.jpg`);
+      const imagePath = path.join(imagesDir, 'global.jpg');
       fs.writeFileSync(imagePath, finalBuffer);
 
-      await extra.reply(`*✅ WELCOME IMAGE UPDATED*\n\n_${voice.lead('affirm')}, new members see this image_`);
+      await extra.reply(`*✅ WELCOME IMAGE UPDATED*\n\n_${voice.lead('affirm')}, this image now welcomes new members in *every non-crew group*_`);
     } catch (error) {
       console.error('SetWelcomeImage error:', error);
       await extra.reply(`_${voice.openErr()} — ${error.message}_`);

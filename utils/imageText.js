@@ -5,6 +5,14 @@
 
 const sharp = require('sharp');
 
+// Small-container tuning (256MB box): libvips defaults (64MB cache, auto
+// thread pool) keep tens of MB resident after the first welcome/sticker
+// pipeline. Cap both — sharp config is process-global.
+try {
+  sharp.cache({ memory: 8, files: 2, items: 60 });
+  sharp.concurrency(1);
+} catch (e) { /* older sharp — defaults stay */ }
+
 /**
  * Default text style config
  */

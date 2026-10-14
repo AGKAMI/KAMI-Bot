@@ -130,6 +130,40 @@ setInterval(() => {
   processedMessages.clear();
 }, 5 * 60 * 1000); // Every 5 minutes
 
+// ---- Memory guard (256MB box, panel kills at 256MB) ----
+// Sample the cgroup counter the panel enforces (fallback: process RSS).
+// Critical twice in a row (10min sustained) → clean exit; tini/wings restart
+// the container fresh instead of a hard OOM kill landing mid-write.
+// Telemetry line every 30min so trends are visible in the console log.
+let memCritStreak = 0;
+let memTicks = 0;
+setInterval(() => {
+  try {
+    let used;
+    try {
+      used = Number(require('fs').readFileSync('/sys/fs/cgroup/memory.current', 'utf8'));
+    } catch {
+      used = process.memoryUsage().rss;
+    }
+    const usedMB = Math.round(used / 1048576);
+    memTicks++;
+    if (memTicks % 6 === 0) {
+      const mu = process.memoryUsage();
+      console.log(`[MEM] ${usedMB}MB/256MB | rss ${Math.round(mu.rss / 1048576)}MB | heap ${Math.round(mu.heapUsed / 1048576)}/${Math.round(mu.heapTotal / 1048576)}MB | ext ${Math.round(mu.external / 1048576)}MB`);
+    }
+    if (used >= 245 * 1048576) {
+      memCritStreak++;
+      console.warn(`⚠️ MEMORY HIGH: ${usedMB}MB/256MB (${memCritStreak}/2 critical checks)`);
+      if (memCritStreak >= 2) {
+        console.error('🛑 MEMORY CRITICAL sustained — self-restarting for a clean slate');
+        process.exit(0);
+      }
+    } else {
+      memCritStreak = 0;
+    }
+  } catch (e) { /* guard must never crash the bot */ }
+}, 5 * 60 * 1000);
+
 // Custom Pino logger with suppression for Baileys noise
 const createSuppressedLogger = (level = 'silent') => {
   const forbiddenPatterns = [

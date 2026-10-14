@@ -123,10 +123,13 @@ welcome: false,
         cars: 'Golf 7, Jeep SRT',
         ranks: ['security officer', 'armed response', 'shift supervisor', 'security supervisor', 'area manager', 'operations manager', 'general manager'],
       },
+      // Invites verified live 2026-10-14: Ls0Vol… = "Private Security Team"
+      // group, D6LGiN… = "METRO POLICE" group. 921ab6e's swap was wrong —
+      // accepting KSSPS applicants DM'd them the Metro Police invite.
       'KSSPS': {
         name: 'Private Security',
-        jid: '120363421626159074@g.us',
-        invite: 'D6LGiNbZaSEAm4KS2kErwx',
+        jid: '120363409819775730@g.us',
+        invite: 'Ls0VolQePSk1kSlV5scXpD',
         image: './utils/team_images/kssps.jpeg',
         description: 'Close Protection — our people stay safe, that\'s the whole job, boet',
         cars: 'Range Rover Defender',
@@ -134,8 +137,8 @@ welcome: false,
       },
       'KSSMP': {
         name: 'Metro Police',
-        jid: '120363409819775730@g.us',
-        invite: 'Ls0VolQePSk1kSlV5scXpD',
+        jid: '120363421626159074@g.us',
+        invite: 'D6LGiNbZaSEAm4KS2kErwx',
         image: './utils/team_images/kssmp.jpeg',
         description: 'Patrol Unit — order on the streets, that\'s what we do',
         cars: 'Mercedes GLE',
