@@ -1,15 +1,20 @@
 # HANDOFF
 
 ## Goal
-Keep KAMI Bot shipping autonomously. Completed arcs: CPM `!event` wizard lifecycle (build → post → RSVP → **auto-unpin**), `!tt` repairs, **full SAST time sweep** (`011a519`), **universal-prefix sweep** (`a52b9fd`), and **production console-log bug sweep** (`fc195c5` — stale-sock timers, recruit-tier promotions, mention leak into role names).
+Keep KAMI Bot shipping autonomously. Completed arcs: CPM `!event` wizard lifecycle (build → post → RSVP → **auto-unpin**), `!tt` repairs, **full SAST time sweep** (`011a519`), **universal-prefix sweep** (`a52b9fd`), **production console-log bug sweep** (`fc195c5` — stale-sock timers, recruit-tier promotions, mention leak into role names), and **user-reported trio** (`3a10543` — global welcome image, KSSPS/KSSMP invite swap, 256MB memory guard).
 
 ## Current State
-- Bot CONNECTED on 27833882383 (prefix `!`) — `fc195c5` auto-pulled at restart, `KAMI BOT CONNECTED` + state `running` + `files_read` verified `_roleIndex`/`_lastHoldCount` in `utils/autoProgression.js` and `_crewSyncSock` in `index.js` on the server
-- HEAD = `fc195c5` (fix(crew): live-sock refresh…); **61/61 tests green** (`node --test --test-force-exit tests/*.test.js`)
-- SAST sweep `011a519` fully deployed/verified earlier; eventWizard.js = 493 lines (500 cap)
+- Bot CONNECTED on 27833882383 (prefix `!`) — `3a10543` auto-pulled at restart, `KAMI BOT CONNECTED` + state `running` + verified on server: `config.js` KSSPS = jid `120363409819775730`/invite `Ls0Vol…`, `utils/images/welcome/global.jpg` present (46611B), `index.js` memory guard present, fresh-boot memory **118MB/256MB** (was 239–254MB)
+- HEAD = `3a10543` (fix: global welcome image…); **61/61 tests green** (`node --test --test-force-exit tests/*.test.js`)
+- SAST sweep `011a519` + console sweep `fc195c5` deployed/verified earlier; eventWizard.js = 493 lines (500 cap)
 - Concurrent session activity absorbed through `5565c8d` (tt backoff / TT_PROXY_URL)
 
 ## What Shipped
+### `3a10543` — user-reported trio (5 files, +60/−11)
+1. **Welcome image now GLOBAL** — `!setwelcomeimage` saved to `utils/images/welcome/<groupJid>.jpg` (per-group), but the welcome flow only reads that file for the ONE group it was set in; every other non-crew group fell through to the tracked `utils/welcome_image.jpg` (owner's old pic). Fix: setter now writes `utils/images/welcome/global.jpg`; handler.js chain for non-crew groups = **global.jpg > per-group legacy file > utils/welcome_image.jpg > group PP > Picsart PNG**. Crew (security) groups unchanged — always group PP. The owner's image set at 14:35 today was promoted to `global.jpg` on the box (no re-set needed). Startup `git clean` does NOT touch these files (verified: survived restart)
+2. **KSSPS/KSSMP invite swap (root cause found)** — commit `921ab6e` ("verified via invite link resolution") had swapped the two entries' jid+invite pairs; accepting a KSSPS applicant DM'd them the METRO POLICE invite. **Verified live** by fetching the invite pages: `Ls0VolQePSk1kSlV5scXpD` → group titled "Private Security Team", `D6LGiNbZaSEAm4KS2kErwx` → group titled "METRO POLICE". Swapped back to original (`2d5979f`) pairing: KSSPS = jid `120363409819775730` + `Ls0Vol…`, KSSMP = jid `120363421626159074` + `D6LGiN…`. jid+invite pairing had moved together through every swap (bdbaa5a → 136729f → 921ab6e), so BOTH jids moved back too — auto-add now targets the right group as well
+3. **Memory (256MB box)** — panel limit 268,435,456B; was at **239MB (93%) after ~3h**, peak VmHWM 310MB → constant OOM-kill risk. Not an active runaway (flat over 5-min samples) — high steady-state. Fixes: (a) `utils/imageText.js` caps libvips (`sharp.cache({memory:8, files:2, items:60})` + `sharp.concurrency(1)` — config is process-global); (b) `index.js` memory guard samples `/sys/fs/cgroup/memory.current` every 5min — ≥245MB twice in a row logs `🛑 MEMORY CRITICAL` and `process.exit(0)` (PID1 = `tini -g -- /entrypoint.sh` → container restart policy relaunches it fresh; safe because restarts pull auth state from disk); (c) `[MEM] …` telemetry line every 30min (rss/heap/external) for trend watching. Fresh boot after deploy = **118MB**
+
 ### `fc195c5` — production console-log bug sweep (5 files, +71/−19)
 Source: `C:\Users\ojuni\Downloads\probs_to_fix.txt` (user's console dump). Four real bugs:
 
@@ -33,6 +38,9 @@ NOT bugs (by design, no code change): mass-kill guard holding 39 kicks until own
 `6b73efb` wizard DATE step · `4833795` Baileys v7 pin shape + labels/mentions/tt · `ae1ec3b` wizard corrections · `95af7ab` unpin sweep
 
 ## Gotchas Hit
+- **Invite links are verifiable offline** — `https://chat.whatsapp.com/<code>` page text includes the group's display name (webfetch, no login). Use this to verify any jid↔invite↔team-name mapping before trusting config history; `921ab6e`'s "verified" claim was wrong and the user's complaint was right
+- **Welcome images on the box are untracked** — `utils/images/welcome/*.jpg` + `global.jpg` survive restarts (panel auto-pull does NOT `git clean`); `utils/welcome_image.jpg` IS tracked (repo default). setgoodbyeimage is still per-group (user never complained — don't fix unprompted)
+- **Box = 256MB panel limit / 294MB cgroup / PID1 tini+restart policy** — in-process `process.exit(0)` is the safe OOM dodge (panel relaunches); memory telemetry = `[MEM]` lines every 30min, critical threshold 245MB ×2 samples
 - **Baileys reconnect = NEW sock object** — any timer registered once across reconnects must read a module-level live sock ref (`_crewSyncSock`/`_unpinSock` pattern), never close over the boot sock. autoProgression already did this via clear+re-register; the two timers above did not
 - **Retry caps must not burn on transient network errors** — a 3-try window during one disconnect stranded the event pin forever; classify `connection closed|timed out|socket|rate limit` as no-penalty retries
 - **Ranks vs roles**: crew sync writes `role: 'member'` for everyone; config ladders (except SSGENERAL) start at their first REAL rank — 'member' is the implicit recruit tier (index -1 → ranks[0]). `PROMOTION_THRESHOLDS[-1]` is undefined and falls through to the TOP threshold — always clamp index ≥ 0
@@ -41,7 +49,7 @@ NOT bugs (by design, no code change): mass-kill guard holding 39 kicks until own
 - **`extra`/`ctx` NEVER carries `prefix`** — **use `config.prefix || '.'`**
 - **`config.js:108 invalidCommand` is DEAD** — unknown commands just get a ❌ reaction
 - **Container clock = UTC**, SA is fixed **UTC+2 no DST** — time code goes through `utils/sast.js`
-- bot-hosting MCP `deployments_power` takes `action` (NOT `signal`), param `id` (NOT `deployment_id`); restart can return `ok:false "A sync is already running"` → wait ~45s; `files_get` doesn't exist — it's `files_read`
+- bot-hosting MCP `deployments_power` takes `action` (NOT `signal`), param `id` (NOT `deployment_id`); restart can return `ok:false "A sync is already running"` → wait ~45s; `files_get` doesn't exist — it's `files_read`; `deployments_setAutoPull` arg is `autoPull` (boolean)
 - `node --test tests/` (directory) fails on Windows/Node 24 — glob `tests*.test.js`; kill stray node procs first; redirect output to file (pipe stalls)
 - `database/crew.json` NO LONGER tracked — tests self-restore
 - PowerShell: build MCP bodies as hashtables → `ConvertTo-Json -Depth 6 -Compress` → ASCII `WriteAllText` → `curl.exe --data "@file"`
@@ -50,8 +58,11 @@ NOT bugs (by design, no code change): mass-kill guard holding 39 kicks until own
 Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, setter panels, NSFW buttons, per-command Again handlers, positional RSVP buttons, silent first-event fallback.
 
 ## Active Files
+- **`config.js`** — KSSPS/KSSMP jid+invite (live-verified 2026-10-14), crewTeams source of truth
+- **`commands/admin/setwelcomeimage.js`** — writes `utils/images/welcome/global.jpg`; **`handler.js` ~2368** — non-crew welcome chain global > per-group > default > group PP > Picsart
+- **`index.js`** — memory guard + `[MEM]` telemetry (~line 134); `_crewSyncSock` live ref (line ~243)
+- **`utils/imageText.js`** — sharp cache/concurrency caps (process-global, loaded via handler.js at boot)
 - **`utils/autoProgression.js`** — `_roleIndex` (recruit tier), `getThresholds` clamp, CHECK/held-log noise gates
-- **`index.js`** — `_crewSyncSock` live ref (line ~243); crew sync interval reads it
 - **`commands/crew/eventRsvp.js`** — `_unpinSock` live ref + transient-error unpin handling
 - **`commands/crew/crewHelpers.js`** — `resolveUser` mention-token strip; **`commands/crew/role.js`** lowercases roles
 - `commands/crew/eventWizard.js` (493 lines, extract before adding) / `eventRender.js` / `cpmData.js`
@@ -60,8 +71,10 @@ Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, sett
 - Any NEW reply with a command example must use `config.prefix || '.'`, never a literal `.`
 
 ## Next Steps
+- Watch `[MEM]` telemetry over the next day — if RSS trends up despite sharp caps, the guard will self-restart at 245MB×2 (panel relaunches); if restarts fire often, profile the real grower (Baileys stores vs external buffers) before raising thresholds
 - Owner action: run `!kickcfg preview` once — releases the 39-member mass-kill hold (kicks were HELD by design every cycle)
 - Owner: re-set the 4 junk KSSMS roles (`!crew role @user <role>`) — pre-fix entries still contain `@jid` prefixes and won't match any ladder (now logged as one "custom role not in ladder" line per team)
+- Smoke: KSSPS apply → accept now DMs `Ls0Vol…` (Private Security Team) link and auto-adds to jid `120363409819775730`; a non-crew group join shows the promoted global.jpg welcome
 - Smoke: after the next reconnect, `[CREW SYNC]` periodic runs must succeed (no more all-teams "Connection Closed"); an ended pinned event must unpin on the first sweep after reconnect
 - Progression: members with ≥100 msgs/36d in SSRS/KSSPS/KSSMP/KSSMS should now promote into `ranks[0]` (was impossible before)
 - Prior arcs' smoke tests still open: `!event` wizard → pin → auto-unpin at SA wall time; `!tt <url>` delivers real video; time displays 00:00–02:00 SAST show SA dates
@@ -69,3 +82,4 @@ Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, sett
 
 ## Memory Keys
 mcp__claude-flow__memory_search { query: "stale sock reconnect timers crew sync unpin sweep recruit tier roleIndex mention token strip roles mass kill guard kickcfg preview", namespace: "project" }
+mcp__claude-flow__memory_search { query: "KSSPS KSSMP invite swap jid verification global welcome image sharp cache memory guard cgroup 256MB", namespace: "project" }
