@@ -452,7 +452,7 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGro
     if (eligible.length !== _lastHoldCount) {
       _lastHoldCount = eligible.length;
       console.log(
-        `[INACTIVE-CHECK] ⚠️ ${eligible.length} members due at once — kicks HELD until owner runs .kickcfg preview (mass-kill guard)`
+        `[INACTIVE-CHECK] ⚠️ ${eligible.length} members due at once — kicks HELD until owner runs ${config.prefix || '.'}kickcfg preview (mass-kill guard)`
       );
     }
   } else {

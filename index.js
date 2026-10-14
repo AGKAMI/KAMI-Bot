@@ -279,7 +279,10 @@ let _crewSyncTimer = null;
 // interval is registered once, so it must read this live reference or every
 // periodic run after a reconnect dies with "Connection Closed" forever.
 let _crewSyncSock = null;
-async function syncCrewRosters(sock, _retry = 0) {
+// Same transient-error policy as the unpin sweep: network flaps must not
+// burn the retry ladder.
+const CREW_SYNC_TRANSIENT = /connection closed|connection terminated|timed? ?out|rate.?limit|stream errored|websocket/i;
+async function syncCrewRosters(sock, _retry = 0, _transient = 0) {
   const db = require('./database');
   const { buildComparableIds } = require('./utils/jidHelper');
   const crewData = db.getCrew();
@@ -287,6 +290,7 @@ async function syncCrewRosters(sock, _retry = 0) {
   let synced = 0;
   let pruned = 0;
   let teamErrors = 0;
+  let transientErrors = 0;
 
   for (const [abbrev, info] of Object.entries(teamMap)) {
     try {
@@ -353,19 +357,42 @@ async function syncCrewRosters(sock, _retry = 0) {
     } catch (e) {
       console.error(`[CREW SYNC] Error syncing ${abbrev}:`, e.message);
       teamErrors++;
+      if (CREW_SYNC_TRANSIENT.test(e.message || '')) transientErrors++;
     }
   }
 
   // Boot runs can fire before the socket can serve groupMetadata — if
-  // EVERY team errored, retry after 60s (max 3) before giving up
+  // EVERY team errored, retry after 60s (max 3) before giving up.
+  // Two guards keep this from torching the ladder during reconnect
+  // flaps (all 4 attempts used to die inside one disconnect):
+  //   1. Socket dead → don't retry at all; the next 'open' event
+  //      re-schedules a boot run anyway.
+  //   2. All errors transient (Connection Closed etc.) → retry at no
+  //      penalty, capped separately so a flapping-but-open socket
+  //      can't loop forever.
   const teamCount = Object.keys(teamMap).length;
-  if (teamCount > 0 && teamErrors === teamCount && _retry < 3) {
-    console.log(`[CREW SYNC] all ${teamCount} teams errored — retrying in 60s (attempt ${_retry + 2}/4)`);
-    setTimeout(() => {
-      syncCrewRosters(_crewSyncSock || sock, _retry + 1).catch(e =>
-        console.error('[CREW SYNC] retry failed:', e.message));
-    }, 60 * 1000).unref();
-    return { synced, pruned, teamErrors, retried: true };
+  if (teamCount > 0 && teamErrors === teamCount) {
+    const wsOpen = (_crewSyncSock || sock)?.ws?.readyState === 1;
+    if (!wsOpen) {
+      console.log('[CREW SYNC] socket not open — waiting for reconnect instead of retrying');
+      return { synced, pruned, teamErrors };
+    }
+    if (transientErrors === teamErrors && _transient < 5) {
+      console.log(`[CREW SYNC] all ${teamCount} teams hit transient network errors — retrying in 60s (no penalty, ${_transient + 1}/5)`);
+      setTimeout(() => {
+        syncCrewRosters(_crewSyncSock || sock, _retry, _transient + 1).catch(e =>
+          console.error('[CREW SYNC] retry failed:', e.message));
+      }, 60 * 1000).unref();
+      return { synced, pruned, teamErrors, retried: true };
+    }
+    if (_retry < 3) {
+      console.log(`[CREW SYNC] all ${teamCount} teams errored — retrying in 60s (attempt ${_retry + 2}/4)`);
+      setTimeout(() => {
+        syncCrewRosters(_crewSyncSock || sock, _retry + 1).catch(e =>
+          console.error('[CREW SYNC] retry failed:', e.message));
+      }, 60 * 1000).unref();
+      return { synced, pruned, teamErrors, retried: true };
+    }
   }
 
   // Sync writes must survive restarts — never ride the debounced flush
@@ -713,6 +740,7 @@ async function startBot() {
         const db = require('./database');
         const currentAdminsByGroup = {};
         let detected = 0;
+        let scanFailures = 0;
 
         // Scan all teams from config + teamMap
         const allTeams = { ...(config.crewTeams || {}) };
@@ -724,7 +752,10 @@ async function startBot() {
         for (const [teamKey, teamInfo] of Object.entries(allTeams)) {
           try {
             const meta = await sock.groupMetadata(teamInfo.jid);
-            if (!meta || !meta.participants) continue;
+            if (!meta || !meta.participants) {
+              scanFailures++;
+              continue;
+            }
 
             const admins = meta.participants
               .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
@@ -740,18 +771,28 @@ async function startBot() {
               db.addTeamAdminTeam(number, teamKey);
             }
           } catch (e) {
+            scanFailures++;
             console.error(`[TEAM ADMIN SYNC] Error scanning ${teamKey}:`, e.message);
           }
         }
 
-        // Prune: remove anyone no longer admin in ANY crew group
-        const pruned = db.pruneTeamAdmins(currentAdminsByGroup);
+        // Prune: remove anyone no longer admin in ANY crew group.
+        // NEVER prune unless EVERY group scanned cleanly — even one failed
+        // scan would wipe admins who are only admin in that group (one
+        // disconnect wiped 9 admins this way). Detection above is additive
+        // and safe; only the destructive prune is gated.
+        const totalTeams = Object.keys(allTeams).length;
+        if (totalTeams > 0 && scanFailures === 0) {
+          const pruned = db.pruneTeamAdmins(currentAdminsByGroup);
+          if (pruned > 0) {
+            console.log(`[TEAM ADMIN SYNC] Pruned ${pruned} former team admins`);
+          }
+        } else if (scanFailures > 0) {
+          console.log(`[TEAM ADMIN SYNC] Skipping prune — ${scanFailures}/${totalTeams} group scans failed`);
+        }
 
         if (detected > 0) {
           console.log(`[TEAM ADMIN SYNC] Auto-detected ${detected} team admins`);
-        }
-        if (pruned > 0) {
-          console.log(`[TEAM ADMIN SYNC] Pruned ${pruned} former team admins`);
         }
       } catch (e) {}
 
