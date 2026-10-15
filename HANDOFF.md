@@ -4,13 +4,16 @@
 Keep KAMI Bot shipping autonomously. Completed arcs: CPM `!event` wizard lifecycle (build → post → RSVP → **auto-unpin**), `!tt` repairs, **full SAST time sweep** (`011a519`), **universal-prefix sweep** (`a52b9fd`), **production console-log bug sweep** (`fc195c5` — stale-sock timers, recruit-tier promotions, mention leak into role names), **user-reported trio** (`3a10543` — global welcome image, KSSPS/KSSMP invite swap, 256MB memory guard), and **reconnect-resilience sweep** (`6081675` — dead-socket crew-sync retry, prune-safe team-admin sync).
 
 ## Current State
-- Bot CONNECTED on 27833882383 (prefix `!`) — `280dacf` auto-pulled at restart, verified on server: `git log` = `280dacf`, `BLOCKED_HOSTS` live at tiktok.js:73, `methodTikcdn` fully removed (0 refs)
-- HEAD = `280dacf` (fix(tt): drop tikcdn from the chain…); **68/68 tests green** (`node --test --test-force-exit tests/*.test.js`, +1 isBlockedHost test)
+- Bot CONNECTED on 27833882383 (prefix `!`) — `39d20dc` auto-pulled at restart, verified on server: `git log` = `39d20dc`, `buildRunButtons` live in `menu.js` + `againDispatch.js`
+- HEAD = `39d20dc` (feat(menu): tap-to-run buttons in category submenus…); buttonAudit+againDispatch = 23/23 green; **KNOWN RED: 2 eventWizard tests (pre-existing, parallel session)** — see Gotchas
 - Memory guard + `[MEM]` telemetry live and healthy: steady **131–138MB/256MB** across reconnects (heap 57-64MB, ext 12-14MB) — was 239-254MB before `3a10543`
 - SAST sweep `011a519` + console sweep `fc195c5` deployed/verified; eventWizard.js = 493 lines (500 cap)
 - Concurrent session activity absorbed through `5565c8d` (tt backoff / TT_PROXY_URL)
 
 ## What Shipped
+### `39d20dc` — tap-to-run buttons in category submenus (3 files, +86/−9)
+User ask: "submenus have commands that don't need input — buttonize them (e.g. anime menu), type the command once and voila." New `buildRunButtons(category, reserved)` in `utils/againDispatch.js`: allowlisted zero-arg commands of a category → `▶️ <name>` buttons with `again:<cmd>` ids (reuses the existing tap dispatcher — cooldown, gates, NSFW-typed-only rule all inherited). `sendCategoryView` attaches them (cap: run+nav ≤ 10) with a "▶️ Tap a button to run it" hint; the typed `!menu <category>` path now shows the same buttons when `buttonMode` is on. `MENU_EXCLUDE = {attend}` — silent first-event RSVP is fine as Again-replay, footgun on exploratory menu taps. NSFW (hwaifu/hneko/loli/milf/megumin) stays text-list-only per kill list. Results: anime = 4 run buttons (waifu/neko/random/konachan), fun = 5, games = 5, crew = events only.
+
 ### `280dacf` — kill the ssstik promo clip (2 files, +39/−19)
 User report: `!tt` "sends promo vids telling me to use ssstik.io". Mechanism: tikcdn.io (chain's last provider) serves a "THIS APP IS OFFLINE — go to ssstik.io" anti-leech clip INSTEAD of the real video, and re-encodes it — the old md5/size denylist rotted, so a re-encoded promo shipped as a "working" video. That link failed every honest provider (`tikapi: empty aweme_list` → `embed: no CDN URL` → `tikwm 403` → `ruhend invalid json`), fell to tikcdn, got the promo. Fix: tikcdn removed from the chain entirely + `methodTikcdn` deleted; new `isBlockedHost()` (BLOCKED_HOSTS = /tikcdn\.io/i) blocks the host on the buffer path, the unchecked URL-send fallback, and a direct paste of a tikcdn link — a clean "couldn't download" beats a wrong video. `isPlaceholder` kept as a content backstop. 68/68 green. NOTE: a hash denylist can never durably stop a re-encoding host — block the host instead.
 
@@ -55,6 +58,8 @@ NOT bugs (by design, no code change): mass-kill guard holding 39 kicks until own
 `6b73efb` wizard DATE step · `4833795` Baileys v7 pin shape + labels/mentions/tt · `ae1ec3b` wizard corrections · `95af7ab` unpin sweep
 
 ## Gotchas Hit
+- **2 eventWizard tests red (PRE-EXISTING, not ours)** — "stored id matches the pinned card" + "targets the pinned card" assert mock-style ids (`m1`/`UNPIN-TARGET-1`) but `sendButtons` now generates REAL Baileys message keys (`3EB0…` hex) because of the v7 nativeFlow relay path (parallel session's change). Live behavior is CORRECT (stores the actual card key — the id it pins); only the test expectations are stale. Fix belongs to whoever owns the v7 button arc: assert against the returned `cardMsg.key.id` instead of a hardcoded/mock id. Verified pre-existing by stashing our work and re-running
+- **PowerShell renders git push stderr progress as NativeCommandError** — the push still succeeds; check `git status -sb` / the `old..new main -> main` line, don't trust the red text
 - **The box IP is now blocked/rate-limited by EVERY free provider** (probed 2026-10-15: tikapi 429/empty, embed 400, tikwm 403 on GET+POST with browser UA+ttwid cookie, ruhend rides tikwm so same 403, ssstik.io's own /abc endpoint returns `{"error":{"code":2108}}` "This request was logged"). Recovery path = set `TT_PROXY_URL` env (metadata JSON only, video bytes stay direct; `https-proxy-agent` already installed, `apiAxiosConfig()` wired into tikapi/tikwm/resolveCanonicalId)
 - **tikcdn.io serves a re-encoded ssstik promo clip, not the video** — content-hash/size denylists rot on every re-encode, so block the HOST (`isBlockedHost`) on every send path instead of chasing md5s. A provider that answers with the wrong video must be dropped from the chain entirely
 - **TikTok photo awemes carry a `play_addr` video rendition** (synthesized slideshow video) that WhatsApp CAN'T play — image extraction must run first and `/photo/` links must hard-reject any videoUrl result or users get a broken mp4
@@ -96,6 +101,7 @@ Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, sett
 - Any NEW reply with a command example must use `config.prefix || '.'`, never a literal `.`
 
 ## Next Steps
+- Smoke: `!menu anime` (or ⬅️ Back → ⬅️ More → ⛩️ Anime) → 4 `▶️` buttons; tap `▶️ waifu` → image arrives with no typing. Same for fun/games. NSFW stays text-only (by design)
 - **Owner action — the one thing that restores most `.tt` links**: set `TT_PROXY_URL` in the panel env (residential/mobile proxy, `http://user:pass@host:port`) then restart. Metadata JSON goes through the proxy (unblocks tikwm/tikapi), video bytes stay direct from TikTok CDN. Without it, links whose providers all block the box IP now honestly report "couldn't download" (by design — no more promo clip)
 - Smoke: `!tt <slideshow link>` (a `/photo/` URL) must now deliver SEPARATE image messages (📸 1/n captions) via tikapi→sendSlideshow — NO video bubble at all; regular `/video/` links still deliver a video unchanged
 - After the next reconnect flap: crew sync must log either success or ONE "socket not open — waiting for reconnect" line (no more 5× Connection Closed walls / attempt 2/4→4/4 storms); team-admin sync must log "Skipping prune — N/M group scans failed" instead of pruning
