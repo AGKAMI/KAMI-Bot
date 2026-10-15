@@ -4,13 +4,16 @@
 Keep KAMI Bot shipping autonomously. Completed arcs: CPM `!event` wizard lifecycle (build → post → RSVP → **auto-unpin**), `!tt` repairs, **full SAST time sweep** (`011a519`), **universal-prefix sweep** (`a52b9fd`), **production console-log bug sweep** (`fc195c5` — stale-sock timers, recruit-tier promotions, mention leak into role names), **user-reported trio** (`3a10543` — global welcome image, KSSPS/KSSMP invite swap, 256MB memory guard), and **reconnect-resilience sweep** (`6081675` — dead-socket crew-sync retry, prune-safe team-admin sync).
 
 ## Current State
-- Bot CONNECTED on 27833882383 (prefix `!`) — `82d9088` auto-pulled at restart, verified on server: `git log` = `82d9088`, `extractSlideshowImages`/`isPhotoLink`/`image_post_info` all live in `commands/media/tiktok.js`
-- HEAD = `82d9088` (fix(tt): send slideshows as separate images…); **67/67 tests green** (`node --test --test-force-exit tests/*.test.js`, +3 extractSlideshowImages tests)
+- Bot CONNECTED on 27833882383 (prefix `!`) — `280dacf` auto-pulled at restart, verified on server: `git log` = `280dacf`, `BLOCKED_HOSTS` live at tiktok.js:73, `methodTikcdn` fully removed (0 refs)
+- HEAD = `280dacf` (fix(tt): drop tikcdn from the chain…); **68/68 tests green** (`node --test --test-force-exit tests/*.test.js`, +1 isBlockedHost test)
 - Memory guard + `[MEM]` telemetry live and healthy: steady **131–138MB/256MB** across reconnects (heap 57-64MB, ext 12-14MB) — was 239-254MB before `3a10543`
 - SAST sweep `011a519` + console sweep `fc195c5` deployed/verified; eventWizard.js = 493 lines (500 cap)
 - Concurrent session activity absorbed through `5565c8d` (tt backoff / TT_PROXY_URL)
 
 ## What Shipped
+### `280dacf` — kill the ssstik promo clip (2 files, +39/−19)
+User report: `!tt` "sends promo vids telling me to use ssstik.io". Mechanism: tikcdn.io (chain's last provider) serves a "THIS APP IS OFFLINE — go to ssstik.io" anti-leech clip INSTEAD of the real video, and re-encodes it — the old md5/size denylist rotted, so a re-encoded promo shipped as a "working" video. That link failed every honest provider (`tikapi: empty aweme_list` → `embed: no CDN URL` → `tikwm 403` → `ruhend invalid json`), fell to tikcdn, got the promo. Fix: tikcdn removed from the chain entirely + `methodTikcdn` deleted; new `isBlockedHost()` (BLOCKED_HOSTS = /tikcdn\.io/i) blocks the host on the buffer path, the unchecked URL-send fallback, and a direct paste of a tikcdn link — a clean "couldn't download" beats a wrong video. `isPlaceholder` kept as a content backstop. 68/68 green. NOTE: a hash denylist can never durably stop a re-encoding host — block the host instead.
+
 ### `82d9088` — slideshow delivery fix (2 files, +66/−4)
 User report: after the `/photo/` ID fix, slideshows downloaded but were delivered as a **video that errors on WhatsApp**. Mechanism: photo awemes carry BOTH image cards AND a synthesized `play_addr` video rendition; newer photo-mode payloads nest the cards in `aweme.image_post_info.images[]` (under `display_image`/`thumbnail` url_list), NOT legacy `aweme.images[].url_list` — so `extractSlideshowImages` returned empty, methodTikApi fell through to the rendition, and sendVideo shipped a broken mp4. Fix: (1) new `extractSlideshowImages(aweme)` handles BOTH shapes (legacy `url_list`, nested `display_image`→`thumbnail` fallback) and runs BEFORE play_addr; (2) hard guard in the send loop — `isPhotoLink` (`/photo/\d+`) rejects any `videoUrl` result ("video rendition of a photo post") and continues the chain, so NO provider (incl. embed, which also exposes the rendition) can ever send a video for a photo post; (3) +3 tests (legacy, photo-mode nested, video-aweme→empty). 67/67 green.
 
@@ -52,6 +55,8 @@ NOT bugs (by design, no code change): mass-kill guard holding 39 kicks until own
 `6b73efb` wizard DATE step · `4833795` Baileys v7 pin shape + labels/mentions/tt · `ae1ec3b` wizard corrections · `95af7ab` unpin sweep
 
 ## Gotchas Hit
+- **The box IP is now blocked/rate-limited by EVERY free provider** (probed 2026-10-15: tikapi 429/empty, embed 400, tikwm 403 on GET+POST with browser UA+ttwid cookie, ruhend rides tikwm so same 403, ssstik.io's own /abc endpoint returns `{"error":{"code":2108}}` "This request was logged"). Recovery path = set `TT_PROXY_URL` env (metadata JSON only, video bytes stay direct; `https-proxy-agent` already installed, `apiAxiosConfig()` wired into tikapi/tikwm/resolveCanonicalId)
+- **tikcdn.io serves a re-encoded ssstik promo clip, not the video** — content-hash/size denylists rot on every re-encode, so block the HOST (`isBlockedHost`) on every send path instead of chasing md5s. A provider that answers with the wrong video must be dropped from the chain entirely
 - **TikTok photo awemes carry a `play_addr` video rendition** (synthesized slideshow video) that WhatsApp CAN'T play — image extraction must run first and `/photo/` links must hard-reject any videoUrl result or users get a broken mp4
 - **Photo-mode image cards live in `aweme.image_post_info.images[]`** (nested `display_image`/`thumbnail` url_list), not legacy `aweme.images[].url_list` — newer app-version payloads; extract from BOTH shapes
 - **TikTok slideshows share `/photo/<id>` URLs, not `/video/<id>`** — same aweme_id, same feed API; any ID-extraction regex must match both (`/\/(?:video|photo)\/(\d+)/`). tikwm/ruhend (the no-ID slideshow fallbacks) 403 the datacenter IP, so tikapi is the ONLY working slideshow source from the box
@@ -91,6 +96,7 @@ Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, sett
 - Any NEW reply with a command example must use `config.prefix || '.'`, never a literal `.`
 
 ## Next Steps
+- **Owner action — the one thing that restores most `.tt` links**: set `TT_PROXY_URL` in the panel env (residential/mobile proxy, `http://user:pass@host:port`) then restart. Metadata JSON goes through the proxy (unblocks tikwm/tikapi), video bytes stay direct from TikTok CDN. Without it, links whose providers all block the box IP now honestly report "couldn't download" (by design — no more promo clip)
 - Smoke: `!tt <slideshow link>` (a `/photo/` URL) must now deliver SEPARATE image messages (📸 1/n captions) via tikapi→sendSlideshow — NO video bubble at all; regular `/video/` links still deliver a video unchanged
 - After the next reconnect flap: crew sync must log either success or ONE "socket not open — waiting for reconnect" line (no more 5× Connection Closed walls / attempt 2/4→4/4 storms); team-admin sync must log "Skipping prune — N/M group scans failed" instead of pruning
 - The 9 pruned team admins (from the pre-fix flap) self-heal on the next clean scan — confirm `[TEAM ADMIN SYNC] Auto-detected N team admins` re-appears after a stable reconnect; if not, owner re-runs a manual team-admin add
