@@ -205,6 +205,30 @@ const TIKAPI_HOSTS = [
 ];
 const MOBILE_UA = 'com.zhiliaoapp.musically/2023009040 (Linux; U; Android 9; en; ASUS_Z01QD; Build/PI;)';
 
+// Slideshow image cards from an aweme. Legacy payloads nest them in
+// aweme.images[].url_list; newer photo-mode ones in
+// aweme.image_post_info.images[] under display_image/thumbnail url_list.
+// Photo awemes ALSO carry a play_addr video rendition (a synthesized
+// slideshow video) — WhatsApp can't play it, so images must be checked
+// first and the rendition never used for photo posts.
+function extractSlideshowImages(aweme) {
+  const list = (Array.isArray(aweme.images) && aweme.images.length)
+    ? aweme.images
+    : (aweme.image_post_info && Array.isArray(aweme.image_post_info.images))
+      ? aweme.image_post_info.images
+      : [];
+  return list
+    .map(im => {
+      if (!im || typeof im !== 'object') return null;
+      const urls = (Array.isArray(im.url_list) && im.url_list) ||
+        (im.display_image && im.display_image.url_list) ||
+        (im.thumbnail && im.thumbnail.url_list) ||
+        [];
+      return urls.find(u => typeof u === 'string' && u.startsWith('http')) || null;
+    })
+    .filter(Boolean);
+}
+
 async function methodTikApi(url) {
   const videoId = await resolveCanonicalId(url);
   if (!videoId) throw new Error('tikapi: could not extract video ID');
@@ -241,9 +265,7 @@ async function methodTikApi(url) {
   if (!aweme) throw new Error(saw429 ? 'tikapi: rate limited (429) — the box IP burned its TikTok API window, retry in a few minutes' : `tikapi: ${lastMsg}`);
 
   // Slideshow posts — image cards instead of a video
-  const images = (aweme.images || [])
-    .map(im => (im.url_list || []).find(u => typeof u === 'string' && u.startsWith('http')))
-    .filter(Boolean);
+  const images = extractSlideshowImages(aweme);
   if (images.length > 0) {
     return { type: 'slideshow', images, title: aweme.desc || null };
   }
@@ -437,6 +459,7 @@ module.exports = {
 
         let success = false;
         let lastError = null;
+        const isPhotoLink = /\/photo\/\d+/.test(url);
 
         for (const method of methods) {
           if (aborted) break;
@@ -450,6 +473,14 @@ module.exports = {
             if (result.type === 'slideshow' && result.images?.length > 0) {
               sent = await sendSlideshow(sock, extra.from, result.images, result.title, msg, () => aborted);
             } else if (result.videoUrl) {
+              // /photo/ links are slideshows — the play_addr video rendition
+              // (also returned by embed for photo awemes) won't play on
+              // WhatsApp. Skip it and let the next provider try for images.
+              if (isPhotoLink) {
+                console.log(`[TT] ${method.name} returned a video rendition for a /photo/ link — skipping`);
+                lastError = new Error(`${method.name}: video rendition of a photo post`);
+                continue;
+              }
               sent = await sendVideo(sock, extra.from, result.videoUrl, result.title, msg);
             }
 
@@ -514,6 +545,7 @@ module.exports = {
     isPlaceholder,
     resolveCanonicalId,
     extractVideoId,
+    extractSlideshowImages,
     RUHEND_TIMEOUT_MS,
     URL_SEND_TIMEOUT_MS,
     WATCHDOG_MS,

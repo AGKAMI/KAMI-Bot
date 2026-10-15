@@ -4,7 +4,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 
 const { _internals } = require('../commands/media/tiktok');
-const { extractEmbedUrl, isPlaceholder, extractVideoId } = _internals;
+const { extractEmbedUrl, isPlaceholder, extractVideoId, extractSlideshowImages } = _internals;
 
 test('extractEmbedUrl: raw v45 URL, decodes HTML entities', () => {
   const html = '<script>{"playAddr":"https://v45.tiktokcdn-eu.com/aaa/bbb/video/tos/alisg/x/?a=1&amp;bti=ODsz&amp;&amp;policy=2&signature=abc"}</script>';
@@ -48,4 +48,34 @@ test('extractVideoId: /photo/ links (slideshows share photo-mode URLs)', () => {
 test('extractVideoId: no numeric id -> null', () => {
   assert.equal(extractVideoId('https://www.tiktok.com/@user'), null);
   assert.equal(extractVideoId(''), null);
+});
+
+test('extractSlideshowImages: legacy aweme.images[].url_list', () => {
+  const images = extractSlideshowImages({
+    images: [
+      { url_list: ['https://cdn.example/a.jpg'] },
+      { url_list: ['https://cdn.example/b.jpg'] },
+      { url_list: [] }
+    ]
+  });
+  assert.deepEqual(images, ['https://cdn.example/a.jpg', 'https://cdn.example/b.jpg']);
+});
+
+test('extractSlideshowImages: photo-mode image_post_info nested display_image', () => {
+  const images = extractSlideshowImages({
+    images: [],
+    image_post_info: {
+      images: [
+        { display_image: { url_list: ['https://cdn.example/c.jpg'] }, thumbnail: { url_list: ['https://cdn.example/c-thumb.jpg'] } },
+        { thumbnail: { url_list: ['https://cdn.example/d-thumb.jpg'] } },
+        { display_image: { url_list: [] } }
+      ]
+    }
+  });
+  assert.deepEqual(images, ['https://cdn.example/c.jpg', 'https://cdn.example/d-thumb.jpg']);
+});
+
+test('extractSlideshowImages: no images at all -> empty (regular video aweme)', () => {
+  assert.deepEqual(extractSlideshowImages({}), []);
+  assert.deepEqual(extractSlideshowImages({ video: { play_addr: { url_list: ['https://cdn.example/v.mp4'] } } }), []);
 });
