@@ -1,7 +1,7 @@
 /**
  * TikTok Downloader - Download TikTok videos without watermark
  * Fallbacks: tikapi (mobile feed) -> embed page (v45 CDN) -> tikwm API
- *            -> ruhend-scraper -> tikcdn direct
+ *            -> ruhend-scraper
  *
  * Why this order (probed live from deployment b0665152, 2026-10-13):
  *  - tikapi: TikTok's own mobile feed API — no sign, no watermark,
