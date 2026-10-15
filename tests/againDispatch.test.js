@@ -1,6 +1,9 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { ALLOW, validate, buildExtra } = require('../utils/againDispatch');
+const { ALLOW, validate, buildExtra, buildRunButtons } = require('../utils/againDispatch');
+const { loadCommands } = require('../utils/commandLoader');
+
+const CMD = loadCommands();
 
 test('validate: allowlisted no-arg id parses', () => {
   const p = validate('again:neko');
@@ -74,4 +77,35 @@ test('buildExtra provides reply/fail/isGroup wired to sock', async () => {
 test('buildExtra: DM context reports isGroup false', () => {
   const extra = buildExtra({ sendMessage: async () => {} }, {}, '999@s.whatsapp.net', '999@s.whatsapp.net');
   assert.strictEqual(extra.isGroup, false);
+});
+
+test('buildRunButtons: anime view = SFW tap-to-run only, NSFW excluded', () => {
+  const btns = buildRunButtons('anime', 1);
+  const ids = btns.map(b => b.id).sort();
+  assert.deepStrictEqual(ids, ['again:konachan', 'again:neko', 'again:random', 'again:waifu']);
+  for (const b of btns) {
+    assert.ok(b.text.startsWith('▶️ '), b.text);
+    assert.ok(validate(b.id), `${b.id} must be a routable again: id`);
+  }
+});
+
+test('buildRunButtons: respects reserved slots so run+nav stays within the 10 cap', () => {
+  // fun has 5 allowlisted commands; reserved=8 → only 2 fit (10-8)
+  const btns = buildRunButtons('fun', 8);
+  assert.strictEqual(btns.length, 2);
+  // reserved=10 → none fit
+  assert.strictEqual(buildRunButtons('fun', 10).length, 0);
+});
+
+test('buildRunButtons: categories with no allowlisted commands return empty', () => {
+  assert.deepStrictEqual(buildRunButtons('utility', 1), []);
+  assert.deepStrictEqual(buildRunButtons('media', 1), []); // tt needs a URL arg
+});
+
+test('buildRunButtons: every generated id is zero-arg (no half-specified taps)', () => {
+  for (const cat of ['anime', 'fun', 'games', 'crew']) {
+    for (const b of buildRunButtons(cat, 1)) {
+      assert.strictEqual(b.id.split(':').length, 2, `${b.id} must carry no args`);
+    }
+  }
 });

@@ -2,6 +2,7 @@ const config = require('../../config');
 const { loadCommands } = require('../../utils/commandLoader');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { sendButtons, onButton, isButtonModeOn, isOwnerJid } = require('../../utils/buttonHelper');
+const { buildRunButtons } = require('../../utils/againDispatch');
 const fs = require('fs');
 const path = require('path');
 
@@ -47,9 +48,13 @@ function buildCategoryText(cat, opts = {}) {
   text += `\n----------\n`;
   // Button views carry a Back button — but if it falls back to plain text
   // (button mode off / rate-limited), the typed path must be spelled out.
-  text += opts.nav
-    ? `_Tap ⬅️ Back for the menu or type ${prefix}menu · ${prefix}help <cmd> for info_`
-    : `_Use ${prefix}help <cmd> for info_`;
+  if (opts.tappable) {
+    text += `_▶️ Tap a button to run it · ${prefix}help <cmd> for info_`;
+  } else {
+    text += opts.nav
+      ? `_Tap ⬅️ Back for the menu or type ${prefix}menu · ${prefix}help <cmd> for info_`
+      : `_Use ${prefix}help <cmd> for info_`;
+  }
   return text;
 }
 
@@ -116,9 +121,14 @@ module.exports = {
         },
       } : {};
 
-      // .menu <category> → show just that category
+      // .menu <category> → show just that category. Button mode ON → the
+      // category view WITH ▶️ tap-to-run + Back buttons (type the command
+      // once, then never type the sub-command again). Mode OFF → plain text.
       const requested = (args[0] || '').toLowerCase();
       if (requested && requested !== 'all' && categoryMeta[requested]) {
+        if (isButtonModeOn()) {
+          return sendCategoryView(sock, extra.from, requested, BACK_MAIN);
+        }
         return extra.reply(buildCategoryText(requested));
       }
 
@@ -212,12 +222,17 @@ const mainBtns = [
 const BACK_MAIN = { id: 'menu:back:main', text: '⬅️ Back to Menu' };
 const BACK_MORE = { id: 'menu:back:more', text: '⬅️ Back to More' };
 
-// Category view = the list WITH a Back button (never a dead end)
+// Category view = the list WITH a Back button (never a dead end). Zero-arg
+// allowlisted commands in the category also get ▶️ tap-to-run buttons
+// (routed via againDispatch) — e.g. the Anime menu becomes one tap per SFW
+// image command. `reserved` keeps run buttons + nav within the 10-button cap.
 async function sendCategoryView(sock, from, cat, backBtn, extraBtns) {
+  const nav = [...(extraBtns || []), backBtn];
+  const runBtns = buildRunButtons(cat, nav.length);
   await sendButtons(sock, from, {
-    text: buildCategoryText(cat, { nav: true }),
+    text: buildCategoryText(cat, { nav: true, tappable: runBtns.length > 0 }),
     footer: config.botName || 'KAMI Bot',
-    buttons: [...(extraBtns || []), backBtn],
+    buttons: [...runBtns, ...nav],
   });
 }
 
