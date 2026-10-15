@@ -11,11 +11,14 @@
  *    2026-10-12 were temporary). No key, no auth, works from datacenter IPs.
  *  - tikwm 403s the datacenter IP (even curl/default-UA, GET and POST) —
  *    ruhend rides tikwm's backend, so both are mid-chain last resorts.
- *  - tikcdn.io/ssstik/<id> is DEAD: 204 empty body now, and before that
- *    it served the "THIS APP IS OFFLINE — go to ssstik.io" anti-leech
- *    placeholder clip. Kept last as a hail-mary; the buffer path hash-
- *    rejects the placeholder and the unchecked URL-send fallback is
- *    blocked for tikcdn hosts so the promo clip can never ship.
+ *  - tikcdn.io/ssstik/<id> is REMOVED from the chain and its host is
+ *    blocked outright. It serves a "THIS APP IS OFFLINE — go to
+ *    ssstik.io" anti-leech promo clip instead of the real video, and it
+ *    RE-ENCODES that clip, so any md5/size denylist rots (a re-encode
+ *    shipped as a "working" video on 2026-10-15). A provider that
+ *    answers with the wrong video is worse than no provider: a clean
+ *    "couldn't download" beats a promo clip. The unchecked URL-send
+ *    fallback is also blocked for tikcdn hosts so the clip can never ship.
  */
 
 const axios = require('axios');
@@ -64,6 +67,14 @@ setInterval(() => {
 
 const TIKTOK_REGEX = /(?:https?:\/\/)?(?:(?:www|vt|vm)\.)?tiktok\.com\/.+|(?:https?:\/\/)?tikcdn\.io\/ssstik\/\d+/i;
 
+// Hosts that serve an anti-leech promo clip INSTEAD of the real video.
+// Blocked at every path (URL-send fallback, buffer download, chain) —
+// content hashing can't keep up because they re-encode the promo clip.
+const BLOCKED_HOSTS = /tikcdn\.io/i;
+function isBlockedHost(url) {
+  return typeof url === 'string' && BLOCKED_HOSTS.test(url);
+}
+
 const dlAxios = axios.create({
   timeout: 120000,
   maxContentLength: 16 * 1024 * 1024, // 16MB — WhatsApp limit
@@ -96,6 +107,10 @@ function extractVideoId(url) {
 }
 
 async function sendVideo(sock, chatId, videoUrl, title, msg) {
+  if (isBlockedHost(videoUrl)) {
+    console.error('[TT] refusing to download from promo-clip host:', videoUrl.slice(0, 60));
+    return false;
+  }
   try {
     const res = await dlAxios.get(videoUrl);
     const buf = Buffer.from(res.data);
@@ -123,9 +138,9 @@ async function sendVideo(sock, chatId, videoUrl, title, msg) {
   } catch (e) {
     console.error('[TT] buffer download failed:', e.message);
     // Fallback: send via URL directly — Baileys streams it, so no hash
-    // check is possible. Never do this for tikcdn (the placeholder host):
+    // check is possible. Never do this for tikcdn (the promo-clip host):
     // that's how the "THIS APP IS OFFLINE" clip shipped unchecked.
-    if (/tikcdn\.io/i.test(videoUrl)) return false;
+    if (isBlockedHost(videoUrl)) return false;
     try {
       const botName = config.botName.toUpperCase();
       const caption = title
@@ -347,6 +362,10 @@ async function methodRuhend(url, timeoutMs = RUHEND_TIMEOUT_MS) {
 // delivered as a "working" video). Content-hash reject → chain falls
 // through to the next provider. Size check backstops a future re-encode
 // that rotates the md5 — the clip ships byte-identical per variant.
+// tikcdn.io deliberately serves a promo clip instead of the real video,
+// and re-encodes it (rotating md5/size), so it is NOT a usable provider:
+// it is blocked host-level and kept out of the chain entirely. isPlaceholder
+// stays as a content backstop in case another host serves the same clip.
 const PLACEHOLDER_MD5 = new Set([
   '905a30c73f68e8b14152f1123336b083',
   '17536d037e61774f5511bd1c0619c7e4',
@@ -413,14 +432,6 @@ async function methodEmbed(url) {
   return { type: 'video', videoUrl, title: null };
 }
 
-async function methodTikcdn(url) {
-  const videoId = await resolveCanonicalId(url);
-  if (!videoId) throw new Error('tikcdn: could not extract video ID');
-
-  const videoUrl = `https://tikcdn.io/ssstik/${videoId}`;
-  return { videoUrl, title: null };
-}
-
 module.exports = {
   name: 'tiktok',
   reactions: { received: '📱', generating: '⬇️', done: '🎞️' },
@@ -453,8 +464,8 @@ module.exports = {
           { name: 'tikapi', fn: () => methodTikApi(url) },
           { name: 'embed', fn: () => methodEmbed(url) },
           { name: 'tikwm', fn: () => methodTikwm(url) },
-          { name: 'ruhend', fn: () => methodRuhend(url) },
-          { name: 'tikcdn', fn: () => methodTikcdn(url) }
+          { name: 'ruhend', fn: () => methodRuhend(url) }
+          // tikcdn dropped: serves the ssstik promo clip, not the video
         ];
 
         let success = false;
@@ -540,9 +551,9 @@ module.exports = {
     methodTikwm,
     methodTikApi,
     methodEmbed,
-    methodTikcdn,
     extractEmbedUrl,
     isPlaceholder,
+    isBlockedHost,
     resolveCanonicalId,
     extractVideoId,
     extractSlideshowImages,

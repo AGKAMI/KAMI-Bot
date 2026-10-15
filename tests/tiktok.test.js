@@ -4,7 +4,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 
 const { _internals } = require('../commands/media/tiktok');
-const { extractEmbedUrl, isPlaceholder, extractVideoId, extractSlideshowImages } = _internals;
+const { extractEmbedUrl, isPlaceholder, isBlockedHost, extractVideoId, extractSlideshowImages } = _internals;
 
 test('extractEmbedUrl: raw v45 URL, decodes HTML entities', () => {
   const html = '<script>{"playAddr":"https://v45.tiktokcdn-eu.com/aaa/bbb/video/tos/alisg/x/?a=1&amp;bti=ODsz&amp;&amp;policy=2&signature=abc"}</script>';
@@ -30,6 +30,15 @@ test('extractEmbedUrl: no video URL -> null', () => {
   assert.equal(extractEmbedUrl('<html>nothing here</html>'), null);
   assert.equal(extractEmbedUrl(''), null);
   assert.equal(extractEmbedUrl(null), null);
+});
+
+test('isBlockedHost: tikcdn promo-clip host is blocked, real hosts are not', () => {
+  // tikcdn serves the re-encoded ssstik promo clip instead of the real
+  // video — must never be downloaded or URL-sent.
+  assert.equal(isBlockedHost('https://tikcdn.io/ssstik/7312456789012345678'), true);
+  assert.equal(isBlockedHost('https://www.tiktokcdn-eu.com/foo/video'), false);
+  assert.equal(isBlockedHost('https://v16m-default.akamaized.net/x.mp4'), false);
+  assert.equal(isBlockedHost(null), false);
 });
 
 test('isPlaceholder: real content is not the anti-leech clip', () => {
