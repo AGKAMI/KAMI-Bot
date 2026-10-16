@@ -680,19 +680,22 @@ const resolveTeam = (abbrev) => {
 // Resolve abbreviation to group JID — checks teamMap first, falls back to config.crewTeams
 const resolveTeamWithConfig = (abbrev) => {
   const upper = abbrev.toUpperCase();
-  
-  // Try runtime teamMap first
-  const fromMap = resolveTeam(upper);
-  if (fromMap) return fromMap;
-  
-  // Fall back to hardcoded config.crewTeams
+
+  // config.crewTeams is the source of truth for built-in teams — a swapped
+  // runtime teamMap entry must never win over it (a swapped KSSPS/KSSMP pair
+  // routed KSSMP applicants into the Private Security group and DM'd them
+  // the wrong invite)
   try {
     const config = require('./config');
     if (config.crewTeams?.[upper]) {
       return { jid: config.crewTeams[upper].jid, name: config.crewTeams[upper].name };
     }
   } catch (e) {}
-  
+
+  // Custom teams mapped at runtime (!crew setteam)
+  const fromMap = resolveTeam(upper);
+  if (fromMap) return fromMap;
+
   return null;
 };
 

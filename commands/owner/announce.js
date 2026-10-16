@@ -122,8 +122,8 @@ async function downloadOne(ref) {
 // ── Group lists with human-readable names ────────────────────
 const GROUPS = {
   SSRS:      { jid: '120363402129417473@g.us', name: 'SSRS Royal Security' },
-  KSSPS:     { jid: '120363421626159074@g.us', name: 'Metro Police' },
-  KSSMP:     { jid: '120363409819775730@g.us', name: 'KSSMP Private Security' },
+  KSSPS:     { jid: '120363409819775730@g.us', name: 'Private Security' },
+  KSSMP:     { jid: '120363421626159074@g.us', name: 'Metro Police' },
   KSSMS:     { jid: '120363423238834158@g.us', name: 'Maganyeni Security' },
   GENERAL:   { jid: '120363417242897528@g.us', name: 'SS Crew General' },
   GARAGE:    { jid: '120363404874858785@g.us', name: 'Exclusive Garage' },

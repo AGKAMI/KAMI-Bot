@@ -254,6 +254,16 @@ async function setTeam(sock, msg, args, extra) {
     );
   }
 
+  const cfgTeam = config.crewTeams?.[abbrev];
+  if (cfgTeam && cfgTeam.jid && cfgTeam.jid !== extra.from) {
+    extra.fail();
+    return extra.reply(
+      `❌ ERROR\n\n*${abbrev}* is a built-in config team and it belongs to a different group\n\n` +
+      `Running this here would cross-wire applications and invite links\n` +
+      `If the team actually moved groups, update config.js instead`
+    );
+  }
+
   database.setTeamMap(abbrev, extra.from, teamName);
 
   await sock.sendMessage(extra.from, {

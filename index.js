@@ -279,6 +279,10 @@ let _crewSyncTimer = null;
 // interval is registered once, so it must read this live reference or every
 // periodic run after a reconnect dies with "Connection Closed" forever.
 let _crewSyncSock = null;
+// Loud one-time boot signal if a runtime teamMap entry contradicts the
+// config team of the same key — that cross-wire silently routes
+// applications to the wrong group with the wrong invite link.
+let _teamMapMismatchWarned = false;
 // Same transient-error policy as the unpin sweep: network flaps must not
 // burn the retry ladder.
 const CREW_SYNC_TRANSIENT = /connection closed|connection terminated|timed? ?out|rate.?limit|stream errored|websocket/i;
@@ -287,6 +291,18 @@ async function syncCrewRosters(sock, _retry = 0, _transient = 0) {
   const { buildComparableIds } = require('./utils/jidHelper');
   const crewData = db.getCrew();
   const teamMap = crewData.teamMap || {};
+  if (!_teamMapMismatchWarned) {
+    _teamMapMismatchWarned = true;
+    try {
+      const cfg = require('./config');
+      for (const [k, t] of Object.entries(cfg.crewTeams || {})) {
+        const m = teamMap[k];
+        if (m && t.jid && m.jid !== t.jid) {
+          console.error(`[TEAMMAP] MISMATCH: teamMap.${k} = ${m.jid} but config = ${t.jid} — config wins for routing; fix database/crew.json`);
+        }
+      }
+    } catch (e) {}
+  }
   let synced = 0;
   let pruned = 0;
   let teamErrors = 0;
