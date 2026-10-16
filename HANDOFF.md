@@ -1,16 +1,31 @@
 # HANDOFF
 
 ## Goal
-Keep KAMI Bot shipping autonomously. Completed arcs: CPM `!event` wizard lifecycle (build → post → RSVP → **auto-unpin**), `!tt` repairs, **full SAST time sweep** (`011a519`), **universal-prefix sweep** (`a52b9fd`), **production console-log bug sweep** (`fc195c5` — stale-sock timers, recruit-tier promotions, mention leak into role names), **user-reported trio** (`3a10543` — global welcome image, KSSPS/KSSMP invite swap, 256MB memory guard), and **reconnect-resilience sweep** (`6081675` — dead-socket crew-sync retry, prune-safe team-admin sync).
+Keep KAMI Bot shipping autonomously. Completed arcs: **auto-kick policy overhaul** (`02c33a6`+`c06339d` — 14d window, instant grace, approval hold removed, mass kicks actually firing), CPM `!event` wizard lifecycle (build → post → RSVP → **auto-unpin**), `!tt` repairs, **full SAST time sweep** (`011a519`), **universal-prefix sweep** (`a52b9fd`), **production console-log bug sweep** (`fc195c5` — stale-sock timers, recruit-tier promotions, mention leak into role names), **user-reported trio** (`3a10543` — global welcome image, KSSPS/KSSMP invite swap, 256MB memory guard), and **reconnect-resilience sweep** (`6081675` — dead-socket crew-sync retry, prune-safe team-admin sync).
 
 ## Current State
-- Bot CONNECTED on 27833882383 (prefix `!`) — `39d20dc` auto-pulled at restart, verified on server: `git log` = `39d20dc`, `buildRunButtons` live in `menu.js` + `againDispatch.js`
-- HEAD = `39d20dc` (feat(menu): tap-to-run buttons in category submenus…); buttonAudit+againDispatch = 23/23 green; **KNOWN RED: 2 eventWizard tests (pre-existing, parallel session)** — see Gotchas
+- Bot CONNECTED on 27833882383 (prefix `!`) — HEAD `c06339d` auto-pulled at restart, verified on server: `git log --oneline -1` = `c06339d`
+- **Auto-kick policy live and verified on the box**: first scan after deploy = 16 kicked, second scan = 10 kicked (SSGENERAL cap rollover logged), owner-protected skip logged, flags draining per group — ZERO rate-overlimit / displayName errors after `c06339d`
+- Live `database/kickConfig.json` rewritten on the box: global = window `1209600000` (14d), grace `0`, minMessages `1`, cap 10; the old `120363417242897528` group override (7d/3d/10) deleted — uniform policy. firstSeen preserved (via MCP `files_edit`)
+- HEAD chain: `c06339d` (fix: pacing + displayName) → `02c33a6` (feat: kick policy) → `141573a`; tests = **79 total / 76 pass / 3 fail** — the 3 fails are eventWizard (pre-existing, parallel session) — see Gotchas (it's 3, not 2 as earlier claimed)
+- Button surface: buttonAudit+againDispatch 23/23 green; kickcfg panel gained grace preset `0` = "instant"
 - Memory guard + `[MEM]` telemetry live and healthy: steady **131–138MB/256MB** across reconnects (heap 57-64MB, ext 12-14MB) — was 239-254MB before `3a10543`
-- SAST sweep `011a519` + console sweep `fc195c5` deployed/verified; eventWizard.js = 493 lines (500 cap)
-- Concurrent session activity absorbed through `5565c8d` (tt backoff / TT_PROXY_URL)
+- eventWizard.js = 493 lines (500 cap)
 
 ## What Shipped
+### `c06339d` — rate-limit pacing + displayName catch-scope fix (2 files, +7/−2)
+Deployed because the FIRST live mass-kick exposed two latent bugs:
+1. **`handler.js` welcome AND goodbye fallbacks crashed on every failure path** — `let displayName` was declared INSIDE the `try`, both `catch` blocks (welcome ~2442, goodbye ~2557) interpolated it → `ReferenceError: displayName is not defined` (logged via index.js:978 "Error handling group update"). Hoisted `let displayName = participantNumber || 'User';` above each try; inner resolve keeps overwriting it. `participantNumber` is defined at handler.js:2307 (outer scope) so the fallback value is always sane.
+2. **Back-to-back kicks+messages tripped WhatsApp `rate-overlimit` (429)** — first scan fired 16 kick messages in seconds; the 429 stack was `groupMetadata` inside `messages-send.js` (mention rendering), which ALSO made the goodbye image path fail (logged `Goodbye error: Error: rate-overlimit`) and made `isBotAdmin` return false → "AUTO-KICK paused in SSGENERAL — bot is not admin" was a **429 false-negative** (SSGENERAL admin-check succeeded on the next boot). Fix: `await sleep(2000)` after each kick message in `_runKickPass`, `sleep(1500)` per manual kick in `runGroupKick`.
+
+### `02c33a6` — auto-kick policy: 14d window, instant grace, no approval (4 files, +165/−88)
+User ask: bot posted an ACTIVITY CHECK ("quiet for 16d+") but kicked nobody — "Anyone inactive for 14+ days should be gone no questions asked." Root cause stack: (a) live config = 16d window + **14d grace** (flags stamped that morning → kicks scheduled 14 days out), (b) **mass-kill guard** (`MASS_DUE_THRESHOLD=10` + expired `massAck`) would hold any ≥10-due batch until owner ran `!kickcfg preview`, (c) flags were only created WHEN A NOTICE WENT OUT (7d cooldown) so inactivity alone never armed a kick. Changes:
+- `utils/kickSettings.js`: DEFAULTS = `inactiveWindow 14d`, `gracePeriod 0`, `minMessages 1` (pure lastActive semantics — the old `minMessages 20` counted low-count-but-recently-active members as inactive, contradicting "inactive 14+ days"); `LIMITS.gracePeriod.min = 0`; `_validate` accepts literal `0`/`0d`/`0 days` for grace
+- `utils/autoProgression.js`: **mass-kill machinery deleted** (`MASS_DUE_THRESHOLD`, `MASS_ACK_TTL`, `_lastHoldCount`, holdKicks, massAck in state/preview/groupKick/summary); **new flag pre-pass** — every enabled crew group flags its roster-visible inactive members EVERY scan (earliest stamp kept), decoupled from notice cooldown; shared `_dueForGroup()` helper used by pre-pass + notice loop + manual notice; `_noticeTail(s)` renders "removed automatically" wording when grace is 0; kick message says "still quiet" (no "after 0 days" awkwardness)
+- `commands/admin/kickcfg.js`: grace preset `0` added, `fmtVal` shows `instant` for grace 0, dashboard "Grace after flag: instant (next scan)", mass-ack line removed, reset reply derives text from live defaults, `set` reply no longer loses `0` to `0 || currentVal`
+- `tests/kickSettings.test.js` (NEW, 7 tests): defaults, grace-0 validation (all spellings), window min, fmtDuration, update round-trips incl. group override + resetGroup — snapshots/restores `database/kickConfig.json` (it is NOT tracked)
+- **Live box config** applied via MCP `files_edit` (surgical oldString/newString — no need to rewrite the 700-line file): global 14d/0/1, `groups: {}`, firstSeen untouched
+
 ### `39d20dc` — tap-to-run buttons in category submenus (3 files, +86/−9)
 User ask: "submenus have commands that don't need input — buttonize them (e.g. anime menu), type the command once and voila." New `buildRunButtons(category, reserved)` in `utils/againDispatch.js`: allowlisted zero-arg commands of a category → `▶️ <name>` buttons with `again:<cmd>` ids (reuses the existing tap dispatcher — cooldown, gates, NSFW-typed-only rule all inherited). `sendCategoryView` attaches them (cap: run+nav ≤ 10) with a "▶️ Tap a button to run it" hint; the typed `!menu <category>` path now shows the same buttons when `buttonMode` is on. `MENU_EXCLUDE = {attend}` — silent first-event RSVP is fine as Again-replay, footgun on exploratory menu taps. NSFW (hwaifu/hneko/loli/milf/megumin) stays text-list-only per kill list. Results: anime = 4 run buttons (waifu/neko/random/konachan), fun = 5, games = 5, crew = events only.
 
@@ -43,7 +58,7 @@ Source: `C:\Users\ojuni\Downloads\probs_to_fix.txt` (user's console dump). Four 
 3. **`@mention` token leaked into role names** — WhatsApp keeps the raw `@123456` token in message text; `crewHelpers.resolveUser` mention branch returned args untouched, so `.crew role @user Constable/recruit` STORED `"@182631220146418 Constable/recruit"` as the role (visible in the log). Fix: strip leading `/^@\d{4,}$/` tokens from args in the mention branch (promote.js iterates args for valid role words — strip helps it too; demote/remove/apply never read args). `role.js` also lowercases now (matches setroles convention)
 4. **Noise** — CHECK lines only log members ≥½ way to either threshold (~50 lines/cycle → ~5); mass-kill ⚠️ re-logs only when the due count changes (`_lastHoldCount`)
 
-NOT bugs (by design, no code change): mass-kill guard holding 39 kicks until owner runs `!kickcfg preview`; TT `tikapi: empty aweme_list` → embed fallback succeeds; panel console buffer replaying identical blocks on reconnect; `[!] Console auth failed` (panel-side, recovered).
+NOT bugs (by design, no code change): TT `tikapi: empty aweme_list` → embed fallback succeeds; panel console buffer replaying identical blocks on reconnect; `[!] Console auth failed` (panel-side, recovered). (The old "mass-kill guard holds 39 kicks" line is OBSOLETE — the guard was deleted in `02c33a6`.)
 
 ### `a52b9fd` — universal prefix in all examples/usage (26 files, +59/−42)
 1. **`commands/general/help.js` (sole renderer of `cmd.usage`)** — old code `.replace(/^\./, prefix)` replaced only the FIRST dot, so multi-example usages rendered mixed `!`/`.`. New: `rawUsage.replace(/(^|[\s|(])\./g, (m, p) => p + prefix)` (function replacement = `$`-safe), then bare usages get prefixed
@@ -58,7 +73,12 @@ NOT bugs (by design, no code change): mass-kill guard holding 39 kicks until own
 `6b73efb` wizard DATE step · `4833795` Baileys v7 pin shape + labels/mentions/tt · `ae1ec3b` wizard corrections · `95af7ab` unpin sweep
 
 ## Gotchas Hit
-- **2 eventWizard tests red (PRE-EXISTING, not ours)** — "stored id matches the pinned card" + "targets the pinned card" assert mock-style ids (`m1`/`UNPIN-TARGET-1`) but `sendButtons` now generates REAL Baileys message keys (`3EB0…` hex) because of the v7 nativeFlow relay path (parallel session's change). Live behavior is CORRECT (stores the actual card key — the id it pins); only the test expectations are stale. Fix belongs to whoever owns the v7 button arc: assert against the returned `cardMsg.key.id` instead of a hardcoded/mock id. Verified pre-existing by stashing our work and re-running
+- **3 eventWizard tests red (PRE-EXISTING, not ours)** — "full build" (:146), "duration 20:30+2hr" (:257), "unpin sweep" (:328): assert mock-style ids but `sendButtons` now generates REAL Baileys message keys (`3EB0…`) because of the v7 nativeFlow relay path (parallel session's change). Live behavior is CORRECT; only expectations are stale. Fix belongs to the v7 button arc owner (assert `cardMsg.key.id`). Verified pre-existing by stashing our work and re-running — same 3 red on a clean tree
+- **Mass kicks trip WhatsApp `rate-overlimit` (429) if sends aren't paced** — the 429 surfaces inside `messages-send.js` (groupMetadata for mention rendering), kills goodbye image sends, AND makes `isBotAdmin`'s query fail → `.catch(() => false)` → false "bot is not admin" pauses. Always sleep ≥1.5-2s between kick/remove API calls (now built in); if a scan logs "not admin" right after heavy send activity, suspect 429 before believing it
+- **`catch` blocks can't see `let` declared inside their `try`** — handler.js welcome/goodbye fallbacks both crashed with `ReferenceError: displayName is not defined` whenever the image path failed; any new fallback that interpolates a try-scoped variable must have the declaration hoisted above the try (pattern now: `let displayName = participantNumber || 'User';` before `try`)
+- **Auto-kick policy is 14d window / grace 0 / minMessages 1 / NO approval hold** (since `02c33a6`) — flags arm EVERY scan (pre-pass, independent of the 7d notice cooldown); `!kickcfg preview` no longer "releases" anything; kick cap stays 10/group/hour so big queues drain over hours, not instantly
+- **firstSeen "too-new" guard delays never-messaged members** — members whose `first` was recorded at a feature deploy (many = 1791605961938 ≈ Oct 10) keep their flags but only become kick-eligible `first + inactiveWindow` later (≈ Oct 24 for 14d) — that's the guard working, not a stall
+- **MCP `files_edit` does surgical oldString/newString file edits on the box** — use it instead of rewriting huge JSON (kickConfig.json is 700 lines of firstSeen); `deployments_logs` result key is `lines` (not `logs`); `searchLogs` requires `lines ≥ 100`; console buffer ≈ 100 lines
 - **PowerShell renders git push stderr progress as NativeCommandError** — the push still succeeds; check `git status -sb` / the `old..new main -> main` line, don't trust the red text
 - **The box IP is now blocked/rate-limited by EVERY free provider** (probed 2026-10-15: tikapi 429/empty, embed 400, tikwm 403 on GET+POST with browser UA+ttwid cookie, ruhend rides tikwm so same 403, ssstik.io's own /abc endpoint returns `{"error":{"code":2108}}` "This request was logged"). Recovery path = set `TT_PROXY_URL` env (metadata JSON only, video bytes stay direct; `https-proxy-agent` already installed, `apiAxiosConfig()` wired into tikapi/tikwm/resolveCanonicalId)
 - **tikcdn.io serves a re-encoded ssstik promo clip, not the video** — content-hash/size denylists rot on every re-encode, so block the HOST (`isBlockedHost`) on every send path instead of chasing md5s. A provider that answers with the wrong video must be dropped from the chain entirely
@@ -92,7 +112,10 @@ Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, sett
 - **`commands/admin/setwelcomeimage.js`** — writes `utils/images/welcome/global.jpg`; **`handler.js` ~2368** — non-crew welcome chain global > per-group > default > group PP > Picsart
 - **`index.js`** — memory guard + `[MEM]` telemetry (~line 134); `_crewSyncSock` live ref + `CREW_SYNC_TRANSIENT` retry policy (~line 282); team-admin prune gated on clean scans (~line 711); `_crewSyncSock` refresh (line ~243)
 - **`utils/imageText.js`** — sharp cache/concurrency caps (process-global, loaded via handler.js at boot)
-- **`utils/autoProgression.js`** — `_roleIndex` (recruit tier), `getThresholds` clamp, CHECK/held-log noise gates
+- **`utils/autoProgression.js`** — flag pre-pass (scan-time flagging), `_dueForGroup`, `_noticeTail`, mass-hold REMOVED, 2s kick pacing; `_roleIndex` (recruit tier), `getThresholds` clamp, CHECK noise gates
+- **`utils/kickSettings.js`** — DEFAULTS 14d/0/1, grace-0 validation, `LIMITS.gracePeriod.min = 0` (hot-reloaded; tests snapshot/restore its DB file)
+- **`commands/admin/kickcfg.js`** — grace preset `0`/instant display, mass-ack UI removed
+- **`handler.js` ~2312/~2455** — `displayName` hoisted above welcome/goodbye tries (fallback catch-scope fix)
 - **`commands/crew/eventRsvp.js`** — `_unpinSock` live ref + transient-error unpin handling
 - **`commands/crew/crewHelpers.js`** — `resolveUser` mention-token strip; **`commands/crew/role.js`** lowercases roles
 - `commands/crew/eventWizard.js` (493 lines, extract before adding) / `eventRender.js` / `cpmData.js`
@@ -101,13 +124,16 @@ Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, sett
 - Any NEW reply with a command example must use `config.prefix || '.'`, never a literal `.`
 
 ## Next Steps
+- **Watch the auto-kick drain over the next hours** — each hourly scan kicks ≤10/group (paced); check `deployments_searchLogs` pattern `AUTO-KICKED|INACTIVE-CHECK` for "Done: N auto-kicked" summaries until "0 auto-kicked"; flags in `database/inactiveAlerts.json` shrink per group as kicks land (2 groups already fully drained after boot 2)
+- **~Oct 24**: the too-new wave — members first-seen ≈Oct 10 with no message history become eligible (`first + 14d`) and will auto-kick with no further input; if the owner wants them kept, that's a `!kickcfg` tweak or roster activity before then
+- Owner: if SSGENERAL (or any crew group) logs "AUTO-KICK paused … bot is not admin" on a QUIET scan (not right after a send burst), the bot genuinely lost admin there — re-promote it
+- Owner action — the one thing that restores most `.tt` links: set `TT_PROXY_URL` in the panel env (residential/mobile proxy, `http://user:pass@host:port`) then restart. Metadata JSON goes through the proxy (unblocks tikwm/tikapi), video bytes stay direct from TikTok CDN. Without it, links whose providers all block the box IP now honestly report "couldn't download" (by design — no more promo clip)
 - Smoke: `!menu anime` (or ⬅️ Back → ⬅️ More → ⛩️ Anime) → 4 `▶️` buttons; tap `▶️ waifu` → image arrives with no typing. Same for fun/games. NSFW stays text-only (by design)
-- **Owner action — the one thing that restores most `.tt` links**: set `TT_PROXY_URL` in the panel env (residential/mobile proxy, `http://user:pass@host:port`) then restart. Metadata JSON goes through the proxy (unblocks tikwm/tikapi), video bytes stay direct from TikTok CDN. Without it, links whose providers all block the box IP now honestly report "couldn't download" (by design — no more promo clip)
 - Smoke: `!tt <slideshow link>` (a `/photo/` URL) must now deliver SEPARATE image messages (📸 1/n captions) via tikapi→sendSlideshow — NO video bubble at all; regular `/video/` links still deliver a video unchanged
 - After the next reconnect flap: crew sync must log either success or ONE "socket not open — waiting for reconnect" line (no more 5× Connection Closed walls / attempt 2/4→4/4 storms); team-admin sync must log "Skipping prune — N/M group scans failed" instead of pruning
 - The 9 pruned team admins (from the pre-fix flap) self-heal on the next clean scan — confirm `[TEAM ADMIN SYNC] Auto-detected N team admins` re-appears after a stable reconnect; if not, owner re-runs a manual team-admin add
 - Watch `[MEM]` telemetry over the next day — steady ~131-138MB so far; guard fires only at ≥245MB×2 samples (panel relaunches); if restarts fire often, profile the real grower (Baileys stores vs external buffers) before raising thresholds
-- Owner action: run `!kickcfg preview` once — releases the 39-member mass-kill hold (kicks were HELD by design every cycle)
+- ~~Owner: run `!kickcfg preview` to release the mass-kill hold~~ — **OBSOLETE**: hold removed in `02c33a6`, kicks run unattended now
 - Owner: re-set the 4 junk KSSMS roles (`!crew role @user <role>`) — pre-fix entries still contain `@jid` prefixes and won't match any ladder (now logged as one "custom role not in ladder" line per team)
 - Smoke: KSSPS apply → accept now DMs `Ls0Vol…` (Private Security Team) link and auto-adds to jid `120363409819775730`; a non-crew group join shows the promoted global.jpg welcome
 - Smoke: after the next reconnect, `[CREW SYNC]` periodic runs must succeed (no more all-teams "Connection Closed"); an ended pinned event must unpin on the first sweep after reconnect
@@ -116,7 +142,8 @@ Crew dashboard, 14 admin mega-panels, WYR A/B buttons, launcher list views, sett
 - Legacy events (pre-`011a519`) have no `pinnedMsgId`/`eventDate` — will NOT auto-unpin
 
 ## Memory Keys
-mcp__claude-flow__memory_search { query: "stale sock reconnect timers crew sync unpin sweep recruit tier roleIndex mention token strip roles mass kill guard kickcfg preview", namespace: "project" }
+mcp__claude-flow__memory_search { query: "auto kick policy 14d window grace zero mass kill hold removed flag pre-pass rate-overlimit pacing isBotAdmin 429 displayName catch scope", namespace: "project" }
+mcp__claude-flow__memory_search { query: "stale sock reconnect timers crew sync unpin sweep recruit tier roleIndex mention token strip roles kickcfg preview", namespace: "project" }
 mcp__claude-flow__memory_search { query: "KSSPS KSSMP invite swap jid verification global welcome image sharp cache memory guard cgroup 256MB", namespace: "project" }
 mcp__claude-flow__memory_search { query: "team admin prune failed scans connection closed retry ladder dead socket readyState transient no penalty 503 flap", namespace: "project" }
 mcp__claude-flow__memory_search { query: "tiktok slideshow photo mode /photo/ url aweme id extraction tikapi tikwm 403 datacenter image_post_info play_addr rendition whatsapp", namespace: "project" }
