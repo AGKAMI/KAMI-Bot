@@ -20,6 +20,7 @@
  */
 
 const config = require('../config');
+const { pick, SLANG } = require('./format');
 const { generateWAMessageFromContent } = require('@whiskeysockets/baileys');
 
 const buttonHandlers = new Map();
@@ -88,6 +89,15 @@ function isOwnerOnly(btnId) {
     }
   }
   return false;
+}
+
+/**
+ * STYLE.md-conformant rejection for taps that fail a permission gate.
+ * Shared so every admin-gate warning (central gate, crew review cards)
+ * renders the same text; pick() runs per call so each warning varies.
+ */
+function adminOnlyText() {
+  return `🛡️ ADMIN ONLY\n\nThat button is for group admins only\n\n_${pick(SLANG.dismiss)}_`;
 }
 
 /**
@@ -342,9 +352,9 @@ async function handleButtonResponse(sock, msg, isAdmin) {
       const isSenderAdmin = typeof isAdmin === 'function' ? await isAdmin(sender, from) : false;
       if (!isSenderAdmin) {
         await sock.sendMessage(from, {
-          text: '\u274C *ADMIN ONLY*\n\u{1F6E1}\uFE0F This button is restricted to group admins.',
+          text: adminOnlyText(),
           mentions: [sender],
-        });
+        }, { quoted: msg });
         return true; // consumed the event, just rejected it
       }
     }
@@ -352,8 +362,9 @@ async function handleButtonResponse(sock, msg, isAdmin) {
     // Owner-only check — forged taps can't bypass (hub checks are UI, not security)
     if (isOwnerOnly(btnId) && !isOwnerJid(msg, sender)) {
       await sock.sendMessage(from, {
-        text: '\u{1F451} *OWNER ONLY*\n_This button is restricted to KAMI._',
-      });
+        text: `👑 OWNER ONLY\n\nThat button is for KAMI only\n\n_${pick(SLANG.dismiss)}_`,
+        mentions: [sender],
+      }, { quoted: msg });
       return true;
     }
 
@@ -394,4 +405,4 @@ let lastHandlerPromise = null;
 const getLastHandlerPromise = () => lastHandlerPromise;
 const listButtonHandlers = () => Array.from(buttonHandlers.keys());
 
-module.exports = { sendButtons, onButton, handleButtonResponse, isButtonModeOn, requireAdmin, requireOwner, isAdminOnly, isOwnerOnly, isOwnerJid, listButtonHandlers, getLastHandlerPromise };
+module.exports = { sendButtons, onButton, handleButtonResponse, isButtonModeOn, requireAdmin, requireOwner, isAdminOnly, isOwnerOnly, isOwnerJid, adminOnlyText, listButtonHandlers, getLastHandlerPromise };

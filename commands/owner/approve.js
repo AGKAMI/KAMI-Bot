@@ -49,6 +49,15 @@ module.exports = {
       // Add to approved list — canonical digits (database canonicalizes too)
       const added = database.addApprovedNumber(digits);
 
+      // One approval per number — a second run is a hard no-op: no welcome
+      // DM re-send, no re-unblock, no re-unban. extra.fail() marks the ⚠️.
+      if (!added) {
+        extra.fail();
+        return extra.reply(
+          `*⚠️ ALREADY APPROVED*\n\n_${digits} is already on the approved list._`
+        );
+      }
+
       // WhatsApp-unblock — tries PN/LID variants. We can't read the block list,
       // so we only report real failures instead of always claiming "UNBLOCKED".
       let unblockErr = '';
@@ -90,10 +99,9 @@ module.exports = {
       }
       if (sentKey) trackSendAck(sock, sentKey, 'APPROVE-DM');
 
-      // Confirm in chat with details
-      let reply = added
-        ? `*✅ APPROVED*\n\n_${digits} can use the bot in DMs now._`
-        : `*⚠️ ALREADY APPROVED*\n\n_${digits} is already approved._`;
+      // Confirm in chat with details — `added` is always true here (the
+      // duplicate case returned early above)
+      let reply = `*✅ APPROVED*\n\n_${digits} can use the bot in DMs now._`;
 
       if (wasBanned) {
         reply += `\n\n🔨 *BAN LIFTED* — off the bot ban list`;

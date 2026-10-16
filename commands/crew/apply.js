@@ -13,7 +13,7 @@ const config = require('../../config');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { TEAMS } = require('./crewForms');
 const { resolveUser } = require('./crewHelpers');
-const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { sendButtons, onButton, isOwnerJid, adminOnlyText } = require('../../utils/buttonHelper');
 const { createApplication } = require('./applyHelper');
 const { getTeamDisplayName } = require('../../utils/teamName');
 
@@ -204,8 +204,15 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
     }, { quoted: msg });
   }
 
-  // Unblock so DMs land + mark them temp-allowed (orders/apply only)
-  try { await updateBlockStatusSafe(sock, dmJid, 'unblock'); } catch (e) {}
+  // Unblock so DMs land + mark them temp-allowed (orders/apply only).
+  // Never swallow a failed unblock — the owner must see why the cards
+  // may not land, and the temp-allow alone can't free a blocked number.
+  let unblockErr = '';
+  try { await updateBlockStatusSafe(sock, dmJid, 'unblock'); }
+  catch (e) {
+    unblockErr = e.message || 'unknown error';
+    console.error('[APPLY-INVITE] unblock failed for', dmJid, '—', unblockErr);
+  }
   try { allowTempDm(dmJid); allowTempDm(targetJid); } catch (e) {}
 
   console.log('[APPLY-INVITE]', extra.sender, '→', targetJid, `(${resolved.method}) dm=${dmJid}`);
@@ -252,7 +259,10 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
       text:
         `📤 *TEAM SELECTION SENT*\n\n` +
         `📲 Dropped the team cards in ${mention(targetJid)}'s DMs — they pick a team and the form starts ${voice.tag('neutral')}\n\n` +
-        `_Picked up by: ${resolved.method}_${skipNote}`,
+        `_Picked up by: ${resolved.method}_${skipNote}` +
+        (unblockErr
+          ? `\n\n⚠️ *WhatsApp unblock failed:* ${unblockErr}\n_They may still be blocked — the cards may not reach them_`
+          : ''),
       mentions: [targetJid],
     }, { quoted: msg });
   } catch (reportErr) {
@@ -293,6 +303,28 @@ onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
     });
     return;
   }
+
+  // Same gate as crew:accept — the review card can sit in a group where
+  // non-admins see the buttons; unauthorized taps get warned, not prompted.
+  let authorized = isOwnerJid(msg, sender) || database.isTeamAdmin(sender);
+  if (!authorized && app) {
+    const teamGroupJid = config.crewTeams[app.team]?.jid || app.groupJid;
+    if (teamGroupJid) {
+      try {
+        const meta = await sock.groupMetadata(teamGroupJid).catch(() => null);
+        const { findParticipant } = require('../../utils/jidHelper');
+        const part = meta && findParticipant(meta.participants || [], [sender]);
+        authorized = !!(part && part.admin);
+      } catch (e) { /* no metadata — stays unauthorized */ }
+    }
+  }
+  if (!authorized) {
+    return sock.sendMessage(from, {
+      text: adminOnlyText(),
+      mentions: [sender],
+    }, { quoted: msg });
+  }
+
   await sock.sendMessage(from, {
     text: `❌ *Deny Application*\n\nDrop a reason for denying *${uid}*\n\`${p}crew deny ${uid} <reason>\``,
   });

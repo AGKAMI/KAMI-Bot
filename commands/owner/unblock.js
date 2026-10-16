@@ -3,8 +3,9 @@
  */
 
 const config = require('../../config');
+const database = require('../../database');
 const { bold, pick, SLANG, voice, mention } = require('../../utils/format');
-const { updateBlockStatusSafe, mentionJid, trackSendAck } = require('../../utils/jidHelper');
+const { updateBlockStatusSafe, mentionJid, trackSendAck, inBlocklist } = require('../../utils/jidHelper');
 
 const parsePhoneNumber = (input) => {
   if (!input) return null;
@@ -55,12 +56,63 @@ module.exports = {
         }
       }
 
-      // Unblock directly — fetchBlocklist is unreliable.
-      // Mentions can arrive as LID digits on the wrong server; try each variant.
+      // Real number when the target arrived as LID digits (used everywhere below)
+      const shown = mentionJid(target);
+      const shownDigits = shown.split('@')[0].replace(/\D/g, '');
+
+      // Read the real block list FIRST — the owner gets the truth: a ✅
+      // verdict for someone who was never blocked is worse than no answer.
+      let listOk = true;
+      let wasBlocked = true;
+      try {
+        wasBlocked = inBlocklist(await sock.fetchBlocklist(), target);
+      } catch (e) {
+        listOk = false; // can't read the list — best-effort unlock below
+        console.error('[UNBLOCK] fetchBlocklist failed:', e.message);
+      }
+
+      if (listOk && !wasBlocked) {
+        const already = !database.addApprovedNumber(shownDigits);
+        extra.fail();
+        return sock.sendMessage(extra.from, {
+          text:
+            `⚠️ NOT BLOCKED\n\n` +
+            `${mention(shown)} _ain't blocked — nothing to unlock_\n\n` +
+            (already
+              ? `✅ Already on the approved list — the DM guard won't touch them`
+              : `✅ Added to the approved list — the DM guard won't touch them`),
+          mentions: [shown],
+        }, { quoted: msg });
+      }
+
+      // Unblock directly — tries each PN/LID variant, throws if none took.
       await updateBlockStatusSafe(sock, target, 'unblock');
 
-      // Real number when the target arrived as LID digits (used for the DM too)
-      const shown = mentionJid(target);
+      // Verify against a fresh read — WhatsApp accepting the call is not proof.
+      if (listOk) {
+        try {
+          if (inBlocklist(await sock.fetchBlocklist(), target)) {
+            extra.fail();
+            return sock.sendMessage(extra.from, {
+              text:
+                `❌ ERROR\n\n` +
+                `WhatsApp took the unlock but ${mention(shown)} is *still on the block list*\n\n` +
+                `_Try again in a moment, ${voice.tag('err')}_`,
+              mentions: [shown],
+            }, { quoted: msg });
+          }
+        } catch (e) {
+          listOk = false; // can't prove it either way — say so below
+          console.error('[UNBLOCK] verify fetch failed:', e.message);
+        }
+      }
+
+      // Pair with the DM guard — without approval the stranger path re-blocks
+      // them on their very next DM and the unlock silently evaporates.
+      const newlyApproved = !!shownDigits && database.addApprovedNumber(shownDigits);
+      const approvalLine = newlyApproved
+        ? `✅ Added to the approved list — the DM guard won't re-block them`
+        : `✅ Already on the approved list — the DM guard won't re-block them`;
 
       // DM the unblocked user — failure is captured and SHOWN to the owner
       let dmErr = '';
@@ -82,8 +134,11 @@ module.exports = {
       }
       if (sentKey) trackSendAck(sock, sentKey, 'UNBLOCK-DM');
 
-      // Confirmation to owner (with the DM outcome attached)
-      let reply = `*✅ UNBLOCKED*\n\n${mention(shown)} _has been unblocked, ${voice.tag('affirm')}!_`;
+      // Confirmation to owner (verified state + DM outcome attached)
+      let reply = `*✅ UNBLOCKED*\n\n${mention(shown)} _has been unblocked, ${voice.tag('affirm')}!_\n\n${approvalLine}`;
+      if (!listOk) {
+        reply += `\n\n⚠️ *Block list unavailable — unlock attempted but not verified*`;
+      }
       if (dmErr) {
         extra.fail();
         reply += `\n\n⚠️ *Unlock DM failed:* ${dmErr}` +

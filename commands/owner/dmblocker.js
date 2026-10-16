@@ -98,6 +98,15 @@ module.exports = {
         // Add to approved list — canonical digits
         const added = database.addApprovedNumber(digits);
 
+        // One approval per number — duplicate run is a hard no-op (no
+        // re-DM, no re-unblock), same as .approve
+        if (!added) {
+          extra.fail();
+          return await sock.sendMessage(chatId, {
+            text: `*⚠️ ALREADY APPROVED*\n\n_${digits} is already on the approved list._`
+          }, { quoted: msg });
+        }
+
         // WhatsApp-unblock (PN/LID variants) — report real failures only
         let unblockErr = '';
         try { await updateBlockStatusSafe(sock, targetJid, 'unblock'); }
@@ -132,10 +141,8 @@ module.exports = {
         }
         if (sentKey) trackSendAck(sock, sentKey, 'DMBLOCKER-DM');
 
-        // Confirm in chat
-        let reply = added
-          ? `*✅ APPROVED*\n\n_${digits} can now use the bot._`
-          : `*⚠️ ALREADY APPROVED*\n\n_${digits} is already approved._`;
+        // Confirm in chat — `added` is always true here (duplicate returned early)
+        let reply = `*✅ APPROVED*\n\n_${digits} can now use the bot._`;
 
         if (wasBanned) {
           reply += `\n\n🔨 *BAN LIFTED* — off the bot ban list`;

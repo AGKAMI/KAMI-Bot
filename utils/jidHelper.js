@@ -183,6 +183,16 @@ const mentionJid = (jid) => {
   return jid;
 };
 
+// Membership test for sock.fetchBlocklist() results. List entries may be
+// PN or LID jids — match digits against every known variant of the target
+// so a LID-form entry can't read as "not blocked".
+const inBlocklist = (blocklist, jid) => {
+  if (!Array.isArray(blocklist) || !jid) return false;
+  const digitsOf = (v) => String(v || '').split('@')[0].split(':')[0].replace(/\D/g, '');
+  const mine = new Set(candidateJids(jid).map(digitsOf).filter(Boolean));
+  return blocklist.some(item => mine.has(digitsOf(item)));
+};
+
 // updateBlockStatus across PN/LID variants — returns the jid that worked
 const updateBlockStatusSafe = async (sock, jid, action) => {
   let lastError = null;
@@ -241,6 +251,7 @@ module.exports = {
   clearLidCache,
   candidateJids,
   mentionJid,
+  inBlocklist,
   updateBlockStatusSafe,
   trackSendAck
 };

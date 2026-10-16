@@ -249,7 +249,7 @@ onButton('menu:admin', async (sock, msg, from, sender) => {
   const clicker = sender || (msg && msg.key && msg.key.participant) || from;
   if (!(await isAdminClicker(sock, msg, from, clicker))) {
     return sendButtons(sock, from, {
-      text: `🛡️ *ADMINS ONLY*\n\n_Only group admins can use those commands._`,
+      text: `🛡️ ADMINS ONLY\n\n_Only group admins can use those commands._`,
       footer: config.botName || 'KAMI Bot',
       buttons: [BACK_MAIN],
     });
@@ -285,7 +285,7 @@ onButton('menu:owner', async (sock, msg, from, sender) => {
   const clicker = sender || (msg && msg.key && msg.key.participant) || from;
   if (!isOwnerClicker(msg, clicker)) {
     return sendButtons(sock, from, {
-      text: `👑 *KAMI ONLY*\n\n_Only KAMI has access to those commands._`,
+      text: `👑 KAMI ONLY\n\n_Only KAMI has access to those commands._`,
       footer: config.botName || 'KAMI Bot',
       buttons: [BACK_MAIN],
     });

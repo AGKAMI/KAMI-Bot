@@ -93,10 +93,15 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
     return { ok: false, error: 'db_error' };
   }
 
-  // 5. Unblock applicant so DM lands
+  // 5. Unblock applicant so DM lands — PN/LID variants via Safe (a raw call
+  // only tries one jid form and can silently miss). A failed unblock means
+  // the form DM below can't arrive, so it's logged loudly, never swallowed.
   try {
-    await sock.updateBlockStatus(applicantJid, 'unblock');
-  } catch (e) {}
+    const { updateBlockStatusSafe } = require('../../utils/jidHelper');
+    await updateBlockStatusSafe(sock, applicantJid, 'unblock');
+  } catch (e) {
+    console.error('[CREW APPLY] unblock failed for', applicantJid, '—', e.message);
+  }
 
   // 6. DM applicant with form + auto-start wizard
   try {
