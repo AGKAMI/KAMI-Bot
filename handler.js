@@ -2310,6 +2310,8 @@ const handleGroupUpdate = async (sock, update) => {
       if (bannedKicked.has(participantJid)) continue;
       
       if (action === 'add' && groupSettings.welcome) {
+        // Hoisted out of the try — the catch fallback below must read it too
+        let displayName = participantNumber || 'User';
         try {
           // Find participant info
           const participantInfo = groupMetadata.participants.find(p => {
@@ -2337,7 +2339,6 @@ const handleGroupUpdate = async (sock, update) => {
           }, 'en-US');
           
           // Resolve display name (username > contact name > formatted phone)
-          let displayName;
           try {
             displayName = resolveDisplayName(participantJid, realPhone, participantInfo, sock);
           } catch {
@@ -2452,6 +2453,8 @@ const handleGroupUpdate = async (sock, update) => {
           });
         }
       } else if (action === 'remove' && groupSettings.goodbye) {
+        // Hoisted out of the try — the catch fallback below must read it too
+        let displayName = participantNumber || 'User';
         try {
           // Find participant info
           const participantInfo = groupMetadata.participants.find(p => {
@@ -2467,7 +2470,6 @@ const handleGroupUpdate = async (sock, update) => {
           const realPhone = participantInfo?.phoneNumber || participantNumber;
           
           // Resolve display name (username > contact name > formatted phone)
-          let displayName;
           try {
             displayName = resolveDisplayName(participantJid, realPhone, participantInfo, sock);
           } catch {

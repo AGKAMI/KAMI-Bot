@@ -503,6 +503,8 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGro
           `Removed from *${teamName}*`,
         mentions: [targetId],
       }).catch(() => {});
+      // Pace removals — back-to-back kicks+messages trip WA rate-overlimit (429)
+      await new Promise(r => setTimeout(r, 2000));
     } catch (e) {
       console.error(`[INACTIVE-CHECK] Auto-kick failed in ${groupJid} for ${targetId}:`, e.message);
       // Keep flag — retry next cycle
@@ -849,6 +851,7 @@ const runGroupKick = async (sock, groupJid) => {
       _saveState();
       kicked++;
       console.log(`[INACTIVE-CHECK] AUTO-KICKED (manual) ${_digits(d.targetId)} from ${teamInfo.key || groupJid}`);
+      await new Promise(r => setTimeout(r, 1500)); // pace removals — see rate-overlimit note in the hourly pass
     } catch (e) {
       console.log(`[INACTIVE-CHECK] manual kick failed for ${_digits(d.targetId)}: ${e.message}`);
     }
