@@ -285,18 +285,20 @@ const stopProgressionEngine = () => {
 };
 
 // ── Inactive Member Notices & Auto-Kick ───────────────────
+// Policy: quiet ≥ inactiveWindow → flagged on the next scan (flagging is
+// independent of the notice cooldown), then kicked once gracePeriod has
+// passed (0 = same scan). No owner approval step.
 // Policy comes from utils/kickSettings.js — hot-reloaded every pass:
 //   effective = defaults ← global ← per-group override
 // Knobs: enabled, inactiveWindow, gracePeriod, minMessages,
-//        noticeCooldown (per-group) + maxKicksPerCycle (global cap).
+//        noticeCooldown (per-group) + maxKicksPerCycle (per-group cap).
 const kickSettings = require('./kickSettings');
 const fs = require('fs');
 const path = require('path');
 const ALERT_DB = path.join(__dirname, '..', 'database', 'inactiveAlerts.json');
 
-// v2 state: groups → last notice ts, flagged → { groupJid → { memberJid → flaggedAt } },
-// massAck → owner previewed a large due batch (kicks unheld for 12h)
-let _state = { groups: {}, flagged: {}, holdUntil: 0, massAck: null };
+// v2 state: groups → last notice ts, flagged → { groupJid → { memberJid → flaggedAt } }
+let _state = { groups: {}, flagged: {}, holdUntil: 0 };
 
 const _saveState = () => {
   try { fs.writeFileSync(ALERT_DB, JSON.stringify(_state, null, 2)); } catch (e) {}
@@ -309,14 +311,13 @@ const _loadState = () => {
         groups: raw.groups || {},
         flagged: raw.flagged || {},
         holdUntil: raw.holdUntil || 0,
-        massAck: raw.massAck || null,
       };
       return;
     }
   } catch (e) {} // no file yet
   // Fresh start — or v1 format ({ jid: ts }): hold every group for one cooldown
   // period so a deploy never re-notices a group that was just messaged.
-  _state = { groups: {}, flagged: {}, holdUntil: Date.now(), massAck: null };
+  _state = { groups: {}, flagged: {}, holdUntil: Date.now() };
   _saveState();
 };
 _loadState();
@@ -325,12 +326,6 @@ _loadState();
 // Group notices only — never DMs (cold DMs to non-contacts got all three
 // accounts restricted even at 5/cycle). Max 5 group notices per hourly cycle.
 const MAX_NOTICES_PER_CYCLE = 5;
-
-// Mass-kill guard: this many members instantly due → hold kicks until the
-// owner views Preview (settings shrunk / stats reset protection).
-const MASS_DUE_THRESHOLD = 10;
-const MASS_ACK_TTL = 12 * 60 * 60 * 1000; // preview acknowledges for 12h
-let _lastHoldCount = 0; // only re-log the ⚠️ when the due count changes
 
 // Identity across LID/PN variants — one person, one entry.
 const { buildComparableIds } = require('./jidHelper');
@@ -342,6 +337,12 @@ const _dayMs = 24 * 60 * 60 * 1000;
 
 const _teamLabel = (info) =>
   info.name || getTeamDisplayName(info.key || info.jid, null) || info.key || info.jid || 'Unknown';
+
+// Notice closing line — with grace 0 the flag itself is the warning.
+const _noticeTail = (s) =>
+  s.gracePeriod > 0
+    ? `_Pop in and stay active hey — inactive ${kickSettings.fmtDuration(s.gracePeriod)} more after this = removed_`
+    : `_Still quiet and you're removed automatically_`;
 
 const _collectTeams = () => {
   const merged = { ...(database.getTeamMap() || {}) };
@@ -428,7 +429,7 @@ const _computeDueFlags = (teamsByJid, participantsByGroup, inactiveByGroup, owne
 
 // ── Auto-kick pass ────────────────────────────────────────
 // Flag bookkeeping (left/active/owner/protected) always runs. Actual removals
-// honour: effective enabled, mass-kill hold, bot-admin, maxKicksPerCycle (per-group).
+// honour: effective enabled, bot-admin, maxKicksPerCycle (per-group).
 // Kick FAILURES keep flags (retry next cycle); terminal states delete them.
 const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGroup, ownerDigits, botDigits, now) => {
   const handler = require('../handler');
@@ -444,20 +445,6 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGro
 
   const due = _computeDueFlags(teamsByJid, participantsByGroup, inactiveByGroup, ownerDigits, botDigits, now);
   const eligible = due.filter(d => !d.reason);
-  const ackFresh = _state.massAck && (now - _state.massAck.at < MASS_ACK_TTL);
-  const holdKicks = eligible.length >= MASS_DUE_THRESHOLD && !ackFresh;
-
-  if (holdKicks) {
-    // Same count as last cycle → owner already saw the warning, stay quiet
-    if (eligible.length !== _lastHoldCount) {
-      _lastHoldCount = eligible.length;
-      console.log(
-        `[INACTIVE-CHECK] ⚠️ ${eligible.length} members due at once — kicks HELD until owner runs ${config.prefix || '.'}kickcfg preview (mass-kill guard)`
-      );
-    }
-  } else {
-    _lastHoldCount = 0;
-  }
 
   // Safe bookkeeping: clear flags that can never lead to a kick
   for (const d of due) {
@@ -468,8 +455,6 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGro
     if (_state.flagged[d.groupJid]) delete _state.flagged[d.groupJid][d.entryJid];
     _saveState();
   }
-
-  if (holdKicks) return kicked;
 
   const botAdminCache = new Map();
   const kickedByGroup = new Map();
@@ -510,10 +495,11 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGro
 
       const when = fmtDate(flaggedAt);
       console.log(`[INACTIVE-CHECK] AUTO-KICKED ${_digits(targetId)} from ${teamInfo.key || groupJid} (flagged ${when})`);
+      const graceBit = s.gracePeriod > 0 ? `, still quiet after ${kickSettings.fmtDuration(s.gracePeriod)}` : ', still quiet';
       await sock.sendMessage(groupJid, {
         text:
           `🗑️ *AUTO-KICK*\n\n` +
-          `@${_digits(targetId)} — got warned ${when}, still quiet after ${kickSettings.fmtDuration(s.gracePeriod)}\n` +
+          `@${_digits(targetId)} — got warned ${when}${graceBit}\n` +
           `Removed from *${teamName}*`,
         mentions: [targetId],
       }).catch(() => {});
@@ -623,11 +609,50 @@ const _scanAll = async (sock) => {
   return { teamsByJid, participantsByGroup, inactiveByGroup, byMember, ownerDigits, botDigits, now, rosterInactive };
 };
 
+// Members inactive in this group AND still on its roster — shared by the
+// flag pre-pass, the hourly notice loop, and the manual notice button.
+const _dueForGroup = (groupJid, byMember, pmap) => {
+  const out = [];
+  const seen = new Set();
+  for (const entry of byMember.values()) {
+    if (seen.has(entry)) continue;
+    seen.add(entry);
+    const inThis = entry.inactiveGroups.find(g => g.groupJid === groupJid);
+    if (!inThis) continue;
+    const memberDigits = [...new Set(buildComparableIds(entry.jid).map(v => _digits(v)).filter(Boolean))];
+    if (!memberDigits.some(d => pmap.has(d))) continue;
+    out.push({ entry, info: inThis });
+  }
+  return out;
+};
+
 const runInactiveCheck = async (sock) => {
   console.log('[INACTIVE-CHECK] Scanning all crew groups (cross-group)...');
 
   const scan = await _scanAll(sock);
   const { teamsByJid, participantsByGroup, inactiveByGroup, byMember, ownerDigits, botDigits, now, rosterInactive } = scan;
+
+  // Flag every inactive member the moment they cross the window — kicks track
+  // the inactivity clock, not the notice cooldown (notices only space out
+  // messages). Existing flags keep their earliest stamp, so re-flagging can
+  // never delay a kick.
+  let newlyFlagged = 0;
+  for (const [groupJid] of teamsByJid) {
+    const s = kickSettings.getEffective(groupJid);
+    if (!s.enabled) continue;
+    const pmap = participantsByGroup.get(groupJid);
+    if (!pmap || !pmap.size) continue;
+    const due = _dueForGroup(groupJid, byMember, pmap);
+    if (!due.length) continue;
+    if (!_state.flagged[groupJid]) _state.flagged[groupJid] = {};
+    for (const { entry } of due) {
+      if (!_state.flagged[groupJid][entry.jid]) {
+        _state.flagged[groupJid][entry.jid] = now;
+        newlyFlagged++;
+      }
+    }
+  }
+  if (newlyFlagged) _saveState();
 
   const kicked = await _runKickPass(sock, teamsByJid, participantsByGroup, inactiveByGroup, ownerDigits, botDigits, now);
 
@@ -664,18 +689,7 @@ const runInactiveCheck = async (sock) => {
     const teamName = _teamLabel(teamInfo);
 
     // Due members in THIS group (still in the group per pmap)
-    const teamDue = [];
-    const seenTeam = new Set();
-    for (const entry of byMember.values()) {
-      if (seenTeam.has(entry)) continue;
-      seenTeam.add(entry);
-      const inThisTeam = entry.inactiveGroups.find(g => g.groupJid === groupJid);
-      if (!inThisTeam) continue;
-      const memberDigits = [...new Set(buildComparableIds(entry.jid).map(v => _digits(v)).filter(Boolean))];
-      if (!memberDigits.some(d => pmap.has(d))) continue;
-      teamDue.push({ entry, info: inThisTeam });
-    }
-
+    const teamDue = _dueForGroup(groupJid, byMember, pmap);
     if (!teamDue.length) continue;
 
     const lines = teamDue.map(({ entry, info }) => {
@@ -692,7 +706,7 @@ const runInactiveCheck = async (sock) => {
         `━━━━━━━━━━━━━━━━\n` +
         `*${teamDue.length}* member${teamDue.length === 1 ? '' : 's'} quiet for ${kickSettings.fmtDuration(s.inactiveWindow)}+:\n\n` +
         `${lines.join('\n')}` +
-        `\n\n_Pop in and stay active hey — inactive ${kickSettings.fmtDuration(s.gracePeriod)} more after this = removed_ ${voice.lead('neutral')}`,
+        `\n\n${_noticeTail(s)} ${voice.lead('neutral')}`,
       mentions,
     });
 
@@ -721,7 +735,7 @@ const runInactiveCheck = async (sock) => {
 
 // ── Preview (dry run) ─────────────────────────────────────
 // Owner-only from the command side. No removals, no flag writes, no group
-// messages. Running it ACKS the mass-kill guard for 12h.
+// messages.
 const runKickPreview = async (sock) => {
   const scan = await _scanAll(sock);
   const { teamsByJid, participantsByGroup, inactiveByGroup, byMember, ownerDigits, botDigits, now, rosterInactive } = scan;
@@ -765,18 +779,12 @@ const runKickPreview = async (sock) => {
     kicks: acc.kicks + g.kickCount,
   }), { inactive: 0, flagged: 0, due: 0, kicks: 0 });
 
-  // Ack the mass-kill guard — owner has now seen the numbers
-  _state.massAck = { at: now };
-  _saveState();
-
   return {
     scannedAt: now,
     perGroup,
     totals,
     uniqueInactive: byMember.size,
     rosterHits: rosterInactive,
-    massHoldWouldApply: totals.kicks >= MASS_DUE_THRESHOLD,
-    massAckAt: now,
     maxPerCycle: kickSettings.getGlobal().maxKicksPerCycle,
   };
 };
@@ -794,10 +802,9 @@ const getLiveGroupName = async (sock, groupJid) => {
 };
 
 // ── Scoped single-group actions (owner button flows) ──────
-// Real kick for ONE group. Owner pressing the button after seeing the list
-// = informed consent → acks the mass-kill guard for this group. Honours
-// effective enabled, cap, bot-admin, protection re-add guard.
-// Kick failures keep flags; terminal states delete them (same as the pass).
+// Real kick for ONE group. Honours effective enabled, cap, bot-admin,
+// protection re-add guard. Kick failures keep flags; terminal states delete
+// them (same as the pass).
 const runGroupKick = async (sock, groupJid) => {
   const scan = await _scanAll(sock);
   const { teamsByJid, participantsByGroup, inactiveByGroup, ownerDigits, botDigits, now } = scan;
@@ -811,10 +818,6 @@ const runGroupKick = async (sock, groupJid) => {
   const due = _computeDueFlags(teamsByJid, participantsByGroup, inactiveByGroup, ownerDigits, botDigits, now)
     .filter(d => d.groupJid === groupJid);
   const eligible = due.filter(d => !d.reason);
-
-  // Owner just reviewed this group — acknowledge the mass guard
-  _state.massAck = { at: now };
-  _saveState();
 
   // Safe bookkeeping: clear flags that can never lead to a kick
   for (const d of due) {
@@ -856,7 +859,7 @@ const runGroupKick = async (sock, groupJid) => {
 
 // Send the activity notice to ONE group right now (owner button).
 // Same text + flag semantics as the hourly pass, but ignores cooldown —
-// an explicit owner press is consent to notify. Flags start the grace clock.
+// an explicit owner press is consent to notify. Flags keep the earliest stamp.
 const sendGroupNotice = async (sock, groupJid) => {
   const scan = await _scanAll(sock);
   const { teamsByJid, participantsByGroup, byMember, now } = scan;
@@ -870,18 +873,7 @@ const sendGroupNotice = async (sock, groupJid) => {
   const pmap = participantsByGroup.get(groupJid);
   if (!pmap || pmap.size === 0) return { error: 'no roster data for that group' };
 
-  const teamDue = [];
-  const seen = new Set();
-  for (const entry of byMember.values()) {
-    if (seen.has(entry)) continue;
-    seen.add(entry);
-    const inThis = entry.inactiveGroups.find(g => g.groupJid === groupJid);
-    if (!inThis) continue;
-    const memberDigits = [...new Set(buildComparableIds(entry.jid).map(v => _digits(v)).filter(Boolean))];
-    if (!memberDigits.some(d => pmap.has(d))) continue;
-    teamDue.push({ entry, info: inThis });
-  }
-
+  const teamDue = _dueForGroup(groupJid, byMember, pmap);
   if (!teamDue.length) return { notified: 0 };
 
   const lines = teamDue.map(({ entry, info }) => {
@@ -898,7 +890,7 @@ const sendGroupNotice = async (sock, groupJid) => {
       `━━━━━━━━━━━━━━━━\n` +
       `*${teamDue.length}* member${teamDue.length === 1 ? '' : 's'} quiet for ${kickSettings.fmtDuration(s.inactiveWindow)}+:\n\n` +
       `${lines.join('\n')}` +
-      `\n\n_Pop in and stay active hey — inactive ${kickSettings.fmtDuration(s.gracePeriod)} more after this = removed_ ${voice.lead('neutral')}`,
+      `\n\n${_noticeTail(s)} ${voice.lead('neutral')}`,
     mentions,
   });
 
@@ -938,7 +930,6 @@ const getKickStateSummary = () => {
     totalFlags,
     holdUntil: _state.holdUntil || 0,
     lastNotice: { ..._state.groups },
-    massAckAt: _state.massAck?.at || 0,
   };
 };
 

@@ -27,7 +27,7 @@ const KEYMAP = {
 
 const PRESETS = {
   window: ['1w', '2w', '1m', '2m', '3m', '6m', '1y'],
-  grace: ['1d', '3d', '7d', '14d', '30d'],
+  grace: ['0', '1d', '3d', '7d', '14d', '30d'],
   msgs: ['1', '5', '10', '20'],
   cooldown: ['3d', '7d', '14d'],
   maxkicks: ['3', '5', '10', '15', '25'],
@@ -42,7 +42,9 @@ const KEY_LABELS = {
 };
 
 const fmtVal = (key, val) =>
-  key === 'msgs' || key === 'maxkicks' ? String(val) : kickSettings.fmtDuration(val);
+  key === 'msgs' || key === 'maxkicks' ? String(val)
+    : key === 'grace' && !val ? 'instant'
+    : kickSettings.fmtDuration(val);
 
 const currentVal = (scope, key) => {
   const s = scope === 'global' ? kickSettings.getGlobal() : kickSettings.getEffective(scope);
@@ -130,7 +132,7 @@ const buildDashboardText = (scope, label) => {
     `━━━━━━━━━━━━━━━━`,
     `Status: ${s.enabled ? '✅ enabled' : '🔕 disabled'}`,
     `⏳ Inactive window: *${kickSettings.fmtDuration(s.inactiveWindow)}*`,
-    `⏰ Grace after notice: *${kickSettings.fmtDuration(s.gracePeriod)}*`,
+    `⏰ Grace after flag: *${s.gracePeriod ? kickSettings.fmtDuration(s.gracePeriod) : 'instant (next scan)'}*`,
     `💬 Min messages in window: *${s.minMessages}*`,
     `🔁 Notice cooldown: *${kickSettings.fmtDuration(s.noticeCooldown)}*`,
     `🛡️ Kick cap: *${s.maxKicksPerCycle}* per cycle`,
@@ -144,9 +146,6 @@ const buildDashboardText = (scope, label) => {
       for (const g of withOv) {
         lines.push(`• ${g.name} — ${g.flags} flag(s) — [${g.overrideKeys.join(', ')}]`);
       }
-    }
-    if (summary.massAckAt && Date.now() - summary.massAckAt < 12 * 60 * 60 * 1000) {
-      lines.push('', `⚠️ Mass-ack active — large kick batches allowed for 12h`);
     }
   } else {
     const g = summary.per.find(x => x.jid === scope);
@@ -255,7 +254,7 @@ const buildGroupScreenText = (name, g, eff) => {
     `🔍 *${name}*`,
     `━━━━━━━━━━━━━━━━`,
     `Status: ${g.enabled ? '✅ enabled' : '🔕 disabled'}`,
-    `⏳ Window *${kickSettings.fmtDuration(eff.inactiveWindow)}* · grace *${kickSettings.fmtDuration(eff.gracePeriod)}* · min *${eff.minMessages}* msg · cap *${g.cap}*/cycle`,
+    `⏳ Window *${kickSettings.fmtDuration(eff.inactiveWindow)}* · grace *${eff.gracePeriod ? kickSettings.fmtDuration(eff.gracePeriod) : 'instant'}* · min *${eff.minMessages}* msg · cap *${g.cap}*/cycle`,
     ``,
     `👥 Inactive: *${g.inactiveCount}* · flagged: *${g.flaggedCount}* · due now: *${g.dueCount}* · kicks: *${g.kickCount}*`,
   ];
@@ -274,7 +273,7 @@ const buildGroupScreenText = (name, g, eff) => {
 
 const sendGroupScreen = async (sock, msg, to, groupJid, pickerId) => {
   const name = await engine().getLiveGroupName(sock, groupJid);
-  const p = await engine().runKickPreview(sock); // dry run; acks the mass guard
+  const p = await engine().runKickPreview(sock); // dry run — no flag writes
   const g = p.perGroup.find(x => x.jid === groupJid);
   if (!g) {
     return sock.sendMessage(to, { text: `⚠️ *${name}* is no longer a crew group — dropped from the list.` });
@@ -392,7 +391,13 @@ module.exports = {
         return extra.reply(had ? `♻️ This group now inherits global settings.` : `ℹ️ This group had no override.`);
       }
       kickSettings.resetGlobal();
-      return extra.reply(`♻️ Global settings reset to defaults (30d window · 14d grace · 1 msg · 7d cooldown · cap 10).`);
+      const d = kickSettings.getGlobal();
+      return extra.reply(
+        `♻️ Global settings reset to defaults ` +
+        `(${kickSettings.fmtDuration(d.inactiveWindow)} window · ` +
+        `${d.gracePeriod ? kickSettings.fmtDuration(d.gracePeriod) : 'instant'} grace · ` +
+        `${d.minMessages} msg · ${kickSettings.fmtDuration(d.noticeCooldown)} cooldown · cap ${d.maxKicksPerCycle}).`
+      );
     }
 
     if (sub === 'set') {
@@ -417,7 +422,9 @@ module.exports = {
       const res = kickSettings.update(scope, patch);
       if (!res.ok) return extra.reply(`❌ ${res.error}`);
       const label = scope === 'global' ? 'Global' : 'This group';
-      return extra.reply(`✅ *${KEY_LABELS[key]}* → *${fmtVal(key, kickSettings.validate(KEYMAP[key], value).value || currentVal(scope, key))}* _(${label})_`);
+      const vres = kickSettings.validate(KEYMAP[key], value);
+      const shown = vres.ok ? vres.value : currentVal(scope, key);
+      return extra.reply(`✅ *${KEY_LABELS[key]}* → *${fmtVal(key, shown)}* _(${label})_`);
     }
 
     // Default: dashboard — the group you're in when in a crew group, else global
@@ -493,7 +500,7 @@ onButton('kickcfg:custom', ow(async (sock, msg, from, sender, btnId) => {
         ? `_Plain number = messages required inside the window._`
         : key === 'maxkicks'
           ? `_Plain number = kicks allowed per hourly cycle._`
-          : `_Units: d / w / m / y (m = 30d, y = 365d). E.g. 25d, 6w, 1m, 1y_`),
+          : `_Units: d / w / m / y (m = 30d, y = 365d)${key === 'grace' ? ' — or 0 for instant' : ''}. E.g. 25d, 6w, 1m, 1y_`),
     footer: 'Auto-Kick · owner only',
     buttons: [{ id: `kickcfg:menu:${key}:${scopeCode || 'l'}`, text: '⬅️ Back' }],
   }, msg);
@@ -587,7 +594,7 @@ onButton('kickcfg:gn', ow(async (sock, msg, from, sender, btnId) => {
     return sock.sendMessage(sender, { text: `ℹ️ Nobody inactive in *${name}* right now.` });
   }
   await sock.sendMessage(sender, {
-    text: `🔔 Notice posted in *${name}* — ${res.notified} member${res.notified === 1 ? '' : 's'} flagged, grace clock running.`,
+    text: `🔔 Notice posted in *${name}* — ${res.notified} member${res.notified === 1 ? '' : 's'} listed and flagged.`,
   });
   return sendGroupScreen(sock, msg, sender, groupJid, null);
 }));

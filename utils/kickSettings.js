@@ -18,8 +18,8 @@ const DAY = 24 * 60 * 60 * 1000;
 
 const DEFAULTS = {
   enabled: true,
-  inactiveWindow: 30 * DAY,   // quiet this long → named in notice
-  gracePeriod: 14 * DAY,      // after notice, still quiet this long → kicked
+  inactiveWindow: 14 * DAY,   // quiet this long → named in notice + kick due
+  gracePeriod: 0,             // wait after flagging before kick (0 = same scan)
   minMessages: 1,             // msgs inside the window to count as active
   noticeCooldown: 7 * DAY,    // per-group spacing between notices
   maxKicksPerCycle: 10,       // default kicks per hourly cycle (groups may override)
@@ -30,7 +30,7 @@ const GROUP_OVERRIDABLE = ['enabled', 'inactiveWindow', 'gracePeriod', 'minMessa
 
 const LIMITS = {
   inactiveWindow: { min: DAY, max: 5 * 365 * DAY },
-  gracePeriod: { min: DAY, max: 90 * DAY },
+  gracePeriod: { min: 0, max: 90 * DAY },
   minMessages: { min: 1, max: 100 },
   noticeCooldown: { min: DAY, max: 90 * DAY },
   maxKicksPerCycle: { min: 1, max: 50 },
@@ -110,6 +110,8 @@ const _validate = (key, raw) => {
   let ms;
   if (typeof raw === 'number') ms = raw;
   else ms = _parseDuration(raw);
+  // gracePeriod accepts a literal zero (instant kick, no wait)
+  if (ms === null && key === 'gracePeriod' && /^0(\s*d(?:ay)?s?)?$/i.test(String(raw).trim())) ms = 0;
   if (ms === null) return { ok: false, error: 'use e.g. 7d, 2w, 1m, 1y' };
   const lim = LIMITS[key];
   if (ms < lim.min || ms > lim.max) {
