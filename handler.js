@@ -719,21 +719,18 @@ const handleMessage = async (sock, msg) => {
                 if (database.hasPendingApplicationsForAnyTeam(dmSender)) {
                   // Team admin with pending apps — let through (accept/deny restriction at command level)
                 } else {
-                  // Team admin with NO pending apps — block them
+                  // Team admin with NO pending apps — refuse, but NEVER block:
+                  // their line opens the moment an application lands, and
+                  // blocking one kills accept/deny outright.
                   try {
                     await sock.sendMessage(from, {
                       text: `🚫 *NO PENDING APPLICATIONS*\n\n` +
-                            `Eish, there's nothing waiting on your teams.\n` +
-                            `I'll free you up the moment somebody applies.\n\n` +
-                            `⚠️ *One more message and your number is BLOCKED* ⛔🔒`
+                            `You can't text this bot right now — nothing's waiting on your teams\n` +
+                            `Your line is only open to *accept/deny applications*\n` +
+                            `Text me the moment somebody applies and I'll let you in`
                     });
                   } catch (warnErr) {
-                    console.error('[DMBLOCKER] admin warning send failed:', warnErr.message);
-                  }
-                  try {
-                    await updateBlockStatusSafe(sock, dmSender, 'block');
-                  } catch (blockErr) {
-                    console.error('[DMBLOCKER] admin block failed:', blockErr.message);
+                    console.error('[DMBLOCKER] admin refusal send failed:', warnErr.message);
                   }
                   verdictReact(sock, from, msg, '🚫');
                   return;

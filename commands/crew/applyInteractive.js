@@ -12,7 +12,7 @@ const { TEAMS, buildAdminNotice } = require('./crewForms');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { SSRS, KSSPS, KSSMP, KSSMS, shuffle } = require('./questionPools');
-const { buildComparableIds } = require('../../utils/jidHelper');
+const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
 const { getTeamDisplayName } = require('../../utils/teamName');
 
 // ── In-memory session store ──────────────────────────────────
@@ -272,14 +272,47 @@ async function submitApplication(sock, session) {
         ? members.participants.filter(p => p.admin).map(p => p.id)
         : []);
 
+      // The owner is the backstop reviewer — they get the notice directly
+      // even when they aren't (or can't be reached as) a group admin.
+      // A silently dropped review notice is how borderline apps rot.
+      const ownerDigits = [...new Set(
+        (config.ownerNumber || [])
+          .map(n => {
+            try { return String(database.canonicalNumber(n) || '').replace(/\D/g, ''); }
+            catch { return ''; }
+          })
+          .filter(Boolean)
+      )];
+      const pingOwner = async (covered = new Set()) => {
+        let any = false;
+        for (const od of ownerDigits) {
+          if (covered.has(od)) continue;
+          try {
+            await sendButtons(sock, od + '@s.whatsapp.net', {
+              text: noticeText,
+              footer: `${session.teamKey} Applications`,
+              buttons: noticeButtons,
+            });
+            covered.add(od);
+            any = true;
+          } catch (e) {
+            console.error(`[CREW WIZARD] owner DM failed ${od}:`, e.message);
+          }
+        }
+        return any;
+      };
+
       if (admins.length > 0) {
         let dmed = 0;
+        // PN digits of admins we actually reached — the owner gets skipped
+        // below when this loop already covered them
+        const coveredPn = new Set();
+        const pnOf = j => String(j || '').split('@')[0].replace(/\D/g, '');
         for (const rawAdminJid of admins) {
           // Resolve LID → phone JID for DMs
           const adminJid = (() => {
             if (!rawAdminJid) return rawAdminJid;
             if (rawAdminJid.includes('@s.whatsapp.net')) return rawAdminJid;
-            const { normalizeJidWithLid } = require('../../utils/jidHelper');
             const resolved = normalizeJidWithLid(rawAdminJid);
             if (resolved && resolved.includes('@s.whatsapp.net')) return resolved;
             const stripped = rawAdminJid.replace(/:\d+@/, '@');
@@ -293,22 +326,70 @@ async function submitApplication(sock, session) {
               buttons: noticeButtons,
             });
             dmed++;
+            coveredPn.add(pnOf(adminJid));
+            coveredPn.add(pnOf(rawAdminJid));
           } catch (e) {
             console.error(`[CREW WIZARD] admin DM failed ${adminJid}:`, e.message);
           }
         }
-        adminMsg = dmed > 0;
+        const ownerHit = await pingOwner(coveredPn);
+        // Every DM bounced → last resort: post into the team group
+        if (dmed === 0 && !ownerHit) {
+          try {
+            await sendButtons(sock, teamGroupJid, {
+              text: noticeText,
+              footer: `${session.teamKey} Applications`,
+              buttons: noticeButtons,
+            });
+            dmed++;
+          } catch (e) {
+            console.error('[CREW WIZARD] group fallback failed:', e.message);
+          }
+        }
+        adminMsg = dmed > 0 || ownerHit;
       } else {
-        await sendButtons(sock, teamGroupJid, {
-          text: noticeText,
-          footer: `${session.teamKey} Applications`,
-          buttons: noticeButtons,
-        });
-        adminMsg = true;
+        // No admins in the group — owner still gets their DM first so a
+        // failed group post can't take the notice down with it
+        const ownerHit = await pingOwner();
+        try {
+          await sendButtons(sock, teamGroupJid, {
+            text: noticeText,
+            footer: `${session.teamKey} Applications`,
+            buttons: noticeButtons,
+          });
+          adminMsg = true;
+        } catch (e) {
+          console.error('[CREW WIZARD] group notice failed:', e.message);
+          adminMsg = ownerHit;
+        }
       }
     } catch (e) {
       console.error('[CREW WIZARD] admin notify failed:', e.message);
       adminMsg = false;
+    }
+  }
+
+  if (adminMsg === null) {
+    // No stored app record to build a notice from — admins got nothing,
+    // so the owner hears about it directly instead of finding out later
+    adminMsg = false;
+    console.error(`[CREW WIZARD] no admin notice built for ${session.appUid} (team ${session.teamKey}) — alerting owner`);
+    try {
+      const od = String(database.canonicalNumber((config.ownerNumber || [])[0]) || '').replace(/\D/g, '');
+      if (od) {
+        await sock.sendMessage(od + '@s.whatsapp.net', {
+          text:
+            `━━━━━━━━━━━━━━━━\n` +
+            `⏳ *APPLICATION SUBMITTED — NO REVIEW NOTICE SENT*\n` +
+            `━━━━━━━━━━━━━━━━\n\n` +
+            `🆔 App ID: *${session.appUid}*\n` +
+            `🏢 Team: *${getTeamDisplayName(session.teamKey)}*\n` +
+            `👤 ${mention(session.applicantJid)}\n\n` +
+            `_The application record is missing, so nobody was pinged — their answers likely weren't saved._`,
+        });
+      }
+    } catch (e) {
+      console.error('[CREW WIZARD] owner alert failed:', e.message);
     }
   }
 
