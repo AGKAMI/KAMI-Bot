@@ -1,5 +1,6 @@
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
-const quiz = new Map();
+const TTLMap = require('../../utils/ttlMap');
+const quiz = new TTLMap('mathquiz', 30 * 60 * 1000); // 30m
 module.exports = {
   name: 'mathquiz',
   reactions: { received: '➕', done: '🎓' },

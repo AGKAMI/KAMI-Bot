@@ -11,7 +11,8 @@ const { pick, SLANG, voice } = require('../../utils/format');
 const TEAM_IMAGES_DIR = path.join(__dirname, '../../utils/team_images');
 
 // In-memory pending state: { ownerJid: { teamKey, chatJid, msgId } }
-const pending = new Map();
+const TTLMap = require('../../utils/ttlMap');
+const pending = new TTLMap('setteamimage-pending', 10 * 60 * 1000); // 10m
 const PENDING_TTL = 2 * 60 * 1000; // 2 minutes
 
 function getPending(ownerJid) {

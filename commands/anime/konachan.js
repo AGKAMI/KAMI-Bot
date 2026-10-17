@@ -15,6 +15,7 @@ module.exports = {
   name: 'konachan',
   reactions: { received: '🎀', generating: '⬇️', done: '🖼️' },
   aliases: ['konachansfw'],
+  nsfw: true,
   category: 'anime',
   description: 'Get a random konachan SFW anime images',
   usage: 'konachan',

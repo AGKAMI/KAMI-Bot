@@ -14,6 +14,7 @@ module.exports = {
   name: 'milf',
   reactions: { received: '🔥', generating: '⬇️', done: '💋' },
   aliases: ['milfnsfw'],
+  nsfw: true,
   category: 'anime',
   description: 'Get a random milf NSFW anime images',
   usage: 'milf',

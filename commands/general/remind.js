@@ -1,14 +1,75 @@
 /**
  * Remind Command - Set reminders for the group with list and cancel support
+ * Backed by utils/reminderStore — pending reminders survive restarts
+ * (database/reminders.json); index.js re-schedules them on boot and
+ * overdue ones fire immediately.
  */
 
 const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const store = require('../../utils/reminderStore');
 
-const activeReminders = new Map();
 const MAX_REMINDERS = 5;
-const firedReminders = new Map(); // reminderId → fired reminder data (1h TTL, for snooze)
+const SNOOZE_TTL = 60 * 60 * 1000; // snooze button valid 1h after firing
+const firedReminders = new Map(); // reminderId → fired reminder data (in-memory only — snooze is ephemeral)
+
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+const fireReminder = async (sock, r, meta = {}) => {
+    firedReminders.set(r.id, {
+        message: r.message,
+        targetJids: r.targetJids,
+        groupId: r.chatJid,
+        ms: r.ms,
+        amount: r.amount,
+        fullUnit: r.fullUnit,
+    });
+    setTimeout(() => firedReminders.delete(r.id), SNOOZE_TTL);
+
+    const lateNote = meta.late ? `\n⚠️ _I was down when this was due — sending late_` : '';
+    try {
+        await sendButtons(sock, r.chatJid, {
+            text: [
+                `⏰ *REMINDER TIME!*`,
+                ``,
+                `👤 *For:* ${r.targetJids.map(j => mention(j)).join(', ')}`,
+                `📝 *Message:* ${r.message}`,
+                ``,
+                `_Set ${r.amount} ${r.fullUnit} ago — ${voice.tag('neutral')}_${lateNote}`
+            ].join('\n'),
+            mentions: r.targetJids,
+            footer: 'Reminder',
+            buttons: [
+                { id: `remind:again:${r.id}`, text: '⏰ Remind Again' },
+                { id: `remind:done:${r.id}`, text: '✅ Done' },
+            ],
+        });
+    } catch (e) {
+        console.error('[Remind] Failed to send reminder:', e.message);
+    }
+};
+
+// Route store fires through our message builder (registered at module load,
+// which happens at boot via commandLoader — before index.js restore)
+store.setFireHandler(fireReminder);
+
+// Re-arm the snooze timer through the store so a snoozed reminder also
+// survives a restart mid-snooze
+const scheduleSnooze = (sock, id, fired) => {
+    store.add(sock, {
+        id,
+        chatJid: fired.groupId,
+        sender: fired.targetJids[0],
+        targetJids: fired.targetJids,
+        message: fired.message,
+        dueAt: Date.now() + fired.ms,
+        ms: fired.ms,
+        amount: fired.amount,
+        fullUnit: fired.fullUnit,
+        snoozed: true,
+    });
+};
 
 module.exports = {
     name: 'remind',
@@ -26,11 +87,7 @@ module.exports = {
             const from = extra.from;
             const sender = extra.sender;
 
-            if (!activeReminders.has(from)) {
-                activeReminders.set(from, []);
-            }
-
-            const groupReminders = activeReminders.get(from);
+            const groupReminders = store.listForGroup(from);
 
             if (args.length >= 1 && args[0].toLowerCase() === 'list') {
                 if (groupReminders.length === 0) {
@@ -51,8 +108,9 @@ module.exports = {
                 for (let i = 0; i < groupReminders.length; i++) {
                     const r = groupReminders[i];
                     const senderTag = mention(r.sender);
+                    const minsLeft = Math.max(1, Math.round((r.dueAt - Date.now()) / 60000));
                     lines.push(`*#${i + 1}* ${senderTag} — ${r.message}`);
-                    lines.push(`⏰ Fires in ${r.timeLabel}`);
+                    lines.push(`⏰ Fires in ~${minsLeft}m (${r.msLabel || r.amount + ' ' + r.fullUnit})`);
                 }
 
                 lines.push(``, `_To cancel: ${prefix}remind cancel <number>_`);
@@ -76,8 +134,7 @@ module.exports = {
                 }
 
                 const reminder = groupReminders[index];
-                clearTimeout(reminder.timeout);
-                groupReminders.splice(index, 1);
+                store.cancel(reminder.id);
 
                 return extra.reply(
                     `✅ *SUCCESS*\n\n` +
@@ -98,7 +155,8 @@ module.exports = {
                     `• ${prefix}remind list\n` +
                     `• ${prefix}remind cancel <number>\n\n` +
                     `⏳ *Units:* s (seconds), m (minutes), h (hours), d (days)\n` +
-                    `📋 *Max active reminders:* ${MAX_REMINDERS}`
+                    `📋 *Max active reminders:* ${MAX_REMINDERS}\n` +
+                    `💾 _Reminders survive bot restarts_`
                 );
             }
 
@@ -152,7 +210,7 @@ module.exports = {
             }
 
             const messageText = args.slice(1).join(' ');
-            const reminderId = Date.now().toString(36);
+            const reminderId = newId();
 
             // Resolve who to remind: a mentioned user, or the command sender if no mention.
             const ctxM = msg.message?.extendedTextMessage?.contextInfo;
@@ -167,49 +225,16 @@ module.exports = {
               .replace(/\s+/g, ' ')
               .trim() || `Reminder for ${mention(targetJid)}`;
 
-            const timeout = setTimeout(async () => {
-                const idx = groupReminders.findIndex(r => r.id === reminderId);
-                if (idx !== -1) groupReminders.splice(idx, 1);
-
-                // Keep the fired reminder briefly so the snooze button can re-create it
-                firedReminders.set(reminderId, {
-                    message: cleanMessage,
-                    targetJids,
-                    groupId: from,
-                    ms,
-                    amount,
-                    fullUnit,
-                });
-                setTimeout(() => firedReminders.delete(reminderId), 60 * 60 * 1000);
-
-                try {
-                    await sendButtons(sock, from, {
-                        text: [
-                            `⏰ *REMINDER TIME!*`,
-                            ``,
-                            `👤 *For:* ${targetJids.map(j => mention(j)).join(', ')}`,
-                            `📝 *Message:* ${cleanMessage}`,
-                            ``,
-                            `_Set ${amount} ${fullUnit} ago — ${voice.tag('neutral')}_`
-                        ].join('\n'),
-                        mentions: targetJids,
-                        footer: 'Reminder',
-                        buttons: [
-                            { id: `remind:again:${reminderId}`, text: '⏰ Remind Again' },
-                            { id: `remind:done:${reminderId}`, text: '✅ Done' },
-                        ],
-                    });
-                } catch (e) {
-                    console.error('[Remind] Failed to send reminder:', e.message);
-                }
-            }, ms);
-
-            groupReminders.push({
+            store.add(sock, {
                 id: reminderId,
+                chatJid: from,
                 sender: targetJid,
+                targetJids,
                 message: cleanMessage,
-                timeLabel: `${amount} ${fullUnit}`,
-                timeout
+                dueAt: Date.now() + ms,
+                ms,
+                amount,
+                fullUnit,
             });
 
             await sock.sendMessage(from, {
@@ -242,43 +267,8 @@ onButton('remind:again:', async (sock, msg, from, sender, btnId) => {
   if (!isTarget && !isOwnerBtn) return;
 
   firedReminders.delete(reminderId);
-  const newId = Date.now().toString(36);
-
-  const timeout = setTimeout(async () => {
-    try {
-      await sendButtons(sock, from, {
-        text: [
-            `⏰ *REMINDER TIME!*`,
-            ``,
-            `👤 *For:* ${fired.targetJids.map(j => mention(j)).join(', ')}`,
-            `📝 *Message:* ${fired.message}`,
-            ``,
-            `_Snoozed ${fired.amount} ${fired.fullUnit} — ${voice.tag('neutral')}_`
-        ].join('\n'),
-        mentions: fired.targetJids,
-        footer: 'Reminder',
-        buttons: [
-            { id: `remind:again:${newId}`, text: '⏰ Remind Again' },
-            { id: `remind:done:${newId}`, text: '✅ Done' },
-        ],
-      });
-    } catch (e) {
-      console.error('[Remind] snooze fire failed:', e.message);
-    }
-    firedReminders.delete(newId);
-    setTimeout(() => firedReminders.delete(newId), 60 * 60 * 1000);
-  }, fired.ms);
-
-  firedReminders.set(newId, {
-    message: fired.message,
-    targetJids: fired.targetJids,
-    groupId: from,
-    ms: fired.ms,
-    amount: fired.amount,
-    fullUnit: fired.fullUnit,
-    timeout,
-  });
-  setTimeout(() => firedReminders.delete(newId), Math.max(fired.ms, 60000) + 60 * 60 * 1000);
+  const snoozeId = newId();
+  scheduleSnooze(sock, snoozeId, fired);
 
   await sock.sendMessage(from, {
     text: `⏰ *SNOOZED*\n\n${mention(sender)} pushed the reminder to ${fired.amount} ${fired.fullUnit} from now`,

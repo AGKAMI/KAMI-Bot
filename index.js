@@ -751,6 +751,14 @@ async function startBot() {
         console.log(`✅ Unblocked ${unblockAll.length} numbers on startup`);
       } catch (e) {}
 
+      // Re-arm persisted reminders — overdue ones fire immediately (they're
+      // stored with absolute dueAt timestamps in database/reminders.json)
+      try {
+        require('./utils/reminderStore').restore(sock);
+      } catch (e) {
+        console.error('[REMINDERS] restore failed:', e.message);
+      }
+
       // Crew sync — groups are the source of truth for rosters.
       // First run 60s after connect (the socket can't serve groupMetadata
       // the instant 'open' fires), then every 30 min (registered once

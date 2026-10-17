@@ -14,6 +14,7 @@ module.exports = {
   name: 'loli',
   reactions: { received: '🍬', generating: '⬇️', done: '🎀' },
   aliases: ['lolinsfw'],
+  nsfw: true,
   category: 'anime',
   description: 'Get a random loli NSFW anime images',
   usage: 'loli',

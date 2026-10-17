@@ -6,7 +6,8 @@
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 // Store game state per user
-const gameState = new Map();
+const TTLMap = require('../../utils/ttlMap');
+const gameState = new TTLMap('bomb', 5 * 60 * 1000); // 5m — bomb rounds are ~60s
 
 module.exports = {
   gameState, // Export for handler access

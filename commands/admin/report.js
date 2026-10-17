@@ -6,8 +6,9 @@ const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { fmtDateTime } = require('../../utils/sast');
 
-const reportStore = new Map();
-const reportCounters = new Map();
+const TTLMap = require('../../utils/ttlMap');
+const reportStore = new TTLMap('report-store', 24 * 60 * 60 * 1000); // 24h
+const reportCounters = new TTLMap('report-counters', 24 * 60 * 60 * 1000); // 24h
 
 module.exports = {
     name: 'report',

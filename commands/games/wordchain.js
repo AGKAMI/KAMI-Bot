@@ -1,6 +1,7 @@
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
-const chains = new Map();
+const TTLMap = require('../../utils/ttlMap');
+const chains = new TTLMap('wordchain', 60 * 60 * 1000); // 1h
 module.exports = {
   name: 'wordchain',
   reactions: { received: '🧵', done: '📝' },

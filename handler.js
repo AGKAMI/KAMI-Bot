@@ -1593,6 +1593,19 @@ const handleMessage = async (sock, msg) => {
       return sock.sendMessage(from, { text: config.messages.privateOnly }, { quoted: msg });
     }
     
+    // NSFW gate — commands flagged nsfw: true need the group opt-in
+    // (.nsfw on). DMs are always allowed (it's the user's own chat);
+    // owner bypasses everywhere.
+    if (command.nsfw && isGroup && !isOwner(sender)) {
+      const nsfwOn = database.getGroupSettings(from).nsfw;
+      if (!nsfwOn) {
+        verdictReact(sock, from, msg, '🚫');
+        return sock.sendMessage(from, {
+          text: `🔞 *NSFW OFF*\n\nNSFW commands are blocked in this group.\nAn admin can enable them with *${config.prefix || '.'}nsfw on*`
+        }, { quoted: msg });
+      }
+    }
+    
     if (command.adminOnly && !(await isAdmin(sock, sender, from, groupMetadata)) && !isOwner(sender)) {
       verdictReact(sock, from, msg, '🚫');
       return sock.sendMessage(from, { text: config.messages.adminOnly }, { quoted: msg });

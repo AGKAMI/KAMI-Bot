@@ -1360,6 +1360,9 @@ const getInactiveMembers = (groupJid, days = 30) => {
 };
 
 // Message count for a member inside the last `days` days (from daily stats)
+// LID-safe: stats may be keyed by PN or LID depending on how WhatsApp
+// delivered each message — sum every comparable variant so a member isn't
+// counted as 0 msgs (wrongful-kick risk when minMessages > 1).
 const getMessagesInWindow = (groupJid, memberJid, days) => {
   const statsPath = path.join(DB_PATH, 'groupStats.json');
   let stats;
@@ -1371,13 +1374,22 @@ const getMessagesInWindow = (groupJid, memberJid, days) => {
   const groupStats = stats[groupJid];
   if (!groupStats) return 0;
 
+  const variants = new Set([memberJid, ...buildComparableIds(memberJid)]);
   const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
   let total = 0;
   for (const [date, dayData] of Object.entries(groupStats)) {
     const dateTs = new Date(date).getTime();
     if (!(dateTs >= cutoff)) continue;
-    if (dayData.users && dayData.users[memberJid]) {
-      total += dayData.users[memberJid] || 0;
+    if (!dayData.users) continue;
+    for (const [uid, count] of Object.entries(dayData.users)) {
+      if (variants.has(uid)) {
+        total += count || 0;
+        continue;
+      }
+      // Different key form (e.g. lid vs pn) — check comparable variants
+      for (const v of buildComparableIds(uid)) {
+        if (variants.has(v)) { total += count || 0; break; }
+      }
     }
   }
   return total;

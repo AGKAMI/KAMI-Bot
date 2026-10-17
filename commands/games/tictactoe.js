@@ -2,9 +2,11 @@ const config = require('../../config');
 const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
-const tttGames = new Map();
+const TTLMap = require('../../utils/ttlMap');
+// TTL'd — abandoned boards used to live until restart
+const tttGames = new TTLMap('ttt-games', 24 * 60 * 60 * 1000); // 24h
 // Last game's players per group — rematch buttons only work for them
-const tttLastPlayers = new Map();
+const tttLastPlayers = new TTLMap('ttt-lastplayers', 48 * 60 * 60 * 1000); // 48h rematch window
 
 module.exports = {
   name: 'tictactoe',

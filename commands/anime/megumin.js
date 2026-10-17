@@ -14,6 +14,7 @@ module.exports = {
   name: 'megumin',
   reactions: { received: '🔮', generating: '⬇️', done: '💥' },
   aliases: ['meguminnsfw'],
+  nsfw: true,
   category: 'anime',
   description: 'Get a random megumin NSFW anime images',
   usage: 'megumin',

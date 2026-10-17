@@ -5,8 +5,10 @@
 const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 
-const afkUsers = new Map();
-const afkHistory = new Map();
+const TTLMap = require('../../utils/ttlMap');
+// 7d TTL — clears stale AFK flags from people who never came back
+const afkUsers = new TTLMap('afk-users', 7 * 24 * 60 * 60 * 1000);
+const afkHistory = new TTLMap('afk-history', 24 * 60 * 60 * 1000); // 24h
 const MAX_HISTORY = 5;
 
 function formatDuration(ms) {

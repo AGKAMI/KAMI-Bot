@@ -1,6 +1,7 @@
 const config = require('../../config');
 const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/format');
-const games = new Map();
+const TTLMap = require('../../utils/ttlMap');
+const games = new TTLMap('groupguess', 60 * 60 * 1000); // 1h
 module.exports = {
   name: 'groupguess',
   reactions: { received: '👥', done: '🎯' },

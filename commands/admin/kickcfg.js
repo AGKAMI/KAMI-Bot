@@ -70,9 +70,10 @@ const ow = (fn) => async (sock, msg, from, sender, btnId) => {
 // _dmScope remembers which group's settings the owner is editing when the
 // dashboard was opened in DMs via the group screen (scope 'g' has no chat
 // context there).
-const _pickers = new Map();
+const TTLMap = require('../../utils/ttlMap');
+const _pickers = new TTLMap('kickcfg-pickers', 15 * 60 * 1000); // 15m
 let _pickerSeq = 0;
-const _dmScope = new Map();
+const _dmScope = new TTLMap('kickcfg-dmscope', 15 * 60 * 1000); // 15m
 const PICKER_TTL_MS = 60 * 60 * 1000;
 const PAGE_SIZE = 9; // +1 slot for Back/Next = 10 buttons max
 

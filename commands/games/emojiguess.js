@@ -11,7 +11,8 @@ const rounds = [
   { emojis: '🤖💡', answer: 'robot lightbulb' },
   { emojis: '🎸🎤', answer: 'guitar microphone' }
 ];
-const active = new Map();
+const TTLMap = require('../../utils/ttlMap');
+const active = new TTLMap('emojiguess', 2 * 60 * 60 * 1000); // 2h
 
 function startRound(sock, from, quoted) {
   const r = rounds[Math.floor(Math.random() * rounds.length)];

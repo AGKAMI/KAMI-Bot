@@ -4,7 +4,8 @@ const WORDS = ['python','javascript','banana','computer','elephant','guitar','ho
 function mask(word, guessed) {
   return word.split('').map(c => guessed.has(c) ? c : '_').join(' ');
 }
-const games = new Map();
+const TTLMap = require('../../utils/ttlMap');
+const games = new TTLMap('hangman', 2 * 60 * 60 * 1000); // 2h
 module.exports = {
   name: 'hangman',
   reactions: { received: '🔤', done: '🪢' },

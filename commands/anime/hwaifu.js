@@ -14,6 +14,7 @@ module.exports = {
   name: 'hwaifu',
   reactions: { received: '💞', generating: '⬇️', done: '💮' },
   aliases: ['hwaifunsfw'],
+  nsfw: true,
   category: 'anime',
   description: 'Get a random hwaifu NSFW anime images',
   usage: 'hwaifu',

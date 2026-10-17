@@ -3,12 +3,13 @@
 > Rewritten 2026-10-17 after the full-codebase audit + fix batch. Supersedes the kick-policy handoff (that work shipped and is closed).
 
 ## Goal
-Keep KAMI Bot (WhatsApp, Baileys, 256MB box) healthy and shipped autonomously: commit → push → MCP restart → verify. Current phase: full audit completed and the critical/high defect batch is deployed.
+Keep KAMI Bot (WhatsApp, Baileys, 256MB box) healthy and shipped autonomously: commit → push → MCP restart → verify. Current phase: full audit completed + critical/high defect batch deployed; 5 follow-up features shipped (persisted reminders, NSFW toggle, LID-safe minMessages, TTL'd session maps, nameCache LRU).
 
 ## Current State
 - **Shipped this checkpoint** (deployed + verified CONNECTED):
   - `7cb37ed` memory guard: non-reclaimable cgroup memory (anon+kernel+slab) at 215MB×2, last-ditch 254MB current, exit(1) so restart policies relaunch (exit(0) left the bot down once), global sharp/libvips caps at boot, store bounded at 40 chats.
-  - **audit batch** (this session, see below): ~40 files of bug/dead-code/consistency/memory fixes.
+  - **audit batch** (`86651ba`): ~40 files of bug/dead-code/consistency/memory fixes — see git log.
+  - **feature batch**: persisted `.remind` (utils/reminderStore.js + database/reminders.json + boot restore in index.js; overdue fire late with a note); per-group `.nsfw on/off` (commands/admin/nsfw.js, handler gate on `command.nsfw`, flagged hneko/hwaifu/konachan/loli/megumin/milf; DMs + owner bypass); LID-safe `getMessagesInWindow` (sums comparable jid variants — closes wrongful-kick risk when minMessages>1); `utils/ttlMap.js` swapped into 18 session Maps (ttt/wordchain/guess/hangman/mathquiz/emojiguess/bomb/ludo/afk/report/kickcfg-pickers/setteamimage — 5m–48h TTLs, global 5-min prune, hard cap 500/map); nameCache true-LRU (Map recency order, touch on get + digit-match, atomic flush).
 - Tests: **76/79** — the 3 fails are the known pre-existing `tests/eventWizard.test.js` reds (:146/:257/:328 — Baileys v7 sendButtons + date-sensitive).
 - Live prefix `!`. Live crew.json: teamMap KSSPS→`120363409819775730@g.us`, KSSMP→`120363421626159074@g.us` (fixed earlier this session).
 
@@ -39,8 +40,8 @@ Keep KAMI Bot (WhatsApp, Baileys, 256MB box) healthy and shipped autonomously: c
 - PowerShell 5.1: no `&&`; push stderr shows as NativeCommandError but succeeds.
 
 ## Next Steps
-1. (optional, not urgent) Remaining MEDIUM/LOW audit items not yet fixed: game session Maps without TTL (tictactoe/hangman/wordchain etc.), `isBotAdmin` ignoring cached metadata (rate-limit contributor), LID-keyed activity stats vs roster keys (wrongful-kick risk when minMessages>1), NSFW flag `config.groups[].nsfw` still unread, `.loli` command name reputation risk, `utils/helpers.js`+`confirm.js`+`channelInfo.js`+`utils/tictactoe.js` dead files, pies.js still hits a non-existent API, duplicate `igs.js`/`igsc.js` fork (make igsc a wrapper), crew stats thresholds inconsistent with autoProgression requirements, gracePeriod:0 notice path dead, owner-hub button id overlap debt (29 warnings, longest-match works).
-2. Feature ideas if KAMI asks: persist reminders, LRU nameCache, per-group NSFW toggle wiring, loader collision test in CI.
+1. (optional, not urgent) Remaining MEDIUM/LOW audit items: `isBotAdmin` ignoring cached metadata (rate-limit contributor), `.loli` command name reputation risk, `utils/helpers.js`+`confirm.js`+`channelInfo.js`+`utils/tictactoe.js` dead files, pies.js still hits a non-existent API, duplicate `igs.js`/`igsc.js` fork (make igsc a wrapper), crew stats thresholds inconsistent with autoProgression requirements, gracePeriod:0 notice path dead, owner-hub button id overlap debt (29 warnings, longest-match works).
+2. Feature ideas if KAMI asks: LRU nameCache already shipped; consider per-group welcome image size caps, `.nsfw` status in groupsettings panel.
 
 ## Memory Keys
 - mcp__claude-flow__memory_search { query: "KAMI audit fixes memory guard owner canonical lid", namespace: "project" }
