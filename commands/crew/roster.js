@@ -117,11 +117,52 @@ module.exports = {
     }).length;
 
     text +=
-      `\n━━━━━━━━━━━━━━━━\n` +
+      `\n───────────────\n` +
       `🟢 Active (7d): *${active}*\n` +
       `🔴 Inactive (30d): *${inactive}*\n\n` +
-      `💡 _Use \`${prefix}crew stats @user\` for detailed stats_`;
+      `💪 _Use \`${prefix}crew stats @user\` for detailed stats_`;
 
-    return extra.reply(text, { mentions });
+    // Roster management — one tap opens a member picker for that action
+    const { sendButtons } = require('../../utils/buttonHelper');
+    return sendButtons(sock, extra.from, {
+      text,
+      footer: `${teamName} · ${memberList.length} members`,
+      mentions,
+      buttons: [
+        { id: 'crewroster:promote', text: '⬆️ Promote member' },
+        { id: 'crewroster:demote', text: '⬇️ Demote member' },
+        { id: 'crewroster:delroster', text: '➖ Remove from roster' },
+      ],
+    }, { quoted: msg });
   },
 };
+
+// ── Roster manage buttons → member picker for the chosen action ──
+// Admin-gated at the router: forged taps bounce before the picker opens.
+const { onButton, requireAdmin } = require('../../utils/buttonHelper');
+requireAdmin('crewroster');
+for (const action of ['promote', 'demote', 'delroster']) {
+  onButton(`crewroster:${action}`, async (sock, msg, from, sender) => {
+    try {
+      const { openPicker } = require('../../utils/memberPicker');
+      await openPicker(sock, msg, from, action, { backId: 'crewroster:back' });
+    } catch (e) {
+      console.error(`[ROSTER] picker (${action}) failed:`, e.message);
+    }
+  });
+}
+onButton('crewroster:back', async (sock, msg, from) => {
+  // Back from a picker — re-run the roster view
+  try {
+    const { loadCommands } = require('../../utils/commandLoader');
+    const crewCmd = loadCommands().get('crew');
+    if (crewCmd) await crewCmd.execute(sock, msg, ['roster'], {
+      from, sender: msg.key.participant || from, isGroup: true, groupMetadata: null,
+      isOwner: false, isAdmin: async () => true, isBotAdmin: async () => false, isMod: () => false,
+      reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
+      fail: () => {},
+    });
+  } catch (e) {
+    console.error('[ROSTER] back failed:', e.message);
+  }
+});

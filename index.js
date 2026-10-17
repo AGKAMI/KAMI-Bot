@@ -139,7 +139,7 @@ const processedMessages = new Set();
 // Aggressive cleanup - clear every 5 minutes
 setInterval(() => {
   processedMessages.clear();
-}, 5 * 60 * 1000); // Every 5 minutes
+}, 5 * 60 * 1000).unref(); // Every 5 minutes
 
 // ---- Memory guard (256MB box, panel kills at 256MB) ----
 // Decide on NON-reclaimable memory (cgroup anon + kernel + unreclaimable
@@ -191,7 +191,7 @@ setInterval(() => {
       memCritStreak = 0;
     }
   } catch (e) { /* guard must never crash the bot */ }
-}, 5 * 60 * 1000);
+}, 5 * 60 * 1000).unref();
 
 // Custom Pino logger with suppression for Baileys noise
 const createSuppressedLogger = (level = 'silent') => {
@@ -304,6 +304,8 @@ let lastLoggedQr = null;
 // reports the member as an @lid). Force-flushes the crew DB — sync
 // writes riding the debounced flush died on restarts.
 let _crewSyncTimer = null;
+let _evtRemindTimer = null;
+let _dbBackupTimer = null;
 // Latest connected socket. Reconnects build a NEW sock object — the 30-min
 // interval is registered once, so it must read this live reference or every
 // periodic run after a reconnect dies with "Connection Closed" forever.
@@ -773,7 +775,7 @@ async function startBot() {
           _crewSyncTimer = setInterval(() => {
             syncCrewRosters(_crewSyncSock || sock).catch(e =>
               console.error('[CREW SYNC] periodic run failed:', e.message));
-          }, 30 * 60 * 1000);
+          }, 30 * 60 * 1000).unref();
           _crewSyncTimer.unref();
         }
       } catch (e) {
@@ -786,6 +788,38 @@ async function startBot() {
         require('./commands/crew/eventRsvp').startEventUnpinSweep(sock);
       } catch (e) {
         console.error('[EVWIZ] unpin sweep boot failed:', e.message);
+      }
+
+      // Crew event reminders — 30-min + start pings for timed meets
+      try {
+        const { checkReminders } = require('./utils/eventReminders');
+        setTimeout(() => {
+          checkReminders(sock).catch(e =>
+            console.error('[EVT-REMIND] boot run failed:', e.message));
+          if (!_evtRemindTimer) {
+            _evtRemindTimer = setInterval(() => {
+              checkReminders(sock).catch(e =>
+                console.error('[EVT-REMIND] run failed:', e.message));
+            }, 60 * 1000);
+            _evtRemindTimer.unref();
+          }
+        }, 90 * 1000).unref();
+      } catch (e) {
+        console.error('[EVT-REMIND] scheduling failed:', e.message);
+      }
+
+      // Database snapshots — 2 min after boot, then every 12h
+      try {
+        const { runSnapshot } = require('./utils/dbBackup');
+        setTimeout(() => {
+          runSnapshot();
+          if (!_dbBackupTimer) {
+            _dbBackupTimer = setInterval(runSnapshot, 12 * 60 * 60 * 1000);
+            _dbBackupTimer.unref();
+          }
+        }, 2 * 60 * 1000).unref();
+      } catch (e) {
+        console.error('[DB-BACKUP] scheduling failed:', e.message);
       }
 
       // Team admin auto-detection — scan all crew groups for WhatsApp admins

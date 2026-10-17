@@ -175,4 +175,15 @@ welcome: false,
       youtube: 'http://youtube.com/@ag_kami'
     }
 };
+
+// ── Environment overrides (panel env wins over defaults) ─────────
+// Rotate sensitive values from the hosting panel without touching git:
+//   OWNER_NUMBER=0833882383,0683993925  (comma separated)
+//   CONTACT_NUMBER=084 082 0712
+//   BOT_NAME=KAMI Bot Mini
+//   BOT_PREFIX=!
+if (process.env.OWNER_NUMBER) module.exports.ownerNumber = process.env.OWNER_NUMBER.split(',').map(s => s.trim()).filter(Boolean);
+if (process.env.CONTACT_NUMBER) module.exports.contactNumber = process.env.CONTACT_NUMBER.trim();
+if (process.env.BOT_NAME) module.exports.botName = process.env.BOT_NAME.trim();
+if (process.env.BOT_PREFIX) module.exports.prefix = process.env.BOT_PREFIX.trim();
   

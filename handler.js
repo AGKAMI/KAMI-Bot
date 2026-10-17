@@ -79,7 +79,7 @@ setInterval(() => {
   // Only prune if they've grown unbounded (indicates a bug in cleanup logic)
   if (_botDemoted.size > 500) _botDemoted.clear();
   if (_botKicked.size > 500) _botKicked.clear();
-}, 300000); // every 5 minutes
+}, 300000).unref(); // every 5 minutes
 
 // Load all commands
 const commands = loadCommands();

@@ -23,6 +23,8 @@
 
 const axios = require('axios');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const { ttdl } = require('ruhend-scraper');
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
@@ -377,6 +379,28 @@ function isPlaceholder(buf) {
   return PLACEHOLDER_MD5.has(crypto.createHash('md5').update(buf).digest('hex'));
 }
 
+// ── Provider stats — which download methods actually work, over time ──
+// Persisted to database/ttStats.json on every bump (tiny write). The
+// box's IP reputation with TikTok-adjacent services rotates weekly, and
+// this is how you SEE a provider dying before users complain.
+const TT_STATS_PATH = path.join(__dirname, '../../database/ttStats.json');
+let ttStats = { providers: {}, updated: 0 };
+try { ttStats = JSON.parse(fs.readFileSync(TT_STATS_PATH, 'utf8')) || ttStats; } catch (e) {}
+try { ttStats.providers = ttStats.providers || {}; } catch (e) {}
+
+function ttBump(name, ok, note) {
+  try {
+    const p = ttStats.providers[name] || (ttStats.providers[name] = { ok: 0, fail: 0, lastFail: null });
+    if (ok) p.ok++;
+    else {
+      p.fail++;
+      p.lastFail = note || 'unknown';
+    }
+    ttStats.updated = Date.now();
+    fs.writeFileSync(TT_STATS_PATH, JSON.stringify(ttStats, null, 2));
+  } catch (e) { /* stats are cosmetic — never break the download */ }
+}
+
 // Shared: vm/vt short links hide the numeric id — follow redirects to the
 // canonical /video/<digits> page first.
 async function resolveCanonicalId(url) {
@@ -497,10 +521,13 @@ module.exports = {
 
             if (sent) {
               success = true;
+              ttBump(method.name, true);
               break;
             }
+            ttBump(method.name, false, 'send failed');
           } catch (e) {
             console.error(`[TT] ${method.name} failed: ${e.message}`);
+            ttBump(method.name, false, e.message.slice(0, 60));
             lastError = e;
           }
         }

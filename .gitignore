@@ -55,3 +55,4 @@ session_backup/
 *.py
 _repro.js
 check.js
+database/backups/
