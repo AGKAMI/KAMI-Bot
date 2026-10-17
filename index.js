@@ -82,6 +82,10 @@ const {
   Browsers,
   fetchLatestBaileysVersion
 } = require('@whiskeysockets/baileys');
+// Sharp/libvips tuning must be process-global BEFORE handler.js loadCommands()
+// pulls in sticker/webp2mp4/gptimage (they require sharp). If those pipelines
+// run first, libvips keeps its default 50MB cache + full thread pool resident.
+try { require('./utils/imageText'); } catch (e) { /* sharp caps best-effort */ }
 const config = require('./config');
 const handler = require('./handler');
 const fs = require('fs');
@@ -93,6 +97,7 @@ const os = require('os');
 const store = {
   messages: new Map(), // Use Map instead of plain object
   maxPerChat: 20, // Limit to 20 messages per chat
+  maxChats: 40, // Bound the chat count — Map was unbounded on long uptime
 
   bind: (ev) => {
     ev.on('messages.upsert', ({ messages }) => {
@@ -102,6 +107,10 @@ const store = {
         const jid = msg.key.remoteJid;
         if (!store.messages.has(jid)) {
           store.messages.set(jid, new Map());
+          if (store.messages.size > store.maxChats) {
+            const oldestChat = store.messages.keys().next().value;
+            store.messages.delete(oldestChat);
+          }
         }
 
         const chatMsgs = store.messages.get(jid);
@@ -131,32 +140,50 @@ setInterval(() => {
 }, 5 * 60 * 1000); // Every 5 minutes
 
 // ---- Memory guard (256MB box, panel kills at 256MB) ----
-// Sample the cgroup counter the panel enforces (fallback: process RSS).
-// Critical twice in a row (10min sustained) → clean exit; tini/wings restart
-// the container fresh instead of a hard OOM kill landing mid-write.
-// Telemetry line every 30min so trends are visible in the console log.
+// Decide on NON-reclaimable memory (cgroup anon + kernel + unreclaimable
+// slab). memory.current also counts page cache, which the kernel reclaims
+// freely — using it made the guard self-kill on healthy processes whose
+// cache happened to be warm. Hard last-ditch: current >= 254MB (one MB shy
+// of the panel kill) still trips regardless.
+// Critical twice in a row (10min sustained) → exit(1): on-failure restart
+// policies relaunch; exit(0) looked like a clean finish and LEFT THE BOT
+// DOWN (observed 2026-10-17). Telemetry every 30min shows both numbers.
+const _cgroupNum = (file) => {
+  try { return Number(require('fs').readFileSync(file, 'utf8')); } catch { return 0; }
+};
+const readNonReclaimable = () => {
+  let anon = 0, kernel = 0, slabUnrec = 0;
+  try {
+    const stat = require('fs').readFileSync('/sys/fs/cgroup/memory.stat', 'utf8');
+    for (const line of stat.split('\n')) {
+      const [k, v] = line.split(/\s+/);
+      if (k === 'anon') anon = Number(v) || 0;
+      else if (k === 'kernel') kernel = Number(v) || 0;
+      else if (k === 'slab_unreclaimable') slabUnrec = Number(v) || 0;
+    }
+    if (anon > 0) return anon + kernel + slabUnrec;
+  } catch { /* stat unreadable — fall through */ }
+  return _cgroupNum('/sys/fs/cgroup/memory.current') || process.memoryUsage().rss;
+};
 let memCritStreak = 0;
 let memTicks = 0;
 setInterval(() => {
   try {
-    let used;
-    try {
-      used = Number(require('fs').readFileSync('/sys/fs/cgroup/memory.current', 'utf8'));
-    } catch {
-      used = process.memoryUsage().rss;
-    }
+    const current = _cgroupNum('/sys/fs/cgroup/memory.current') || process.memoryUsage().rss;
+    const used = readNonReclaimable();
     const usedMB = Math.round(used / 1048576);
+    const curMB = Math.round(current / 1048576);
     memTicks++;
     if (memTicks % 6 === 0) {
       const mu = process.memoryUsage();
-      console.log(`[MEM] ${usedMB}MB/256MB | rss ${Math.round(mu.rss / 1048576)}MB | heap ${Math.round(mu.heapUsed / 1048576)}/${Math.round(mu.heapTotal / 1048576)}MB | ext ${Math.round(mu.external / 1048576)}MB`);
+      console.log(`[MEM] non-reclaim ${usedMB}MB | current ${curMB}MB/256MB | rss ${Math.round(mu.rss / 1048576)}MB | heap ${Math.round(mu.heapUsed / 1048576)}/${Math.round(mu.heapTotal / 1048576)}MB | ext ${Math.round(mu.external / 1048576)}MB`);
     }
-    if (used >= 245 * 1048576) {
+    if (used >= 215 * 1048576 || current >= 254 * 1048576) {
       memCritStreak++;
-      console.warn(`⚠️ MEMORY HIGH: ${usedMB}MB/256MB (${memCritStreak}/2 critical checks)`);
+      console.warn(`⚠️ MEMORY HIGH: non-reclaim ${usedMB}MB / current ${curMB}MB (${memCritStreak}/2 critical checks)`);
       if (memCritStreak >= 2) {
         console.error('🛑 MEMORY CRITICAL sustained — self-restarting for a clean slate');
-        process.exit(0);
+        process.exit(1);
       }
     } else {
       memCritStreak = 0;
