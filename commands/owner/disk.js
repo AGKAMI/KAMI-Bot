@@ -44,10 +44,12 @@ module.exports = {
       const total = totalOut.trim().split('\t')[0];
 
       // Prune dead git objects (old session files removed from tracking but
-      // still loose locally) + compress packs — shrinks .git best-effort
+      // still loose locally) + compress packs — shrinks .git best-effort.
+      // Plain gc (not --aggressive): aggressive mode burns CPU/IO for minutes
+      // on this 256MB box just to report a disk reading.
       let gcNote = '';
       try {
-        await execPromise('git gc --aggressive --prune=now --quiet', {
+        await execPromise('git gc --prune=now --quiet', {
           maxBuffer: 1024 * 1024, timeout: 120000, cwd: '/home/container',
         });
         const { stdout: gitAfter } = await execPromise(

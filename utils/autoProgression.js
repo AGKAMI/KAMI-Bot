@@ -640,18 +640,24 @@ const runInactiveCheck = async (sock) => {
   // never delay a kick.
   let newlyFlagged = 0;
   for (const [groupJid] of teamsByJid) {
-    const s = kickSettings.getEffective(groupJid);
-    if (!s.enabled) continue;
-    const pmap = participantsByGroup.get(groupJid);
-    if (!pmap || !pmap.size) continue;
-    const due = _dueForGroup(groupJid, byMember, pmap);
-    if (!due.length) continue;
-    if (!_state.flagged[groupJid]) _state.flagged[groupJid] = {};
-    for (const { entry } of due) {
-      if (!_state.flagged[groupJid][entry.jid]) {
-        _state.flagged[groupJid][entry.jid] = now;
-        newlyFlagged++;
+    try {
+      const s = kickSettings.getEffective(groupJid);
+      if (!s.enabled) continue;
+      const pmap = participantsByGroup.get(groupJid);
+      if (!pmap || !pmap.size) continue;
+      const due = _dueForGroup(groupJid, byMember, pmap);
+      if (!due.length) continue;
+      if (!_state.flagged[groupJid]) _state.flagged[groupJid] = {};
+      for (const { entry } of due) {
+        if (!_state.flagged[groupJid][entry.jid]) {
+          _state.flagged[groupJid][entry.jid] = now;
+          newlyFlagged++;
+        }
       }
+    } catch (e) {
+      // One broken group (deleted, metadata fetch failed, bad settings)
+      // must not abort flagging for every remaining group
+      console.error(`[INACTIVE-CHECK] flag pass failed for ${groupJid}: ${e.message}`);
     }
   }
   if (newlyFlagged) _saveState();
@@ -672,6 +678,7 @@ const runInactiveCheck = async (sock) => {
 
   for (const [groupJid, teamInfo] of teamsByJid) {
     if (noticesSent >= MAX_NOTICES_PER_CYCLE) break;
+    try {
 
     const s = kickSettings.getEffective(groupJid);
     if (!s.enabled) {
@@ -726,6 +733,11 @@ const runInactiveCheck = async (sock) => {
     nudgedMembers += teamDue.length;
 
     await new Promise(r => setTimeout(r, 3000));
+    } catch (e) {
+      // One group's failed send (429, bot removed, group deleted) must not
+      // abort notices for every remaining group this cycle
+      console.error(`[INACTIVE-CHECK] notice pass failed for ${groupJid}: ${e.message}`);
+    }
   }
 
   console.log(

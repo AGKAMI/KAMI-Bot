@@ -85,6 +85,12 @@ module.exports = {
         return extra.reply(`⚠️ *WARNING*\n💡 Reply to media with ${prefix}crop, or send it with ${prefix}crop as the caption`);
       }
 
+      // Reject oversized media from metadata BEFORE downloading (256MB box)
+      if (mediaMessage.fileLength && Number(mediaMessage.fileLength) > MAX_FILE_SIZE) {
+        extra.fail();
+        return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — that file is too big: ${(Number(mediaMessage.fileLength) / 1024 / 1024).toFixed(2)}MB (max: ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+      }
+
       // Download media
       const mediaBuffer = await downloadMediaMessage(
         targetMessage,

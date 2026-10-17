@@ -10,13 +10,19 @@ const config = require('../config');
 
 // LID mapping cache
 const lidMappingCache = new Map();
+// Negative lookups (file missing) expire so a mapping file Baileys writes a
+// minute later isn't invisible for the rest of the process lifetime.
+const LID_NEG_TTL_MS = 5 * 60 * 1000;
 
 // Get LID mapping value from files
 const getLidMappingValue = (user, direction) => {
   if (!user) return null;
   const cacheKey = `${direction}:${user}`;
   if (lidMappingCache.has(cacheKey)) {
-    return lidMappingCache.get(cacheKey);
+    const entry = lidMappingCache.get(cacheKey);
+    if (entry && entry.v !== null) return entry.v; // positive mapping — stable
+    if (entry && Date.now() - entry.t < LID_NEG_TTL_MS) return null; // recent miss
+    // negative entry expired — fall through and re-check disk
   }
   
   const sessionPath = path.join(__dirname, '..', config.sessionName || 'session');
@@ -24,17 +30,17 @@ const getLidMappingValue = (user, direction) => {
   const filePath = path.join(sessionPath, `lid-mapping-${user}${suffix}`);
   
   if (!fs.existsSync(filePath)) {
-    lidMappingCache.set(cacheKey, null);
+    lidMappingCache.set(cacheKey, { v: null, t: Date.now() });
     return null;
   }
   
   try {
     const raw = fs.readFileSync(filePath, 'utf8').trim();
     const value = raw ? JSON.parse(raw) : null;
-    lidMappingCache.set(cacheKey, value || null);
+    lidMappingCache.set(cacheKey, { v: value || null, t: Date.now() });
     return value || null;
   } catch (error) {
-    lidMappingCache.set(cacheKey, null);
+    lidMappingCache.set(cacheKey, { v: null, t: Date.now() });
     return null;
   }
 };
@@ -63,10 +69,16 @@ const normalizeJidWithLid = (jid) => {
     };
     
     if (server === 'lid' || server === 'hosted.lid') {
-      mapToPn();
-    } else if (server === 's.whatsapp.net' || server === 'hosted') {
-      mapToPn();
+      if (!mapToPn()) {
+        // Unmapped LID — return as-is. The old fallthrough encoded LID digits
+        // as a fake @s.whatsapp.net jid, so canonicalNumber treated them as a
+        // phone number (the documented "LID digits ≠ phone" gotcha).
+        return jid;
+      }
     }
+    // PN/hosted inputs are already phone numbers — do NOT consult the
+    // lid→pn reverse file (wrong direction; a stray file could rewrite a
+    // valid PN). buildComparableIds handles the PN→lid direction separately.
     
     if (server === 'hosted') {
       return jidEncode(user, 'hosted');

@@ -850,7 +850,7 @@ async function sendProgressiveResponse(sock, jid, state) {
           `━━━━━━━━━━━━━━━━\n` +
           `🤖 *APPLICATION AUTO-APPROVED*\n` +
           `━━━━━━━━━━━━━━━━\n\n` +
-          `Your *${state.teamKey}* — ${teamLabel} application passed my review!\n\n` +
+          `Your *${teamName}* application passed my review!\n\n` +
           `🆔 App ID: *${state.appUid}*\n\n` +
           `⏳ An admin will add you to the group now-now.`
       });

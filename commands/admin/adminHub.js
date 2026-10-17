@@ -153,7 +153,7 @@ async function renderPage(sock, msg, from, page) {
       const code = await sock.groupInviteCode(from);
       linkRow = [{ text: '🔗 Grouplink', url: `https://chat.whatsapp.com/${code}` }];
     } catch (e) { /* not a group or no permission — skip */ }
-    const gh = (config.socials && config.socials.github) || 'https://github.com/AGKAMI/KAMI-Bot';
+    const gh = (config.social && config.social.github) || 'https://github.com/AGKAMI/KAMI-Bot';
     body = `*🛡️ ADMIN HUB — INFO*\n\n_misc & links_\n\n_typed escape:_ \`${prefix()}help\``;
     buttons = [
       { id: 'admin:hub:go:uptime', text: LABELS.uptime },

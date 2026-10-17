@@ -39,7 +39,7 @@ function formatResults(poll) {
     return `${bar} ${opt} — ${counts[i]} vote${counts[i] === 1 ? '' : 's'} (${pct}%)`;
   });
 
-  return `${poll.question}\n\n${lines.join('\n')}\n\n👥 ${total} vote${total === 1 ? '' : 's'} in`;
+  return `${poll.question}\n\n${lines.join('\n')}\n\n👥 ${total} vote${total === 1 ? '' : 's'}`;
 }
 
 module.exports = {

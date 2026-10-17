@@ -6,6 +6,7 @@ module.exports = {
     // Bot Owner Configuration
     ownerNumber: ['0833882383', '0683993925', '0840820712', '112365605486640'], // Add your number without + or spaces (e.g., 919876543210)
     ownerName: ['AG KAMI'], // Owner names corresponding to ownerNumber array
+    contactNumber: '084 082 0712', // the human-readable number shown in "DM me here" copy
     
     // Bot Configuration
     botName: 'KAMI Bot Mini',

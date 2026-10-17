@@ -30,12 +30,6 @@ console.log('🔧 Initializing KAMI Bot...\n');
 initializeTempSystem();
 startCleanup();
 
-// Ensure the repo-shipped yt-dlp binary is executable (SFTP uploads lose the exec bit)
-try {
-  const ytDlpBin = path.join(__dirname, 'bin', 'yt-dlp');
-  if (fs.existsSync(ytDlpBin)) fs.chmodSync(ytDlpBin, 0o755);
-} catch (e) {}
-
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
@@ -92,6 +86,14 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 const os = require('os');
+
+// Ensure the repo-shipped yt-dlp binary is executable (SFTP uploads lose the exec bit).
+// Must live BELOW the fs/path requires — the old placement hit the temporal dead
+// zone (ReferenceError swallowed by the catch) and the chmod never ran.
+try {
+  const ytDlpBin = path.join(__dirname, 'bin', 'yt-dlp');
+  if (fs.existsSync(ytDlpBin)) fs.chmodSync(ytDlpBin, 0o755);
+} catch (e) {}
 
 // Optimized in-memory store with hard limits (Map-based for better memory management)
 const store = {
@@ -1163,8 +1165,13 @@ process.on('uncaughtException', (err) => {
   // Handle ENOSPC errors gracefully without crashing
   if (err.code === 'ENOSPC' || err.errno === -28 || err.message?.includes('no space left on device')) {
     console.error('⚠️ ENOSPC Error: No space left on device. Attempting cleanup...');
-    const { cleanupOldFiles } = require('./utils/cleanup');
-    cleanupOldFiles();
+    try {
+      const { cleanupTempFiles, nukeCacheDirs } = require('./utils/cleanup');
+      cleanupTempFiles();
+      nukeCacheDirs();
+    } catch (cleanupErr) {
+      console.error('ENOSPC cleanup itself failed:', cleanupErr.message);
+    }
     console.warn('⚠️ Cleanup completed. Bot will continue but may experience issues until space is freed.');
     return; // Don't crash, just log and continue
   }
@@ -1174,8 +1181,13 @@ process.on('unhandledRejection', (err) => {
   // Handle ENOSPC errors gracefully
   if (err.code === 'ENOSPC' || err.errno === -28 || err.message?.includes('no space left on device')) {
     console.warn('⚠️ ENOSPC Error in promise: No space left on device. Attempting cleanup...');
-    const { cleanupOldFiles } = require('./utils/cleanup');
-    cleanupOldFiles();
+    try {
+      const { cleanupTempFiles, nukeCacheDirs } = require('./utils/cleanup');
+      cleanupTempFiles();
+      nukeCacheDirs();
+    } catch (cleanupErr) {
+      console.error('ENOSPC cleanup itself failed:', cleanupErr.message);
+    }
     console.warn('⚠️ Cleanup completed. Bot will continue but may experience issues until space is freed.');
     return; // Don't crash, just log and continue
   }
@@ -1194,6 +1206,11 @@ const _flushAndExit = () => {
     const db = require('./database');
     db.flushAll();
     console.log('💾 Database cache flushed to disk');
+  } catch (e) {}
+  try {
+    // groupstats buffers deltas up to 30s — its own SIGTERM listener never
+    // ran because process.exit below kills the process first
+    require('./utils/groupstats').flushPending();
   } catch (e) {}
   process.exit(0);
 };

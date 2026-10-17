@@ -279,7 +279,9 @@ onButton('crew:accept', async (sock, msg, from, sender, btnId) => {
   const uid = btnId.replace('crew:accept:', '');
   if (!uid) return;
   const acceptCmd = require('./accept');
-  const senderIsOwner = (config.ownerNumber || []).some(n => sender.includes(n));
+  // Same canonical owner check as the deny handler below — the old
+  // sender.includes(n) could never match an international jid
+  const senderIsOwner = isOwnerJid(msg, sender);
   await acceptCmd.execute(sock, msg, [uid], {
     from, sender,
     isGroup: false,

@@ -7,7 +7,7 @@ const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/forma
 module.exports = {
     name: 'groupstats',
     reactions: { received: '📊', done: '🥧' },
-    aliases: ['stats', 'leaderboard', 'gstats', 'topmembers', 'msgs', 'messagestats'],
+    aliases: ['gstats', 'topmembers', 'msgs', 'messagestats'],
     category: 'general',
     description: 'Show today\'s group chat statistics',
     usage: '.groupstats',

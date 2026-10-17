@@ -1,31 +1,35 @@
-// utils/autoReact.js — persists to database.json instead of rewriting config.js
-let db;
-function getDb() {
-    if (!db) db = require('../database');
-    return db;
-}
+// utils/autoReact.js — persists to database/autoReact.json
+// The old implementation called database.readDB/USERS_DB/writeDB, none of
+// which are exported — load() always returned the disabled default and
+// save() threw a swallowed TypeError. The runtime gate in handler.js now
+// reads this module instead of config.autoReact.
+const fs = require('fs');
+const path = require('path');
+
+const DB_PATH = path.join(__dirname, '..', 'database', 'autoReact.json');
+let cache = null;
 
 function load() {
+    if (cache) return { ...cache };
     try {
-        const data = getDb().readDB(getDb().USERS_DB);
-        const settings = data._autoReact || {};
-        return {
-            enabled: settings.enabled || false,
-            mode: settings.mode || 'bot'
-        };
+        const data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+        cache = { enabled: !!data.enabled, mode: data.mode === 'all' ? 'all' : 'bot' };
     } catch {
-        return { enabled: false, mode: 'bot' };
+        cache = { enabled: false, mode: 'bot' };
     }
+    return { ...cache };
 }
 
 function save(data) {
+    cache = { enabled: !!data.enabled, mode: data.mode === 'all' ? 'all' : 'bot' };
     try {
-        const usersDb = getDb();
-        const users = usersDb.readDB(usersDb.USERS_DB);
-        users._autoReact = { enabled: data.enabled, mode: data.mode };
-        usersDb.writeDB(usersDb.USERS_DB, users);
+        const dir = path.dirname(DB_PATH);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        const tmp = `${DB_PATH}.tmp`;
+        fs.writeFileSync(tmp, JSON.stringify(cache, null, 2));
+        fs.renameSync(tmp, DB_PATH);
     } catch (err) {
-        console.error('[autoReact] save error:', err);
+        console.error('[autoReact] save error:', err.message);
     }
 }
 

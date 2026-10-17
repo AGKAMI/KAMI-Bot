@@ -34,7 +34,6 @@ module.exports = {
     activeAudioDownloads++;
     try {
       if (activeAudioDownloads > 2) {
-        activeAudioDownloads--;
         extra.fail();
         return await extra.reply(`❌ _too many downloads — give it a few seconds_`);
       }

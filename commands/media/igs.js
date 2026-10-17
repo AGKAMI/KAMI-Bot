@@ -308,8 +308,10 @@ async function fetchBufferFromUrl(url, itemIndex = 0) {
         responseType: 'arraybuffer',
         headers: headers,
         timeout: 30000,
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
+        // Cap downloads — this box has 256MB total. Infinity let one big reel
+        // OOM the process (exit-137 history) before the 50MB sticker check ran.
+        maxContentLength: 16 * 1024 * 1024,
+        maxBodyLength: 16 * 1024 * 1024,
         decompress: true,
         maxRedirects: 5, // Always allow redirects - Instagram URLs often redirect
         validateStatus: s => s >= 200 && s < 300 // ONLY accept 2xx responses (not 3xx redirects)
@@ -343,8 +345,8 @@ async function fetchBufferFromUrl(url, itemIndex = 0) {
             responseType: 'stream',
             headers: headers,
             timeout: 40000,
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity,
+            maxContentLength: 16 * 1024 * 1024,
+            maxBodyLength: 16 * 1024 * 1024,
             maxRedirects: 5,
             validateStatus: s => s >= 200 && s < 300 // ONLY accept 2xx responses
           });

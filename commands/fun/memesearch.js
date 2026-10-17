@@ -16,7 +16,7 @@ const BASE = 'https://meme-api.com/gimme';
 module.exports = {
   name: 'memesearch',
   reactions: { received: '🔍', generating: '⬇️', done: '🖼️' },
-  aliases: ['memes', 'sm', 'smeme', 'gifsearch', 'gif'],
+  aliases: ['smeme', 'gifsearch', 'gif'],
   category: 'fun',
   description: 'Search and get memes',
   usage: 'memesearch <query>',
@@ -32,10 +32,25 @@ module.exports = {
         );
       }
       
-      // Fetch meme from API
-      const url = `${BASE}?apikey=shizo&query=${encodeURIComponent(query)}`;
-      const response = await axios.get(url, {
+      // meme-api.com/gimme returns JSON metadata ({url,title,nsfw,...}), NOT
+      // image bytes — the old code requested arraybuffer and sent the raw JSON
+      // as an "image", so this command never returned a meme. Fetch metadata
+      // (skipping NSFW posts), then download the actual media. Note: the API
+      // has no real search — query is display-only.
+      let post = null;
+      for (let i = 0; i < 3 && !post; i++) {
+        const meta = await axios.get(`${BASE}?count=1`, {
+          timeout: 12000,
+          headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
+        if (meta.data && meta.data.url && !meta.data.nsfw) post = meta.data;
+      }
+      if (!post) throw new Error('no SFW meme available right now — try again');
+
+      const response = await axios.get(post.url, {
         responseType: 'arraybuffer',
+        timeout: 20000,
+        maxContentLength: 16 * 1024 * 1024,
         headers: {
           'User-Agent': 'Mozilla/5.0'
         }

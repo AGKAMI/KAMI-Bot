@@ -157,7 +157,7 @@ module.exports = {
                 } else {
                     extra.fail();
                     return extra.reply(
-                        `❌ ERROR\n\nNo reporting admins, hey\n\nIf an admin is out of line, DM the owner at *084 082 0712*`
+                        `❌ ERROR\n\nNo reporting admins, hey\n\nIf an admin is out of line, DM the owner at *${config.contactNumber}*`
                     );
                 }
             }

@@ -19,16 +19,25 @@ function loadDB() {
 
 function saveDB(data) {
     try {
-        fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+        // Atomic write — a panel kill mid-write must not truncate groupStats.json
+        const tmp = `${DB_PATH}.tmp`;
+        fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+        fs.renameSync(tmp, DB_PATH);
+        return true;
     } catch (err) {
         console.error('[groupStats] save error:', err);
+        return false;
     }
 }
 
 function flushPending() {
     if (Object.keys(pendingWrites).length === 0) return;
     const db = loadDB();
-    for (const [key, delta] of Object.entries(pendingWrites)) {
+    const batch = pendingWrites;
+    // Detach the batch FIRST so concurrent addMessage() calls during this
+    // flush land in a fresh map instead of being lost.
+    pendingWrites = {};
+    for (const [key, delta] of Object.entries(batch)) {
         const [groupId, date] = key.split('|');
         if (!db[groupId]) db[groupId] = {};
         if (!db[groupId][date]) {
@@ -43,8 +52,20 @@ function flushPending() {
             g.hours[h] = (g.hours[h] || 0) + count;
         }
     }
-    pendingWrites = {};
-    saveDB(db);
+    if (!saveDB(db)) {
+        // Write failed — merge the batch back so the deltas aren't dropped
+        for (const [key, delta] of Object.entries(batch)) {
+            if (!pendingWrites[key]) pendingWrites[key] = { total: 0, users: {}, hours: {} };
+            const p = pendingWrites[key];
+            p.total += delta.total;
+            for (const [uid, count] of Object.entries(delta.users)) {
+                p.users[uid] = (p.users[uid] || 0) + count;
+            }
+            for (const [h, count] of Object.entries(delta.hours)) {
+                p.hours[h] = (p.hours[h] || 0) + count;
+            }
+        }
+    }
 }
 
 function addMessage(groupId, senderId) {
@@ -79,7 +100,11 @@ function getStats(groupId) {
     return db[groupId][today];
 }
 
+// NOTE: SIGINT/SIGTERM flush here never ran in the bot — index.js's
+// _flushAndExit calls process.exit() synchronously and its handler is
+// registered first, so later listeners never fire. index.js now calls
+// flushPending() explicitly via the export below before exiting.
 process.on('SIGINT', () => { flushPending(); });
 process.on('SIGTERM', () => { flushPending(); });
 
-module.exports = { addMessage, getStats };
+module.exports = { addMessage, getStats, flushPending };

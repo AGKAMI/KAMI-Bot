@@ -3,6 +3,8 @@ const { bold, italic, pick, SLANG, mention, voice } = require('../../utils/forma
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 
 const tttGames = new Map();
+// Last game's players per group — rematch buttons only work for them
+const tttLastPlayers = new Map();
 
 module.exports = {
   name: 'tictactoe',
@@ -23,8 +25,7 @@ module.exports = {
         turn: 'X',
         players: { X: null, O: null },
       });
-      ctx.fail();
-      return ctx.reply(`❌ ${voice.openErr()} — tic tac toe!\nWhoever plays first is X.\nUse ${prefix}ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`);
+      return ctx.reply(`⭕ *TIC TAC TOE*\n\nWhoever plays first is X.\nUse ${prefix}ttt <1-9>\n\n1|2|3\n4|5|6\n7|8|9`);
     }
 
     if (['stop', 'end'].includes(sub)) {
@@ -66,6 +67,7 @@ module.exports = {
 
     if (winner) {
       tttGames.delete(boardKey);
+      tttLastPlayers.set(from, { ...g.players });
       return sendButtons(sock, ctx.from, {
         text: `🎉 ${mention(sender)} wins with ${token}! ${voice.tag('affirm')}\n\n${formatBoard(g.board)}\n\n_Player X:_ ${g.players.X ? mention(g.players.X) : '—'}\n_Player O:_ ${g.players.O ? mention(g.players.O) : '—'}`,
         mentions: [g.players.X, g.players.O].filter(Boolean),
@@ -77,6 +79,7 @@ module.exports = {
     }
     if (full) {
       tttGames.delete(boardKey);
+      tttLastPlayers.set(from, { ...g.players });
       return sendButtons(sock, ctx.from, {
         text: `🤝 ${voice.lead('neutral')}, draw!\n\n${formatBoard(g.board)}\n\n_Player X:_ ${g.players.X ? mention(g.players.X) : '—'}\n_Player O:_ ${g.players.O ? mention(g.players.O) : '—'}`,
         mentions: [g.players.X, g.players.O].filter(Boolean),
@@ -95,8 +98,18 @@ module.exports = {
 };
 
 // ── Rematch button — fresh board for the group ──────────────
-onButton('ttt:rematch', async (sock, msg, from) => {
+onButton('ttt:rematch', async (sock, msg, from, sender) => {
   if (!from.endsWith('@g.us')) return;
+  // Auth: only the previous game's players (or the bot itself) may rematch —
+  // old buttons used to let anyone in any chat wipe the current game.
+  const last = tttLastPlayers.get(from);
+  const allowed = !last || [last.X, last.O].filter(Boolean).includes(sender);
+  if (!allowed) {
+    return sock.sendMessage(from, {
+      text: `🚫 Only ${[last.X, last.O].filter(Boolean).map(j => '@' + j.split('@')[0]).join(' or ')} can start a rematch`,
+      mentions: [last.X, last.O].filter(Boolean),
+    }, { quoted: msg });
+  }
   const prefix = config.prefix || '.';
   tttGames.set('ttt_' + from, {
     board: Array(9).fill(' '),

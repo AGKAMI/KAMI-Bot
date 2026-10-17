@@ -9,7 +9,10 @@ let ffmpegPath;
 try {
   ffmpegPath = require('ffmpeg-static');
 } catch {
-  console.warn('[webp2mp4] ffmpeg-static not installed — media conversion unavailable');
+  // Fall back to the system binary — with the old undefined the ffmpeg
+  // command literally started with `"undefined"` and every conversion failed.
+  ffmpegPath = 'ffmpeg';
+  console.warn('[webp2mp4] ffmpeg-static not installed — falling back to system ffmpeg');
 }
 const { getTempDir, deleteTempFile } = require('./tempManager');
 

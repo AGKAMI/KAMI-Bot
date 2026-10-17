@@ -73,7 +73,7 @@ module.exports = {
       }
 
       // Atomic: remove app immediately to prevent double-accept race condition
-      database.removeApplicant(app.team, uid);
+      database.removeApplicant(app.groupJid || app.team, uid);
 
       // Resolve LID → phone JID for DMs (WhatsApp can't DM LID JIDs)
       const rawJid = app.jid;

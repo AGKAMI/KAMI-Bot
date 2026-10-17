@@ -27,19 +27,20 @@ module.exports = {
 
     // Check config.crewTeams for team JIDs
     const crewConfig = config.crewTeams || {};
-    const teamKey = Object.keys(crewConfig).find(
+    let teamKey = Object.keys(crewConfig).find(
       k => crewConfig[k]?.jid === from
     );
 
-    // Fallback: check database teamMap
+    // Fallback: check database teamMap — values are {jid, name} objects
+    // (the old `teamMap[k] === from` compared an object to a string, so
+    // teamMap-only groups were always told "isn't a crew team")
     if (!teamKey) {
       const teamData = database.getCrew();
-      const dbKey = Object.keys(teamData.teamMap || {}).find(
-        k => teamData.teamMap[k] === from
+      teamKey = Object.keys(teamData.teamMap || {}).find(
+        k => (teamData.teamMap[k]?.jid || teamData.teamMap[k]) === from
       );
-      if (dbKey) {
-        return extra.reply(`📋 ROSTER\n\nTeam: ${dbKey}\n\n_No members yet_`);
-      }
+    }
+    if (!teamKey) {
       extra.fail();
       return extra.reply(`❌ ERROR\n\nThis group isn't a crew team, shame`);
     }

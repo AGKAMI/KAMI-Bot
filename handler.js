@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Message Handler - Processes incoming messages and executes commands
  */
 
@@ -71,6 +71,10 @@ setInterval(() => {
   }
   // lidMappingCache: clear entirely (entries don't have timestamps, small cache)
   lidMappingCache.clear();
+  // Also clear the shared jidHelper cache — its negative lookups (missing
+  // mapping file cached as null) were pinned for the whole process lifetime,
+  // so a user whose mapping file appeared after first lookup stayed unresolvable.
+  try { require('./utils/jidHelper').clearLidCache(); } catch (e) { /* helper optional */ }
   // Bot action sets are "skip once" flags — keep them small but don't wipe entirely
   // Only prune if they've grown unbounded (indicates a bug in cleanup logic)
   if (_botDemoted.size > 500) _botDemoted.clear();
@@ -208,17 +212,24 @@ const isOwner = (sender) => {
   const normalizedSender = normalizeJidWithLid(sender);
   const normalizedSenderNumber = normalizeJid(normalizedSender);
   
-  // Check against owner numbers
+  // Canonicalize both sides (0833882383 → 27833823833) like buttonHelper.isOwnerJid —
+  // config.ownerNumber is stored in local SA format while jids are international,
+  // so raw digit equality never matched and every ownerOnly gate was denying the owner.
+  const canon = (n) => (database.canonicalNumber ? database.canonicalNumber(n) : String(n || '').replace(/\D/g, ''));
   const isOwnerResult = config.ownerNumber.some(owner => {
     const ownerNum = owner.replace(/\D/g, ''); // Remove any non-digits
     const senderNum = senderNumber.replace(/\D/g, '');
     const normalizedSenderNum = normalizedSenderNumber ? normalizedSenderNumber.replace(/\D/g, '') : '';
-    
-    // Check direct match, normalized match, or raw number match
-    return owner === senderNumber || 
+    const ownerCanon = canon(owner);
+    const senderCanon = canon(senderNum);
+    const normalizedSenderCanon = canon(normalizedSenderNum);
+
+    // Check direct match, normalized match, raw number match, or canonical match
+    return owner === senderNumber ||
            owner === normalizedSenderNumber ||
            ownerNum === senderNum ||
-           ownerNum === normalizedSenderNum;
+           ownerNum === normalizedSenderNum ||
+           (ownerCanon && (ownerCanon === senderCanon || ownerCanon === normalizedSenderCanon));
   });
   
   if (isOwnerResult) {
@@ -833,7 +844,7 @@ const handleMessage = async (sock, msg) => {
                 try {
                   await sock.sendMessage(from, {
                     text: `🚫 *DON'T TEXT THIS NUMBER* — it's a *bot*, nobody's here 🤖\n` +
-                          `📲 *Message me on:* 084 082 0712\n` +
+                          `📲 *Message me on:* ${config.contactNumber}\n` +
                           `⚠️ *One more message and your number is BLOCKED* ⛔🔒`
                   });
                 } catch (warnErr) {
@@ -876,7 +887,12 @@ const handleMessage = async (sock, msg) => {
     
         // Auto-React System
     try {
-      if (config.autoReact && msg.message && !msg.key.fromMe) {
+      // Runtime config comes from utils/autoReact persistence (the old code
+      // read config.autoReact, which .autoreact never updated — feature was
+      // dead: broken persistence AND a gate that always saw false).
+      let autoReactCfg = { enabled: !!config.autoReact, mode: config.autoReactMode || 'bot' };
+      try { autoReactCfg = require('./utils/autoReact').load(); } catch (e) { /* fallback to config */ }
+      if (autoReactCfg.enabled && msg.message && !msg.key.fromMe) {
         const content = msg.message.ephemeralMessage?.message || msg.message;
         const text =
           content.conversation ||
@@ -886,10 +902,10 @@ const handleMessage = async (sock, msg) => {
         const jid = msg.key.remoteJid;
         const emojis = ['❤️','🔥','👌','💀','😁','✨','👍','🤨','😎','😂','🤝','💫'];
         
-        const mode = config.autoReactMode || 'bot';
+        const mode = autoReactCfg.mode || 'bot';
 
         if (mode === 'bot') {
-          const prefixList = ['.', '/', '#'];
+          const prefixList = [config.prefix || '.'];
           const trimmed = (text || '').trim();
           if (prefixList.includes(trimmed[0])) {
             // Progressive reactions already stage known commands — don't
@@ -1239,38 +1255,12 @@ const handleMessage = async (sock, msg) => {
       // Silently ignore if bomb command doesn't exist or has errors
     }
     
-    // Check for active tictactoe games (before prefix check) — skip if no active games
-    try {
-      const tictactoeModule = require('./commands/fun/tictactoe');
-      if (tictactoeModule.handleTicTacToeMove && Object.keys(tictactoeModule.games || {}).length > 0) {
-        // Check if user is in an active game
-        const isInGame = Object.values(tictactoeModule.games || {}).some(room => 
-          room.id.startsWith('tictactoe') && 
-          [room.game.playerX, room.game.playerO].includes(sender) && 
-          room.state === 'PLAYING'
-        );
-        
-        if (isInGame) {
-          // User has active game, process input
-          const handled = await tictactoeModule.handleTicTacToeMove(sock, msg, {
-            from,
-            sender,
-            isGroup,
-            groupMetadata,
-            isOwner: isOwner(sender) || msg.key.fromMe,
-            isAdmin: await isAdmin(sock, sender, from, groupMetadata),
-            isBotAdmin: await isBotAdmin(sock, from, groupMetadata),
-            isMod: isMod(sender),
-            reply: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
-            react: (emoji) => sock.sendMessage(from, { react: { text: emoji, key: msg.key } }),
-            fail: () => {}
-          });
-          if (handled) return; // Don't process as command if move was handled
-        }
-      }
-    } catch (e) {
-      // Silently ignore if tictactoe command doesn't exist or has errors
-    }
+    // NOTE: the old tictactoe pre-prefix interception block was removed —
+    // it required commands/fun/tictactoe (never existed since the game
+    // moved to commands/games/), so it threw MODULE_NOT_FOUND and was
+    // silently swallowed on EVERY group message. The current game
+    // (commands/games/tictactoe.js) plays via !ttt <1-9> commands and
+    // needs no interception.
 
     // AFK check — auto-reply when AFK user sends message or someone mentions AFK user
     if (isGroup && afkModule && !msg.key.fromMe) {
@@ -1408,12 +1398,15 @@ const handleMessage = async (sock, msg) => {
                 } catch (e) {}
                 // Direct DM to the spammer so THEY get the warning personally
                 try {
-                  const targetJid = sender.includes('@lid') || sender.includes('@g.us')
-                    ? sender.split('@')[0] + '@s.whatsapp.net'
-                    : sender;
-                  await sock.sendMessage(targetJid, {
-                    text: `⚠️ *FLOOD WARNING*\n\nSho — slow down, you\'re spamming this group like there\'s no tomorrow.\n\n_One more burst and I\'m kicking you out_`
-                  });
+                  // Only DM a resolvable phone jid — LID digits aren't a phone
+                  // number, so `${lidDigits}@s.whatsapp.net` could land on a
+                  // stranger's account. Skip the DM when unmapped.
+                  const resolved = normalizeJidWithLid(sender);
+                  if (resolved && resolved.includes('@s.whatsapp.net')) {
+                    await sock.sendMessage(resolved, {
+                      text: `⚠️ *FLOOD WARNING*\n\nSho — slow down, you\'re spamming this group like there\'s no tomorrow.\n\n_One more burst and I\'m kicking you out_`
+                    });
+                  }
                 } catch (e) {}
               }
               verdictReact(sock, from, msg, '🚫');
@@ -1439,11 +1432,19 @@ const handleMessage = async (sock, msg) => {
 
         if (elapsed < slowSec && lastTime > 0) {
           const remaining = Math.ceil(slowSec - elapsed);
-          await sock.sendMessage(from, {
-            text: `🐢 *SLOWMODE*\n\n@${sender.split('@')[0]} — wait *${remaining}s* before sending again`,
-            mentions: [sender]
-          });
-          verdictReact(sock, from, msg, '🚫');
+          // Throttle the warning itself — previously EVERY message inside the
+          // cooldown window fired another group reply (a self-inflicted burst
+          // that added rate-limit pressure instead of calming things down).
+          const warnKey = `warn:${userKey}`;
+          const lastWarn = trackMap.get(warnKey) || 0;
+          if (Date.now() - lastWarn > slowSec * 1000) {
+            trackMap.set(warnKey, Date.now());
+            await sock.sendMessage(from, {
+              text: `🐢 *SLOWMODE*\n\n@${sender.split('@')[0]} — wait *${remaining}s* before sending again`,
+              mentions: [sender]
+            });
+            verdictReact(sock, from, msg, '🚫');
+          }
           return;
         }
 
@@ -1485,7 +1486,7 @@ const handleMessage = async (sock, msg) => {
       try {
         await sock.sendMessage(from, {
           text: `🚫 *DON'T TEXT THIS NUMBER* — it's a *bot*, nobody's here 🤖\n` +
-                `📲 *Message me on:* 084 082 0712\n` +
+                `📲 *Message me on:* ${config.contactNumber}\n` +
                 `⚠️ *One more message and your number is BLOCKED* ⛔🔒`
         });
         await updateBlockStatusSafe(sock, senderNorm, 'block');
@@ -1502,7 +1503,7 @@ const handleMessage = async (sock, msg) => {
       const lowerBody = (body || '').trim().toLowerCase();
       const prefixEscaped = config.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const prefix = config.prefix || '.';
-      const isAllowedCmd = new RegExp('^\\' + prefixEscaped +
+      const isAllowedCmd = new RegExp('^' + prefixEscaped +
         'crew\\s+(accept|deny|hire|reject|fire|applicants|pending)\\b').test(lowerBody);
       if (!isAllowedCmd) {
         verdictReact(sock, from, msg, '🚫');
@@ -2356,7 +2357,7 @@ const handleGroupUpdate = async (sock, update) => {
           let userAvatarBuf = null;
           try {
             const userPicUrl = await sock.profilePictureUrl(participantJid, 'image');
-            const userPicRes = await axios.get(userPicUrl, { responseType: 'arraybuffer' });
+            const userPicRes = await axios.get(userPicUrl, { responseType: 'arraybuffer', timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
             userAvatarBuf = Buffer.from(userPicRes.data);
           } catch (e) { /* no pic available */ }
           
@@ -2374,7 +2375,7 @@ const handleGroupUpdate = async (sock, update) => {
             // Security group: group PP only
             try {
               const groupPicUrl = await sock.profilePictureUrl(id, 'image');
-              const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer' });
+              const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer', timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
               bgBuffer = Buffer.from(groupPicRes.data);
             } catch (e) {
               const fallbackPath = path.join(__dirname, 'Picsart_25-11-17_09-42-48-275.png');
@@ -2393,7 +2394,7 @@ const handleGroupUpdate = async (sock, update) => {
             } else {
               try {
                 const groupPicUrl = await sock.profilePictureUrl(id, 'image');
-                const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer' });
+                const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer', timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
                 bgBuffer = Buffer.from(groupPicRes.data);
               } catch (e) {
                 const fallbackPath = path.join(__dirname, 'Picsart_25-11-17_09-42-48-275.png');
@@ -2480,7 +2481,7 @@ const handleGroupUpdate = async (sock, update) => {
           let userAvatarBuf = null;
           try {
             const userPicUrl = await sock.profilePictureUrl(participantJid, 'image');
-            const userPicRes = await axios.get(userPicUrl, { responseType: 'arraybuffer' });
+            const userPicRes = await axios.get(userPicUrl, { responseType: 'arraybuffer', timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
             userAvatarBuf = Buffer.from(userPicRes.data);
           } catch (e) { /* no pic */ }
           
@@ -2507,7 +2508,7 @@ const handleGroupUpdate = async (sock, update) => {
             // Security group: group PP only
             try {
               const groupPicUrl = await sock.profilePictureUrl(id, 'image');
-              const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer' });
+              const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer', timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
               bgBuffer = Buffer.from(groupPicRes.data);
             } catch (e) {
               const fallbackPath = path.join(__dirname, 'Picsart_25-11-17_09-42-48-275.png');
@@ -2524,7 +2525,7 @@ const handleGroupUpdate = async (sock, update) => {
             } else {
               try {
                 const groupPicUrl = await sock.profilePictureUrl(id, 'image');
-                const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer' });
+                const groupPicRes = await axios.get(groupPicUrl, { responseType: 'arraybuffer', timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
                 bgBuffer = Buffer.from(groupPicRes.data);
               } catch (e) {
                 const fallbackPath = path.join(__dirname, 'Picsart_25-11-17_09-42-48-275.png');
@@ -2806,7 +2807,12 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
 
 
 // Anti-call feature initializer
+// WeakSet guard: 'open' can fire more than once per socket — without this the
+// call listener stacks and every incoming call gets N rejects/blocks/messages.
+const _antiCallSocks = new WeakSet();
 const initializeAntiCall = (sock, isOwner) => {
+  if (_antiCallSocks.has(sock)) return;
+  _antiCallSocks.add(sock);
   sock.ev.on('call', async (calls) => {
     try {
       // Re-require per call: anticall/mode rewrite config.js + bust the

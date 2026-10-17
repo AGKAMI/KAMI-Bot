@@ -35,7 +35,7 @@ module.exports = {
 
       if (!cmd) {
         extra.fail();
-        return extra.reply(`âŒ *NOT FOUND*\n No command called "${cmdName}"\n💡 Try ${prefix}menu for the whole list.`);
+        return extra.reply(`❌ *NOT FOUND*\n No command called "${cmdName}"\n💡 Try ${prefix}menu for the whole list.`);
       }
 
       const aliases = cmd.aliases && cmd.aliases.length > 0

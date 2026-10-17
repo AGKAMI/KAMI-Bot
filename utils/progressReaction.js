@@ -85,10 +85,13 @@ const REPLY_DENY_RE = new RegExp(
  */
 const classifyReply = (text) => {
   if (typeof text !== 'string') return 'none';
+  // Strip WhatsApp bold/italic/strike markers so "*❌ ERROR*" (used across
+  // many owner commands) still classifies as fail instead of 'none'
+  const t = text.replace(/[*_~]/g, '');
   // A 🚫-leading reply IS a not-allowed signal — no phrase matching needed.
-  if (/^\s*🚫/.test(text)) return 'deny';
-  if (!REPLY_FAIL_RE.test(text)) return 'none';
-  return REPLY_DENY_RE.test(text) ? 'deny' : 'fail';
+  if (/^\s*🚫/.test(t)) return 'deny';
+  if (!REPLY_FAIL_RE.test(t)) return 'none';
+  return REPLY_DENY_RE.test(t) ? 'deny' : 'fail';
 };
 
 // Fallbacks for any command that forgets to declare a stage.

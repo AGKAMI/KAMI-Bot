@@ -55,10 +55,30 @@ function _loadToCache(filePath) {
     const raw = fs.readFileSync(filePath, 'utf-8');
     data = JSON.parse(raw);
   } catch (e) {
+    if (e.code !== 'ENOENT') {
+      // Existing file but unreadable/corrupt — stash a backup before falling
+      // back to {} so the next flush can't silently overwrite the original.
+      try {
+        const bak = `${filePath}.corrupt-${Date.now()}.bak`;
+        fs.copyFileSync(filePath, bak);
+        console.error(`[DB] CORRUPT ${path.basename(filePath)} backed up to ${path.basename(bak)}: ${e.message}`);
+      } catch (e2) {
+        console.error(`[DB] ${path.basename(filePath)} unreadable and backup failed: ${e2.message}`);
+      }
+    }
     data = {};
   }
   _cache.set(filePath, data);
   return data;
+}
+
+// Atomic write: temp file + rename. A panel restart/OOM kill mid-write must
+// never leave a truncated JSON on disk (that truncation is what fed the
+// corrupt-read → {} → overwrite cascade above).
+function _atomicWrite(filePath, dataStr) {
+  const tmp = `${filePath}.tmp`;
+  fs.writeFileSync(tmp, dataStr);
+  fs.renameSync(tmp, filePath);
 }
 
 // Load all DBs into memory at startup
@@ -81,8 +101,10 @@ setInterval(() => {
     const data = _cache.get(filePath);
     if (data === undefined) continue;
     try {
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+      _atomicWrite(filePath, JSON.stringify(data, null, 2));
     } catch (e) {
+      // Keep the path dirty so the next cycle retries instead of dropping the write
+      _dirty.add(filePath);
       console.error(`[DB-FLUSH] Error writing ${path.basename(filePath)}: ${e.message}`);
     }
   }
@@ -106,7 +128,7 @@ const flushAll = () => {
     const data = _cache.get(filePath);
     if (data === undefined) continue;
     try {
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+      _atomicWrite(filePath, JSON.stringify(data, null, 2));
     } catch (e) {
       console.error(`[DB] flushAll FAILED: ${filePath}: ${e.message}`);
     }
@@ -123,7 +145,7 @@ const flushDB = (filePath) => {
   const data = _cache.get(filePath);
   if (data === undefined) return false;
   try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    _atomicWrite(filePath, JSON.stringify(data, null, 2));
     _dirty.delete(filePath);
     return true;
   } catch (e) {
@@ -338,8 +360,10 @@ const getTeamAdmins = () => {
 const addTeamAdmin = (number) => {
   const settings = getGlobalSettings();
   if (!settings.teamAdmins) settings.teamAdmins = [];
-  const normalized = number.replace(/[\+\-\s]/g, '');
-  if (!settings.teamAdmins.includes(normalized)) {
+  const stripped = number.replace(/[\+\-\s]/g, '');
+  const normalized = canonicalNumber(stripped) || stripped;
+  // Compare canonically so legacy 083…-style entries don't double-add
+  if (!settings.teamAdmins.some(n => (canonicalNumber(n) || n) === normalized)) {
     settings.teamAdmins.push(normalized);
     return writeDB(GLOBAL_DB, settings);
   }
@@ -349,21 +373,29 @@ const addTeamAdmin = (number) => {
 const removeTeamAdmin = (number) => {
   const settings = getGlobalSettings();
   if (!settings.teamAdmins) return false;
-  const normalized = number.replace(/[\+\-\s]/g, '');
-  settings.teamAdmins = settings.teamAdmins.filter(n => n !== normalized);
+  const stripped = number.replace(/[\+\-\s]/g, '');
+  const normalized = canonicalNumber(stripped) || stripped;
+  const before = settings.teamAdmins.length;
+  settings.teamAdmins = settings.teamAdmins.filter(n => (canonicalNumber(n) || n) !== normalized);
+  if (settings.teamAdmins.length === before) return false;
   return writeDB(GLOBAL_DB, settings);
 };
 
 const isTeamAdmin = (jid) => {
   if (!jid) return false;
-  // Owner always counts
+  // Owner always counts — canonicalize like isApprovedNumber/buttonHelper.isOwnerJid
+  // (raw digit equality never matched 083…-formatted config entries against
+  // international jids, so the owner was denied by every team-admin gate).
   const fullNumber = (jid || '').split('@')[0];        // 1234567890:0
   const bareNumber = fullNumber.split(':')[0];           // 1234567890
-  const ownerNumbers = (config.ownerNumber || []).map(n => n.replace(/[\+\-\s]/g, ''));
-  if (ownerNumbers.includes(fullNumber) || ownerNumbers.includes(bareNumber)) return true;
-  const admins = getTeamAdmins();
-  // Check both formats — teamAdmins may store with or without :device suffix
-  return admins.includes(fullNumber) || admins.includes(bareNumber);
+  const canon = (n) => canonicalNumber(n) || String(n || '').replace(/\D/g, '');
+  const targets = [canon(fullNumber), canon(bareNumber)];
+  const ownerNumbers = (config.ownerNumber || []).map(canon);
+  if (ownerNumbers.some(o => o && targets.includes(o))) return true;
+  const admins = getTeamAdmins().map(canon);
+  // Check both formats — teamAdmins may store with or without :device suffix,
+  // and legacy entries may be raw (083…) while new ones are canonical (2783…)
+  return admins.some(a => a && targets.includes(a));
 };
 
 // ==================== Crew Functions ====================
@@ -377,8 +409,11 @@ const getTeam = (groupJid) => {
   const crew = getCrew();
   if (!crew.groups) crew.groups = {};
   if (!crew.groups[groupJid]) {
+    // In-memory placeholder only — the old writeDB here meant every stray
+    // lookup (wrong team key, bare .event in a non-crew group) permanently
+    // polluted crew.json with phantom groups. Real groups get written by
+    // updateTeam / explicit accept flows.
     crew.groups[groupJid] = { members: {}, events: {}, applicants: {} };
-    writeDB(CREW_DB, crew);
   }
   return crew.groups[groupJid];
 };
@@ -540,6 +575,22 @@ const getApplicants = (groupJid) => {
 
 // Remove applicant by key within a group
 const removeApplicant = (groupJid, applicantKey) => {
+  // Some call sites (accept.js race guard, applyInteractive orphan cleanup)
+  // historically passed a team abbreviation ('KSSPS') instead of the group
+  // jid — that used to create a phantom crew group via getTeam and the real
+  // applicant was never removed. Resolve by UID across teams when the first
+  // arg isn't a jid so the removal still lands.
+  if (!groupJid || !String(groupJid).includes('@')) {
+    const crew = getCrew();
+    const key = String(applicantKey || '').toUpperCase();
+    for (const [gid, team] of Object.entries(crew.groups || {})) {
+      if (team.applicants && team.applicants[key]) {
+        delete team.applicants[key];
+        return updateTeam(gid, team);
+      }
+    }
+    return false;
+  }
   const team = getTeam(groupJid);
   if (!team.applicants || !team.applicants[applicantKey]) return false;
   delete team.applicants[applicantKey];
@@ -725,10 +776,15 @@ const removeTeamAdminTeam = (adminNumber, teamKey) => {
   if (!settings.teamAdminTeams?.[adminNumber]) return false;
   const before = settings.teamAdminTeams[adminNumber].length;
   settings.teamAdminTeams[adminNumber] = settings.teamAdminTeams[adminNumber].filter(t => t !== teamKey);
+  const removed = settings.teamAdminTeams[adminNumber].length < before;
   if (settings.teamAdminTeams[adminNumber].length === 0) {
     delete settings.teamAdminTeams[adminNumber];
   }
-  if (settings.teamAdminTeams[adminNumber]?.length < before) {
+  // Must test `removed`, not the post-delete length: after the delete above,
+  // `settings.teamAdminTeams[adminNumber]?.length` is undefined → the old
+  // check never fired, the delete never persisted, and the removed admin's
+  // team mapping resurrected on the next restart.
+  if (removed) {
     return writeDB(GLOBAL_DB, settings);
   }
   return false;
@@ -739,7 +795,10 @@ const hasPendingApplicationsForAnyTeam = (adminJid) => {
   const settings = getGlobalSettings();
   const adminNumber = (adminJid || '').replace(/@.*$/, '');
   const teamAdminTeams = settings.teamAdminTeams || {};
-  const teams = teamAdminTeams[adminNumber] || [];
+  // Keys may be stored raw or canonical, and the incoming jid may be either —
+  // check every form so a format mismatch can't hide pending applications.
+  const lookupKeys = [...new Set([adminNumber, canonicalNumber(adminNumber)].filter(Boolean))];
+  const teams = [...new Set(lookupKeys.flatMap(k => teamAdminTeams[k] || []))];
   
   for (const teamKey of teams) {
     // Check both config.crewTeams and teamMap
@@ -845,14 +904,19 @@ const pruneTeamAdmins = (currentAdminsByGroup) => {
     }
   }
   
-  // Also always keep owner numbers
-  const ownerNumbers = (config.ownerNumber || []).map(n => n.replace(/[\+\-\s]/g, ''));
+  // Also always keep owner numbers (canonicalized to match the filter below)
+  const ownerNumbers = (config.ownerNumber || []).map(n => canonicalNumber(n) || n.replace(/[\+\-\s]/g, ''));
   for (const num of ownerNumbers) {
     allCurrentAdmins.add(num);
   }
   
   const before = settings.teamAdmins.length;
-  settings.teamAdmins = settings.teamAdmins.filter(n => allCurrentAdmins.has(n));
+  // Compare canonically: stored entries may be legacy 083… while the live
+  // admin jids are international 2783… — raw Set.has would prune real admins.
+  settings.teamAdmins = settings.teamAdmins.filter(n => {
+    const c = canonicalNumber(n) || n;
+    return allCurrentAdmins.has(c) || allCurrentAdmins.has(n);
+  });
   if (settings.teamAdmins.length < before) {
     writeDB(GLOBAL_DB, settings);
     return before - settings.teamAdmins.length;

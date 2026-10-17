@@ -22,7 +22,15 @@ function toDmJid(sender) {
 }
 
 // ── Load catalog ────────────────────────────────────────────
-const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../catalog.json'), 'utf8'));
+// Module-load read: a corrupt/missing catalog.json used to crash the
+// ENTIRE bot at boot. Fail soft — the order command reports the problem
+// instead of taking everything down.
+let catalog = { landingPage: '', flags: {}, security: {}, police: {}, premium: {}, mods: {}, accounts: {} };
+try {
+  catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../catalog.json'), 'utf8'));
+} catch (e) {
+  console.error('[ORDER] catalog.json unreadable — order command degraded:', e.message);
+}
 
 // ── Category definitions ────────────────────────────────────
 const CATEGORIES = [

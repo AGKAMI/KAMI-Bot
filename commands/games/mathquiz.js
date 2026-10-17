@@ -34,7 +34,7 @@ module.exports = {
       b = Math.floor(Math.random() * 20) + 1;
       if (op === '*' && diff === 'hard') { a = Math.floor(Math.random() * 50) + 1; b = Math.floor(Math.random() * 50) + 1; }
     }
-    ans = op === '+' ? a + b : op === '-' ? a - b : a * b;
+    ans = op === '+' ? a + b : op === '-' ? a - b : op === '/' ? a / b : a * b;
     expr = a + ' ' + op + ' ' + b;
     quiz.set(ctx.from, { ans, expr });
     return ctx.reply('🔢 ' + expr + ' = ?');

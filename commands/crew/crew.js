@@ -19,7 +19,7 @@ const prefix = config.prefix || '.';
 const subHandlers = {};
 const handlersPath = path.join(__dirname);
 fs.readdirSync(handlersPath)
-  .filter(f => f.endsWith('.js') && f !== 'crew.js' && f !== 'crewHelpers.js' && f !== 'setroles.js' && f !== 'viewroles.js')
+  .filter(f => f.endsWith('.js') && f !== 'crew.js' && f !== 'crewHelpers.js')
   .forEach(file => {
     const handler = require(path.join(handlersPath, file));
     const subName = handler.subName || handler.name;
