@@ -50,3 +50,8 @@ build/
 database/crew.json
 database/ownerAddedMembers.json
 database/ownerPromotedAdmins.json
+session.zip
+session_backup/
+*.py
+_repro.js
+check.js
