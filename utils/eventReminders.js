@@ -27,7 +27,10 @@ function nowMinutesSAST() {
 }
 
 async function checkReminders(sock) {
-  const db = require('./database');
+  // utils/ → database.js is one level up — './database' resolved to
+  // utils/database (missing), so every reminder run died with
+  // "Cannot find module './database'"
+  const db = require('../database');
   const crew = db.getCrew();
   const teamMap = crew.teamMap || {};
   const nowMin = nowMinutesSAST();
