@@ -8,6 +8,8 @@ const axios = require('axios');
 const { execFile } = require('child_process');
 const util = require('util');
 const fs = require('fs');
+const fsp = require('fs').promises;
+const os = require('os');
 const path = require('path');
 const execFilePromise = util.promisify(execFile);
 const config = require('../../config');
@@ -19,6 +21,49 @@ const { withTimeout } = require('../../utils/withTimeout');
 const URL_SEND_TIMEOUT_MS = 60000;
 // Umbrella watchdog; the env override is a test seam only.
 const WATCHDOG_MS = Number(process.env.FB_WATCHDOG_MS) || 180000;
+// WhatsApp hard-caps video around 16MB; we also cap the on-disk stream so a
+// huge/hostile URL can never balloon the process (256MB box).
+const MAX_VIDEO_BYTES = 16 * 1024 * 1024;
+const DOWNLOAD_TIMEOUT_MS = 120000;
+
+// Stream a remote video to a size-capped temp file so the bytes never sit in
+// RAM (Baileys' `video: { url }` buffers the whole thing → OOM kills the bot).
+// Returns { path, size } — caller MUST unlink when done. Throws if oversized.
+async function downloadToTempFile(remoteUrl) {
+  const tmpPath = path.join(os.tmpdir(), `fb-${Date.now()}-${Math.floor(Math.random() * 1e6)}.mp4`);
+  const res = await axios.get(remoteUrl, {
+    responseType: 'stream',
+    timeout: DOWNLOAD_TIMEOUT_MS,
+    maxContentLength: MAX_VIDEO_BYTES,
+    maxBodyLength: MAX_VIDEO_BYTES,
+    proxy: false,
+  });
+  const declared = Number(res.headers['content-length']) || 0;
+  if (declared > MAX_VIDEO_BYTES) {
+    res.data.destroy?.();
+    throw new Error(`video too large (${Math.round(declared / 1048576)}MB > 16MB)`);
+  }
+  await new Promise((resolve, reject) => {
+    let written = 0;
+    const out = fs.createWriteStream(tmpPath);
+    res.data.on('data', (chunk) => {
+      written += chunk.length;
+      if (written > MAX_VIDEO_BYTES) {
+        out.destroy();
+        res.data.destroy?.();
+        reject(new Error('video too large (>16MB)'));
+      }
+    });
+    res.data.on('error', (e) => { out.destroy(); reject(e); });
+    out.on('error', (e) => { res.data.destroy?.(); reject(e); });
+    out.on('finish', resolve);
+    res.data.pipe(out);
+  }).catch(async (e) => {
+    await fsp.unlink(tmpPath).catch(() => {});
+    throw e;
+  });
+  return { path: tmpPath, size: written };
+}
 
 // Repo-shipped yt-dlp binary (bin/yt-dlp) preferred, then config path, then bare command
 const repoYtDlp = path.join(__dirname, '..', '..', 'bin', 'yt-dlp');
@@ -192,36 +237,24 @@ module.exports = {
         const caption = `*DOWNLOADED BY KAMI BOT*\n\n${videoData.title ? '📝 ' + videoData.title : ''}\n_${voice.lead('affirm')}, enjoy_`;
         let sendSuccess = false;
 
-        // Method 1: direct URL (Baileys fetches it — bound it)
+        // Single bounded path: stream to a size-capped temp file, send from
+        // disk. Never `video: { url }` (Baileys buffers it all in RAM → OOM)
+        // and never a full in-RAM buffer. Capped at 16MB = WhatsApp's limit.
+        let tmpFile = null;
         try {
-          console.log('.fb: Method 1 direct URL');
+          console.log('.fb: streaming (capped 16MB)');
+          tmpFile = await downloadToTempFile(videoData.url);
+          console.log(`.fb: got ${(tmpFile.size / 1048576).toFixed(1)}MB, sending`);
           await withTimeout(sock.sendMessage(extra.from, {
-            video: { url: videoData.url },
+            video: { url: tmpFile.path },
+            mimetype: 'video/mp4',
             caption,
-          }, { quoted: msg }), URL_SEND_TIMEOUT_MS, 'URL send');
+          }, { quoted: msg }), URL_SEND_TIMEOUT_MS, 'video send');
           sendSuccess = true;
         } catch (e1) {
-          console.log('.fb: Method 1 failed:', e1.message);
-          if (aborted) return;
-          // Method 2: download buffer (500MB limit)
-          try {
-            console.log('.fb: Method 2 buffer');
-            const videoResponse = await axios.get(videoData.url, {
-              responseType: 'arraybuffer',
-              timeout: 120000,
-              maxContentLength: 16 * 1024 * 1024, // 16MB — WhatsApp limit
-              proxy: false,
-            });
-            const buffer = Buffer.from(videoResponse.data);
-            await sock.sendMessage(extra.from, {
-              video: buffer,
-              mimetype: 'video/mp4',
-              caption,
-            }, { quoted: msg });
-            sendSuccess = true;
-          } catch (e2) {
-            console.log('.fb: Method 2 failed:', e2.message);
-          }
+          console.log('.fb: download/send failed:', e1.message);
+        } finally {
+          if (tmpFile) fsp.unlink(tmpFile.path).catch(() => {});
         }
 
         if (aborted) return;
