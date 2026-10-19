@@ -393,6 +393,12 @@ function shouldSendMenu(jid) {
 
 async function sweep(sock) {
   const db = require('../database');
+
+  // Self-healing seed — boot-time groupMetadata can fail before the
+  // socket is ready; the sweep runs every minute, so retry seeding here
+  // until every watched group is grandfathered
+  try { await ensureSeed(sock); } catch (e) {}
+
   const now = Date.now();
   for (const [key, g] of Object.entries(grace)) {
     try {
