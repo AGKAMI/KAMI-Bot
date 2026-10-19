@@ -221,6 +221,13 @@ module.exports = {
         role: role,
       });
 
+      // Join-gate ledger — the bot vouches for this member in this group
+      // (belt-and-braces: the group-participants event with author=bot
+      // also marks it, but events can be missed/raced)
+      try {
+        require('../../utils/joinGate').markBotAdded(teamGroupJid, applicantJid, 'application-accept', extra.sender);
+      } catch (e) {}
+
       // Force-flush the crew DB — the roster write MUST survive. The
       // debounced 2s flush silently lost accept-time roster writes across
       // every process lifetime (audit entries proved accepts happened

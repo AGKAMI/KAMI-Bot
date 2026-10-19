@@ -17,6 +17,8 @@ const { hasActiveSession, getApplicantState, sendProgressiveResponse } = require
 // Event wizard — static require so its onButton handlers register at boot
 // (lazy require would leave ewiz:/evrsvp: taps unroutable until first command)
 const eventWizard = require('./commands/crew/eventWizard');
+// Join gate — security-group membership gatekeeper (ledger + grace)
+const joinGate = require('./utils/joinGate');
 const { runWithReactions, stageEmoji, classifyReply } = require('./utils/progressReaction');
 const { updateBlockStatusSafe } = require('./utils/jidHelper');
 const nameCache = require('./utils/nameCache');
@@ -786,6 +788,29 @@ const handleMessage = async (sock, msg) => {
                   return;
                 }
               }
+              // Join-gate grace (kicked from a security group, 48h apply
+              // window) — button taps and apply commands pass; ANY text
+              // gets the two-button menu (apply / make order), never a
+              // block until the 48h clock runs out (sweep handles that)
+              else if (joinGate.isGraceActive(dmSender)) {
+                const isButtonTap = !!(msg.message?.templateButtonReplyMessage || msg.message?.buttonsResponseMessage || msg.message?.interactiveResponseMessage);
+                if (!isButtonTap && !isApplyCmd) {
+                  if (joinGate.shouldSendMenu(dmSender)) {
+                    const menu = joinGate.graceMenuText();
+                    try {
+                      await sock.sendMessage(from, {
+                        text: menu.text,
+                        buttons: menu.buttons,
+                        footer: menu.footer,
+                      }, { quoted: msg });
+                    } catch (menuErr) {
+                      console.error('[JOIN-GATE] menu reply failed:', menuErr.message);
+                    }
+                  }
+                  return;
+                }
+                // button tap / apply command — let through
+              }
               // Temp-allowed (unblocked via Make Order / Apply button) —
               // button taps and apply commands pass; plain-text DMs get ONE
               // nudge (they may be texting "kssmp" instead of tapping a
@@ -1478,10 +1503,12 @@ const handleMessage = async (sock, msg) => {
     
     // Check self mode (private mode) - only owner/approved can use commands (DMs ONLY, groups unaffected)
     // Pending applicants, team admins and temp-allowed (apply/order invite) users are
-    // exempt so the .crew apply / accept / deny flow works in DMs.
+    // exempt so the .crew apply / accept / deny flow works in DMs. Join-gate
+    // grace users are exempt too — the early blocker already menu-replies
+    // their texts and passes their apply commands.
     const globalSettings = database.getGlobalSettings();
     const senderNorm = normalizeJidWithLid(sender) || sender;
-    if (!isGroup && globalSettings.selfMode && !isOwner(senderNorm) && !database.isApprovedNumber(senderNorm) && !database.isTeamAdmin(senderNorm) && !database.hasPendingApplication(senderNorm) && !hasActiveSession(senderNorm) && !isTempAllowed(senderNorm) && !isTempAllowed(sender) && !isTempAllowed(from)) {
+    if (!isGroup && globalSettings.selfMode && !isOwner(senderNorm) && !database.isApprovedNumber(senderNorm) && !database.isTeamAdmin(senderNorm) && !database.hasPendingApplication(senderNorm) && !hasActiveSession(senderNorm) && !isTempAllowed(senderNorm) && !isTempAllowed(sender) && !isTempAllowed(from) && !joinGate.isGraceActive(senderNorm) && !joinGate.isGraceActive(sender)) {
       // Send warning then block (owner can never reach here due to isOwner check above)
       try {
         await sock.sendMessage(from, {
@@ -1784,6 +1811,20 @@ const handleGroupUpdate = async (sock, update) => {
           const jid = typeof participant === 'string' ? participant : (participant.id || participant.jid || participant.participant);
           if (!jid || jid === sock.user?.id) continue;
           
+          // Join-gate ledger cleanup — when someone leaves or is removed
+          // by a HUMAN/self (not by the bot's own kick, which must keep
+          // its 'kicked' marker for rejoin recognition), clear their entry
+          // so a future legitimate join starts fresh
+          if (joinGate.isWatched(id) && (action === 'remove' || action === 'leave')) {
+            const actorJid = author || participant;
+            const botDigits = String(sock.user?.id || '').split('@')[0].replace(/\D/g, '');
+            const actorDigits = String(actorJid || '').split('@')[0].replace(/\D/g, '');
+            const actorIsBot = botDigits && actorDigits === botDigits;
+            if (!actorIsBot) {
+              try { joinGate.removeLedger(id, jid); } catch (e) {}
+            }
+          }
+
           // Build JID variants for matching (handle LID/PN)
           const jidVariants = buildComparableIds(jid);
           let isInCrew = jidVariants.some(v => database.getCrewMember(id, v));
@@ -1805,6 +1846,25 @@ const handleGroupUpdate = async (sock, update) => {
           }
           
           if (action === 'add') {
+            // ── Join-gate — security-group membership gatekeeper ──
+            // Evaluates EVERY join into the four security groups: bot-added
+            // / bot-invited / pending / accepted pass; anyone else (human
+            // admin invites, leaked links) is kicked + DM'd + 48h grace.
+            // Runs first — a gatekeeper kick must win over the welcome.
+            if (joinGate.isWatched(id)) {
+              try {
+                const gateKicked = await joinGate.evaluateJoin(sock, id, jid, author);
+                if (gateKicked) {
+                  // skip the welcome for gate-kicked joiners (same pattern
+                  // as the kick-ban enforcement below)
+                  bannedKicked.add(jid);
+                  for (const v of jidVariants) bannedKicked.add(v);
+                }
+              } catch (gateErr) {
+                console.error('[JOIN-GATE] hook error:', gateErr.message);
+              }
+            }
+
             // ── Kick-ban enforcement ──────────────────────
             // Owner-kicked members: anyone else re-adding them (native UI,
             // invite join, another admin) gets them kicked straight back out.

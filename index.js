@@ -306,6 +306,7 @@ let lastLoggedQr = null;
 let _crewSyncTimer = null;
 let _evtRemindTimer = null;
 let _dbBackupTimer = null;
+let _joinGateTimer = null;
 // Latest connected socket. Reconnects build a NEW sock object — the 30-min
 // interval is registered once, so it must read this live reference or every
 // periodic run after a reconnect dies with "Connection Closed" forever.
@@ -820,6 +821,25 @@ async function startBot() {
         }, 2 * 60 * 1000).unref();
       } catch (e) {
         console.error('[DB-BACKUP] scheduling failed:', e.message);
+      }
+
+      // Join gate — grandfather current security-group members once, then
+      // sweep the 48h grace clocks every minute (warnings + blocks)
+      try {
+        const joinGate = require('./utils/joinGate');
+        setTimeout(() => {
+          joinGate.ensureSeed(sock).catch(e =>
+            console.error('[JOIN-GATE] seed failed:', e.message));
+          if (!_joinGateTimer) {
+            _joinGateTimer = setInterval(() => {
+              joinGate.sweep(sock).catch(e =>
+                console.error('[JOIN-GATE] sweep failed:', e.message));
+            }, 60 * 1000);
+            _joinGateTimer.unref();
+          }
+        }, 90 * 1000).unref();
+      } catch (e) {
+        console.error('[JOIN-GATE] scheduling failed:', e.message);
       }
 
       // Team admin auto-detection — scan all crew groups for WhatsApp admins
