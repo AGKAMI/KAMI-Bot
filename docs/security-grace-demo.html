@@ -314,9 +314,8 @@ function onJoin(adder){
   if(!state.explained){
     dmMsg('kicknotice','KAMI Bot',
       `🚫 *You were removed from “Royal Security” (SSRS)*\n\n`+
-      `I don't recognise you. You weren't added by me, you didn't apply for this team, `+
-      `and you weren't added by KAMI (via \`${'!crew add'}\` / \`${'!add'}\`).\n\n`+
-      `You have a *2-day (48h) grace period* to apply for this team — after that I'll block this number.`);
+      `KAMI doesn't recognise you. You weren't added by KAMI and you didn't apply for this team.\n\n`+
+      `You have a *2-day (48h) grace period* to apply for this team — after that, this number gets blocked.`);
     state.explained=true;
     log('dm','kick notice sent (one-time explanation)');
   }
