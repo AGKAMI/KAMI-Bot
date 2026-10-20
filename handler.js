@@ -2116,7 +2116,18 @@ const handleGroupUpdate = async (sock, update) => {
                   result: offered ? 'readd-offered' : 'readd-offer-failed',
                 });
 
-                // DM the owner
+                // DM the owner — name the group and the admin who kicked
+                // (author is known from the event; resolve LID → PN for a
+                // readable @mention)
+                let kickGname = '';
+                try { kickGname = await protectionDm.groupName(sock, id); } catch (e) {}
+                let authorJid = author;
+                try {
+                  const { normalizeJidWithLid } = require('./utils/jidHelper');
+                  authorJid = normalizeJidWithLid(author) || author;
+                } catch (e) {}
+                const authorNum = authorJid.split(':')[0].split('@')[0];
+
                 const ownerNumbers = config.ownerNumber || [];
                 for (const ownerNum of ownerNumbers) {
                   try {
@@ -2124,12 +2135,11 @@ const handleGroupUpdate = async (sock, update) => {
                     await sock.sendMessage(ownerJid, {
                       text:
                         `🛡️ *PROTECTION* 💀\n\n` +
-                        `@${memberNum} got kicked out of a crew group\n\n` +
+                        `@${memberNum} got kicked out of *${kickGname || 'the group'}* by @${authorNum}\n\n` +
                         (offered
                           ? `Sent them a bring-me-back offer, ${voice.tag('neutral')}\nTheir call — protection stays armed either way`
-                          : `Couldn't DM them the offer (blocked or privacy settings)\nProtection stays armed`) +
-                        `\nCheck who did it, ${voice.tag('neutral')}`,
-                      mentions: [jid],
+                          : `Couldn't DM them the offer (blocked or privacy settings)\nProtection stays armed`),
+                      mentions: [jid, authorJid],
                     });
                   } catch (e) {}
                 }
@@ -2141,6 +2151,8 @@ const handleGroupUpdate = async (sock, update) => {
             // Skip if kick protection already handled this event
             if (!kickProtectionFired && isProtected && !wasBotKicked) {
               const memberNum = jid.split(':')[0].split('@')[0];
+              let leftGname = '';
+              try { leftGname = await protectionDm.groupName(sock, id); } catch (e) {}
               const ownerNumbers = config.ownerNumber || [];
               for (const ownerNum of ownerNumbers) {
                 try {
@@ -2148,7 +2160,7 @@ const handleGroupUpdate = async (sock, update) => {
                   await sock.sendMessage(ownerJid, {
                     text:
                       `👋 *MEMBER LEFT*\n\n` +
-                      `@${memberNum} left a crew group\n\n` +
+                      `@${memberNum} left *${leftGname || 'the group'}*\n\n` +
                       `_If they must stay, get KAMI to add them back hey_`,
                     mentions: [jid],
                   });

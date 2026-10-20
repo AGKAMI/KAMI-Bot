@@ -84,7 +84,7 @@ async function groupName(sock, groupJid) {
     const meta = await sock.groupMetadata(groupJid);
     if (meta && meta.subject) return meta.subject;
   } catch (e) {}
-  return 'a crew group';
+  return 'a group';
 }
 
 async function memberInGroup(sock, groupJid, memberJid) {
@@ -208,7 +208,7 @@ onButton('protect:back:', async (sock, msg, from, sender, btnId) => {
         sock,
         `🛡️ *PROTECTION* 💀\n\n` +
           `@${digitsOf(offer.memberJid)} accepted the bring-me-back offer\n` +
-          `They're back in the crew group`,
+          `They're back in *${gname}*`,
         offer.memberJid
       );
     } else {
@@ -264,4 +264,4 @@ onButton('protect:pass:', async (sock, msg, from, sender, btnId) => {
   }
 });
 
-module.exports = { offerReadd, takeOffer, candidatesFor, sameMember };
+module.exports = { offerReadd, takeOffer, candidatesFor, sameMember, groupName };

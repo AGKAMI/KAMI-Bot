@@ -320,13 +320,12 @@ function onAdminKick(){
      {label:"🚫 Nah I'm good",fn:"ev('tappass')"}],
     `KAMI Bot Mini · protect:back:${state.offer.nonce}`);
 
-  // owner ping (real copy from handler.js)
+  // owner ping (real copy from handler.js — group + kicker are named)
   ownerMsg('offernotice','KAMI Bot',
     `🛡️ *PROTECTION* 💀\n\n`+
-    `@${state.number} got kicked out of a crew group\n\n`+
+    `@${state.number} got kicked out of *${state.group}* by @27799900001\n\n`+
     `Sent them a bring-me-back offer, hey\n`+
-    `Their call — protection stays armed either way\n`+
-    `Check who did it, hey`);
+    `Their call — protection stays armed either way`);
   render();
 }
 
@@ -338,7 +337,7 @@ function onVolLeave(){
   // the previously-dead left-tracker now fires
   ownerMsg('sys','KAMI Bot',
     `👋 *MEMBER LEFT*\n\n`+
-    `@${state.number} left a crew group\n\n`+
+    `@${state.number} left *${state.group}*\n\n`+
     `_If they must stay, get KAMI to add them back hey_`);
   render();
 }
@@ -426,7 +425,7 @@ function onTapBack(nonceArg){
   ownerMsg('offernotice','KAMI Bot',
     `🛡️ *PROTECTION* 💀\n\n`+
     `@${state.number} accepted the bring-me-back offer\n`+
-    `They're back in the crew group`);
+    `They're back in *${state.group}*`);
   log('tap','back tap → groupParticipantsUpdate add ✓ → re-added, owner notified');
   render();
 }
