@@ -22,6 +22,8 @@ const eventWizard = require('./commands/crew/eventWizard');
 const protectionDm = require('./utils/protectionDm');
 // Join gate — security-group membership gatekeeper (ledger + grace)
 const joinGate = require('./utils/joinGate');
+// Honest group-participant outcomes (status codes — no-throw ≠ success)
+const { groupAction } = require('./utils/groupActions');
 const { runWithReactions, stageEmoji, classifyReply } = require('./utils/progressReaction');
 const { updateBlockStatusSafe } = require('./utils/jidHelper');
 const nameCache = require('./utils/nameCache');
@@ -1180,14 +1182,13 @@ const handleMessage = async (sock, msg) => {
                     // Mark as bot-initiated so protection doesn't re-add (prevents loop)
                     _botKicked.add(sender);
                     setTimeout(() => _botKicked.delete(sender), 5000);
-                    try {
-                      await sock.groupParticipantsUpdate(from, [sender], 'remove');
-                    } catch (e) {
-                      console.error('Failed to kick for antitag:', e);
-                    }
+                    const antitagKick = await groupAction(sock, from, [sender], 'remove');
+                    if (!antitagKick.ok) console.error('Failed to kick for antitag:', antitagKick.error);
                     const usernames = [`@${sender.split('@')[0]}`];
                     await sock.sendMessage(from, {
-                      text: `🚫 *KAMI SECURITY*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: you were tagging everyone in the group_\n\n_That's a warning — push it and you're gone._`,
+                      text: antitagKick.ok
+                        ? `🚫 *KAMI SECURITY*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: you were tagging everyone in the group_\n\n_That's a warning — push it and you're gone._`
+                        : `⚠️ *KAMI SECURITY*\n\nCouldn't remove @${sender.split('@')[0]} (${antitagKick.error || 'not allowed'})\n\n_Reason: you were tagging everyone in the group_\n\n_KAMI, check my admin status — they're still here._`,
                       mentions: [sender],
                     }, { quoted: msg });
                   }
@@ -1348,16 +1349,18 @@ const handleMessage = async (sock, msg) => {
                     mentions: [sender]
                   });
                 } else if (action === 'kick') {
-                  await sock.sendMessage(from, {
-                    text: `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _kicked — bad word detected_`,
-                    mentions: [sender]
-                  });
                   // Mark as bot-initiated so protection doesn't re-add (prevents loop)
                   _botKicked.add(sender);
                   setTimeout(() => _botKicked.delete(sender), 5000);
-                  try {
-                    await sock.groupParticipantsUpdate(from, [sender], 'remove');
-                  } catch (e) {}
+                  // Honest: kick first, then claim what happened — "_kicked_"
+                  // used to fire before the attempt and regardless of outcome
+                  const badwordKick = await groupAction(sock, from, [sender], 'remove');
+                  await sock.sendMessage(from, {
+                    text: badwordKick.ok
+                      ? `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _kicked — bad word detected_`
+                      : `🚫 *BAD WORD*\n\n@${sender.split('@')[0]} _dropped a bad word — I couldn't kick them (${badwordKick.error || 'not allowed'})_`,
+                    mentions: [sender]
+                  });
                 }
                 return;
               }
@@ -1388,16 +1391,21 @@ const handleMessage = async (sock, msg) => {
               if (tracker.count >= limit) {
               floodTracker.delete(key);
               if (action === 'kick') {
-                await sock.sendMessage(from, {
-                  text: `🚫 *FLOOD DETECTED*\n\n@${sender.split('@')[0]} _kicked for spamming_`,
-                  mentions: [sender]
-                });
                 // Mark as bot-initiated so protection doesn't re-add (prevents loop)
                 _botKicked.add(sender);
                 setTimeout(() => _botKicked.delete(sender), 5000);
-                try {
-                  await sock.groupParticipantsUpdate(from, [sender], 'remove');
-                } catch (e) {}
+                // Honest: kick FIRST, then claim what actually happened —
+                // "_kicked for spamming_" used to fire before the attempt
+                const floodKick = await groupAction(sock, from, [sender], 'remove');
+                await sock.sendMessage(from, floodKick.ok
+                  ? {
+                      text: `🚫 *FLOOD DETECTED*\n\n@${sender.split('@')[0]} _kicked for spamming_`,
+                      mentions: [sender]
+                    }
+                  : {
+                      text: `🚫 *FLOOD DETECTED*\n\n@${sender.split('@')[0]} _is flooding — I couldn't kick them (${floodKick.error || 'not allowed'})_`,
+                      mentions: [sender]
+                    });
               } else if (action === 'delete') {
                 // Delete the offending messages
                 try {
@@ -1900,13 +1908,8 @@ const handleGroupUpdate = async (sock, update) => {
                   } catch {}
                   for (const v of banVariants) if (!candidates.includes(v)) candidates.push(v);
                   candidates.push(jid);
-                  for (const c of candidates) {
-                    try {
-                      await sock.groupParticipantsUpdate(id, [c], 'remove');
-                      removed = true;
-                      break;
-                    } catch {}
-                  }
+                  const banKick = await groupAction(sock, id, candidates, 'remove');
+                  removed = banKick.ok;
                 } catch (e) {
                   console.error(`[KICK BAN] Remove failed for ${jid.split('@')[0]}:`, e.message);
                 }
@@ -1985,16 +1988,16 @@ const handleGroupUpdate = async (sock, update) => {
             const wasDemoted = [jid, ...jidVariants].some(v => database.isOwnerDemoted(id, v));
             if (wasPromoted && !wasDemoted) {
               console.log(`[MEMBER PROTECTION] Protected admin ${jid.split('@')[0]} rejoined ${id} — auto-promoting`);
-              try {
-                await sock.groupParticipantsUpdate(id, [jid], 'promote');
+              const rePromote = await groupAction(sock, id, [jid], 'promote');
+              if (rePromote.ok) {
                 await sock.sendMessage(jid, {
                   text:
                     `👑 *WELCOME BACK*\n\n` +
                     `You're the admin again\n` +
                     `_Yoh, KAMI-Bot never forgets who put you there 💀_`,
                 });
-              } catch (e) {
-                console.error(`[MEMBER PROTECTION] Failed to auto-promote ${jid.split('@')[0]}:`, e.message);
+              } else {
+                console.error(`[MEMBER PROTECTION] Failed to auto-promote ${jid.split('@')[0]}: ${rePromote.error}`);
               }
             }
           } else if (action === 'remove') {
@@ -2041,13 +2044,8 @@ const handleGroupUpdate = async (sock, update) => {
                   }
                 } catch {}
                 candidateJids.push(jidToAdd);
-                for (const jid of candidateJids) {
-                  try {
-                    await sock.groupParticipantsUpdate(id, [jid], 'add');
-                    return true;
-                  } catch {}
-                }
-                return false;
+                const ownerAdd = await groupAction(sock, id, candidateJids, 'add');
+                return ownerAdd.ok;
               };
 
               reAdded = await tryAddOwner(jid);
@@ -2214,15 +2212,13 @@ const handleGroupUpdate = async (sock, update) => {
                   });
                   if (isTargetOwner && !module.exports._botDemoted.has(jid)) {
                     console.log(`[OWNER PROTECTION] External demote of owner ${number} in ${id} — re-promoting`);
-                    try {
-                      await sock.groupParticipantsUpdate(id, [jid], 'promote');
-                    } catch (e) {}
+                    const ownerRePromote = await groupAction(sock, id, [jid], 'promote');
                     database.logProtection({
                       action: 'demote',
                       target: jid,
                       triggeredBy: author || 'unknown',
                       group: id,
-                      result: 'owner-re-promoted',
+                      result: ownerRePromote.ok ? 'owner-re-promoted' : 'owner-re-promote-failed',
                     });
                     continue; // Skip all other demote processing
                   }
@@ -2235,16 +2231,14 @@ const handleGroupUpdate = async (sock, update) => {
                     // Skip if the owner did this demotion (check via botDemoted tracking)
                     if (!module.exports._botDemoted.has(jid)) {
                       console.log(`[ADMIN PROTECTION] External demote of protected admin ${number} in ${id} — re-promoting`);
-                      try {
-                        await sock.groupParticipantsUpdate(id, [jid], 'promote');
-                      } catch (e) {}
-                      // Log the protection event
+                      const adminRePromote = await groupAction(sock, id, [jid], 'promote');
+                      // Log the protection event — result reflects reality
                       database.logProtection({
                         action: 'demote',
                         target: jid,
                         triggeredBy: author || 'unknown',
                         group: id,
-                        result: 're-promoted',
+                        result: adminRePromote.ok ? 're-promoted' : 're-promote-failed',
                       });
                       // Notify owner(s) — name the group (already-fetched
                       // meta.subject) and the demoter (event author, LID-resolved)
@@ -2706,12 +2700,21 @@ const handleAntilink = async (sock, msg, groupMetadata) => {
           // Mark as bot-initiated so protection doesn't re-add (prevents loop)
           _botKicked.add(sender);
           setTimeout(() => _botKicked.delete(sender), 5000);
-          await sock.groupParticipantsUpdate(from, [sender], 'remove');
-          await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-LINK, HEY*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: 3 links dropped, that's enough_\n\n_That was your last warning shame._`,
-            mentions: [sender]
-          });
-          database.clearWarnings(from, sender);
+          const antilinkKick = await groupAction(sock, from, [sender], 'remove');
+          if (antilinkKick.ok) {
+            await sock.sendMessage(from, {
+              text: `🚫 *ANTI-LINK, HEY*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: 3 links dropped, that's enough_\n\n_That was your last warning shame._`,
+              mentions: [sender]
+            });
+            database.clearWarnings(from, sender);
+          } else {
+            // Honest: refused kicks resolve without throwing — warnings stay
+            // for someone still in the group
+            await sock.sendMessage(from, {
+              text: `🚫 *ANTI-LINK, HEY*\n\n@${sender.split('@')[0]} hit the limit but I couldn't kick them (${antilinkKick.error || 'not allowed'})\n\n_KAMI, check my admin status shame — warnings stay._`,
+              mentions: [sender]
+            });
+          }
         } else {
           const remaining = maxWarnings - warnCount;
           await sock.sendMessage(from, { 
@@ -2802,9 +2805,11 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
         // Mark as bot-initiated so protection doesn't re-add (prevents loop)
         _botKicked.add(sender);
         setTimeout(() => _botKicked.delete(sender), 5000);
-        await sock.groupParticipantsUpdate(from, [sender], 'remove');
-        await sock.sendMessage(from, { 
-          text: `📌 Group tag spotted — user's gone.`,
+        const antigroupKick = await groupAction(sock, from, [sender], 'remove');
+        await sock.sendMessage(from, {
+          text: antigroupKick.ok
+            ? `📌 Group tag spotted — user's gone.`
+            : `📌 Group tag spotted — but I couldn't remove them (${antigroupKick.error || 'not allowed'}) — KAMI, check my admin status`,
           mentions: [sender]
         });
       } catch (e) {
@@ -2828,12 +2833,20 @@ const handleAntigroupmention = async (sock, msg, groupMetadata) => {
           // Mark as bot-initiated so protection doesn't re-add (prevents loop)
           _botKicked.add(sender);
           setTimeout(() => _botKicked.delete(sender), 5000);
-          await sock.groupParticipantsUpdate(from, [sender], 'remove');
-          await sock.sendMessage(from, { 
-            text: `🚫 *ANTI-GROUP TAG*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: you tagged the whole group 3 times_\n\n_That was your last warning, shame._`,
-            mentions: [sender]
-          });
-          database.clearWarnings(from, sender);
+          const antigroupWarnKick = await groupAction(sock, from, [sender], 'remove');
+          if (antigroupWarnKick.ok) {
+            await sock.sendMessage(from, {
+              text: `🚫 *ANTI-GROUP TAG*\n\n${bold('REMOVED')} @${sender.split('@')[0]}\n\n_Reason: you tagged the whole group 3 times_\n\n_That was your last warning, shame._`,
+              mentions: [sender]
+            });
+            database.clearWarnings(from, sender);
+          } else {
+            // Honest: refused kicks resolve without throwing — warnings stay
+            await sock.sendMessage(from, {
+              text: `🚫 *ANTI-GROUP TAG*\n\n@${sender.split('@')[0]} hit the limit but I couldn't remove them (${antigroupWarnKick.error || 'not allowed'})\n\n_KAMI, check my admin status — warnings stay._`,
+              mentions: [sender]
+            });
+          }
         } else {
           const remaining = maxWarnings - warnCount;
           await sock.sendMessage(from, { 

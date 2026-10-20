@@ -124,8 +124,14 @@ module.exports = {
             const attempts = database.incrementKickAttempts(chatId, target);
 
             if (attempts >= 2) {
-              // 2nd attempt — demote the violator
-              try { await sock.groupParticipantsUpdate(chatId, [extra.sender], 'demote'); } catch (e) {}
+              // 2nd attempt — demote the violator. Honest: only claim it
+              // when WhatsApp confirms status 200 (a refused demote resolves
+              // without throwing and used to report "got demoted 💀").
+              const { groupAction } = require('../../utils/groupActions');
+              const violatorDemote = await groupAction(
+                chatId, extra.sender,
+                [extra.sender, ...buildComparableIds(extra.sender)], 'demote'
+              );
               database.resetKickAttempts(chatId, target);
               database.logProtection({
                 action: 'kick',
@@ -133,8 +139,20 @@ module.exports = {
                 targetName: null,
                 triggeredBy: extra.sender,
                 group: chatId,
-                result: 'demoted-violator',
+                result: violatorDemote.ok ? 'demoted-violator' : 'demote-failed',
               });
+
+              if (!violatorDemote.ok) {
+                await sock.sendMessage(chatId, {
+                  text:
+                    `🚨 *CAUGHT IN 4K* 💀\n\n` +
+                    `${mention(extra.sender)} tried again to kick ${mention(target)}, bru\n\n` +
+                    `I couldn't demote them this time (${violatorDemote.error || 'not allowed'}) — ` +
+                    `KAMI, check my admin status hey`,
+                  mentions: [extra.sender, target],
+                });
+                return;
+              }
 
               // Group — show who's boss
               await sock.sendMessage(chatId, {
@@ -312,7 +330,7 @@ module.exports = {
           (alreadyGone.length
             ? `ℹ️ _${alreadyGone.length} weren't in the group anymore_\n\n`
             : '') +
-          (extra.isOwner
+          ((extra.isOwner && (kickedOk.length || alreadyGone.length))
             ? `🚫 *Banned from re-adding* — only you can bring them back, ${voice.tag('neutral')}\n\n`
             : '') +
           `_${voice.react('ok')}_`,

@@ -104,13 +104,11 @@ async function memberInGroup(sock, groupJid, memberJid) {
 }
 
 async function tryReadd(sock, groupJid, memberJid) {
-  for (const c of candidatesFor(memberJid)) {
-    try {
-      await sock.groupParticipantsUpdate(groupJid, [c], 'add');
-      return true;
-    } catch (e) {}
-  }
-  return false;
+  // Honest: refused adds resolve without throwing — a 403 used to return
+  // true here and the caller sent "WELCOME BACK" for someone still outside.
+  const { groupAction } = require('./groupActions');
+  const r = await groupAction(sock, groupJid, candidatesFor(memberJid), 'add');
+  return r.ok;
 }
 
 async function notifyOwner(sock, text, mentionJid) {
@@ -191,6 +189,9 @@ onButton('protect:back:', async (sock, msg, from, sender, btnId) => {
     const reAdded = await tryReadd(sock, offer.groupJid, offer.memberJid);
 
     if (reAdded) {
+      // Vouch for the re-add in the join-gate ledger (belt & braces — the
+      // add event's author can arrive as the bot's LID and miss the actor check)
+      try { require('./joinGate').markBotAdded(offer.groupJid, offer.memberJid, 'protection-offer', 'member-button'); } catch (e) {}
       await sock.sendMessage(from, {
         text:
           `✅ *WELCOME BACK* 💪\n\n` +
@@ -219,7 +220,7 @@ onButton('protect:back:', async (sock, msg, from, sender, btnId) => {
       await sock.sendMessage(from, {
         text:
           `😅 *COULDN'T ADD YOU DIRECTLY*\n\n` +
-          `Privacy settings blocked the pull-back\n\n` +
+          `WhatsApp blocked the pull-back — their privacy settings or I'm not admin\n\n` +
           (inviteLink
             ? `🔗 *Jump back in here:*\n${inviteLink}\n\nOnce you're back you're protected again`
             : `Ask KAMI to pull you back in, hey`),

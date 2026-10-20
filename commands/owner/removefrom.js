@@ -167,9 +167,9 @@ module.exports = {
         for (const v of [...targetVariants, target]) handler._botKicked.delete(v);
       }, 5000);
 
-      // Remove with device-suffix + LID fallback
-      let removeFailed = false;
-      let lastError = null;
+      // Remove with device-suffix + LID fallback — honest status codes
+      // (a refused remove resolves without throwing; it used to count as out)
+      const { groupAction } = require('../../utils/groupActions');
       const candidateJids = [];
       const stripped = target.replace(/:\d+@/, '@');
       if (stripped !== target) candidateJids.push(stripped);
@@ -180,19 +180,11 @@ module.exports = {
       }
       candidateJids.push(target);
 
-      for (const jid of candidateJids) {
-        try {
-          await sock.groupParticipantsUpdate(groupJid, [jid], 'remove');
-          removeFailed = false;
-          break;
-        } catch (e) {
-          removeFailed = true;
-          lastError = e;
-        }
-      }
+      const removeOutcome = await groupAction(sock, groupJid, candidateJids, 'remove');
+      const removeFailed = !removeOutcome.ok;
 
       if (removeFailed) {
-        const reason = lastError?.message || 'all JID variants rejected';
+        const reason = removeOutcome.error || 'all JID variants rejected';
         console.error('[REMOVEFROM] WhatsApp remove failed:', reason);
         extra.fail();
         return extra.reply(

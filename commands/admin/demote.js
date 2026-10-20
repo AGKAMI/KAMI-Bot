@@ -199,13 +199,17 @@ module.exports = {
             return;
           } else {
             // 2nd attempt — demote violator, re-promote protected admin
-            try {
-              await sock.groupParticipantsUpdate(extra.from, [target], 'promote');
-            } catch (e) {}
-
-            try {
-              await sock.groupParticipantsUpdate(extra.from, [extra.sender], 'demote');
-            } catch (e) {}
+            // Honest: both ops status-checked — refused ops resolve without
+            // throwing, and every claim below used to fire regardless.
+            const { groupAction } = require('../../utils/groupActions');
+            const restoreAdmin = await groupAction(
+              sock, extra.from,
+              [target, ...buildComparableIds(target)], 'promote'
+            );
+            const violatorDown = await groupAction(
+              sock, extra.from,
+              [extra.sender, ...buildComparableIds(extra.sender)], 'demote'
+            );
 
             database.removeOwnerPromotedAdmin(extra.from, target);
 
@@ -216,51 +220,76 @@ module.exports = {
               targetName: null,
               triggeredBy: extra.sender,
               group: extra.from,
-              result: 'demoted-violator',
+              result: !violatorDown.ok
+                ? 'demote-failed'
+                : restoreAdmin.ok ? 'demoted-violator' : 'demoted-violator-restore-failed',
             });
 
-            // Group — show who's boss
+            // Group — show who's boss (only what really happened)
+            const attemptLine = violatorDown.ok
+              ? `${mention(extra.sender)} got demoted 💀\n`
+              : `${mention(extra.sender)} tried again — I couldn't demote them (${violatorDown.error || 'not allowed'})\n`;
+            const backLine = restoreAdmin.ok
+              ? `${mention(target)} back where they belong\n\n`
+              : `⚠️ Couldn't re-promote ${mention(target)} (${restoreAdmin.error || 'not allowed'}) — KAMI, sort my admin status hey\n\n`;
             await sock.sendMessage(extra.from, {
               text:
-                `🚨 *CAUGHT IN 4K* 📸\n\n` +
-                `${mention(extra.sender)} got demoted 💀\n` +
+                `🚨 *CAUGHT IN 4K* 💸\n\n` +
+                attemptLine +
                 (ownerNum
                   ? `Kept trying to touch ${mention(ownerJid)}'s admin, bru\n\n`
                   : `Kept trying to touch KAMI's admin, bru\n\n`) +
-                `${mention(target)} back where they belong\n\n` +
+                backLine +
                 `_KAMI-Bot doesn't play_ 👑`,
               mentions: ownerNum
                 ? [target, extra.sender, ownerJid]
                 : [target, extra.sender],
             });
 
-            // DM victim
+            // DM victim — claims mirror the real op outcomes
             try {
+              const victimHeader = (violatorDown.ok || restoreAdmin.ok)
+                ? `🛡️ *SORTED* 💪\n\n`
+                : `🛡️ *PROTECTION* 💪\n\n`;
+              const victimLines = violatorDown.ok
+                ? `They got demoted for it\n`
+                : `I couldn't demote them this time (${violatorDown.error || 'not allowed'})\n`;
+              const victimAdmin = restoreAdmin.ok
+                ? `You're back as admin\n\n`
+                : `⚠️ I couldn't restore your admin (${restoreAdmin.error || 'not allowed'}) — KAMI needs to sort it\n\n`;
               await sock.sendMessage(target, {
                 text:
-                  `🛡️ *SORTED* 💪\n\n` +
+                  victimHeader +
                   `${mention(extra.sender)} tried demoting you twice hey 💀\n` +
-                  `They got demoted for it\n` +
-                  `You're back as admin\n\n` +
+                  victimLines +
+                  victimAdmin +
                 `${voice.say('protected')}`,
                 mentions: [extra.sender],
               });
             } catch (e) {}
 
-            // DM violator
-            try {
-              await sock.sendMessage(extra.sender, {
-                text:
-                  `🚨 *YOU GOT DEMOTED* 💀\n\n` +
-                  `Kept trying to demote KAMI's admin, bru\n` +
-                  `Now you're regular\n\n` +
-                  `Yoh you really didn't listen the first time tho 😭\n` +
-                  `_Should've left it alone_`,
-              });
-            } catch (e) {}
+            // DM violator — only when the demote actually landed
+            if (violatorDown.ok) {
+              try {
+                await sock.sendMessage(extra.sender, {
+                  text:
+                    `🚨 *YOU GOT DEMOTED* 💀\n\n` +
+                    `Kept trying to demote KAMI's admin, bru\n` +
+                    `Now you're regular\n\n` +
+                    `Yoh you really didn't listen the first time tho 😭\n` +
+                    `_Should've left it alone_`,
+                });
+              } catch (e) {}
+            }
 
-            // DM owner
+            // DM owner — claims mirror the real op outcomes
             const ownerNumbers2 = config.ownerNumber || [];
+            const ownerDemoteLine = violatorDown.ok
+              ? `They got demoted for it\n`
+              : `⚠️ I couldn't demote them (${violatorDown.error || 'not allowed'})\n`;
+            const ownerBackLine = restoreAdmin.ok
+              ? `${mention(target)} back where they belong\n\n`
+              : `⚠️ Couldn't restore ${mention(target)}'s admin — check my status hey\n\n`;
             for (const oNum of ownerNumbers2) {
               try {
                 const oJid2 = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
@@ -268,8 +297,8 @@ module.exports = {
                   text:
                     `🛡️ *ADMIN PROTECTION* 💀\n\n` +
                     `${mention(extra.sender)} tried demoting ${mention(target)} twice\n` +
-                    `They got demoted for it\n` +
-                    `${mention(target)} back where they belong\n\n` +
+                    ownerDemoteLine +
+                    ownerBackLine +
                     `${voice.say('protected')}`,
                   mentions: [target, extra.sender],
                 });

@@ -203,11 +203,18 @@ function hasAcceptedForTeam(groupJid, jid) {
 function isBotActor(authorJid, sock) {
   if (!authorJid) return false;
   const botJid = (sock.user && sock.user.id) || '';
-  if (jidsMatch(authorJid, botJid)) return true;
-  // the bot's own LID (mapping files) — digits compare covers the rest
+  if (botJid && jidsMatch(authorJid, botJid)) return true;
+  // The bot's own LID — add events can carry the LID as author while
+  // sock.user.id is the PN jid, and the bot's OWN LID→PN mapping usually
+  // doesn't exist in our store → jidsMatch alone missed it and the gate
+  // kicked members the bot itself was adding. Compare lid explicitly.
+  const botLid = (sock.user && sock.user.lid) || '';
+  if (botLid && jidsMatch(authorJid, botLid)) return true;
   const ad = digitsOf(authorJid);
   const bd = digitsOf(botJid);
   if (ad && bd && ad === bd) return true;
+  const bl = digitsOf(botLid);
+  if (ad && bl && ad === bl) return true;
   return false;
 }
 
@@ -228,18 +235,14 @@ async function kickAndGrace(sock, groupJid, teamKey, joinerJid, authorJid) {
   }
   candidates.push(joinerJid);
 
-  let kicked = false;
-  for (const c of candidates) {
-    try {
-      await sock.groupParticipantsUpdate(groupJid, [c], 'remove');
-      kicked = true;
-      break;
-    } catch (e) { /* try next variant */ }
-  }
-  console.log(`[JOIN-GATE] kicked ${joinerJid.split('@')[0]} from ${teamKey} (bot=${kicked ? 'yes' : 'FAILED'}, addedBy=${authorJid || 'unknown'})`);
+  const { groupAction } = require('./groupActions');
+  const kickOutcome = await groupAction(sock, groupJid, candidates, 'remove');
+  const kicked = kickOutcome.ok;
+  console.log(`[JOIN-GATE] kicked ${joinerJid.split('@')[0]} from ${teamKey} (bot=${kicked ? 'yes' : 'FAILED' + (kickOutcome.error ? ' — ' + kickOutcome.error : '')}, addedBy=${authorJid || 'unknown'})`);
 
-  // 2. Ledger the kick so a rejoin is recognised
-  markLedger(groupJid, joinerJid, 'kicked', authorJid || 'unknown');
+  // 2. Ledger the kick so a rejoin is recognised — only when they're
+  // actually out (a refused kick used to be ledgered as if it happened)
+  if (kicked) markLedger(groupJid, joinerJid, 'kicked', authorJid || 'unknown');
 
   // 3. Grace record — 48h clock, no extension on rejoin
   const now = Date.now();
@@ -279,8 +282,10 @@ async function kickAndGrace(sock, groupJid, teamKey, joinerJid, authorJid) {
           `I don't recognise you, hey — you just landed in *${teamName}* and:\n\n` +
           `• I didn't add you\n` +
           `• You never applied for that team\n` +
-          `• Kami didn't \`${config.prefix || '.'}crew add\` you either\n\n` +
-          `So I removed you from *${teamName}*. No bad blood 😅\n\n` +
+          `• KAMI didn't add you either\n\n` +
+          (kicked
+            ? `So I removed you from *${teamName}*. No bad blood 😅\n\n`
+            : `⚠️ I couldn't pull you out myself — KAMI, check my admin status 😅\n\n`) +
           `⚠️ *You have 48 hours to apply for ${teamName}* — ` +
           `after that this DM gets blocked for good.\n\n` +
           `👇 Sort yourself out:`,
@@ -306,6 +311,11 @@ async function evaluateJoin(sock, groupJid, joinerJid, authorJid) {
     if (!joinerJid) return false;
     if (joinerJid === (sock.user && sock.user.id)) return false; // the bot itself
     if (isOwnerJid(joinerJid)) { markLedger(groupJid, joinerJid, 'owner', authorJid); return false; }
+
+    // The OWNER performed this add — KAMI's decision overrides the gate.
+    // Native WhatsApp adds carry the owner as author (not the bot), and
+    // the bot used to kick people the owner was personally adding.
+    if (authorJid && isOwnerJid(authorJid)) { markLedger(groupJid, joinerJid, 'owner-actor', authorJid); return false; }
 
     const teamKey = teamKeyFor(groupJid);
 

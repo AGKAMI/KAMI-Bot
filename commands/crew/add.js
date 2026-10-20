@@ -141,10 +141,13 @@ module.exports = {
 
       // Join-gate ledger — !crew add is a bot-sanctioned add (the bot
       // performs the groupParticipantsUpdate, but ledger it explicitly
-      // in case the participants event is missed)
-      try {
-        require('../../utils/joinGate').markBotAdded(extra.from, target, 'crew-add', extra.sender);
-      } catch (e) {}
+      // in case the participants event is missed). Only ledger when the
+      // add ACTUALLY landed — a failed add must not vouch for a stranger.
+      if (addOutcome.ok) {
+        try {
+          require('../../utils/joinGate').markBotAdded(extra.from, target, 'crew-add', extra.sender);
+        } catch (e) {}
+      }
 
       // Track owner-added members for protection
       if (extra.isOwner) {

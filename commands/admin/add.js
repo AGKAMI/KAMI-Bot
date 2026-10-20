@@ -119,9 +119,23 @@ module.exports = {
         return;
       }
 
-      // FAILED — their privacy settings block the add.
-      // Group message (Pattern A), then DM them the invite + the group's profile picture.
+      // FAILED — report the ACTUAL reason. Only a 403 earns the invite-DM
+      // flow below; the old code claimed "privacy settings — I've DM'd them
+      // the invite" for every refusal (rate limits, numbers not on WA…).
       extra.fail();
+      const failCode = String(addOutcome.code || '');
+      if (failCode !== '403') {
+        const why = (failCode === '404' || failCode === '406')
+          ? `${mention(target)} isn't on WhatsApp, hey — check the number ${voice.tag('neutral')}`
+          : failCode === '425'
+            ? `WhatsApp is rate-limiting me — try again in a minute ${voice.tag('neutral')}`
+            : `Couldn't add ${mention(target)} — WhatsApp refused${failCode ? ` (${failCode})` : ''}` +
+              `\n\n_${addOutcome.error || 'unknown reason'}_`;
+        return extra.reply(`❌ ERROR\n\n${why}`);
+      }
+      // 403 — their privacy settings block direct adds (I AM admin here —
+      // botAdminNeeded gate verified that before this command ran).
+      // Group message (Pattern A), then DM them the invite + the group's profile picture.
       await sock.sendMessage(extra.from, {
         text:
           `❌ ERROR\n\n` +

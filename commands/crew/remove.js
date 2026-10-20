@@ -77,6 +77,7 @@ module.exports = {
       // Also kick from WhatsApp group — honest status codes (a 403
       // "not admin / privacy" return used to count as kicked)
       const { groupAction } = require('../../utils/groupActions');
+      const { buildComparableIds } = require('../../utils/jidHelper');
       let kickedFromGroup = false;
       let kickError = null;
       try {

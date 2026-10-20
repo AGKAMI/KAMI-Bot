@@ -485,7 +485,12 @@ const _runKickPass = async (sock, teamsByJid, participantsByGroup, inactiveByGro
     setTimeout(() => { for (const v of guardIds) handler._botKicked.delete(v); }, 5000);
 
     try {
-      await sock.groupParticipantsUpdate(groupJid, [targetId], 'remove');
+      // Honest: refused kicks resolve without throwing — a non-200 used to
+      // fall through as success (flag deleted + "Removed from" claimed).
+      // Throw into the existing catch so the flag is KEPT (documented policy).
+      const { groupAction } = require('./groupActions');
+      const kickRes = await groupAction(sock, groupJid, [targetId], 'remove');
+      if (!kickRes.ok) throw new Error(kickRes.error || 'kick refused');
       const pmap = participantsByGroup.get(groupJid);
       if (pmap) for (const dd of memberDigits) pmap.delete(dd); // don't mention them in today's notice
       if (_state.flagged[groupJid]) delete _state.flagged[groupJid][entryJid];
@@ -857,7 +862,11 @@ const runGroupKick = async (sock, groupJid) => {
     setTimeout(() => { for (const v of guardIds) handler._botKicked.delete(v); }, 5000);
 
     try {
-      await sock.groupParticipantsUpdate(groupJid, [d.targetId], 'remove');
+      // Honest: status-check — a refused kick resolved without throwing and
+      // counted as kicked (flag deleted). Throw → catch keeps the flag.
+      const { groupAction } = require('./groupActions');
+      const kickRes = await groupAction(sock, groupJid, [d.targetId], 'remove');
+      if (!kickRes.ok) throw new Error(kickRes.error || 'kick refused');
       if (pmap) for (const dd of d.memberDigits) pmap.delete(dd);
       if (_state.flagged[groupJid]) delete _state.flagged[groupJid][d.entryJid];
       _saveState();
