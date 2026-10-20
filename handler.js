@@ -17,6 +17,9 @@ const { hasActiveSession, getApplicantState, sendProgressiveResponse } = require
 // Event wizard — static require so its onButton handlers register at boot
 // (lazy require would leave ewiz:/evrsvp: taps unroutable until first command)
 const eventWizard = require('./commands/crew/eventWizard');
+// Protection re-add offers — static require so protect:back:/protect:pass:
+// button taps are routable from boot (see utils/protectionDm.js)
+const protectionDm = require('./utils/protectionDm');
 // Join gate — security-group membership gatekeeper (ledger + grace)
 const joinGate = require('./utils/joinGate');
 const { runWithReactions, stageEmoji, classifyReply } = require('./utils/progressReaction');
@@ -2082,94 +2085,54 @@ const handleGroupUpdate = async (sock, update) => {
               continue;
             }
             if (isProtected && !wasBotKicked) {
-              kickProtectionFired = true;
-              console.log(`[MEMBER PROTECTION] Protected member ${jid.split('@')[0]} removed from ${id} — attempting re-add`);
+              // Exit-method check — Baileys delivers every exit as action:'remove'
+              // but `author` tells us HOW it happened:
+              //   author = human admin → kicked via native WhatsApp UI
+              //   author = undefined   → they left the group voluntarily
+              // bot-command kicks never reach here (_botKicked marker upstream)
+              if (!author) {
+                // Left on purpose — no re-add offer. kickProtectionFired stays
+                // false so the left-tracker below notifies the owner as designed.
+                console.log(`[MEMBER PROTECTION] Protected member ${jid.split('@')[0]} left ${id} voluntarily — no re-add offer`);
+              } else {
+                kickProtectionFired = true;
+                console.log(`[MEMBER PROTECTION] Protected member ${jid.split('@')[0]} kicked from ${id} by ${author} — sending re-add offer`);
 
-              const memberNum = jid.split(':')[0].split('@')[0];
-              let reAdded = false;
+                const memberNum = jid.split(':')[0].split('@')[0];
 
-              // Try to re-add the protected member (strip device suffix first, then LID fallback)
-              const tryAdd = async (jidToAdd) => {
-                const candidateJids = [];
-                // Strip device suffix: 27683993925:0@s.whatsapp.net → 27683993925@s.whatsapp.net
-                const stripped = jidToAdd.replace(/:\d+@/, '@');
-                if (stripped !== jidToAdd) candidateJids.push(stripped);
-                // LID → PN mapping
+                let offered = false;
                 try {
-                  const { normalizeJidWithLid, buildComparableIds } = require('./utils/jidHelper');
-                  const resolved = normalizeJidWithLid(jidToAdd);
-                  if (resolved && resolved !== jidToAdd && resolved !== stripped) candidateJids.push(resolved);
-                  for (const v of buildComparableIds(jidToAdd)) {
-                    if (!candidateJids.includes(v)) candidateJids.push(v);
-                  }
-                } catch {}
-                candidateJids.push(jidToAdd);
-                for (const jid of candidateJids) {
-                  try {
-                    await sock.groupParticipantsUpdate(id, [jid], 'add');
-                    return true;
-                  } catch {}
+                  offered = await protectionDm.offerReadd(sock, id, jid, author);
+                } catch (e) {
+                  console.error('[MEMBER PROTECTION] offer DM error:', e.message);
                 }
-                return false;
-              };
 
-              reAdded = await tryAdd(jid);
+                // Log the protection event
+                database.logProtection({
+                  action: 'kick',
+                  target: jid,
+                  triggeredBy: author,
+                  group: id,
+                  result: offered ? 'readd-offered' : 'readd-offer-failed',
+                });
 
-              // Log the protection event
-              database.logProtection({
-                action: 'kick',
-                target: jid,
-                triggeredBy: 'unknown',
-                group: id,
-                result: reAdded ? 're-added' : 'failed',
-              });
-
-              // DM the victim
-              try {
-                if (reAdded) {
-                  await sock.sendMessage(jid, {
-                    text:
-                      `🛡️ *YOU GOOD* 💪\n\n` +
-                      `Somebody kicked you out of a crew group 💀\n` +
-                      `KAMI-Bot brought you back\n\n` +
-                      `${voice.say('protected')}`,
-                  });
-                } else {
-                  // Re-add failed — send invite link
-                  let inviteLink = '';
+                // DM the owner
+                const ownerNumbers = config.ownerNumber || [];
+                for (const ownerNum of ownerNumbers) {
                   try {
-                    const code = await sock.groupInviteCode(id);
-                    inviteLink = `https://chat.whatsapp.com/${code}`;
+                    const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
+                    await sock.sendMessage(ownerJid, {
+                      text:
+                        `🛡️ *PROTECTION* 💀\n\n` +
+                        `@${memberNum} got kicked out of a crew group\n\n` +
+                        (offered
+                          ? `Sent them a bring-me-back offer, ${voice.tag('neutral')}\nTheir call — protection stays armed either way`
+                          : `Couldn't DM them the offer (blocked or privacy settings)\nProtection stays armed`) +
+                        `\nCheck who did it, ${voice.tag('neutral')}`,
+                      mentions: [jid],
+                    });
                   } catch (e) {}
-
-                  await sock.sendMessage(jid, {
-                    text:
-                      `🛡️ *YOU GOOD* 💪\n\n` +
-                      `Somebody kicked you out of a crew group 💀\n` +
-                      `KAMI-Bot tried to pull you back but couldn't, shame\n\n` +
-                      (inviteLink
-                        ? `🔗 *Jump back in here:*\n${inviteLink}\n\nOnce you're back you're admin again`
-                        : `Or just hit up KAMI to get back in, hey`),
-                  });
                 }
-              } catch (e) {}
-
-              // DM the owner
-              const ownerNumbers = config.ownerNumber || [];
-              for (const ownerNum of ownerNumbers) {
-                try {
-                  const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
-                  await sock.sendMessage(ownerJid, {
-                    text:
-                      `🛡️ *PROTECTION* 💀\n\n` +
-                      `@${memberNum} got kicked out of a crew group\n\n` +
-                      (reAdded
-                        ? `KAMI-Bot brought them back, ${voice.tag('neutral')}`
-                        : `Couldn't add them back — I sent the link instead\nThey'll be admin the moment they join`) +
-                      `\nCheck who did it, ${voice.tag('neutral')}`,
-                    mentions: [jid],
-                  });
-                } catch (e) {}
               }
             }
 
