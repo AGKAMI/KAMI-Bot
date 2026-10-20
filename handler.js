@@ -2220,7 +2220,7 @@ const handleGroupUpdate = async (sock, update) => {
                     database.logProtection({
                       action: 'demote',
                       target: jid,
-                      triggeredBy: 'unknown',
+                      triggeredBy: author || 'unknown',
                       group: id,
                       result: 'owner-re-promoted',
                     });
@@ -2242,11 +2242,21 @@ const handleGroupUpdate = async (sock, update) => {
                       database.logProtection({
                         action: 'demote',
                         target: jid,
-                        triggeredBy: 'unknown',
+                        triggeredBy: author || 'unknown',
                         group: id,
                         result: 're-promoted',
                       });
-                      // Notify owner(s)
+                      // Notify owner(s) — name the group (already-fetched
+                      // meta.subject) and the demoter (event author, LID-resolved)
+                      const demoteGname = (meta && meta.subject) || 'the group';
+                      let demoterJid = author || null;
+                      if (demoterJid) {
+                        try {
+                          const { normalizeJidWithLid } = require('./utils/jidHelper');
+                          demoterJid = normalizeJidWithLid(demoterJid) || demoterJid;
+                        } catch (e) {}
+                      }
+                      const demoterNum = demoterJid ? demoterJid.split(':')[0].split('@')[0] : null;
                       const ownerNumbers = config.ownerNumber || [];
                       for (const ownerNum of ownerNumbers) {
                         try {
@@ -2254,12 +2264,14 @@ const handleGroupUpdate = async (sock, update) => {
                           await sock.sendMessage(ownerJid, {
                             text:
                               `🛡️ *ADMIN PROTECTION* 💀\n\n` +
-                              `@${number} got demoted in a crew group\n` +
+                              `@${number} got demoted in *${demoteGname}*${demoterNum ? ` by @${demoterNum}` : ''}\n` +
                               `You promoted them, so they're *protected*\n\n` +
                               `✅ KAMI-Bot put them straight back as admin\n` +
-                              `⚠️ If this keeps up, go check who's demoting admins\n\n` +
+                              (demoterNum
+                                ? `⚠️ If this keeps up, have a word with @${demoterNum}\n\n`
+                                : `⚠️ If this keeps up, go check who's demoting admins\n\n`) +
                               `${voice.say('tease')}`,
-                            mentions: [jid],
+                            mentions: demoterNum ? [jid, demoterJid] : [jid],
                           });
                         } catch (e) {}
                       }
