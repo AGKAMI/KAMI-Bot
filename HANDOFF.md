@@ -1,47 +1,48 @@
 # HANDOFF — KAMI Bot
 
-> Rewritten 2026-10-17 after the full-codebase audit + fix batch. Supersedes the kick-policy handoff (that work shipped and is closed).
+> Rewritten 2026-10-20. Supersedes the audit-batch handoff (that work shipped and is closed).
 
 ## Goal
-Keep KAMI Bot (WhatsApp, Baileys, 256MB box) healthy and shipped autonomously: commit → push → MCP restart → verify. Current phase: full audit completed + critical/high defect batch deployed; 5 follow-up features shipped (persisted reminders, NSFW toggle, LID-safe minMessages, TTL'd session maps, nameCache LRU).
+Keep KAMI Bot (WhatsApp, Baileys, 256MB box) healthy and shipped autonomously: commit → push → MCP apply → verify box HEAD + CONNECTED. Current phase: join-gate landed, outage fixed, `.fb` memory hardening shipped, protection re-add converted to a button-offer flow.
 
 ## Current State
-- **Shipped this checkpoint** (deployed + verified CONNECTED):
-  - `7cb37ed` memory guard: non-reclaimable cgroup memory (anon+kernel+slab) at 215MB×2, last-ditch 254MB current, exit(1) so restart policies relaunch (exit(0) left the bot down once), global sharp/libvips caps at boot, store bounded at 40 chats.
-  - **audit batch** (`86651ba`): ~40 files of bug/dead-code/consistency/memory fixes — see git log.
-  - **feature batch**: persisted `.remind` (utils/reminderStore.js + database/reminders.json + boot restore in index.js; overdue fire late with a note); per-group `.nsfw on/off` (commands/admin/nsfw.js, handler gate on `command.nsfw`, flagged hneko/hwaifu/konachan/loli/megumin/milf; DMs + owner bypass); LID-safe `getMessagesInWindow` (sums comparable jid variants — closes wrongful-kick risk when minMessages>1); `utils/ttlMap.js` swapped into 18 session Maps (ttt/wordchain/guess/hangman/mathquiz/emojiguess/bomb/ludo/afk/report/kickcfg-pickers/setteamimage — 5m–48h TTLs, global 5-min prune, hard cap 500/map); nameCache true-LRU (Map recency order, touch on get + digit-match, atomic flush).
-- Tests: **76/79** — the 3 fails are the known pre-existing `tests/eventWizard.test.js` reds (:146/:257/:328 — Baileys v7 sendButtons + date-sensitive).
-- Live prefix `!`. Live crew.json: teamMap KSSPS→`120363409819775730@g.us`, KSSMP→`120363421626159074@g.us` (fixed earlier this session).
-
-### Audit fix batch — what changed (by area)
-- **handler.js**: team-admin DM gate regex `'^\\'`→`'^'` (gate matched nothing, blocked team admins from ALL DM commands incl. accept/deny); isOwner canonicalizes like buttonHelper (config stores `083…`, jids are `2783…`); slowmode warning throttled to once/cooldown; antiflood DM only to resolved PN jids (no fake PN from LID digits); auto-react gate reads `utils/autoReact` (was dead: broken persistence + config flag never updated) and uses `config.prefix` not hardcoded `['.','/','#']`; welcome/goodbye axios get timeout 8s + 5MB cap; anti-call listener WeakSet-guarded (no stacking on re-`open`); 5-min sweep also clears jidHelper's cache; `classifyReply` strips `*`/`_`/`~` so `*❌ ERROR*` replies classify as fail.
-- **index.js**: yt-dlp chmod moved below `fs`/`path` requires (was TDZ ReferenceError, never executed); ENOSPC handlers call real exports (`cleanupTempFiles`/`nukeCacheDirs` — old `cleanupOldFiles` was undefined → TypeError inside uncaughtException = fatal); `_flushAndExit` now flushes groupstats too.
-- **database.js**: atomic writes (tmp+rename) everywhere; corrupt-read guard stashes `.corrupt-<ts>.bak` before falling back to `{}`; flush loop keeps path dirty on write failure; `removeApplicant` resolves by UID when first arg isn't a jid (accept.js race guard + applyInteractive orphan cleanup were passing team abbreviations → phantom crew groups, applicant never removed); `removeTeamAdminTeam` persists (old `?.length < before` after delete never fired); isTeamAdmin/addTeamAdmin/removeTeamAdmin/pruneTeamAdmins canonical-number compare; `hasPendingApplicationsForAnyTeam` checks raw+canonical keys; `getTeam` no longer writes phantom groups on miss.
-- **utils**: jidHelper negative LID-cache TTL 5min + unmapped LID returns original jid (was fabricating fake PN) + PN inputs skip wrong-direction reverse-file lookup; groupstats atomic save, failed flush merges deltas back, `flushPending` exported; webp2mp4 ffmpeg falls back to system `ffmpeg` (was literal `"undefined"` in command); autoProgression flag/notice loops wrapped per-group try/catch (one failed group no longer aborts the scan); autoReact rewritten to persist `database/autoReact.json` (old code called non-existent DB API); commandLoader warns on name/alias collisions.
-- **Commands**: mathquiz division answer was multiplication (broken); song.js double-decrement corrupted download counter; igs/igsc downloads capped 16MB (was Infinity — OOM on 256MB box); sticker/crop reject oversized media from metadata BEFORE download; memesearch fetches meme-api JSON then the image (old code sent raw JSON as an image — never worked); tictactoe no longer fail-reacts on start, rematch button authed to last game's players; poll results dangling "in"; help.js mojibake `âŒ`; adminHub `config.socials`→`config.social`; roster teamMap compare (object vs string) + lists members for teamMap-only groups; crew.js routes `.crew setroles`/`.crew viewroles` as documented; apply.js crew:accept owner check uses isOwnerJid; disk.js `git gc` non-aggressive; translate lang param URL-encoded + timeouts; setbotpp/setbotname dropped aliases `setpp`/`setname` (shadowed admin commands); status/groupstats/calc/memesearch dropped colliding aliases (`.stats`→crew stats, `.math`→mathquiz, `.sm`→slowmode, `.memes`→meme.js); **deleted dead files** `commands/general/translate.js` + `commands/games/polls.js` (fully shadowed duplicates); prior uncommitted improvements kept (report.js `config.contactNumber`, order.js fail-soft catalog).
-- **Restored commands owners/admins thought were broken**: `.setpp` (group pp), `.setname` (group rename), `.stats` (crew stats), `.math` (quiz), `.sm` (slowmode), `.memes` (simple meme).
+- **Live box** = deployment `b0665152-9b54-4ede-a11f-45c4a6641704`, HEAD = **`f1ccf31`**, CONNECTED, ~96/256MB. Prefix `!`.
+- **Shipped since previous checkpoint** (all deployed + verified):
+  - `24f7473` + `914fa34` **join gate** (landed from a parallel session, NOT this one — read `utils/joinGate.js` before touching): security groups (SSRS/KSSPS/KSSMP/KSSMS, not SSGENERAL) are bot-door-only — ledger `database/joinLedger.json` (seed-grandfathered), `evaluateJoin` on add events (bot-actor / pending application / accepted pass; strangers kicked + DM'd with apply/cancel buttons), 48h grace (`database/joinGrace.json`, two-button menu, T-30min warning, block at expiry), sweep self-heals seeding every pass until all watched groups grandfathered.
+  - `5039041` **outage fix**: `utils/eventReminders.js` required `'./database'` from `utils/` → module-load crash loop, bot was DOWN. Fixed to `'../database'`, started via MCP, CONNECTED.
+  - `2610b4e` **`.fb` memory hardening**: `commands/media/facebook.js` now streams to a 16MB-capped temp file and sends `video: { url: tmpFile.path }` (was uncapped `video: { url }` which ballooned Node heap on a 256MB box — the 294MB guard trip during `.fb` was the outage's trigger). Deployed.
+  - `abb21a8` + `754e955` **grace-funnel demo** `docs/security-grace-demo.html` (single-file interactive 3-panel sim; logic verified headlessly 23/23 — fixed unreachable `'grace'` status + T-30min off-by-one) + **feature-viz skill** at `C:\Users\ojuni\.agents\skills\feature-viz\` (+ `/feature-viz` command in `C:\Users\ojuni\.config\opencode\commands\feature-viz.md`). Restart opencode to register.
+  - `f1ccf31` **protection re-add → button offer** (THIS session): new `utils/protectionDm.js` + `handler.js` remove branch. Protected member kicked by a human admin via native WhatsApp UI → DM'd a two-button offer (`protect:back:<nonce>` / `protect:pass:<nonce>`, persisted `database/protectionOffers.json`, 7-day TTL, one live offer per group+member, nonce ids, LID-safe `sameMember`, invite-link fallback on add failure). **Voluntary leave (author undefined) no longer re-adds** — the previously-dead left-tracker block now fires and notifies the owner. Bot-command kicks (`_botKicked`) and owner kicks (protection cleared) unchanged. Owner-protection (owner themselves kicked) still re-adds instantly.
+- Tests: **76/79** after `f1ccf31` — the 3 fails are the known pre-existing `tests/eventWizard.test.js` reds (:146/:257/:328). Plus a 10/10 headless harness for protectionDm (`C:\Users\ojuni\AppData\Local\Temp\opencode\prot_dm_test.js`) exercising offer + both buttons through the real `handleButtonResponse` route.
 
 ## What Was Tried That Failed
-- (this session) Nothing — all fixes verified by syntax check, 76/79 tests, boot smoke test (460 commands load, autoReact persist round-trip, jidHelper/groupstats exports).
+- (this session) ProtectionDm harness asserted button-flow results immediately after `handleButtonResponse()` — it dispatches handlers **fire-and-forget** (`lastHandlerPromise`); fixed by `await getLastHandlerPromise()` in the harness. Real handler.js code is unaffected (production awaits nothing here; taps just resolve async).
+- Known, undecided: `commands/media/instagram.js:142` + `commands/media/tiktok.js:154` still use uncapped `video: { url }` — same OOM pattern fixed in facebook.js. Offered the fix; KAMI never decided. Apply the `downloadToTempFile` pattern if it comes up.
 
 ## Active Files
+- `utils/protectionDm.js` — offer store + both button handlers (statically required by handler.js so taps route from boot).
+- `handler.js` :2087+ — remove branch exit-method split (`!author` = voluntary leave; else offer flow). Left-tracker block ~:2189 now reachable.
+- `utils/joinGate.js` — join gate implementation (parallel session; ledger/grace/kick-DM).
+- `docs/security-grace-demo.html` — committed funnel simulator.
 - `HANDOFF.md` — this file.
-- Everything in the audit batch above — read the git log for the exact commit(s).
 
 ## Known Gotchas
-- **TWO SERVERS**: live = `b0665152-9b54-4ede-a11f-45c4a6641704` / SFTP `u9mg7ylz`; panel `08b6894d` is DEAD.
-- **MCP restart**: `POST https://bot-hosting.net/api/mcp` Bearer `bhk_b77e82b54bfb19ebe8be6391d3833e514af2614e1478d0e8`, JSON-RPC `tools/call`, param `id`, actions start|stop|restart|kill, waitSeconds ≤ 45; "A sync is already running" → wait ~52s retry. `bhk_` keys do NOT work on control.bot-hosting.net.
-- Panel console buffer ~16-100 lines — verify from state files / `git log` on box, not logs.
-- Tests: `node --test --test-force-exit tests\*.test.js`; snapshot `database/crew.json` before/after (tests dirty it); known 3 eventWizard reds — do NOT "fix" silently.
-- Live-data edits: MCP `stop` (bot flushes DB on stop) → `files_edit` → validate → `start` (auto-pull). Never deploy local `database/*`.
-- `database/` untracked; never-commit list: `__pycache__/`, `app.json`, `check.js`, `check_disk.py`, `upload_*.py` — stage explicit paths only.
-- Memory telemetry: `[MEM] non-reclaim XMB | current YMB/256MB | rss | heap | ext` every 30min. Guard trips on non-reclaim ≥215MB ×2 OR current ≥254MB ×2 → exit(1).
-- Prefix: live `!`; idioms `config.prefix || '.'`; NEVER `extra.prefix`.
-- PowerShell 5.1: no `&&`; push stderr shows as NativeCommandError but succeeds.
+- **TWO SERVERS**: live = `b0665152-…` / SFTP `u9mg7ylz`; panel `08b6894d` is DEAD. `bhk_` keys → `POST https://bot-hosting.net/api/mcp` (JSON-RPC `tools/call`, param `id`); `deployments_apply` = pull+restart (this is what "deploy" means now); waitSeconds ≤ 45; "A sync is already running" → wait ~52s retry.
+- Panel console buffer ~16-100 lines — verify from box `git rev-parse HEAD` via `deployments_shell`, state files, or boot logs in the apply response, not live logs.
+- **buttonHelper dispatch is fire-and-forget** — tests MUST `await getLastHandlerPromise()` after `handleButtonResponse` or async handler assertions race.
+- **PS 5.1 `>` writes UTF-16** — `rg`/plain-text tooling sees nothing; read such files with `Get-Content`. Node's spec reporter prints `ℹ pass N` (not TAP `# pass`) — match accordingly.
+- Tests: `node --test --test-force-exit tests\*.test.js`; snapshot `database/crew.json` before/after (verified unchanged this session); known 3 eventWizard reds — do NOT "fix" silently.
+- `database/*.json` is gitignored (joinLedger, joinGrace, protectionOffers, audit) — local copies never deploy; the box keeps its own.
+- Memory guard: non-reclaim ≥215MB×2 or current ≥254MB×2 → flush + `exit(1)`. Uncapped `video: { url }` sends are the known tripwire — cap them.
+- Chrome broken on the dev machine (`chrome.dll` missing) — verify HTML demos with a Node DOM-stub harness, not playwright.
+- PowerShell 5.1: no `&&`; git push stderr shows NativeCommandError but succeeds — verify via `…main -> main`.
+- Never-commit list: `__pycache__/`, `app.json`, `check.js`, `check_disk.py`, `upload_*.py` — stage explicit paths only.
 
 ## Next Steps
-1. (optional, not urgent) Remaining MEDIUM/LOW audit items: `isBotAdmin` ignoring cached metadata (rate-limit contributor), `.loli` command name reputation risk, `utils/helpers.js`+`confirm.js`+`channelInfo.js`+`utils/tictactoe.js` dead files, pies.js still hits a non-existent API, duplicate `igs.js`/`igsc.js` fork (make igsc a wrapper), crew stats thresholds inconsistent with autoProgression requirements, gracePeriod:0 notice path dead, owner-hub button id overlap debt (29 warnings, longest-match works).
-2. Feature ideas if KAMI asks: LRU nameCache already shipped; consider per-group welcome image size caps, `.nsfw` status in groupsettings panel.
+1. Watch the first real protection kick on the live box: expected sequence = `[MEMBER PROTECTION] … sending re-add offer` in boot log, `database/protectionOffers.json` entry on the box, member receives the 2-button DM. If the DM fails (blocked/privacy) the owner gets "Couldn't DM them the offer" — protection stays armed either way.
+2. (KAMI decision pending) Apply the `facebook.js` temp-file capping pattern to `instagram.js:142` + `tiktok.js:154`.
+3. Restart opencode so `/feature-viz` + the feature-viz skill register.
+4. (optional, not urgent) Remaining MEDIUM/LOW audit items: `isBotAdmin` cached-metadata staleness, `.loli` name reputation, dead files (`utils/helpers.js`/`confirm.js`/`channelInfo.js`/`utils/tictactoe.js`), pies.js dead API, `igs`/`igsc` fork merge, owner-hub button-id overlap debt.
 
 ## Memory Keys
-- mcp__claude-flow__memory_search { query: "KAMI audit fixes memory guard owner canonical lid", namespace: "project" }
+- mcp__claude-flow__memory_search { query: "KAMI protection offer join gate outage eventReminders facebook hardening", namespace: "project" }
