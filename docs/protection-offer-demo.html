@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAMI Bot — Member Protection Re-add Offer</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#30363d;
+    --ink:#e6edf3; --dim:#8b949e; --accent:#58a6ff; --green:#3fb950;
+    --amber:#d29922; --red:#f85149; --purple:#bc8cff;
+    --kick:#f85149; --offer:#58a6ff; --ok:#3fb950; --skip:#8b949e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px;line-height:1.5}
+  header{padding:16px 24px;border-bottom:1px solid var(--line);display:flex;
+    align-items:baseline;gap:16px;flex-wrap:wrap}
+  header h1{margin:0;font-size:18px}
+  header .sub{color:var(--dim);font-size:13px}
+  .clock{margin-left:auto;font-variant-numeric:tabular-nums;background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:13px}
+  .clock b{color:var(--accent)}
+
+  .wrap{display:grid;grid-template-columns:320px 1fr 320px;gap:16px;padding:16px 24px;
+    align-items:start;max-width:1500px;margin:0 auto}
+  @media(max-width:1100px){.wrap{grid-template-columns:1fr}}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .panel h2{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+  .group{margin-bottom:18px}
+  .group h3{margin:0 0 8px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+  button{display:block;width:100%;text-align:left;background:var(--panel2);color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin-bottom:6px;
+    cursor:pointer;font-size:13px;font-family:inherit;transition:background .12s,border-color .12s}
+  button:hover:not(:disabled){background:#263041;border-color:var(--accent)}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  button .tag{float:right;font-size:10px;padding:2px 6px;border-radius:5px;font-weight:600}
+  .tag.offer{background:rgba(88,166,255,.15);color:var(--accent)}
+  .tag.skip{background:rgba(139,148,158,.15);color:var(--dim)}
+  .tag.clear{background:rgba(248,81,73,.15);color:var(--red)}
+  .tag.ok{background:rgba(63,185,80,.15);color:var(--green)}
+  .btnrow{display:flex;gap:6px}
+  .btnrow button{flex:1}
+
+  /* phones */
+  .phones{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .phone{background:var(--panel2);border:1px solid var(--line);border-radius:16px;
+    overflow:hidden;display:flex;flex-direction:column;height:600px}
+  .phone .bar{padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;font-size:13px;
+    display:flex;align-items:center;gap:8px}
+  .phone .bar .dot{width:8px;height:8px;border-radius:50%}
+  .chat{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .m{max-width:88%;padding:8px 11px;border-radius:12px;font-size:13px;position:relative}
+  .m .who{font-size:10px;color:var(--dim);margin-bottom:2px}
+  .m .ts{font-size:10px;color:var(--dim);text-align:right;margin-top:3px}
+  .m .ft{font-size:10px;color:var(--dim);text-align:center;margin-top:5px}
+  .m.bot{align-self:flex-start;background:#1f2b3d;border-bottom-left-radius:3px}
+  .m.them{align-self:flex-end;background:#1a3a2a;border-bottom-right-radius:3px}
+  .m.sys{align-self:center;background:transparent;color:var(--dim);font-size:11px;
+    border:1px dashed var(--line);max-width:100%}
+  .m.system-note{align-self:center;background:rgba(210,153,34,.1);color:var(--amber);
+    font-size:11px;border:1px solid rgba(210,153,34,.3);max-width:95%;text-align:center}
+  .m.offernotice{align-self:flex-start;background:rgba(88,166,255,.1);
+    border:1px solid rgba(88,166,255,.35);color:#a9d1ff}
+  .m.kicknotice{align-self:flex-start;background:rgba(248,81,73,.12);
+    border:1px solid rgba(248,81,73,.35);color:#ffb4ae}
+  .m.oknotice{align-self:flex-start;background:rgba(63,185,80,.1);
+    border:1px solid rgba(63,185,80,.3);color:#a7f3c0}
+  .btns{display:flex;flex-direction:column;gap:5px;margin-top:7px}
+  .btns button{margin:0;padding:6px 10px;font-size:12px;text-align:center;background:#243447}
+  .btns button.primary{border-color:var(--accent);color:var(--accent)}
+
+  /* state */
+  .statecard{margin-bottom:14px}
+  .pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;margin:2px}
+  .pill.protected{background:rgba(63,185,80,.15);color:var(--green)}
+  .pill.offer{background:rgba(88,166,255,.15);color:var(--accent)}
+  .pill.back{background:rgba(63,185,80,.2);color:var(--green)}
+  .pill.invite{background:rgba(210,153,34,.15);color:var(--amber)}
+  .pill.declined{background:rgba(188,140,255,.15);color:var(--purple)}
+  .pill.expired{background:rgba(139,148,158,.15);color:var(--dim)}
+  .pill.left{background:rgba(210,153,34,.15);color:var(--amber)}
+  .pill.cleared{background:rgba(248,81,73,.2);color:var(--red)}
+  .pill.skipped{background:rgba(139,148,158,.15);color:var(--dim)}
+  .pill.unprot{background:rgba(248,81,73,.15);color:var(--red)}
+  .meta{font-size:12px;color:var(--dim);margin-top:8px}
+  .meta div{margin:3px 0}
+  .meta b{color:var(--ink)}
+
+  .flow{display:flex;flex-direction:column;gap:0;margin-top:6px}
+  .node{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;
+    background:var(--panel2);position:relative;color:var(--dim)}
+  .node.active{border-color:var(--accent);color:var(--ink);background:#1a2a3f;
+    box-shadow:0 0 0 1px var(--accent)}
+  .node.done{opacity:.55}
+  .node.o-active{border-color:var(--accent);background:#152536;color:#a9d1ff;
+    box-shadow:0 0 0 1px var(--accent)}
+  .node.k-active{border-color:var(--red);background:#2a1518;color:#ffb4ae;
+    box-shadow:0 0 0 1px var(--red)}
+  .node.g-active{border-color:var(--amber);background:#2a2313;color:#ffe08a;
+    box-shadow:0 0 0 1px var(--amber)}
+  .node.s-active{border-color:var(--dim);background:#20262e;color:#c9d1d9;
+    box-shadow:0 0 0 1px var(--dim)}
+  .arrow{width:2px;height:10px;background:var(--line);margin:2px 0 2px 16px}
+
+  .ledger{font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--dim);
+    max-height:130px;overflow-y:auto;background:var(--bg);border:1px solid var(--line);
+    border-radius:8px;padding:8px;margin-top:10px}
+  .ledger div{margin:2px 0}
+  .ledger .t{color:var(--accent)}
+  .legend{font-size:11px;color:var(--dim);margin-top:14px;line-height:1.7}
+  .legend span{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+  .note{font-size:11px;color:var(--dim);margin-top:10px;padding:8px;background:var(--bg);
+    border:1px solid var(--line);border-radius:8px}
+  .note b{color:var(--amber)}
+</style>
+</head>
+<body>
+<header>
+  <h1>💀 KAMI Bot — Member Protection: re-add <i>offer</i></h1>
+  <span class="sub">Interactive simulation · kicked by an admin → 2-button DM instead of instant re-add · 7-day offer TTL</span>
+  <div class="clock">Sim clock: <b id="clock">—</b></div>
+</header>
+
+<div class="wrap">
+  <!-- CONTROLS -->
+  <div class="panel">
+    <h2>⚡ Trigger events</h2>
+
+    <div class="group">
+      <h3>Group &amp; protection events</h3>
+      <button id="btnAdminKick" onclick="ev('adminkick')">⚔️ Admin kicks member (WhatsApp UI) <span class="tag offer">OFFER</span></button>
+      <button id="btnVolLeave" onclick="ev('volleave')">👋 Member leaves voluntarily <span class="tag skip">NO OFFER</span></button>
+      <button id="btnOwnerKick" onclick="ev('ownerkick')">👑 Owner kicks member (UI) <span class="tag clear">CLEARS</span></button>
+      <button id="btnBotKick" onclick="ev('botkick')">🤖 Bot-command kick (!kick) <span class="tag skip">SKIPPED</span></button>
+      <button id="btnRejoin" onclick="ev('rejoin')">🔗 Member rejoins the group <span class="tag ok">REJOIN</span></button>
+    </div>
+
+    <div class="group">
+      <h3>Member DM edge cases</h3>
+      <button id="btnStrangerTap" onclick="ev('strangertap')">🚫 Someone <i>else</i> taps the button <span class="tag skip">REJECT</span></button>
+    </div>
+
+    <div class="group">
+      <h3>Time travel</h3>
+      <div class="btnrow">
+        <button onclick="advance(1*DAY)">+1d</button>
+        <button onclick="advance(3*DAY)">+3d</button>
+      </div>
+      <div class="btnrow">
+        <button onclick="advance(6*DAY)">+6d</button>
+        <button onclick="toExpiry()">⏭ Past 7-day TTL</button>
+      </div>
+      <button onclick="reset()">🔄 Reset simulation</button>
+    </div>
+
+    <div class="note">
+      <b>Try this order:</b> Admin kicks (UI) → member gets the 2-button DM, owner gets pinged
+      → tap <i>Bring me back</i> (they're pulled straight back in). Or tap
+      <i>Nah I'm good</i> (out but still protected), then rejoin and get kicked again —
+      fresh offer. Or jump past the 7-day TTL first: the tap goes dead.
+      Owner kicks and bot-command kicks never send an offer.
+    </div>
+  </div>
+
+  <!-- PHONES -->
+  <div class="panel">
+    <h2>📱 Live view</h2>
+    <div class="phones">
+      <div class="phone">
+        <div class="bar"><span class="dot" style="background:var(--green)"></span>
+          Kagiso M. <span style="color:var(--dim);font-weight:400">(protected member · DM)</span></div>
+        <div class="chat" id="dmChat"></div>
+      </div>
+      <div class="phone">
+        <div class="bar"><span class="dot" style="background:var(--accent)"></span>
+          AG KAMI <span style="color:var(--dim);font-weight:400">(owner · DM)</span></div>
+        <div class="chat" id="ownerChat"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE -->
+  <div class="panel">
+    <h2>🧠 Bot state</h2>
+    <div class="statecard" id="stateCard"></div>
+
+    <h2>Flow</h2>
+    <div class="flow" id="flow"></div>
+
+    <div class="ledger" id="ledger"></div>
+
+    <div class="legend">
+      <span style="background:var(--offer)"></span>offer &nbsp;
+      <span style="background:var(--ok)"></span>back in &nbsp;
+      <span style="background:var(--amber)"></span>wait &nbsp;
+      <span style="background:var(--dim)"></span>skip &nbsp;
+      <span style="background:var(--red)"></span>clear/kick
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Simulated clock & constants ──────────────────────────────────
+const DAY = 24*60*60*1000, HOUR = 60*60*1000, MIN = 60*1000;
+const OFFER_TTL = 7*DAY; // utils/protectionDm.js OFFER_TTL
+let now = Date.now();
+const fmt = (d)=>new Date(d).toLocaleString('en-ZA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const fmtT = (d)=>new Date(d).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+const fmtLeft = (ms)=>{
+  if(ms<=0) return 'expired';
+  const d=Math.floor(ms/DAY), h=Math.floor((ms%DAY)/HOUR);
+  return d>0 ? `${d}d ${h}h` : `${h}h`;
+};
+
+// ── State ────────────────────────────────────────────────────────
+// status enum (closed — every one is reachable):
+//   protected | offer-sent | readded | invite-sent | declined | expired
+//   | voluntary-left | owner-cleared | bot-skipped | unprotected
+const state = {
+  person:'Kagiso M.',
+  number:'27683993925',
+  group:'SSRS — Royal Security',
+  status:'protected',   // protected | offer-sent | readded | invite-sent | declined
+                        // | expired | voluntary-left | owner-cleared | bot-skipped | unprotected
+  inGroup:true,         // are they currently in the crew group?
+  armed:true,           // owner-protection flags still set?
+  offer:null,           // { nonce, sentAt, expiresAt, consumed }
+  nonceSeq:0,
+  addFail:false,        // simulate privacy-blocked re-add (invite fallback)
+};
+
+function reset(){
+  now=Date.now();
+  Object.assign(state,{person:'Kagiso M.',number:'27683993925',group:'SSRS — Royal Security',
+    status:'protected',inGroup:true,armed:true,offer:null,nonceSeq:0,addFail:false});
+  clearChats();
+  document.getElementById('ledger').innerHTML='';
+  note(dmChat,'(Kagiso is in the group, protection armed — nothing has happened yet)');
+  note(ownerChat,'(owner gets DMs only when something happens to a protected member)');
+  log('sim','reset — protected member in group, protection armed');
+  render();
+}
+
+// ── Chat helpers ─────────────────────────────────────────────────
+const dmChat=document.getElementById('dmChat'), ownerChat=document.getElementById('ownerChat');
+function clearChats(){dmChat.innerHTML='';ownerChat.innerHTML='';}
+function bubble(el,cls,who,text,buttons,footer){
+  const m=document.createElement('div');
+  m.className='m '+cls;
+  let html = who?`<div class="who">${who}</div>`:'';
+  html += `<div>${text}</div>`;
+  if(buttons){
+    html+='<div class="btns">'+buttons.map(b=>
+      `<button class="${b.p?'primary':''}" onclick="${b.fn}">${b.label}</button>`).join('')+'</div>';
+  }
+  if(footer) html+=`<div class="ft">${footer}</div>`;
+  html+=`<div class="ts">${fmtT(now)}</div>`;
+  m.innerHTML=html;
+  el.appendChild(m); el.scrollTop=el.scrollHeight;
+}
+function dmMsg(cls,who,text,buttons,footer){bubble(dmChat,cls,who,text,buttons,footer);}
+function ownerMsg(cls,who,text){bubble(ownerChat,cls,who,text);}
+function note(el,text){bubble(el,'system-note','',text);}
+function log(kind,text){
+  const l=document.getElementById('ledger');
+  const d=document.createElement('div');
+  d.innerHTML=`<span class="t">${fmtT(now)}</span> [${kind}] ${text}`;
+  l.prepend(d);
+}
+
+// ── Exit-method detection (the core rule) ────────────────────────
+// Baileys delivers every exit as action:'remove', but `author` tells us HOW:
+//   bot-command kicks → _botKicked marker upstream → skipped
+//   owner UI kicks    → protection cleared (deliberate)
+//   admin UI kicks    → author = that admin → OFFER flow (this sim)
+//   voluntary leaves  → author undefined     → owner ping only, no offer
+function isLiveOffer(){
+  return !!(state.offer && !state.offer.consumed && now < state.offer.expiresAt);
+}
+
+// ── Events ───────────────────────────────────────────────────────
+function ev(type){
+  if(type==='adminkick') return onAdminKick();
+  if(type==='volleave') return onVolLeave();
+  if(type==='ownerkick') return onOwnerKick();
+  if(type==='botkick') return onBotKick();
+  if(type==='rejoin') return onRejoin();
+  if(type==='strangertap') return onStrangerTap();
+  if(type==='tapback') return onTapBack();
+  if(type==='tappass') return onTapPass();
+}
+
+function newNonce(){
+  state.nonceSeq++;
+  return 'm'+state.nonceSeq.toString(36)+'k'+Math.random().toString(36).slice(2,6);
+}
+
+function onAdminKick(){
+  if(!state.inGroup){ note(dmChat,'(admin can\'t kick — they\'re not in the group; rejoin first)'); render(); return; }
+  if(!state.armed){ note(dmChat,'(no protection — a plain kick, no offer, nothing happens)'); log('kick','admin UI kick — member not protected, no offer'); render(); return; }
+
+  // fresh kick REPLACES any previous live offer (one live offer per group+member)
+  if(state.offer && !state.offer.consumed){ log('offer','previous offer replaced by fresh kick'); }
+
+  state.inGroup=false;
+  state.status='offer-sent';
+  state.offer={nonce:newNonce(),sentAt:now,expiresAt:now+OFFER_TTL,consumed:false};
+  log('remove','action:remove author=adminJid → admin UI kick — offer flow');
+
+  // offer DM to the member (real copy from utils/protectionDm.js)
+  dmMsg('offernotice','KAMI Bot',
+    `🛡️ *PROTECTED MEMBER* 💪\n\n`+
+    `An admin just kicked you out of *${state.group}*\n`+
+    `You're on KAMI's protection list though — I can pull you straight back in\n\n`+
+    `Your call:`,
+    [{label:'🔄 Bring me back',fn:"ev('tapback')",p:true},
+     {label:"🚫 Nah I'm good",fn:"ev('tappass')"}],
+    `KAMI Bot Mini · protect:back:${state.offer.nonce}`);
+
+  // owner ping (real copy from handler.js)
+  ownerMsg('offernotice','KAMI Bot',
+    `🛡️ *PROTECTION* 💀\n\n`+
+    `@${state.number} got kicked out of a crew group\n\n`+
+    `Sent them a bring-me-back offer, hey\n`+
+    `Their call — protection stays armed either way\n`+
+    `Check who did it, hey`);
+  render();
+}
+
+function onVolLeave(){
+  if(!state.inGroup){ note(dmChat,'(not in the group)'); render(); return; }
+  state.inGroup=false;
+  state.status='voluntary-left';
+  log('remove','action:remove author=undefined → voluntary leave — NO offer');
+  // the previously-dead left-tracker now fires
+  ownerMsg('sys','KAMI Bot',
+    `👋 *MEMBER LEFT*\n\n`+
+    `@${state.number} left a crew group\n\n`+
+    `_If they must stay, get KAMI to add them back hey_`);
+  render();
+}
+
+function onOwnerKick(){
+  if(!state.inGroup){ note(dmChat,'(not in the group)'); render(); return; }
+  state.inGroup=false;
+  state.armed=false;
+  state.status='owner-cleared';
+  log('remove','action:remove author=owner → deliberate — protection flags cleared, no offer, no DM');
+  note(ownerChat,'(the owner kicked them on purpose — the bot just clears the protection flags and stays out of it)');
+  render();
+}
+
+function onBotKick(){
+  if(!state.inGroup){ note(dmChat,'(not in the group)'); render(); return; }
+  state.inGroup=false;
+  state.status='bot-skipped';
+  log('remove','!kick marks _botKicked → protection skipped entirely, no offer');
+  note(dmChat,'(the bot removed them via !kick — _botKicked marker, protection never fires)');
+  render();
+}
+
+function onRejoin(){
+  if(state.inGroup){ note(dmChat,'(already in the group)'); render(); return; }
+  state.inGroup=true;
+  if(state.status==='offer-sent'){
+    // rejoined by other means while the offer sat — offer stays live,
+    // tapping back now hits the "already back in" branch
+    log('add','member rejoined while offer still live — offer not consumed yet');
+  } else {
+    state.status = state.armed ? 'protected' : 'unprotected';
+    log('add','member rejoined the group'+(state.armed?' — protection armed':' — NO protection (owner cleared it)'));
+  }
+  render();
+}
+
+// tap with the wrong sender (someone else got hold of the message)
+function onStrangerTap(){
+  if(!isLiveOffer()){ note(dmChat,'(no live offer to tap)'); render(); return; }
+  dmMsg('sys','KAMI Bot','❌ That offer expired — or it\'s not yours, hey');
+  log('tap','wrong sender — sameMember() fails → rejected, offer untouched');
+  render();
+}
+
+// ── button flows (nonce-validated like takeOffer in the real code) ──
+function onTapBack(nonceArg){
+  const offer = state.offer;
+  const nonce = nonceArg!==undefined ? nonceArg : (offer && offer.nonce);
+  // takeOffer: missing nonce / consumed / TTL passed → dead
+  if(!offer || offer.consumed || nonce!==offer.nonce || now>=offer.expiresAt){
+    dmMsg('sys','KAMI Bot','❌ That offer expired — or it\'s not yours, hey');
+    if(offer && !offer.consumed && now>=offer.expiresAt){ state.status='expired'; log('ttl','tap on expired offer → dead'); }
+    render(); return;
+  }
+  offer.consumed=true;
+
+  // already rejoined by other means?
+  if(state.inGroup){
+    dmMsg('oknotice','KAMI Bot','✅ You\'re already back in — no action needed 💪');
+    state.status='readded';
+    log('tap','back tap — memberInGroup() true → "already back in", offer consumed');
+    render(); return;
+  }
+
+  // privacy-blocked path → invite link fallback
+  if(state.addFail){
+    dmMsg('kicknotice','KAMI Bot',
+      `😅 *COULDN'T ADD YOU DIRECTLY*\n\n`+
+      `Privacy settings blocked the pull-back\n\n`+
+      `🔗 *Jump back in here:*\nhttps://chat.whatsapp.com/TESTCODE123\n\n`+
+      `Once you're back you're protected again`);
+    state.status='invite-sent';
+    log('tap','back tap — all re-add candidates failed → invite-link fallback (no owner DM on this path)');
+    render(); return;
+  }
+
+  // success
+  state.inGroup=true;
+  state.status='readded';
+  dmMsg('oknotice','KAMI Bot',
+    `✅ *WELCOME BACK* 💪\n\n`+
+    `You're back in *${state.group}*\n`+
+    `_Nobody kicks KAMI's people without asking first 😤_`);
+  ownerMsg('offernotice','KAMI Bot',
+    `🛡️ *PROTECTION* 💀\n\n`+
+    `@${state.number} accepted the bring-me-back offer\n`+
+    `They're back in the crew group`);
+  log('tap','back tap → groupParticipantsUpdate add ✓ → re-added, owner notified');
+  render();
+}
+
+function onTapPass(nonceArg){
+  const offer = state.offer;
+  const nonce = nonceArg!==undefined ? nonceArg : (offer && offer.nonce);
+  if(!offer || offer.consumed || nonce!==offer.nonce || now>=offer.expiresAt){
+    dmMsg('sys','KAMI Bot','❌ That offer expired — or it\'s not yours, hey');
+    if(offer && !offer.consumed && now>=offer.expiresAt){ state.status='expired'; log('ttl','tap on expired offer → dead'); }
+    render(); return;
+  }
+  offer.consumed=true;
+  state.status='declined';
+  dmMsg('oknotice','KAMI Bot',
+    `✅ *ALL GOOD* 💪\n\n`+
+    `You're staying out of it — your protection stays armed though\n`+
+    `_If you ever want back in, hit KAMI up_`);
+  log('tap','pass tap → declined, protection stays armed, offer consumed');
+  render();
+}
+
+// ── Time travel ──────────────────────────────────────────────────
+function advance(ms){ now+=ms; tick(); }
+function toExpiry(){
+  if(!state.offer){ note(dmChat,'(no offer active — nothing to expire)'); render(); return; }
+  now=state.offer.expiresAt+1000; tick(); // land just PAST the TTL, not before
+}
+
+function tick(){
+  // offer TTL — fires exactly once (status leaves 'offer-sent')
+  if(state.status==='offer-sent' && state.offer && !state.offer.consumed && now>=state.offer.expiresAt){
+    state.status='expired';
+    log('ttl','7-day offer TTL passed — offer is dead (takeOffer would reject any tap now)');
+  }
+  render();
+}
+
+// ── Render ───────────────────────────────────────────────────────
+function render(){
+  document.getElementById('clock').textContent = fmt(now);
+
+  const pills={
+    protected:'<span class="pill protected">protected · in group</span>',
+    'offer-sent':'<span class="pill offer">offer sent</span>',
+    readded:'<span class="pill back">back in the group</span>',
+    'invite-sent':'<span class="pill invite">invite link sent</span>',
+    declined:'<span class="pill declined">declined (still armed)</span>',
+    expired:'<span class="pill expired">offer expired</span>',
+    'voluntary-left':'<span class="pill left">left voluntarily</span>',
+    'owner-cleared':'<span class="pill cleared">owner cleared protection</span>',
+    'bot-skipped':'<span class="pill skipped">bot-command kick</span>',
+    unprotected:'<span class="pill unprot">in group · NOT protected</span>',
+  };
+  let html=pills[state.status]||'';
+  html+=`<div class="meta">`;
+  html+=`<div>Member: <b>${state.person}</b> (@${state.number})</div>`;
+  html+=`<div>In group: <b>${state.inGroup?'yes':'no'}</b> &nbsp;·&nbsp; Protection: <b>${state.armed?'armed':'cleared'}</b></div>`;
+  if(state.offer){
+    html+=`<div>Offer nonce: <b>${state.offer.nonce}</b>${state.offer.consumed?' (consumed)':''}</div>`;
+    html+=`<div>Offer sent: <b>${fmt(state.offer.sentAt)}</b></div>`;
+    html+=`<div>Expires: <b>${fmt(state.offer.expiresAt)}</b> (${fmtLeft(state.offer.expiresAt-now)} left)</div>`;
+  } else {
+    html+=`<div>Offer: <b>none</b></div>`;
+  }
+  html+=`</div>`;
+  document.getElementById('stateCard').innerHTML=html;
+
+  // flow nodes
+  const nodes=[
+    {id:'n1',label:'1 · Member protected (armed, in group)'},
+    {id:'n2',label:'2 · Exit event — bot reads <code>author</code>'},
+    {id:'n2b',label:'2b · voluntary / owner / bot-command → no offer'},
+    {id:'n3',label:'3 · Admin UI kick → 2-button offer DM + owner ping'},
+    {id:'n4',label:'4 · Member decides (or 7-day TTL runs out)'},
+    {id:'n5a',label:'5a · Back → re-added (welcome back)'},
+    {id:'n5b',label:'5b · Back blocked → invite link'},
+    {id:'n5c',label:'5c · Pass → declined, still armed'},
+    {id:'n5d',label:'5d · TTL passes → offer dead'},
+  ];
+  const active = {
+    protected:['n1'],
+    'offer-sent':['n1','n2','n3','n4'],
+    readded:['n1','n2','n3','n4','n5a'],
+    'invite-sent':['n1','n2','n3','n4','n5b'],
+    declined:['n1','n2','n3','n4','n5c'],
+    expired:['n1','n2','n3','n4','n5d'],
+    'voluntary-left':['n1','n2','n2b'],
+    'owner-cleared':['n1','n2','n2b'],
+    'bot-skipped':['n1','n2','n2b'],
+    unprotected:['n1'],
+  }[state.status]||['n1'];
+  document.getElementById('flow').innerHTML = nodes.map((n,i)=>{
+    const a=active.includes(n.id);
+    let cls='node';
+    if(a){
+      if(n.id==='n3'||n.id==='n4') cls+=' o-active';
+      else if(n.id==='n5b'||n.id==='n5d') cls+=' g-active';
+      else if(n.id==='n2b') cls+=' s-active';
+      else if(n.id==='n5a') cls+=' active';
+      else cls+=' o-active';
+    }
+    return `<div class="${cls}">${n.label}</div>`+(i<nodes.length-1?'<div class="arrow"></div>':'');
+  }).join('');
+
+  // control enable/disable by phase
+  const ing = state.inGroup;
+  document.getElementById('btnAdminKick').disabled = !ing;
+  document.getElementById('btnVolLeave').disabled = !ing;
+  document.getElementById('btnOwnerKick').disabled = !ing;
+  document.getElementById('btnBotKick').disabled = !ing;
+  document.getElementById('btnRejoin').disabled = ing;
+  document.getElementById('btnStrangerTap').disabled = !isLiveOffer();
+}
+
+// expose for the headless harness (mirrors the real module's surface)
+const sim = {
+  get state(){ return state },
+  get now(){ return now }, set now(v){ now=v },
+  ev, advance, toExpiry, reset, tick,
+  onTapBack, onTapPass,
+  setAddFail(v){ state.addFail=!!v },
+};
+
+reset();
+</script>
+</body>
+</html>
