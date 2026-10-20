@@ -107,9 +107,12 @@ module.exports = {
         }
       }
 
-      // Add to WhatsApp group first (with device-suffix + LID fallback)
-      let groupAddFailed = false;
+      // Add to WhatsApp group first (with device-suffix + LID fallback).
+      // Honest outcome: Baileys returns per-participant status codes —
+      // 200 ok, 408 already-in, 403 privacy-blocked — and the old code
+      // counted a 403 return as success.
       const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
+      const { groupAction } = require('../../utils/groupActions');
       const candidateJids = [];
       // Strip device suffix
       const stripped = target.replace(/:\d+@/, '@');
@@ -123,17 +126,10 @@ module.exports = {
       }
       candidateJids.push(target);
 
-      for (const jid of candidateJids) {
-        try {
-          await sock.groupParticipantsUpdate(extra.from, [jid], 'add');
-          groupAddFailed = false;
-          break;
-        } catch (e) {
-          groupAddFailed = true;
-        }
-      }
+      const addOutcome = await groupAction(sock, extra.from, candidateJids, 'add');
+      const groupAddFailed = !addOutcome.ok;
       if (groupAddFailed) {
-        console.error('[CREW ADD] WhatsApp add failed — all JID variants rejected');
+        console.error(`[CREW ADD] WhatsApp add failed — ${addOutcome.error || 'all JID variants rejected'}`);
       }
 
       // Save to database
@@ -161,21 +157,35 @@ module.exports = {
 
       const roleEmoji = getRoleEmoji(role, validRoles);
       const ownerVIP = extra.isOwnerMentioned;
+      const alreadyIn = addOutcome.alreadyDone;
+
+      // Honest verdict — the group-add either went through or it didn't;
+      // the roster write is real either way, but the copy says which
+      const verdictIcon = groupAddFailed ? '⚠️' : '✅';
+      const headline = ownerVIP
+        ? `👑 THE BOSS HAS SPOKEN 👑`
+        : groupAddFailed
+          ? `📝 ON THE ROSTER — GROUP ADD FAILED`
+          : alreadyIn
+            ? `👤 ALREADY IN THE GROUP — ROSTER UPDATED`
+            : `👤 MEMBER ADDED`;
 
       await sock.sendMessage(extra.from, {
         text:
-          `✅ SUCCESS\n\n` +
-          (ownerVIP
-            ? `👑 THE BOSS HAS SPOKEN 👑\n\n`
-            : `👤 MEMBER ADDED\n\n`) +
+          `${verdictIcon} ${groupAddFailed ? 'PARTIAL' : 'SUCCESS'}\n\n` +
+          `${headline}\n\n` +
           `${roleEmoji} ${mention(target)}\n\n` +
           `🏷️ Role: ${bold(role)}\n` +
           `📅 Joined: ${fmtDate(Date.now())}\n\n` +
           (ownerVIP
             ? `_The owner personally added this one. Show respect._ 👑`
             : groupAddFailed
-              ? `_On the crew roster now — couldn't get them into the WhatsApp group (privacy settings, or I'm not admin)_`
-            : `_Added to group + crew roster_`),
+              ? `_On the crew roster now — but I could NOT get them into the WhatsApp group_ ` +
+                `(${addOutcome.error || 'privacy settings, or I\'m not admin'}).\n` +
+                `💡 _Send them the invite link manually, or check my admin status_`
+            : alreadyIn
+              ? `_Was already in the group — crew roster updated_`
+              : `_Added to group + crew roster_`),
         mentions: [target],
       }, { quoted: msg });
 

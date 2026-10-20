@@ -68,7 +68,8 @@ function mkSock(sent, updates) {
     groupInviteCode: async () => { throw new Error('mock'); },
     groupParticipantsUpdate: async (jid, targets, action) => {
       updates.push({ jid, targets, action });
-      return {};
+      // mirror real Baileys: per-participant status codes (200 = done)
+      return targets.map(t => ({ jid: t, status: '200' }));
     },
   };
 }

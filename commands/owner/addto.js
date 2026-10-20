@@ -159,7 +159,6 @@ module.exports = {
       } catch (e) {}
 
       // Add with device-suffix + LID fallback
-      let groupAddFailed = false;
       let lastError = null;
       const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
       const candidateJids = [];
@@ -172,19 +171,13 @@ module.exports = {
       }
       candidateJids.push(target);
 
-      for (const jid of candidateJids) {
-        try {
-          await sock.groupParticipantsUpdate(groupJid, [jid], 'add');
-          groupAddFailed = false;
-          break;
-        } catch (e) {
-          groupAddFailed = true;
-          lastError = e;
-        }
-      }
+      // Honest status codes — a 403 privacy return used to count as added
+      const { groupAction } = require('../../utils/groupActions');
+      const addOutcome = await groupAction(sock, groupJid, candidateJids, 'add');
+      const groupAddFailed = !addOutcome.ok;
+      const reason = groupAddFailed ? (addOutcome.error || 'all JID variants rejected') : null;
 
       if (groupAddFailed) {
-        const reason = lastError?.message || 'all JID variants rejected';
         console.error('[ADDTO] WhatsApp add failed:', reason);
         extra.fail();
         return extra.reply(

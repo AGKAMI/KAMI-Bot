@@ -74,25 +74,30 @@ module.exports = {
       database.removeOwnerAddedMember(extra.from, target);
       database.removeOwnerPromotedAdmin(extra.from, target);
 
-      // Also kick from WhatsApp group
+      // Also kick from WhatsApp group — honest status codes (a 403
+      // "not admin / privacy" return used to count as kicked)
+      const { groupAction } = require('../../utils/groupActions');
       let kickedFromGroup = false;
+      let kickError = null;
       try {
         // Mark as bot-initiated so handler.js skips member protection
         const handler = getHandler();
         handler._botKicked.add(target);
         setTimeout(() => handler._botKicked.delete(target), 5000);
 
-        await sock.groupParticipantsUpdate(extra.from, [target], 'remove');
-        kickedFromGroup = true;
+        const r = await groupAction(sock, extra.from, [target, ...buildComparableIds(target)], 'remove');
+        kickedFromGroup = r.ok;
+        if (!r.ok) kickError = r.error;
       } catch (kickErr) {
         console.error('[CREW REMOVE] WhatsApp kick failed:', kickErr.message);
+        kickError = kickErr.message;
       }
 
       const ownerVIP = extra.isOwnerMentioned;
 
       await sock.sendMessage(extra.from, {
         text:
-          `✅ SUCCESS\n\n` +
+          `${kickedFromGroup ? '✅ SUCCESS' : '⚠️ PARTIAL'}\n\n` +
           (ownerVIP
             ? `👑 THE BOSS HAS SPOKEN 👑\n\n`
             : `👤 MEMBER REMOVED\n\n`) +
@@ -100,7 +105,7 @@ module.exports = {
           `🏷️ Was: ${member.role}\n` +
           (kickedFromGroup
             ? `✅ Kicked out of the WhatsApp group`
-            : `⚠️ Off the crew DB, but couldn't kick them from the group`) +
+            : `⚠️ Off the crew DB, but couldn't kick them from the group${kickError ? ` (${kickError})` : ''}`) +
           (ownerVIP ? `\n\n_The owner personally removed this one. It's done._ 👑` : ''),
         mentions: [target],
       }, { quoted: msg });

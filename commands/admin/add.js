@@ -96,14 +96,12 @@ module.exports = {
       }
       candidateJids.push(target);
 
-      let added = false;
-      for (const jid of candidateJids) {
-        try {
-          await sock.groupParticipantsUpdate(extra.from, [jid], 'add');
-          added = true;
-          break;
-        } catch (e) {}
-      }
+      // Honest add — Baileys status codes: a 403 privacy return used to
+      // count as success here (the "✅ ADDED" lie)
+      const { groupAction } = require('../../utils/groupActions');
+      const addOutcome = await groupAction(sock, extra.from, candidateJids, 'add');
+      const added = addOutcome.ok;
+      const alreadyIn = addOutcome.alreadyDone;
 
       if (added) {
         // Owner add — mark for kick protection (ban already lifted above if any)
@@ -112,7 +110,7 @@ module.exports = {
         }
         await sock.sendMessage(extra.from, {
           text:
-            `✅ SUCCESS\n\n➕ ADDED\n\n${mention(target)} is in the group now\n\n` +
+            `${alreadyIn ? '⚠️ ALREADY IN' : '✅ SUCCESS'}\n\n➕ ${alreadyIn ? 'ALREADY IN THE GROUP' : 'ADDED'}\n\n${mention(target)} ${alreadyIn ? 'was already here — no add needed' : 'is in the group now'}\n\n` +
             (extra.isOwner
               ? `_Protected — only you can kick them, ${voice.tag('neutral')}_`
               : ''),

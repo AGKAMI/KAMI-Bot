@@ -107,7 +107,20 @@ module.exports = {
             handler._botKicked.add(target);
             setTimeout(() => handler._botKicked.delete(target), 5000);
 
-            await sock.groupParticipantsUpdate(extra.from, [target], 'remove');
+            // Honest kick — a 403 status return used to report ✅ KICKED
+            const { groupAction } = require('../../utils/groupActions');
+            const { buildComparableIds: bci } = require('../../utils/jidHelper');
+            const kickOutcome = await groupAction(sock, extra.from, [target, ...bci(target)], 'remove');
+            if (!kickOutcome.ok) {
+              extra.fail();
+              return await sock.sendMessage(extra.from, {
+                text:
+                  `❌ ERROR\n\n` +
+                  `Couldn't kick — ${kickOutcome.error || 'not admin / not in group'}\n\n` +
+                  `_They hit the warning limit — kick them manually, shame_`,
+                mentions: [target]
+              });
+            }
             await sock.sendMessage(extra.from, {
               text:
                 `✅ SUCCESS\n\n` +
@@ -216,7 +229,17 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
     handler._botKicked.add(target);
     setTimeout(() => handler._botKicked.delete(target), 5000);
 
-    await sock.groupParticipantsUpdate(from, [target], 'remove');
+    // Honest kick — status codes checked
+    const { groupAction } = require('../../utils/groupActions');
+    const { buildComparableIds: bci2 } = require('../../utils/jidHelper');
+    const kickOutcome = await groupAction(sock, from, [target, ...bci2(target)], 'remove');
+    if (!kickOutcome.ok) {
+      return await sock.sendMessage(from, {
+        text:
+          `❌ ERROR\n\n` +
+          `Couldn't kick — ${kickOutcome.error || 'not admin / not in group'}`,
+      });
+    }
     await sock.sendMessage(from, {
       text:
         `✅ SUCCESS\n\n` +

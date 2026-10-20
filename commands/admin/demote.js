@@ -10,6 +10,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { buildComparableIds } = require('../../utils/jidHelper');
 
 // Lazy require to avoid circular dependency (demote.js ↔ handler.js)
 function getHandler() {
@@ -283,7 +284,19 @@ module.exports = {
       // ── Normal Demote ──────────────────────────────────────
       const handler = getHandler();
       handler._botDemoted.add(target);
-      await sock.groupParticipantsUpdate(extra.from, [target], 'demote');
+      // Honest outcome — a failed demote used to report ✅ DEMOTED
+      const { groupAction } = require('../../utils/groupActions');
+      const demoteOutcome = await groupAction(sock, extra.from, [target, ...buildComparableIds(target)], 'demote');
+      if (!demoteOutcome.ok) {
+        extra.fail();
+        return await sock.sendMessage(extra.from, {
+          text:
+            `❌ ERROR\n\n` +
+            `Couldn't demote ${mention(target)} — ${demoteOutcome.error || 'not admin / not allowed'}\n\n` +
+            `_They may not be an admin, or I lack permission_`,
+          mentions: [target],
+        }, { quoted: msg });
+      }
       setTimeout(() => handler._botDemoted.delete(target), 5000);
 
       // Track owner demotions — blocks future promotes by anyone else
@@ -370,7 +383,18 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
       }
     }
 
-    await sock.groupParticipantsUpdate(from, [target], 'promote');
+    // Honest promote — status codes checked (a 403 used to fly through)
+    const { groupAction } = require('../../utils/groupActions');
+    const promoteOutcome = await groupAction(sock, from, [target, ...buildComparableIds(target)], 'promote');
+    if (!promoteOutcome.ok) {
+      return await sock.sendMessage(from, {
+        text:
+          `❌ ERROR\n\n` +
+          `Couldn't promote ${mention(target)} — ${promoteOutcome.error || 'not allowed'}\n\n` +
+          `_Check I'm a group admin, shame_`,
+        mentions: [target],
+      });
+    }
 
     // Track owner-promoted admins for protection + clear demoted flag (owner re-promotion = forgiveness)
     let protectionNote = '';

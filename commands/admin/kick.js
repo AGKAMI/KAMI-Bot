@@ -283,20 +283,40 @@ module.exports = {
         }
       }
 
-      await sock.groupParticipantsUpdate(chatId, usersToKick, 'remove');
+      // Honest kick — per-participant status codes; a failed kick (bot
+      // not admin, unknown participant) used to still report ✅ KICKED
+      const { groupAction } = require('../../utils/groupActions');
+      const kickResults = [];
+      for (const t of usersToKick) {
+        const r = await groupAction(sock, chatId, [t, ...buildComparableIds(t)], 'remove');
+        kickResults.push({ jid: t, ...r });
+      }
+      const kickedOk = kickResults.filter(r => r.ok && !r.alreadyDone);
+      const alreadyGone = kickResults.filter(r => r.ok && r.alreadyDone);
+      const kickFailed = kickResults.filter(r => !r.ok);
 
-      const usernames = usersToKick.map((jid) => mention(jid));
+      const usernames = kickResults.map((r) => mention(r.jid));
       const primaryTarget = usersToKick[0];
+      const kickVerdict = kickFailed.length === 0 ? '✅ SUCCESS' : (kickedOk.length || alreadyGone.length ? '⚠️ PARTIAL' : '❌ FAILED');
+      const kickHeadline = kickFailed.length === 0
+        ? `🔨 KICKED`
+        : `${kickedOk.length || alreadyGone.length ? 'SOME KICKED — SOME FAILED' : 'KICK FAILED'}`;
       await sendButtons(sock, chatId, {
         text:
-          `✅ SUCCESS\n\n` +
-          `🔨 KICKED\n\n` +
-          `${usernames.join(', ')} has been kicked\n\n` +
+          `${kickVerdict}\n\n` +
+          `${kickHeadline}\n\n` +
+          `${usernames.join(', ')}\n\n` +
+          (kickFailed.length
+            ? `⚠️ _Couldn't kick: ${kickFailed.map(r => mention(r.jid)).join(', ')} — ${kickFailed[0].error || 'not admin / not in group'}_\n\n`
+            : '') +
+          (alreadyGone.length
+            ? `ℹ️ _${alreadyGone.length} weren't in the group anymore_\n\n`
+            : '') +
           (extra.isOwner
             ? `🚫 *Banned from re-adding* — only you can bring them back, ${voice.tag('neutral')}\n\n`
             : '') +
           `_${voice.react('ok')}_`,
-        mentions: usersToKick,
+        mentions: kickResults.map(r => r.jid),
         footer: 'Kick Management',
         buttons: [
           { id: `admin:readd:${primaryTarget.split(':')[0]}`, text: '🔄 Re-add User' },
@@ -399,15 +419,11 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
 
     let added = false;
     let lastErr = '';
-    for (const jid of candidateJids) {
-      try {
-        await sock.groupParticipantsUpdate(from, [jid], 'add');
-        added = true;
-        break;
-      } catch (e) {
-        lastErr = e.message || 'unknown';
-      }
-    }
+    // Honest status codes — a 403 return used to count as re-added
+    const { groupAction } = require('../../utils/groupActions');
+    const readdOutcome = await groupAction(sock, from, candidateJids, 'add');
+    added = readdOutcome.ok;
+    if (!added) lastErr = readdOutcome.error || 'unknown';
 
     if (!added) {
       return await sock.sendMessage(from, {

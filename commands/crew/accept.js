@@ -166,10 +166,17 @@ module.exports = {
 
         for (const jid of candidateJids) {
           try {
-            await sock.groupParticipantsUpdate(teamGroupJid, [jid], 'add');
-            addedToGroup = true;
-            addErrorMsg = '';
-            break;
+            // Honest status codes — a 403 privacy return used to count as
+            // addedToGroup (the accept reply then claimed they were in)
+            const res = await sock.groupParticipantsUpdate(teamGroupJid, [jid], 'add');
+            const raw = res && res[0];
+            const code = String((raw && (raw.status ?? raw.code)) ?? '');
+            if (code === '200' || code === '201' || code === '408') {
+              addedToGroup = true;
+              addErrorMsg = '';
+              break;
+            }
+            addErrorMsg = 'status ' + (code || 'unknown');
           } catch (e) {
             addErrorMsg = e.message || 'unknown error';
           }

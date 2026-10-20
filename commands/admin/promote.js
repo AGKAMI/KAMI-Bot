@@ -73,7 +73,18 @@ module.exports = {
         }
       }
 
-      await sock.groupParticipantsUpdate(extra.from, [target], 'promote');
+      // Honest promote — status codes checked (a 403 used to fly through)
+      const { groupAction } = require('../../utils/groupActions');
+      const { buildComparableIds } = require('../../utils/jidHelper');
+      const promoteOutcome = await groupAction(sock, extra.from, [target, ...buildComparableIds(target)], 'promote');
+      if (!promoteOutcome.ok) {
+        extra.fail();
+        return extra.reply(
+          `❌ ERROR\n\n` +
+          `Couldn't promote ${mention(target)} — ${promoteOutcome.error || 'not allowed'}\n\n` +
+          `_Check I'm a group admin, shame_`
+        );
+      }
 
       // Track owner-promoted admins for protection
       let protectionNote = '';
