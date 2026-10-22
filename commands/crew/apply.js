@@ -12,7 +12,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { TEAMS } = require('./crewForms');
-const { resolveUser } = require('./crewHelpers');
+const { resolveUser, phoneToJid } = require('./crewHelpers');
 const { sendButtons, onButton, isOwnerJid, adminOnlyText } = require('../../utils/buttonHelper');
 const { createApplication } = require('./applyHelper');
 const { getTeamDisplayName } = require('../../utils/teamName');
@@ -43,7 +43,13 @@ module.exports = {
         const target = resolveUser(args || [], mentioned, ctx);
         // A reply to the BOT's own message resolves to the bot — never
         // target ourselves (sending cards to our own jid blows up).
-        if (target.jid && isSelfJid(sock, target.jid)) target.jid = null;
+        // A typed PHONE that resolves to the bot gets a real answer instead.
+        if (target.jid && isSelfJid(sock, target.jid)) {
+          if (target.method === 'phone') {
+            return extra.reply(`❌ ERROR\n\nThat's this bot's own number — can't invite it, hey`);
+          }
+          target.jid = null;
+        }
 
         if (target.jid) {
           if (extra.isOwner) return sendTeamSelection(sock, msg, extra, target);
@@ -55,6 +61,20 @@ module.exports = {
             `• \`${prefix}crew apply <team>\` — apply for yourself\n\n` +
             `Teams: ${Object.keys(TEAMS).join(', ')}`
           );
+        }
+
+        // Fallback: the number arrived mangled (iOS linkifies phone numbers
+        // and the tokens can split/mention weirdly) — dig a phone-shaped
+        // sequence out of the RAW TEXT directly.
+        const rawText = (msg.message?.conversation || msg.message?.extendedTextMessage?.text || '');
+        const phoneInText = rawText.match(/(?:\+?2[27]\s?\d{2}(?:\s?\d{3,4}){2}|\d{9,12})/);
+        if (phoneInText) {
+          const jid = phoneToJid(phoneInText[0]);
+          if (jid && !isSelfJid(sock, jid)) {
+            if (extra.isOwner) {
+              return sendTeamSelection(sock, msg, extra, { jid, args: [], method: 'phone-fallback' });
+            }
+          }
         }
 
         // Nothing to target — bare `.apply` (reply is picked up above)
@@ -73,8 +93,42 @@ module.exports = {
       // Team given → normal application flow (self, reply, mention or number)
       const resolved = resolveUser(args.slice(1), mentioned, ctx);
       // Same guard: a reply to the bot's own message targets nobody — fall
-      // through to self-apply instead of sending the form to ourselves.
-      if (resolved.jid && isSelfJid(sock, resolved.jid)) resolved.jid = null;
+      // through to self-apply instead of sending the form to ourselves. A
+      // typed PHONE that resolves to the bot gets a real answer instead.
+      if (resolved.jid && isSelfJid(sock, resolved.jid)) {
+        if (resolved.method === 'phone') {
+          return extra.reply(`❌ ERROR\n\nThat's this bot's own number — can't apply for it, hey`);
+        }
+        resolved.jid = null;
+      }
+
+      // A target was clearly attempted (leftover digits or junk tokens) but
+      // couldn't be resolved — NEVER silently fall back to SELF-apply.
+      // That's what produced "You're already in … ne" about the SENDER when
+      // KAMI ran `!crew apply <team> <number>` with a junk-laden paste.
+      if (!resolved.jid) {
+        if (resolved.error === 'invalid_phone') {
+          return extra.reply(
+            `❌ ERROR\n\nThat number doesn't look valid hey\n\n` +
+            `Tip: any format works — \`${prefix}apply ${first} 082 123 4567\``
+          );
+        }
+        const leftover = (resolved.args || []).join(' ');
+        if (/\d{6,}/.test(leftover)) {
+          console.log('[APPLY] unresolved phone target:', JSON.stringify(resolved.args));
+          return extra.reply(
+            `❌ ERROR\n\nCouldn't read that number hey — try typing it clean\n\n` +
+            `Any format works: \`${prefix}apply ${first} +27 82 123 4567\``
+          );
+        }
+        if (leftover.trim()) {
+          console.log('[APPLY] unresolved target tokens:', JSON.stringify(resolved.args));
+          return extra.reply(
+            `❌ ERROR\n\nCouldn't read that as a person, hey\n\n` +
+            `Use @mention, a reply, or a number — or just \`${prefix}apply ${first}\` to do it yourself`
+          );
+        }
+      }
 
       let applicantJid;
       let applyingForSomeone = false;
@@ -149,7 +203,7 @@ function applyUsage(prefix) {
     `Usage:\n` +
     `• \`${prefix}apply <team>\` — apply for yourself\n` +
     `• \`${prefix}apply <team> @user\` — apply for someone\n` +
-    `• \`${prefix}apply <team> 0833882383\` — apply by number\n` +
+    `• \`${prefix}apply <team> 082 123 4567\` — apply by number\n` +
     `• \`${prefix}apply @user\` / reply / number — *(owner)* send them the team selection\n\n` +
     `Teams: ${Object.keys(TEAMS).join(', ')}`
   );
