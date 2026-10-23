@@ -21,7 +21,7 @@ module.exports = {
       if (args.length === 0) {
         return await sock.sendMessage(msg.key.remoteJid, {
           text: `📝 _${voice.lead('neutral')}, give me a song name_\n\n_Example:_ ${config.prefix}lyrics Despacito`
-        });
+        }, { quoted: msg });
       }
 
       const query = args.join(' ');
@@ -142,7 +142,7 @@ module.exports = {
         extra.fail();
         return await sock.sendMessage(msg.key.remoteJid, {
           text: `❌ _${voice.openErr()}, could not find lyrics for "${query}"_\n\n_Just type:_ ${config.prefix}lyrics songname artist`
-        });
+        }, { quoted: msg });
       }
 
       // Format lyrics (limit to prevent message too long)
@@ -157,14 +157,14 @@ module.exports = {
                      `${lyrics}\n\n` +
                      `_Powered by ${lyricsData.source}_`;
 
-      await sock.sendMessage(msg.key.remoteJid, { text: caption });
+      await sock.sendMessage(msg.key.remoteJid, { text: caption }, { quoted: msg });
 
     } catch (error) {
       console.error('[lyrics] Error:', error.message);
       extra.fail();
       await sock.sendMessage(msg.key.remoteJid, {
         text: `❌ _${voice.openErr()} — error fetching lyrics hey_`
-      });
+      }, { quoted: msg });
     }
   }
 };

@@ -107,7 +107,7 @@ onButton('admin:antilink:on', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antilink: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTILINK ON*\n\n_Antilink protection activated_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antilink:off', async (sock, msg, from) => {
@@ -116,7 +116,7 @@ onButton('admin:antilink:off', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antilink: false });
   await sock.sendMessage(from, {
     text: `✅ *ANTILINK OFF*\n\n_Antilink protection disabled_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antilink:set:warn', async (sock, msg, from) => {
@@ -125,7 +125,7 @@ onButton('admin:antilink:set:warn', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antilinkAction: 'warn', antilink: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTILINK ACTION*\n\n_Action set to warn_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antilink:set:delete', async (sock, msg, from) => {
@@ -134,7 +134,7 @@ onButton('admin:antilink:set:delete', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antilinkAction: 'delete', antilink: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTILINK ACTION*\n\n_Action set to delete_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antilink:set:kick', async (sock, msg, from) => {
@@ -143,5 +143,5 @@ onButton('admin:antilink:set:kick', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antilinkAction: 'kick', antilink: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTILINK ACTION*\n\n_Action set to kick_`,
-  });
+  }, { quoted: msg });
 });

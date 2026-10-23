@@ -157,7 +157,7 @@ module.exports = {
             text: '👇 Tap a button below',
             footer: btnFooter,
             buttons: mainBtns,
-          });
+          }, msg);
         } else {
           await sendButtons(sock, extra.from, {
             text: summary,
@@ -226,21 +226,21 @@ const BACK_MORE = { id: 'menu:back:more', text: '⬅️ Back to More' };
 // allowlisted commands in the category also get ▶️ tap-to-run buttons
 // (routed via againDispatch) — e.g. the Anime menu becomes one tap per SFW
 // image command. `reserved` keeps run buttons + nav within the 10-button cap.
-async function sendCategoryView(sock, from, cat, backBtn, extraBtns) {
+async function sendCategoryView(sock, from, cat, backBtn, extraBtns, msg) {
   const nav = [...(extraBtns || []), backBtn];
   const runBtns = buildRunButtons(cat, nav.length);
   await sendButtons(sock, from, {
     text: buildCategoryText(cat, { nav: true, tappable: runBtns.length > 0 }),
     footer: config.botName || 'KAMI Bot',
     buttons: [...runBtns, ...nav],
-  });
+  }, msg);
 }
 
 // ── Main-page categories → Back to main menu ────────────
 for (const b of mainBtns) {
   if (b.id === 'menu:owner' || b.id === 'menu:more' || b.id === 'menu:admin') continue; // special-cased below
   const cat = b.id.slice('menu:'.length);
-  onButton(b.id, (sock, msg, from) => sendCategoryView(sock, from, cat, BACK_MAIN));
+  onButton(b.id, (sock, msg, from) => sendCategoryView(sock, from, cat, BACK_MAIN, null, msg));
 }
 
 // ── 🛡️ Admin button — only group admins get the admin list + hub;
@@ -252,11 +252,11 @@ onButton('menu:admin', async (sock, msg, from, sender) => {
       text: `🛡️ ADMINS ONLY\n\n_Only group admins can use those commands._`,
       footer: config.botName || 'KAMI Bot',
       buttons: [BACK_MAIN],
-    });
+    }, msg);
   }
   await sendCategoryView(sock, from, 'admin', BACK_MAIN, [
     { id: 'admin:hub', text: '🛡️ Admin Hub' },
-  ]);
+  ], msg);
 });
 
 // ── 👑 Owner button — only KAMI gets the owner command list; everyone else
@@ -288,16 +288,16 @@ onButton('menu:owner', async (sock, msg, from, sender) => {
       text: `👑 KAMI ONLY\n\n_Only KAMI has access to those commands._`,
       footer: config.botName || 'KAMI Bot',
       buttons: [BACK_MAIN],
-    });
+    }, msg);
   }
   // Owner Hub launcher → interactive anticall/mode/autoreact/dmblocker panels
   await sendCategoryView(sock, from, 'owner', BACK_MAIN, [
     { id: 'owner:hub', text: '🎛️ Owner Hub' },
-  ]);
+  ], msg);
 });
 
 // ── More page: Anime, Textmaker, Back ────────────────
-async function sendMorePage(sock, from) {
+async function sendMorePage(sock, from, msg) {
   await sendButtons(sock, from, {
     text: `📂 *MORE*\n\nTap to see commands:`,
     footer: config.botName || 'KAMI Bot',
@@ -306,14 +306,14 @@ async function sendMorePage(sock, from) {
       { id: 'menu:textmaker', text: '✨ Textmaker' },
       BACK_MAIN,
     ],
-  });
+  }, msg);
 }
-onButton('menu:more', (sock, msg, from) => sendMorePage(sock, from));
-onButton('menu:back:more', (sock, msg, from) => sendMorePage(sock, from)); // children's parent-aware Back
+onButton('menu:more', (sock, msg, from) => sendMorePage(sock, from, msg));
+onButton('menu:back:more', (sock, msg, from) => sendMorePage(sock, from, msg)); // children's parent-aware Back
 
 // More-page children → Back returns to the More page, not the main menu
-onButton('menu:anime', (sock, msg, from) => sendCategoryView(sock, from, 'anime', BACK_MORE));
-onButton('menu:textmaker', (sock, msg, from) => sendCategoryView(sock, from, 'textmaker', BACK_MORE));
+onButton('menu:anime', (sock, msg, from) => sendCategoryView(sock, from, 'anime', BACK_MORE, null, msg));
+onButton('menu:textmaker', (sock, msg, from) => sendCategoryView(sock, from, 'textmaker', BACK_MORE, null, msg));
 
 // ── Back to Main Menu ────────────────────────────────
 onButton('menu:back:main', (sock, msg, from) => sendButtons(sock, from, {
@@ -321,4 +321,4 @@ onButton('menu:back:main', (sock, msg, from) => sendButtons(sock, from, {
   footer: config.botName || 'KAMI Bot',
   header: 'KAMI BOT',
   buttons: mainBtns,
-}));
+}, msg));

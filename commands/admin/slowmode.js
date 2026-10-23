@@ -237,7 +237,7 @@ onButton('admin:slowmode:off', async (sock, msg, from) => {
   database.updateGroupSettings(from, { slowmode: 0 });
   await sock.sendMessage(from, {
     text: `✅ *SLOWMODE OFF*\n\n_Message cooldown disabled_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:slowmode:10s', async (sock, msg, from) => {
@@ -246,7 +246,7 @@ onButton('admin:slowmode:10s', async (sock, msg, from) => {
   database.updateGroupSettings(from, { slowmode: 10 });
   await sock.sendMessage(from, {
     text: `✅ *SLOWMODE ON*\n\n⏱️ *Cooldown:* 10s\n_Everyone must wait 10s between messages_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:slowmode:30s', async (sock, msg, from) => {
@@ -255,5 +255,5 @@ onButton('admin:slowmode:30s', async (sock, msg, from) => {
   database.updateGroupSettings(from, { slowmode: 30 });
   await sock.sendMessage(from, {
     text: `✅ *SLOWMODE ON*\n\n⏱️ *Cooldown:* 30s\n_Everyone must wait 30s between messages_`,
-  });
+  }, { quoted: msg });
 });

@@ -148,7 +148,7 @@ async function sendTeamCards(sock, from, applicantJid) {
     }
     await sock.sendMessage(from, {
       text: `\u{1F4CB} *SECURITY TEAMS*\n\n${why}`,
-    });
+    }, { quoted: msg });
     return;
   }
 
@@ -302,7 +302,7 @@ onButton('start:menu', async (sock, msg, from) => {
       { id: 'menu:owner',   text: '\u{1F451} Owner' },
       { id: 'menu:more',    text: '\u{1F4C2} More' },
     ],
-  });
+  }, msg);
 });
 
 // Apply -> send team cards via DM (not in group)
@@ -313,7 +313,7 @@ onButton('start:apply', async (sock, msg, from, sender) => {
     // In group: tell user to check DMs (no @mention needed — bot is sending TO them)
     await sock.sendMessage(from, {
       text: `💬 _DM'd you the form, ${voice.mate()} — check your DMs hey_`,
-    });
+    }, { quoted: msg });
   }
   
   // Unblock so DMs land + mark them temp-allowed (orders/apply only)
@@ -336,7 +336,7 @@ onButton('start:order', async (sock, msg, from, sender) => {
   if (isGroup) {
     await sock.sendMessage(from, {
       text: `💬 _DM'd you the catalog, ${voice.mate()} — go have a look hey_`,
-    });
+    }, { quoted: msg });
   }
   const dmJid = toDmJid(sender);
   // Unblock so DMs land + mark them temp-allowed (orders/apply only)
@@ -369,7 +369,7 @@ onButton('start:join:', async (sock, msg, from, sender, btnId) => {
   if (isGroup) {
     await sock.sendMessage(from, {
       text: `\u{1F4AC} _check your DMs for the confirmation._`,
-    });
+    }, { quoted: msg });
   }
   
   // Send confirmation to DM
@@ -384,7 +384,7 @@ onButton('start:confirm:', async (sock, msg, from, sender, btnId) => {
   if (!config.crewTeams[teamKey]) return;
 
   const result = await createApplication(sock, sender, teamKey, {
-    replyFn: (text) => sock.sendMessage(from, { text }),
+    replyFn: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
     from,
     applyingForSomeone: false,
   });
@@ -397,7 +397,7 @@ onButton('start:confirm:', async (sock, msg, from, sender, btnId) => {
         `\u{1F4CB} *App ID:* ${result.app.appUid}\n\n` +
         `\u{1F4AC} I dropped the form in your DMs.\n\n` +
         `_${voice.greetOpen()}, good luck!_`,
-    });
+    }, { quoted: msg });
   }
 });
 

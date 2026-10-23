@@ -107,7 +107,7 @@ module.exports = {
                 `No way you tryna kick the owner, bru 😭\n` +
                 `Don't act like a laaitie man, ${voice.tag('neutral')}`,
               mentions: [extra.sender],
-            });
+            }, { quoted: msg });
             return;
           }
         }
@@ -150,7 +150,7 @@ module.exports = {
                     `I couldn't demote them this time (${violatorDemote.error || 'not allowed'}) — ` +
                     `KAMI, check my admin status hey`,
                   mentions: [extra.sender, target],
-                });
+                }, { quoted: msg });
                 return;
               }
 
@@ -164,7 +164,7 @@ module.exports = {
                 mentions: ownerJid
                   ? [target, extra.sender, ownerJid]
                   : [target, extra.sender],
-              });
+              }, { quoted: msg });
 
               // DM victim
               try {
@@ -224,7 +224,7 @@ module.exports = {
               mentions: ownerJid
                 ? [target, extra.sender, ownerJid]
                 : [target, extra.sender],
-            });
+            }, { quoted: msg });
 
             // DM victim
             try {
@@ -367,7 +367,7 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
         return await sock.sendMessage(from, {
           text: `❌ *ADMIN ONLY*\n\nOnly group admins can re-add members, shame.`,
           mentions: [sender],
-        });
+        }, { quoted: msg });
       }
     }
   } catch (e) {
@@ -389,7 +389,7 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
         `${mention(target)} was kicked by KAMI personally\n\n` +
         `Only KAMI can bring them back, boet — don't even try ${voice.tag('tease')}`,
       mentions: [target],
-    });
+    }, { quoted: msg });
   }
   // Owner re-adding a banned member — lift the ban BEFORE the add so the
   // group-participants event doesn't race and kick them straight back out
@@ -412,7 +412,7 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
             `❌ ERROR\n\n` +
             `${mention(target)} is already in the group, ne, ne`,
           mentions: [target],
-        });
+        }, { quoted: msg });
       }
     }
 
@@ -446,7 +446,7 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
     if (!added) {
       return await sock.sendMessage(from, {
         text: `❌ ERROR\n\nCouldn't re-add — ${lastErr}`,
-      });
+      }, { quoted: msg });
     }
 
     // Owner re-added a banned member — restore protection (ban lifted above)
@@ -464,13 +464,13 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
           : '') +
         `_${voice.react('ok')}_`,
       mentions: [target],
-    });
+    }, { quoted: msg });
   } catch (e) {
     console.error('[READD BTN] Error:', e.message);
     await sock.sendMessage(from, {
       text:
         `❌ ERROR\n\n` +
         `Couldn't re-add — ${e.message || 'Unknown error'}`,
-    });
+    }, { quoted: msg });
   }
 });

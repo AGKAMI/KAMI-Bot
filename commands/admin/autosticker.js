@@ -76,7 +76,7 @@ onButton('admin:autosticker:on', async (sock, msg, from) => {
   database.updateGroupSettings(from, { autosticker: true });
   await sock.sendMessage(from, {
     text: `✅ AUTOSTICKER ON\n\n_Autosticker turned ON — every image and video becomes a sticker_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:autosticker:off', async (sock, msg, from) => {
@@ -85,6 +85,6 @@ onButton('admin:autosticker:off', async (sock, msg, from) => {
   database.updateGroupSettings(from, { autosticker: false });
   await sock.sendMessage(from, {
     text: `✅ AUTOSTICKER OFF\n\n_Autosticker turned OFF_`,
-  });
+  }, { quoted: msg });
 });
 

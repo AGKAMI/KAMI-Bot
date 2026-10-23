@@ -26,7 +26,7 @@ module.exports = {
     if (upcoming.length === 0) {
       return sock.sendMessage(jid, {
         text: `❌ *ERROR*\n\nNo events coming up.\nMake one with: \`${prefix}event\``
-      });
+      }, { quoted: msg });
     }
 
     let response = `📅 *UPCOMING EVENTS*\n\n`;

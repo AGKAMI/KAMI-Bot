@@ -119,7 +119,7 @@ module.exports = {
                   `Couldn't kick — ${kickOutcome.error || 'not admin / not in group'}\n\n` +
                   `_They hit the warning limit — kick them manually, shame_`,
                 mentions: [target]
-              });
+              }, { quoted: msg });
             }
             await sock.sendMessage(extra.from, {
               text:
@@ -128,7 +128,7 @@ module.exports = {
                 `${mention(target)} is out — too many warnings\n\n` +
                 `_${voice.react('ok')}_`,
               mentions: [target]
-            });
+            }, { quoted: msg });
           } catch (e) {
             extra.fail();
             await extra.reply(
@@ -177,14 +177,14 @@ onButton('admin:undowarn', async (sock, msg, from, sender, btnId) => {
         `${mention(target)} is cleared of their last warning\n\n` +
         `_${voice.react('ok')}_`,
       mentions: [target],
-    });
+    }, { quoted: msg });
   } catch (e) {
     console.error('[UNDOWARN] Error:', e.message);
     await sock.sendMessage(from, {
       text:
         `❌ ERROR\n\n` +
         `Couldn't remove warning — ${e.message || 'Unknown error'}`,
-    });
+    }, { quoted: msg });
   }
 });
 
@@ -205,7 +205,7 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
             `❌ ERROR\n\n` +
             `${mention(target)} isn't in this group`,
           mentions: [target],
-        });
+        }, { quoted: msg });
       }
     }
 
@@ -221,7 +221,7 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
           `${mention(target)} was added by KAMI personally\n\n` +
           `Only KAMI kicks them, hey`,
         mentions: [target],
-      });
+      }, { quoted: msg });
     }
 
     // Mark as bot-initiated so handler.js skips member protection (prevents re-add loop)
@@ -238,7 +238,7 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
         text:
           `❌ ERROR\n\n` +
           `Couldn't kick — ${kickOutcome.error || 'not admin / not in group'}`,
-      });
+      }, { quoted: msg });
     }
     await sock.sendMessage(from, {
       text:
@@ -247,7 +247,7 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
         `${mention(target)} is out of the group now\n\n` +
         `_${voice.react('ok')}_`,
       mentions: [target],
-    });
+    }, { quoted: msg });
     database.clearWarnings(from, target);
   } catch (e) {
     console.error('[KICK BTN] Error:', e.message);
@@ -255,6 +255,6 @@ onButton('admin:kick', async (sock, msg, from, sender, btnId) => {
       text:
         `❌ ERROR\n\n` +
         `Couldn't kick — ${e.message || 'Unknown error'}`,
-    });
+    }, { quoted: msg });
   }
 });

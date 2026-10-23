@@ -363,7 +363,7 @@ module.exports = {
       if (isGroup) {
         await sock.sendMessage(extra.from, {
           text: `\u{1F4AC} _check your DMs for the catalogue._`,
-        });
+        }, { quoted: msg });
         const dmJid = toDmJid(extra.sender);
         if (!dmJid) return;
         // Unblock so DMs land (same as crew application)

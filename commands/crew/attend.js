@@ -26,7 +26,7 @@ module.exports = {
     if (upcoming.length === 0) {
       return sock.sendMessage(jid, {
         text: `❌ *ERROR*\n\nNo events coming up.\nMake one with: \`${prefix}event <name> <time>\``
-      });
+      }, { quoted: msg });
     }
 
     // Resolve which event: number from .events list, bare ID
@@ -41,7 +41,7 @@ module.exports = {
       if (!upcoming[idx]) {
         return sock.sendMessage(jid, {
           text: `❌ *ERROR*\n\nOnly ${upcoming.length} event${upcoming.length === 1 ? '' : 's'} coming up.\nSee them with: \`${prefix}events\``
-        });
+        }, { quoted: msg });
       }
       eventId = upcoming[idx][0];
     } else if (arg) {
@@ -50,7 +50,7 @@ module.exports = {
       if (!hit) {
         return sock.sendMessage(jid, {
           text: `❌ *ERROR*\n\nNo event with that ID.\nSee them with: \`${prefix}events\``
-        });
+        }, { quoted: msg });
       }
       eventId = hit;
     } else {
@@ -63,13 +63,13 @@ module.exports = {
     if (!event) {
       return sock.sendMessage(jid, {
         text: `❌ *ERROR*\n\nNo event with that number.\nSee them with: \`${prefix}events\``
-      });
+      }, { quoted: msg });
     }
 
     if (event.status && event.status !== 'upcoming') {
       return sock.sendMessage(jid, {
         text: `❌ *ERROR*\n\nThat one is done and dusted.\nSee what's next with: \`${prefix}events\``
-      });
+      }, { quoted: msg });
     }
 
     if (!event.attendees) {

@@ -105,7 +105,7 @@ module.exports = {
             `No way you tryna demote the owner, bru 😭\n` +
             `Don't act like a laaitie man, ${voice.tag('neutral')}`,
           mentions: [extra.sender],
-        });
+        }, { quoted: msg });
         return;
       }
       // Also check by JID match
@@ -121,7 +121,7 @@ module.exports = {
             `No way you tryna demote the owner, bru 😭\n` +
             `Don't act like a laaitie man, ${voice.tag('neutral')}`,
           mentions: [extra.sender],
-        });
+        }, { quoted: msg });
         return;
       }
 
@@ -155,7 +155,7 @@ module.exports = {
               mentions: ownerNum
                 ? [target, extra.sender, ownerJid]
                 : [target, extra.sender],
-            });
+            }, { quoted: msg });
 
             // DM victim
             try {
@@ -244,7 +244,7 @@ module.exports = {
               mentions: ownerNum
                 ? [target, extra.sender, ownerJid]
                 : [target, extra.sender],
-            });
+            }, { quoted: msg });
 
             // DM victim — claims mirror the real op outcomes
             try {
@@ -375,7 +375,7 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
         return await sock.sendMessage(from, {
           text: `❌ *ADMIN ONLY*\n\nOnly group admins can promote members, shame.`,
           mentions: [sender],
-        });
+        }, { quoted: msg });
       }
     }
   } catch (e) {
@@ -392,7 +392,7 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
         `${mention(target)} got demoted by the owner\n\n` +
         `Only the owner can promote them again, hey`,
       mentions: [target],
-    });
+    }, { quoted: msg });
   }
 
   // ── Check if target is already admin before promoting ──
@@ -408,7 +408,7 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
             `❌ ERROR\n\n` +
             `${mention(target)} is already an admin, ne`,
           mentions: [target],
-        });
+        }, { quoted: msg });
       }
     }
 
@@ -422,7 +422,7 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
           `Couldn't promote ${mention(target)} — ${promoteOutcome.error || 'not allowed'}\n\n` +
           `_Check I'm a group admin, shame_`,
         mentions: [target],
-      });
+      }, { quoted: msg });
     }
 
     // Track owner-promoted admins for protection + clear demoted flag (owner re-promotion = forgiveness)
@@ -440,13 +440,13 @@ onButton('admin:promote', async (sock, msg, from, sender, btnId) => {
         `${mention(target)} is now a group admin, lekke${protectionNote}\n\n` +
         `_${voice.react('ok')}_`,
       mentions: [target],
-    });
+    }, { quoted: msg });
   } catch (e) {
     console.error('[PROMOTE BTN] Error:', e.message);
     await sock.sendMessage(from, {
       text:
         `❌ ERROR\n\n` +
         `Couldn't promote — ${e.message || 'Unknown error'}`,
-    });
+    }, { quoted: msg });
   }
 });

@@ -356,7 +356,7 @@ onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
     const action = processed.action === 'accepted' ? '✅ accepted' : '❌ denied';
     await sock.sendMessage(from, {
       text: `⚠️ *${uid}* was already ${action} by an admin.\n\nNothing to do here.`,
-    });
+    }, { quoted: msg });
     return;
   }
 
@@ -383,7 +383,7 @@ onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
 
   await sock.sendMessage(from, {
     text: `❌ *Deny Application*\n\nDrop a reason for denying *${uid}*\n\`${p}crew deny ${uid} <reason>\``,
-  });
+  }, { quoted: msg });
 });
 
 onButton('crew:cancel', async (sock, msg, from, sender, btnId) => {

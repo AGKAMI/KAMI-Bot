@@ -55,7 +55,7 @@ const currentVal = (scope, key) => {
 const ownerGate = async (sock, msg, from, sender) => {
   if (msg.key?.fromMe) return true;
   if (ownerLib().isOwner(sender)) return true;
-  await sock.sendMessage(from, { text: '🔒 *OWNER ONLY*\nThis panel is restricted to the bot owner.' }).catch(() => {});
+  await sock.sendMessage(from, { text: '🔒 *OWNER ONLY*\nThis panel is restricted to the bot owner.' }, { quoted: msg }).catch(() => {});
   return false;
 };
 
@@ -277,7 +277,7 @@ const sendGroupScreen = async (sock, msg, to, groupJid, pickerId) => {
   const p = await engine().runKickPreview(sock); // dry run — no flag writes
   const g = p.perGroup.find(x => x.jid === groupJid);
   if (!g) {
-    return sock.sendMessage(to, { text: `⚠️ *${name}* is no longer a crew group — dropped from the list.` });
+    return sock.sendMessage(to, { text: `⚠️ *${name}* is no longer a crew group — dropped from the list.`, ...(msg ? { quoted: msg } : {}) });
   }
   const eff = kickSettings.getEffective(groupJid);
 
@@ -309,7 +309,7 @@ const sendGroupPicker = async (sock, msg, to, page = 0, cachedEntries = null, fa
     }
   }
   if (!entries.length) {
-    return sock.sendMessage(to, { text: `⚠️ No crew groups registered — map one with \`${config.prefix || '.'}crew setteam\` first.` });
+    return sock.sendMessage(to, { text: `⚠️ No crew groups registered — map one with \`${config.prefix || '.'}crew setteam\` first.`, ...(msg ? { quoted: msg } : {}) });
   }
 
   const pages = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
@@ -447,22 +447,22 @@ onButton('kickcfg:view', ow(async (sock, msg, from, sender, btnId) => {
 onButton('kickcfg:toggle', ow(async (sock, msg, from, sender, btnId) => {
   const scopeCode = btnId.split(':')[2] || 'l';
   const r = resolveScope(from, scopeCode);
-  if (r.error) return sock.sendMessage(from, { text: r.error });
+  if (r.error) return sock.sendMessage(from, { text: r.error }, { quoted: msg });
   const cur = r.scope === 'global'
     ? kickSettings.getGlobal().enabled
     : kickSettings.getEffective(r.scope).enabled;
   const res = kickSettings.update(r.scope, { enabled: !cur });
-  if (!res.ok) return sock.sendMessage(from, { text: `❌ ${res.error}` });
+  if (!res.ok) return sock.sendMessage(from, { text: `❌ ${res.error}` }, { quoted: msg });
   return sendDashboard(sock, msg, from, scopeCode);
 }));
 
 onButton('kickcfg:reg', ow(async (sock, msg, from, sender, btnId) => {
   const res = await ensureCrewGroup(sock, from);
-  if (!res.ok) return sock.sendMessage(from, { text: `❌ ${res.error}` });
+  if (!res.ok) return sock.sendMessage(from, { text: `❌ ${res.error}` }, { quoted: msg });
   if (!res.already) {
     await sock.sendMessage(from, {
       text: `➕ *TRACKING ENABLED*\n\n🏷️ ${res.name} \`${res.abbrev}\`\n\n_Engine will scan this group every pass — it also shows up in the preview picker._`,
-    });
+    }, { quoted: msg });
   }
   return sendDashboard(sock, msg, from, 'g');
 }));
@@ -477,12 +477,12 @@ onButton('kickcfg:set', ow(async (sock, msg, from, sender, btnId) => {
   const [, , key, scopeCode, value] = btnId.split(':');
   if (!PRESETS[key] || !value) return;
   const r = resolveScope(from, scopeCode || 'l');
-  if (r.error) return sock.sendMessage(from, { text: r.error });
+  if (r.error) return sock.sendMessage(from, { text: r.error }, { quoted: msg });
   const res = kickSettings.update(r.scope, { [KEYMAP[key]]: value });
-  if (!res.ok) return sock.sendMessage(from, { text: `❌ ${res.error}` });
+  if (!res.ok) return sock.sendMessage(from, { text: `❌ ${res.error}` }, { quoted: msg });
   await sock.sendMessage(from, {
     text: `✅ *${KEY_LABELS[key]}* → *${fmtVal(key, currentVal(r.scope, key))}* _(${r.label})_`,
-  });
+  }, { quoted: msg });
   return sendDashboard(sock, msg, from, scopeCode || 'l');
 }));
 
@@ -518,7 +518,7 @@ onButton('kickcfg:purge', ow(async (sock, msg, from, sender, btnId) => {
   engine().purgeKickFlags(useGroup ? r.scope : null);
   await sock.sendMessage(from, {
     text: useGroup ? `🗑️ Flags purged for this group.` : `🗑️ Flags purged for ALL crew groups.`,
-  });
+  }, { quoted: msg });
   return sendDashboard(sock, msg, from, scopeCode);
 }));
 
@@ -526,15 +526,15 @@ onButton('kickcfg:reset', ow(async (sock, msg, from, sender, btnId) => {
   const scopeCode = btnId.split(':')[2] || 'l';
   if (scopeCode === 'g') {
     const r = resolveScope(from, 'g');
-    if (r.error) return sock.sendMessage(from, { text: '❌ Not a crew group.' });
+    if (r.error) return sock.sendMessage(from, { text: '❌ Not a crew group.' }, { quoted: msg });
     const had = kickSettings.resetGroup(r.scope);
     await sock.sendMessage(from, {
       text: had ? `♻️ This group now inherits global settings.` : `ℹ️ This group had no override.`,
-    });
+    }, { quoted: msg });
     return sendDashboard(sock, msg, from, 'g');
   }
   kickSettings.resetGlobal();
-  await sock.sendMessage(from, { text: `♻️ Global settings reset to defaults.` });
+  await sock.sendMessage(from, { text: `♻️ Global settings reset to defaults.` }, { quoted: msg });
   return sendDashboard(sock, msg, from, 'l');
 }));
 
@@ -544,7 +544,7 @@ onButton('kickcfg:gp', ow(async (sock, msg, from, sender, btnId) => {
   const picker = _pickers.get(pickerId);
   const jid = picker ? picker.entries[parseInt(idxStr, 10)]?.jid : null;
   if (!jid) {
-    return sock.sendMessage(sender, { text: '⚠️ That list expired — press Preview again.' });
+    return sock.sendMessage(sender, { text: '⚠️ That list expired — press Preview again.' }, { quoted: msg });
   }
   return sendGroupScreen(sock, msg, sender, jid, pickerId);
 }));
@@ -553,7 +553,7 @@ onButton('kickcfg:gpp', ow(async (sock, msg, from, sender, btnId) => {
   const [, , pickerId, pageStr] = btnId.split(':');
   const picker = _pickers.get(pickerId);
   if (!picker) {
-    return sock.sendMessage(sender, { text: '⚠️ That list expired — press Preview again.' });
+    return sock.sendMessage(sender, { text: '⚠️ That list expired — press Preview again.' }, { quoted: msg });
   }
   return sendGroupPicker(sock, msg, sender, parseInt(pageStr, 10) || 0, picker.entries, from);
 }));
@@ -562,7 +562,7 @@ onButton('kickcfg:gpb', ow(async (sock, msg, from, sender, btnId) => {
   const [, , pickerId] = btnId.split(':');
   const picker = _pickers.get(pickerId);
   if (!picker) {
-    return sock.sendMessage(sender, { text: '⚠️ That list expired — press Preview again.' });
+    return sock.sendMessage(sender, { text: '⚠️ That list expired — press Preview again.' }, { quoted: msg });
   }
   return sendGroupPicker(sock, msg, sender, picker.page, picker.entries, from);
 }));
@@ -573,14 +573,14 @@ onButton('kickcfg:gk', ow(async (sock, msg, from, sender, btnId) => {
   const name = await engine().getLiveGroupName(sock, groupJid);
   const res = await engine().runGroupKick(sock, groupJid);
   if (res.error) {
-    return sock.sendMessage(sender, { text: `❌ *${name}*\n${res.error}${res.due ? `\n(${res.due} due once resolved)` : ''}` });
+    return sock.sendMessage(sender, { text: `❌ *${name}*\n${res.error}${res.due ? `\n(${res.due} due once resolved)` : ''}` }, { quoted: msg });
   }
   const cappedNote = res.capped ? `\n⚠️ Cap hit — the rest roll to the next scan.` : '';
   await sock.sendMessage(sender, {
     text: res.kicked
       ? `👢 Kicked *${res.kicked}* inactive member${res.kicked === 1 ? '' : 's'} from *${name}*${cappedNote}`
       : `ℹ️ Nobody due for kick in *${name}* right now.`,
-  });
+  }, { quoted: msg });
   return sendGroupScreen(sock, msg, sender, groupJid, null);
 }));
 
@@ -589,14 +589,14 @@ onButton('kickcfg:gn', ow(async (sock, msg, from, sender, btnId) => {
   const name = await engine().getLiveGroupName(sock, groupJid);
   const res = await engine().sendGroupNotice(sock, groupJid);
   if (res.error) {
-    return sock.sendMessage(sender, { text: `❌ *${name}*\n${res.error}` });
+    return sock.sendMessage(sender, { text: `❌ *${name}*\n${res.error}` }, { quoted: msg });
   }
   if (!res.notified) {
-    return sock.sendMessage(sender, { text: `ℹ️ Nobody inactive in *${name}* right now.` });
+    return sock.sendMessage(sender, { text: `ℹ️ Nobody inactive in *${name}* right now.` }, { quoted: msg });
   }
   await sock.sendMessage(sender, {
     text: `🔔 Notice posted in *${name}* — ${res.notified} member${res.notified === 1 ? '' : 's'} listed and flagged.`,
-  });
+  }, { quoted: msg });
   return sendGroupScreen(sock, msg, sender, groupJid, null);
 }));
 

@@ -43,7 +43,7 @@ function hasActiveSession(jid) {
 }
 
 //getSession with expiry feedback
-async function getSessionOrExpired(sock, jid) {
+async function getSessionOrExpired(sock, jid, msg) {
   const s = sessions.get(jid);
   if (!s) return null;
   if (Date.now() - s.startedAt > SESSION_TTL) {
@@ -56,7 +56,7 @@ async function getSessionOrExpired(sock, jid) {
           `━━━━━━━━━━━━━━━━\n\n` +
           `Your application session timed out (30 min limit)\n\n` +
           `_Run ${config.prefix || '.'}crew apply to start a fresh one_`,
-      });
+      }, msg ? { quoted: msg } : {});
     } catch (e) {}
     return null;
   }
@@ -124,7 +124,7 @@ function getQuestions(teamKey) {
 }
 
 // ── Send the current question to the applicant ───────────────
-async function sendCurrentQuestion(sock, session) {
+async function sendCurrentQuestion(sock, session, msg) {
   const questions = session.questions;
   const q = questions[session.currentQ - 1];
   const progress = `[${session.currentQ}/${session.totalQ}]`;
@@ -157,11 +157,11 @@ async function sendCurrentQuestion(sock, session) {
     text,
     footer: `${TEAMS[session.teamKey]?.label || session.teamKey} Application`,
     buttons,
-  });
+  }, msg);
 }
 
 // ── Send the review screen ───────────────────────────────────
-async function sendReview(sock, session) {
+async function sendReview(sock, session, msg) {
   const questions = session.questions;
   const team = TEAMS[session.teamKey];
 
@@ -193,11 +193,11 @@ async function sendReview(sock, session) {
     text,
     footer: `${team?.label || session.teamKey} Application`,
     buttons,
-  });
+  }, msg);
 }
 
 // ── Show question picker (for changing an answer) ────────────
-async function sendQuestionPicker(sock, session) {
+async function sendQuestionPicker(sock, session, msg) {
   const questions = session.questions;
 
   let text = `✏️ *Which question do you want to change?*\n\n`;
@@ -220,11 +220,11 @@ async function sendQuestionPicker(sock, session) {
     text,
     footer: 'Pick a question',
     buttons,
-  });
+  }, msg);
 }
 
 // ── Submit to database + notify admins ───────────────────────
-async function submitApplication(sock, session) {
+async function submitApplication(sock, session, msg) {
   const questions = session.questions;
   const team = TEAMS[session.teamKey];
 
@@ -406,7 +406,7 @@ async function submitApplication(sock, session) {
     `⏳ Keep this App ID — an admin will accept or reject you, hey.\n\n` +
     `_${voice.greetOpen()}, good luck!_`;
 
-  await sock.sendMessage(session.jid, { text: confirm });
+  await sock.sendMessage(session.jid, { text: confirm }, msg ? { quoted: msg } : {});
 
   // Cleanup
   sessions.delete(session.jid);
@@ -428,7 +428,7 @@ onButton('cwiz:a:', async (sock, msg, from, sender, btnId) => {
   const qNum = parseInt(parts[2]);
   const answer = parts.slice(3).join(':');
 
-  const session = await getSessionOrExpired(sock, from);
+  const session = await getSessionOrExpired(sock, from, msg);
   if (!session || session.stage !== 'question') return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
   if (qNum !== session.currentQ) {
@@ -445,14 +445,14 @@ onButton('cwiz:a:', async (sock, msg, from, sender, btnId) => {
   session.answers[qNum] = answer;
 
   // Move to next question or review
-  if (session.currentQ < session.totalQ) {
-    session.currentQ++;
-    await sendCurrentQuestion(sock, session);
-  } else {
-    session.stage = 'review';
-    await sendReview(sock, session);
-  }
-});
+    if (session.currentQ < session.totalQ) {
+      session.currentQ++;
+      await sendCurrentQuestion(sock, session, msg);
+    } else {
+      session.stage = 'review';
+      await sendReview(sock, session, msg);
+    }
+  });
 
 // Review buttons: cwiz:pick / cwiz:confirm / cwiz:redo
 onButton('cwiz:pick:', async (sock, msg, from, sender, btnId) => {
@@ -460,11 +460,11 @@ onButton('cwiz:pick:', async (sock, msg, from, sender, btnId) => {
   const teamKey = parts[0];
   const appUid = parts[1];
 
-  const session = await getSessionOrExpired(sock, from);
+  const session = await getSessionOrExpired(sock, from, msg);
   if (!session || session.stage !== 'review') return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
 
-  await sendQuestionPicker(sock, session);
+  await sendQuestionPicker(sock, session, msg);
 });
 
 onButton('cwiz:submit:', async (sock, msg, from, sender, btnId) => {
@@ -472,14 +472,14 @@ onButton('cwiz:submit:', async (sock, msg, from, sender, btnId) => {
   const teamKey = parts[0];
   const appUid = parts[1];
 
-  const session = await getSessionOrExpired(sock, from);
+  const session = await getSessionOrExpired(sock, from, msg);
   if (!session || session.stage !== 'review') return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
 
   // ONE submit path — the bot does the review. Applicants can't choose
   // their reviewer anymore: admins only take over when the score is too
   // low for the bot to grade (inside runBotReview).
-  await runBotReview(sock, session);
+  await runBotReview(sock, session, msg);
 });
 
 // Admin review — current behavior
@@ -488,20 +488,20 @@ onButton('cwiz:adminreview:', async (sock, msg, from, sender, btnId) => {
   const teamKey = parts[0];
   const appUid = parts[1];
 
-  const session = await getSessionOrExpired(sock, from);
+  const session = await getSessionOrExpired(sock, from, msg);
   if (!session) return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
   if (session.stage !== 'review') return;
 
   session.stage = 'done';
-  await submitApplication(sock, session);
+  await submitApplication(sock, session, msg);
 });
 
 // Bot review — the ONLY review path. Grades the answers: pass (70%+) =
 // bot auto-approves; skipped-heavy or borderline (50-69%) = too low for
 // the bot to grade, handed to that team's admins with the applicant told
 // their application is under review by them.
-async function runBotReview(sock, session) {
+async function runBotReview(sock, session, msg) {
   const teamKey = session.teamKey;
   const appUid = session.appUid;
 
@@ -558,9 +558,9 @@ async function runBotReview(sock, session) {
         `━━━━━━━━━━━━━━━━\n\n` +
         `⚠️ You skipped ${skippedCount} questions\n\n` +
         `_Score too low for me to grade — handing it to the *${getTeamDisplayName(teamKey)}* admins._`,
-    });
+    }, msg ? { quoted: msg } : {});
     session.stage = 'done';
-    await submitApplication(sock, session);
+    await submitApplication(sock, session, msg);
     return;
   }
 
@@ -582,7 +582,7 @@ async function runBotReview(sock, session) {
         { id: `cwiz:pick:${teamKey}:${appUid}`, text: '✏️ Improve Answers' },
         { id: `cwiz:cancel:${teamKey}:${appUid}`, text: '🚫 Cancel' },
       ],
-    });
+    }, msg);
     return;
   }
 
@@ -596,9 +596,9 @@ async function runBotReview(sock, session) {
         `⏳ *Borderline application*\n\n` +
         `Score: *${totalScore}/${maxScore}* (${percentage}%)\n\n` +
         `_Too close to call — your application is going to the *${getTeamDisplayName(teamKey)}* admins for a manual look._`,
-    });
+    }, msg ? { quoted: msg } : {});
     session.stage = 'done';
-    await submitApplication(sock, session);
+    await submitApplication(sock, session, msg);
     return;
   }
 
@@ -672,7 +672,7 @@ async function runBotReview(sock, session) {
     `_An admin will pull you into the group now-now_\n\n` +
     `_${voice.greetOpen()}, welcome to the squad!_`;
 
-  await sock.sendMessage(session.jid, { text: confirm });
+  await sock.sendMessage(session.jid, { text: confirm }, msg ? { quoted: msg } : {});
 
   // Cleanup
   sessions.delete(session.jid);
@@ -685,10 +685,10 @@ onButton('cwiz:adminreview:', async (sock, msg, from, sender, btnId) => {
   const teamKey = parts[0];
   const appUid = parts[1];
 
-  const session = await getSessionOrExpired(sock, from);
+  const session = await getSessionOrExpired(sock, from, msg);
   if (!session || session.stage !== 'review') return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
-  await runBotReview(sock, session);
+  await runBotReview(sock, session, msg);
 });
 
 onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
@@ -696,10 +696,10 @@ onButton('cwiz:botreview:', async (sock, msg, from, sender, btnId) => {
   const teamKey = parts[0];
   const appUid = parts[1];
 
-  const session = await getSessionOrExpired(sock, from);
+  const session = await getSessionOrExpired(sock, from, msg);
   if (!session || session.stage !== 'review') return;
   if (session.teamKey !== teamKey || session.appUid !== appUid) return;
-  await runBotReview(sock, session);
+  await runBotReview(sock, session, msg);
 });
 
 // Cancel application from review screen
@@ -730,7 +730,7 @@ onButton('cwiz:cancel:', async (sock, msg, from, sender, btnId) => {
       `━━━━━━━━━━━━━━━━\n\n` +
       `Your *${getTeamDisplayName(teamKey)}* application is gone.\n\n` +
       `💡 Apply again whenever with ${config.prefix || '.'}crew apply ${teamKey}`
-  });
+  }, { quoted: msg });
 });
 
 // Edit buttons: cwiz:edit:<team>:<uid>:<qNum>
@@ -750,7 +750,7 @@ onButton('cwiz:edit:', async (sock, msg, from, sender, btnId) => {
   session.currentQ = qNum;
   session.stage = 'question';
 
-  await sendCurrentQuestion(sock, session);
+  await sendCurrentQuestion(sock, session, msg);
 });
 
 // ── Applicant State Detection ────────────────────────────────
@@ -812,9 +812,10 @@ function getApplicantState(jid) {
 }
 
 // Send a progressive response based on the user's application state
-async function sendProgressiveResponse(sock, jid, state) {
+async function sendProgressiveResponse(sock, jid, state, msg) {
   const prefix = config.prefix || '.';
   const teamName = getTeamDisplayName(state.teamKey);
+  const q = msg ? { quoted: msg } : {};
 
   switch (state.state) {
     case 'pending_submitted':
@@ -828,7 +829,7 @@ async function sendProgressiveResponse(sock, jid, state) {
           `💡 *What you can do:*\n` +
           `• \`${prefix}crew applicants ${state.teamKey}\` — check status\n` +
           `• \`${prefix}crew withdraw ${state.appUid}\` — withdraw application`
-      });
+      }, q);
       break;
 
     case 'pending_incomplete':
@@ -841,7 +842,7 @@ async function sendProgressiveResponse(sock, jid, state) {
           `🆔 App ID: *${state.appUid}*\n\n` +
           `💡 *Start fresh:*\n` +
           `\`${prefix}crew apply ${state.teamKey}\``
-      });
+      }, q);
       break;
 
     case 'pending_approved':
@@ -853,7 +854,7 @@ async function sendProgressiveResponse(sock, jid, state) {
           `Your *${teamName}* application passed my review!\n\n` +
           `🆔 App ID: *${state.appUid}*\n\n` +
           `⏳ An admin will add you to the group now-now.`
-      });
+      }, q);
       break;
   }
 }

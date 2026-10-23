@@ -193,7 +193,7 @@ onButton('admin:antibadword:on', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antibadword: true, badwords: seeded });
   await sock.sendMessage(from, {
     text: `✅ *ANTIBADWORD ON*\n\n_Bad word filter switched on with ${seeded.length} patterns_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antibadword:off', async (sock, msg, from) => {
@@ -202,5 +202,5 @@ onButton('admin:antibadword:off', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antibadword: false });
   await sock.sendMessage(from, {
     text: `✅ *ANTIBADWORD OFF*\n\n_Bad word filter disabled_`,
-  });
+  }, { quoted: msg });
 });

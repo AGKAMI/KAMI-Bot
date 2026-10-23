@@ -190,7 +190,7 @@ async function sendSlideshow(sock, chatId, images, title, msg, shouldStop) {
         await sock.sendMessage(chatId, {
           image: buf,
           caption: `📸 ${i + 1}/${total}`
-        });
+        }, i === 0 ? { quoted: msg } : {});
         sent++;
       } catch (e) {
         console.error(`[TT] slideshow image ${i + 1} failed: ${e.message}`);

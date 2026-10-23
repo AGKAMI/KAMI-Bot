@@ -173,7 +173,7 @@ onButton('protect:back:', async (sock, msg, from, sender, btnId) => {
   try {
     const offer = takeOffer(btnId, sender);
     if (!offer) {
-      await sock.sendMessage(from, { text: `❌ That offer expired — or it's not yours, hey` });
+      await sock.sendMessage(from, { text: `❌ That offer expired — or it's not yours, hey` }, { quoted: msg });
       return;
     }
     delete offers[offer.nonce];
@@ -181,7 +181,7 @@ onButton('protect:back:', async (sock, msg, from, sender, btnId) => {
 
     // rejoined by other means while the offer sat?
     if (await memberInGroup(sock, offer.groupJid, offer.memberJid)) {
-      await sock.sendMessage(from, { text: `✅ You're already back in — no action needed 💪` });
+      await sock.sendMessage(from, { text: `✅ You're already back in — no action needed 💪` }, { quoted: msg });
       return;
     }
 
@@ -197,7 +197,7 @@ onButton('protect:back:', async (sock, msg, from, sender, btnId) => {
           `✅ *WELCOME BACK* 💪\n\n` +
           `You're back in *${gname}*\n` +
           `_Nobody kicks KAMI's people without asking first 😤_`,
-      });
+      }, { quoted: msg });
       database.logProtection({
         action: 'readd-confirmed',
         target: offer.memberJid,
@@ -224,7 +224,7 @@ onButton('protect:back:', async (sock, msg, from, sender, btnId) => {
           (inviteLink
             ? `🔗 *Jump back in here:*\n${inviteLink}\n\nOnce you're back you're protected again`
             : `Ask KAMI to pull you back in, hey`),
-      });
+      }, { quoted: msg });
       database.logProtection({
         action: 'readd-confirmed',
         target: offer.memberJid,
@@ -242,7 +242,7 @@ onButton('protect:pass:', async (sock, msg, from, sender, btnId) => {
   try {
     const offer = takeOffer(btnId, sender);
     if (!offer) {
-      await sock.sendMessage(from, { text: `❌ That offer expired — or it's not yours, hey` });
+      await sock.sendMessage(from, { text: `❌ That offer expired — or it's not yours, hey` }, { quoted: msg });
       return;
     }
     delete offers[offer.nonce];
@@ -252,7 +252,7 @@ onButton('protect:pass:', async (sock, msg, from, sender, btnId) => {
         `✅ *ALL GOOD* 💪\n\n` +
         `You're staying out of it — your protection stays armed though\n` +
         `_If you ever want back in, hit KAMI up_`,
-    });
+    }, { quoted: msg });
     database.logProtection({
       action: 'readd-declined',
       target: offer.memberJid,

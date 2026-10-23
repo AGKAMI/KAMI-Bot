@@ -107,7 +107,7 @@ onButton('admin:antitag:on', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antitag: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTITAG ON*\n\n_Anti-tag protection activated_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antitag:off', async (sock, msg, from) => {
@@ -116,7 +116,7 @@ onButton('admin:antitag:off', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antitag: false });
   await sock.sendMessage(from, {
     text: `✅ *ANTITAG OFF*\n\n_Anti-tag protection disabled_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antitag:set:delete', async (sock, msg, from) => {
@@ -125,7 +125,7 @@ onButton('admin:antitag:set:delete', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antitagAction: 'delete', antitag: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTITAG ACTION*\n\n_Action set to delete_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antitag:set:kick', async (sock, msg, from) => {
@@ -134,5 +134,5 @@ onButton('admin:antitag:set:kick', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antitagAction: 'kick', antitag: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTITAG ACTION*\n\n_Action set to kick_`,
-  });
+  }, { quoted: msg });
 });

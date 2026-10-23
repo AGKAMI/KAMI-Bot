@@ -163,10 +163,10 @@ onButton('admin:lockall', async (sock, msg, from) => {
     await sock.groupSettingUpdate(from, 'announcement');
     await sock.sendMessage(from, {
       text: `🔒 *GROUP LOCKED*\n\n✅ *All settings locked:*\n🔒 Name\n🔒 Description\n🔒 Profile pic`,
-    });
+    }, { quoted: msg });
   } catch (e) {
     console.error('[LOCKALL BTN] Error:', e.message);
-    await sock.sendMessage(from, { text: `❌ *LOCK FAILED*\n\n${e.message || "Couldn't lock group"}` });
+    await sock.sendMessage(from, { text: `❌ *LOCK FAILED*\n\n${e.message || "Couldn't lock group"}` }, { quoted: msg });
   }
 });
 
@@ -178,9 +178,9 @@ onButton('admin:unlockall', async (sock, msg, from) => {
     await sock.groupSettingUpdate(from, 'not_announcement');
     await sock.sendMessage(from, {
       text: `🔓 *GROUP UNLOCKED*\n\n🔓 *All settings unlocked*`,
-    });
+    }, { quoted: msg });
   } catch (e) {
     console.error('[UNLOCKALL BTN] Error:', e.message);
-    await sock.sendMessage(from, { text: `❌ *UNLOCK FAILED*\n\n${e.message || "Couldn't unlock group"}` });
+    await sock.sendMessage(from, { text: `❌ *UNLOCK FAILED*\n\n${e.message || "Couldn't unlock group"}` }, { quoted: msg });
   }
 });

@@ -20,7 +20,7 @@ module.exports = {
     if (!args || args.length < 2) {
       return sock.sendMessage(jid, {
         text: `❌ *ERROR*\n\nUsage: \`${prefix}crew result <event-id> <winner>\`\nExample: \`${prefix}crew result evt_1234567890 Mfowethu\`\n\nLog what happened at the event.`
-      });
+      }, { quoted: msg });
     }
 
     const eventId = args[0];
@@ -30,7 +30,7 @@ module.exports = {
     if (!team || !team.events || !team.events[eventId]) {
       return sock.sendMessage(jid, {
         text: `❌ *ERROR*\n\nNo event with that ID: *${eventId}*\nSee all events with: \`${prefix}crew events\``
-      });
+      }, { quoted: msg });
     }
 
     const event = team.events[eventId];
@@ -38,7 +38,7 @@ module.exports = {
     if (event.status === 'completed') {
       return sock.sendMessage(jid, {
         text: `❌ *ERROR*\n\nThat one's already done — results are logged.\n\n🏆 *Winner:* ${event.winner}`
-      });
+      }, { quoted: msg });
     }
 
     event.status = 'completed';
@@ -57,6 +57,6 @@ module.exports = {
         `👥 *Attending:* ${event.attendees ? event.attendees.length : 0}\n` +
         `📅 *Completed:* ${fmtDateTime(Date.now())}\n\n` +
         `_Lekka one, mfowethu! 🏎️💨_`
-    });
+    }, { quoted: msg });
   }
 };

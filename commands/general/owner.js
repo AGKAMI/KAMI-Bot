@@ -43,7 +43,7 @@ END:VCARD
                     displayName: displayName,
                     contacts: vCards
                 }
-            });
+            }, { quoted: msg });
 
             // Copy button only — nobody calls the owner, they text
             const firstNumber = dialableNumbers[0] ? String(dialableNumbers[0]).replace(/\D/g, '') : null;

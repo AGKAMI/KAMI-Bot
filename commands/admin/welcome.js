@@ -61,7 +61,7 @@ onButton('admin:welcome:on', async (sock, msg, from) => {
   database.updateGroupSettings(from, { welcome: true });
   await sock.sendMessage(from, {
     text: `✅ WELCOME ON\n\n_Welcome messages enabled_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:welcome:off', async (sock, msg, from) => {
@@ -70,5 +70,5 @@ onButton('admin:welcome:off', async (sock, msg, from) => {
   database.updateGroupSettings(from, { welcome: false });
   await sock.sendMessage(from, {
     text: `✅ WELCOME OFF\n\n_Welcome messages disabled_`,
-  });
+  }, { quoted: msg });
 });

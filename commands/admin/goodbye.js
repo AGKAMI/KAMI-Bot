@@ -61,7 +61,7 @@ onButton('admin:goodbye:on', async (sock, msg, from) => {
   database.updateGroupSettings(from, { goodbye: true });
   await sock.sendMessage(from, {
     text: `✅ GOODBYE ON\n\n_Goodbye messages enabled_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:goodbye:off', async (sock, msg, from) => {
@@ -70,5 +70,5 @@ onButton('admin:goodbye:off', async (sock, msg, from) => {
   database.updateGroupSettings(from, { goodbye: false });
   await sock.sendMessage(from, {
     text: `✅ GOODBYE OFF\n\n_Goodbye messages disabled_`,
-  });
+  }, { quoted: msg });
 });

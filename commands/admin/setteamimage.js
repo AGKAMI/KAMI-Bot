@@ -87,7 +87,7 @@ module.exports = {
       const buffer = await downloadMediaMessage(imgMsg, 'buffer', {});
 
       if (!buffer || buffer.length === 0) {
-        await sock.sendMessage(from, { text: `❌ Failed to download image` });
+        await sock.sendMessage(from, { text: `❌ Failed to download image` }, { quoted: msg });
         return true;
       }
 
@@ -104,12 +104,12 @@ module.exports = {
           `✅ *IMAGE SET*\n\n` +
           `🏢 Team: *${p.teamKey}* — ${config.crewTeams[p.teamKey].name}\n` +
           `📁 Saved: ${fileName}`,
-      });
+      }, { quoted: msg });
 
       return true;
     } catch (err) {
       console.error('[SETTEAMIMAGE] Save failed:', err.message);
-      await sock.sendMessage(from, { text: `❌ Couldn't save the image: ${err.message}` });
+      await sock.sendMessage(from, { text: `❌ Couldn't save the image: ${err.message}` }, { quoted: msg });
       return true;
     }
   },

@@ -164,7 +164,7 @@ module.exports = {
           rerollMsg.mentions = rerollWinners;
         }
 
-        await sock.sendMessage(from, rerollMsg);
+        await sock.sendMessage(from, rerollMsg, { quoted: msg });
         return;
       }
 
@@ -383,7 +383,7 @@ module.exports = {
               ``,
               `Nobody entered hey — better luck next time 💀`
             ].join('\n')
-          });
+          }, { quoted: msg });
           return;
         }
 
@@ -405,7 +405,7 @@ module.exports = {
             // Second timeout — force end regardless
             sock.ev.off('messages.upsert', newListener);
             activeGiveaways.delete(from);
-            pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuffer, sock);
+            pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuffer, sock, msg);
           }, extraMs);
 
           await sock.sendMessage(from, {
@@ -418,11 +418,11 @@ module.exports = {
               ``,
               `React with 🎁 to join!`
             ].join('\n')
-          });
+          }, { quoted: msg });
           return;
         }
 
-        pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuffer, sock);
+        pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuffer, sock, msg);
         } catch (e) {
           console.error('[giveaway] Timer error:', e.message);
         }
@@ -438,7 +438,7 @@ module.exports = {
 };
 
 // ── Pick winners and announce ──────────────────────────────
-async function pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuffer, sock) {
+async function pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuffer, sock, quotedMsg = null) {
   const entryList = Array.from(entries);
 
   if (entryList.length === 0) {
@@ -452,7 +452,7 @@ async function pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuf
         ``,
         `Nobody entered hey — better luck next time 💀`
       ].join('\n')
-    });
+    }, quotedMsg ? { quoted: quotedMsg } : {});
     return;
   }
 
@@ -479,8 +479,8 @@ async function pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuf
       image: mediaBuffer,
       caption: resultText,
       mentions: winners,
-    });
+    }, quotedMsg ? { quoted: quotedMsg } : {});
   } else {
-    await sock.sendMessage(from, { text: resultText, mentions: winners });
+    await sock.sendMessage(from, { text: resultText, mentions: winners }, quotedMsg ? { quoted: quotedMsg } : {});
   }
 }

@@ -132,13 +132,13 @@ onButton('admin:clearwarnings', async (sock, msg, from, sender, btnId) => {
         `${mention(target)} is cleared of all warnings\n\n` +
         `_${voice.react('ok')}_`,
       mentions: [target],
-    });
+    }, { quoted: msg });
   } catch (e) {
     console.error('[CLEAR WARNINGS BTN] Error:', e.message);
     await sock.sendMessage(from, {
       text:
         `❌ ERROR\n\n` +
         `Couldn't clear warnings — ${e.message || 'Unknown error'}`,
-    });
+    }, { quoted: msg });
   }
 });

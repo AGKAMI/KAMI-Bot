@@ -189,7 +189,7 @@ onButton('poll:end:', async (sock, msg, from, sender, btnId) => {
     return await sock.sendMessage(from, {
       text: `🚫 *POLL CREATOR ONLY*\n\nOnly ${mention(poll.creator)} or the owner can end this poll, shame, shame`,
       mentions: [poll.creator],
-    });
+    }, { quoted: msg });
   }
 
   clearTimeout(poll.timeout);
@@ -198,5 +198,5 @@ onButton('poll:end:', async (sock, msg, from, sender, btnId) => {
   await sock.sendMessage(from, {
     text: `🏁 *POLL ENDED*\n\n${formatResults(poll)}\n\n_${voice.lead('neutral')}_`,
     mentions: [...poll.votes.keys()],
-  });
+  }, { quoted: msg });
 });

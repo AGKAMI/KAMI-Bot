@@ -163,7 +163,7 @@ async function cancelWizardFor(sock, msg, extra) {
 
 // Publish: DB first (a card-send failure still leaves a working event),
 // then card (hidden mention), 24h pin, confirm. Latch stops double-taps.
-async function publishEvent(sock, s) {
+async function publishEvent(sock, s, msg) {
   if (s.publishing) return;
   s.publishing = true;
   const eventId = genEventId(s.groupJid);
@@ -220,7 +220,7 @@ async function publishEvent(sock, s) {
         `━━━ 🏁 *EVENT LIVE* ━━━\n\n` +
         `Card's up — tag the crew and let's fill that lobby ${voice.tag('ok')}\n` +
         `_Event ID: ${eventId}_`,
-    });
+    }, msg ? { quoted: msg } : {});
   } catch (e) { /* confirm is cosmetic */ }
 }
 
@@ -247,9 +247,9 @@ async function _arm(sock, from, msg, s, awaiting, promptText) {
   return sent;
 }
 
-const _expiredNotice = (sock, from) => sock.sendMessage(from, {
+const _expiredNotice = (sock, from, msg) => sock.sendMessage(from, {
   text: `⏰ *EVENT BUILD EXPIRED*\n\nThat draft got old, boet — run ${prefix()}event again.`,
-});
+}, msg ? { quoted: msg } : {});
 
 // A future-date meet can't be "now-now" — endAt for timeless events is
 // now-relative, so skipping time on a scheduled date would corrupt it
@@ -270,7 +270,7 @@ async function captureText(sock, msg, ctx) {
     const { s, expired } = _lookup(ctx.from, ctx.sender);
     if (!s) {
       if (expired) {
-        await _expiredNotice(sock, ctx.from);
+        await _expiredNotice(sock, ctx.from, msg);
         return true;
       }
       return false;
@@ -371,14 +371,14 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
     if (!s) {
       return sock.sendMessage(from, {
         text: `⚠️ That build is gone — expired, cancelled or restarted. Run ${prefix()}event to start fresh.`,
-      });
+      }, { quoted: msg });
     }
     // Wrong chat or wrong fingers: creator-only, LID-safe
     if (s.chatJid !== from || !jidsMatch(s.hostJid, sender)) return;
     // Lazy TTL on taps — expired builds get one nudge, never silence
     if (Date.now() - s.startedAt > SESSION_TTL) {
       sessions.delete(s.nonce);
-      return _expiredNotice(sock, from);
+      return _expiredNotice(sock, from, msg);
     }
 
     switch (action) {
@@ -499,7 +499,7 @@ onButton('ewiz:', async (sock, msg, from, sender, btnId) => {
         return renderReviewStep(sock, s);
 
       case 'post':
-        return publishEvent(sock, s);
+        return publishEvent(sock, s, msg);
 
       case 'edit':
         return renderEditPicker(sock, s);

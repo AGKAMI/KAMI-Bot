@@ -480,7 +480,7 @@ onButton('joingate:apply:', async (sock, msg, from, sender, btnId) => {
     // the 48h clock is moot
     const { createApplication } = require('../commands/crew/applyHelper');
     const result = await createApplication(sock, sender, teamKey, {
-      replyFn: (text) => sock.sendMessage(from, { text }),
+      replyFn: (text) => sock.sendMessage(from, { text }, { quoted: msg }),
       from,
       applyingForSomeone: false,
     });
@@ -492,7 +492,7 @@ onButton('joingate:apply:', async (sock, msg, from, sender, btnId) => {
           `🎯 *CLOCK STOPPED*\n\n` +
           `Your *${teamKey}* application is in — the 48h grace no longer applies to you.\n\n` +
           `_Answer the form buttons in your DMs, boet._`,
-      });
+      }, { quoted: msg });
     }
   } catch (e) {
     console.error('[JOIN-GATE] apply button failed:', e.message);
@@ -508,7 +508,7 @@ onButton('joingate:cancel', async (sock, msg, from) => {
         `No stress — the 48h clock keeps running though.\n\n` + menu.text,
       buttons: menu.buttons,
       footer: menu.footer,
-    });
+    }, { quoted: msg });
   } catch (e) {
     console.error('[JOIN-GATE] cancel failed:', e.message);
   }

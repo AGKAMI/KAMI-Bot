@@ -108,7 +108,7 @@ onButton('admin:antigroupmention:on', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antigroupmention: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTIGROUPMENTION ON*\n\n_Anti-group mention protection activated_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antigroupmention:off', async (sock, msg, from) => {
@@ -117,7 +117,7 @@ onButton('admin:antigroupmention:off', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antigroupmention: false });
   await sock.sendMessage(from, {
     text: `✅ *ANTIGROUPMENTION OFF*\n\n_Anti-group mention protection disabled_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antigroupmention:set:warn', async (sock, msg, from) => {
@@ -126,7 +126,7 @@ onButton('admin:antigroupmention:set:warn', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antigroupmentionAction: 'warn', antigroupmention: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTIGROUPMENTION ACTION*\n\n_Action set to warn_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antigroupmention:set:delete', async (sock, msg, from) => {
@@ -135,7 +135,7 @@ onButton('admin:antigroupmention:set:delete', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antigroupmentionAction: 'delete', antigroupmention: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTIGROUPMENTION ACTION*\n\n_Action set to delete_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antigroupmention:set:kick', async (sock, msg, from) => {
@@ -144,5 +144,5 @@ onButton('admin:antigroupmention:set:kick', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antigroupmentionAction: 'kick', antigroupmention: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTIGROUPMENTION ACTION*\n\n_Action set to kick_`,
-  });
+  }, { quoted: msg });
 });

@@ -58,10 +58,10 @@ onButton('admin:mute', async (sock, msg, from, sender, btnId) => {
     await sock.groupSettingUpdate(from, 'announcement');
     await sock.sendMessage(from, {
       text: `🔒 MUTED\n\nGroup is closed — only admins talk now`,
-    });
+    }, { quoted: msg });
   } catch (e) {
     console.error('[MUTE BTN] Error:', e.message);
-    await sock.sendMessage(from, { text: `❌ *MUTE FAILED*\n\n${e.message || "Couldn't close the group"}` });
+    await sock.sendMessage(from, { text: `❌ *MUTE FAILED*\n\n${e.message || "Couldn't close the group"}` }, { quoted: msg });
   }
 });
 
@@ -71,15 +71,15 @@ onButton('admin:unmute', async (sock, msg, from, sender, btnId) => {
     if (database.isOwnerMuted(from) && !isOwner(sender)) {
       return await sock.sendMessage(from, {
         text: `🚫 *UNMUTE BLOCKED*\n\nThe owner muted this group, hey — only they can unmute`,
-      });
+      }, { quoted: msg });
     }
     await sock.groupSettingUpdate(from, 'not_announcement');
     database.clearOwnerMuted(from);
     await sock.sendMessage(from, {
       text: `🔓 UNMUTED\n\nGroup is open — everyone can talk`,
-    });
+    }, { quoted: msg });
   } catch (e) {
     console.error('[UNMUTE BTN] Error:', e.message);
-    await sock.sendMessage(from, { text: `❌ *UNMUTE FAILED*\n\n${e.message || "Couldn't open the group"}` });
+    await sock.sendMessage(from, { text: `❌ *UNMUTE FAILED*\n\n${e.message || "Couldn't open the group"}` }, { quoted: msg });
   }
 });

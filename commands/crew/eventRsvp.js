@@ -76,11 +76,11 @@ onButton('evrsvp:', async (sock, msg, from, sender, btnId) => {
     if (!found) {
       return sock.sendMessage(from, {
         text: `⚠️ That event is gone, hey — check ${prefix()}events for what's coming up.`,
-      });
+      }, { quoted: msg });
     }
     const evt = found.team.events[eventId];
     if (evt.status && evt.status !== 'upcoming') {
-      return sock.sendMessage(from, { text: `❌ *${evt.name}* is done and dusted, boet.` });
+      return sock.sendMessage(from, { text: `❌ *${evt.name}* is done and dusted, boet.` }, { quoted: msg });
     }
     if (!Array.isArray(evt.attendees)) evt.attendees = [];
 
@@ -97,7 +97,7 @@ onButton('evrsvp:', async (sock, msg, from, sender, btnId) => {
       return sock.sendMessage(from, {
         text: `✅ ${mention(sender)} locked in for *${evt.name}*${evt.eventDate ? ` on *${fmtCardDate(evt.eventDate)}*` : ''}${evt.time ? ` at *${evt.time}*` : ''} — *${evt.attendees.length}* going so far`,
         mentions: [sender],
-      });
+      }, { quoted: msg });
     } else {
       if (isAttending) {
         evt.attendees = evt.attendees.filter(a => !buildComparableIds(a).some(v => variants.includes(v)));
@@ -106,7 +106,7 @@ onButton('evrsvp:', async (sock, msg, from, sender, btnId) => {
       return sock.sendMessage(from, {
         text: `👋 ${mention(sender)} is out of *${evt.name}* — *${evt.attendees.length}* still going`,
         mentions: [sender],
-      });
+      }, { quoted: msg });
     }
   } catch (e) {
     console.error('[EVWIZ] rsvp error:', e.message);

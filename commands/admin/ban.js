@@ -71,7 +71,7 @@ module.exports = {
           `${mention(target)} is permanently banned from this bot, done\n\n` +
           `_If you want it lifted, contact the bot owner directly._`,
         mentions: [target]
-      });
+      }, { quoted: msg });
 
       // WhatsApp-block them
       try {
@@ -119,7 +119,7 @@ onButton('admin:unban', async (sock, msg, from, sender, btnId) => {
         return await sock.sendMessage(from, {
           text: `❌ *ADMIN ONLY*\n\nOnly group admins can unban members, shame.`,
           mentions: [sender],
-        });
+        }, { quoted: msg });
       }
     }
   } catch (e) {
@@ -135,13 +135,13 @@ onButton('admin:unban', async (sock, msg, from, sender, btnId) => {
         `${mention(target)} has been unbanned\n\n` +
         `_${voice.react('ok')}_`,
       mentions: [target],
-    });
+    }, { quoted: msg });
   } catch (e) {
     console.error('[UNBAN BTN] Error:', e.message);
     await sock.sendMessage(from, {
       text:
         `❌ ERROR\n\n` +
         `Couldn't unban — ${e.message || 'Unknown error'}`,
-    });
+    }, { quoted: msg });
   }
 });

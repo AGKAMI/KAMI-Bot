@@ -244,7 +244,7 @@ onButton('admin:antiflood:on', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antiflood: true });
   await sock.sendMessage(from, {
     text: `✅ *ANTIFLOOD ON*\n\n_Anti-flood protection activated_`,
-  });
+  }, { quoted: msg });
 });
 
 onButton('admin:antiflood:off', async (sock, msg, from) => {
@@ -253,5 +253,5 @@ onButton('admin:antiflood:off', async (sock, msg, from) => {
   database.updateGroupSettings(from, { antiflood: false });
   await sock.sendMessage(from, {
     text: `✅ *ANTIFLOOD OFF*\n\n_Anti-flood protection disabled_`,
-  });
+  }, { quoted: msg });
 });
