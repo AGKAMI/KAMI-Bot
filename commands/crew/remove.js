@@ -8,6 +8,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
+const { buildComparableIds } = require('../../utils/jidHelper');
 
 // Lazy require to avoid circular dependency
 function getHandler() {
@@ -44,7 +45,10 @@ module.exports = {
 
       const target = resolved.jid;
 
-      const member = database.getCrewMember(extra.from, target);
+      // Look up with PN + LID variant handling
+      const targetVariants = buildComparableIds(target);
+      const member = database.getCrewMember(extra.from, target)
+        || targetVariants.map(v => database.getCrewMember(extra.from, v)).find(Boolean);
       if (!member) {
         return extra.reply(
           `❌ ERROR\n\n` +

@@ -2,6 +2,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, voice, mention } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
+const { buildComparableIds } = require('../../utils/jidHelper');
 
 const getRoleEmoji = (role, roles) => {
   const idx = roles.indexOf(role);
@@ -37,7 +38,11 @@ module.exports = {
 
       const target = resolved.jid;
 
-      const member = database.getCrewMember(extra.from, target);
+      // Look up with PN + LID variant handling so a LID-stored
+      // member matches a PN-resolved target (and vice versa)
+      const targetVariants = buildComparableIds(target);
+      const member = database.getCrewMember(extra.from, target)
+        || targetVariants.map(v => database.getCrewMember(extra.from, v)).find(Boolean);
       if (!member) {
         return extra.reply(`❌ ERROR\n\n${mention(target)} is not in this crew`);
       }

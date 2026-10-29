@@ -7,6 +7,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
+const { buildComparableIds } = require('../../utils/jidHelper');
 const { fmtDate } = require('../../utils/sast');
 
 module.exports = {
@@ -52,7 +53,10 @@ module.exports = {
       targetJid = `${num}@s.whatsapp.net`;
     }
 
-    const member = database.getCrewMember(from, targetJid);
+    // Look up with PN + LID variant handling
+    const targetVariants = buildComparableIds(targetJid);
+    const member = database.getCrewMember(from, targetJid)
+      || targetVariants.map(v => database.getCrewMember(from, v)).find(Boolean);
 
     const meta = await sock.groupMetadata(from).catch(() => null);
     const teamName = getTeamDisplayName(teamKey, meta?.subject);
