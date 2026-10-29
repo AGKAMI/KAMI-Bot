@@ -46,7 +46,7 @@ module.exports = {
         // A typed PHONE that resolves to the bot gets a real answer instead.
         if (target.jid && isSelfJid(sock, target.jid)) {
           if (target.method === 'phone') {
-            return extra.reply(`âŒ ERROR\n\nThat's this bot's own number â€” can't invite it, hey`);
+            return extra.reply(`❌ ERROR\n\nThat's this bot's own number â€” can't invite it, hey`);
           }
           target.jid = null;
         }
@@ -55,7 +55,7 @@ module.exports = {
           if (extra.isOwner) return sendTeamSelection(sock, msg, extra, target);
           extra.deny && extra.deny('team selection is owner-only');
           return extra.reply(
-            `âŒ ERROR\n\nProvide a team â€” only KAMI can drop the team selection on its own\n\n` +
+            `❌ ERROR\n\nProvide a team â€” only KAMI can drop the team selection on its own\n\n` +
             `Usage:\n` +
             `â€¢ \`${prefix}apply <team> @user\` â€” apply for someone\n` +
             `â€¢ \`${prefix}crew apply <team>\` â€” apply for yourself\n\n` +
@@ -82,7 +82,7 @@ module.exports = {
 
         if (target.error === 'invalid_phone') {
           return extra.reply(
-            `âŒ ERROR\n\nThat number doesn't look valid hey\n\n` +
+            `❌ ERROR\n\nThat number doesn't look valid hey\n\n` +
             `Tip: any format works â€” \`${prefix}apply 083 388 2383\``
           );
         }
@@ -97,7 +97,7 @@ module.exports = {
       // typed PHONE that resolves to the bot gets a real answer instead.
       if (resolved.jid && isSelfJid(sock, resolved.jid)) {
         if (resolved.method === 'phone') {
-          return extra.reply(`âŒ ERROR\n\nThat's this bot's own number â€” can't apply for it, hey`);
+          return extra.reply(`❌ ERROR\n\nThat's this bot's own number â€” can't apply for it, hey`);
         }
         resolved.jid = null;
       }
@@ -109,7 +109,7 @@ module.exports = {
       if (!resolved.jid) {
         if (resolved.error === 'invalid_phone') {
           return extra.reply(
-            `âŒ ERROR\n\nThat number doesn't look valid hey\n\n` +
+            `❌ ERROR\n\nThat number doesn't look valid hey\n\n` +
             `Tip: any format works â€” \`${prefix}apply ${first} 082 123 4567\``
           );
         }
@@ -117,14 +117,14 @@ module.exports = {
         if (/\d{6,}/.test(leftover)) {
           console.log('[APPLY] unresolved phone target:', JSON.stringify(resolved.args));
           return extra.reply(
-            `âŒ ERROR\n\nCouldn't read that number hey â€” try typing it clean\n\n` +
+            `❌ ERROR\n\nCouldn't read that number hey â€” try typing it clean\n\n` +
             `Any format works: \`${prefix}apply ${first} +27 82 123 4567\``
           );
         }
         if (leftover.trim()) {
           console.log('[APPLY] unresolved target tokens:', JSON.stringify(resolved.args));
           return extra.reply(
-            `âŒ ERROR\n\nCouldn't read that as a person, hey\n\n` +
+            `❌ ERROR\n\nCouldn't read that as a person, hey\n\n` +
             `Use @mention, a reply, or a number â€” or just \`${prefix}apply ${first}\` to do it yourself`
           );
         }
@@ -164,7 +164,7 @@ module.exports = {
         applyingForSomeone,
       });
 
-      // Failure already replied an error via replyFn â€” mark the verdict âŒ
+      // Failure already replied an error via replyFn â€” mark the verdict ❌
       // (the reply classifier catches it too, but be explicit).
       if (!result.ok) return extra.fail(result.error);
 
@@ -193,7 +193,7 @@ module.exports = {
     } catch (error) {
       console.error('Crew apply error:', error);
       extra.fail && extra.fail(error.message || error);
-      await extra.reply(`âŒ ERROR\n\n${voice.openErr()} â€” couldn't kick it off, shame (${error.message || 'unknown'})`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} â€” couldn't kick it off, shame (${error.message || 'unknown'})`);
     }
   },
 };
@@ -211,7 +211,7 @@ function isSelfJid(sock, jid) {
 
 function applyUsage(prefix) {
   return (
-    `âŒ ERROR\n\nProvide a team or a target\n\n` +
+    `❌ ERROR\n\nProvide a team or a target\n\n` +
     `Usage:\n` +
     `â€¢ \`${prefix}apply <team>\` â€” apply for yourself\n` +
     `â€¢ \`${prefix}apply <team> @user\` â€” apply for someone\n` +
@@ -239,7 +239,7 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
     console.error('[APPLY-INVITE] toDmJid failed:', e.message);
     extra.fail && extra.fail(e.message);
     return sock.sendMessage(extra.from, {
-      text: `âŒ ERROR\n\nCouldn't work out ${mention(targetJid)}'s DM number â€” ${e.message}\n\n` +
+      text: `❌ ERROR\n\nCouldn't work out ${mention(targetJid)}'s DM number â€” ${e.message}\n\n` +
             `_Check the number and try again, shame_`,
       mentions: [targetJid],
     }, { quoted: msg });
@@ -285,7 +285,7 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
 
   // Unblock notice FIRST, then the team cards â€” identical to .start flow.
   // Either send can fail (blocked bot, unreachable number, privacy settings) â€”
-  // report the real cause with a âŒ verdict instead of the generic
+  // report the real cause with a ❌ verdict instead of the generic
   // "couldn't kick it off".
   try {
     await sendApplyDmNotice(sock, dmJid);
@@ -294,7 +294,7 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
     console.error('[APPLY-INVITE] DM chain failed:', dmErr.message);
     extra.fail && extra.fail(dmErr.message);
     return sock.sendMessage(extra.from, {
-      text: `âŒ ERROR\n\nCouldn't DM ${mention(targetJid)} the team cards â€” ${dmErr.message}\n\n` +
+      text: `❌ ERROR\n\nCouldn't DM ${mention(targetJid)} the team cards â€” ${dmErr.message}\n\n` +
             `Likely one of:\n` +
             `â€¢ They blocked the bot\n` +
             `â€¢ Privacy settings are stopping DMs\n` +
@@ -365,7 +365,7 @@ onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
   const app = getApplicantByUid(uid);
   const processed = getProcessedApp(uid);
   if (!app && processed) {
-    const action = processed.action === 'accepted' ? 'âœ… accepted' : 'âŒ denied';
+    const action = processed.action === 'accepted' ? 'âœ… accepted' : '❌ denied';
     await sock.sendMessage(from, {
       text: `âš ï¸ *${uid}* was already ${action} by an admin.\n\nNothing to do here.`,
     }, { quoted: msg });
@@ -394,7 +394,7 @@ onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
   }
 
   await sock.sendMessage(from, {
-    text: `âŒ *Deny Application*\n\nDrop a reason for denying *${uid}*\n\`${p}crew deny ${uid} <reason>\``,
+    text: `❌ *Deny Application*\n\nDrop a reason for denying *${uid}*\n\`${p}crew deny ${uid} <reason>\``,
   }, { quoted: msg });
 });
 
