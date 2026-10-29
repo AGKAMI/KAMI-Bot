@@ -8,7 +8,6 @@ const path = require('path');
 const axios = require('axios');
 const APIs = require('../../utils/api');
 const config = require('../../config');
-const { toAudio } = require('../../utils/converter');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 const AXIOS_DEFAULTS = {
@@ -44,7 +43,6 @@ module.exports = {
         return await extra.reply(`📝 _${voice.lead('neutral')}, give me a song name or YouTube link_\n\n_Example:_ ${prefix}song Shape of You`);
       }
       
-      // Send loading message
       const sent = await extra.reply(`🔍 _searching for that one..._`);
       if (!sent?.key) { extra.fail(); return extra.reply(`❌ _${voice.openErr()} — failed to send loading message_`); }
       
@@ -61,17 +59,20 @@ module.exports = {
         video = search.videos[0];
       }
       
-      // Edit to show downloading status
       await extra.edit(sent.key, `🎵 *Downloading:* ${video.title}\n⏱ *Duration:* ${video.timestamp}`);
       
-      // Try loader.to API
       let audioData;
       try {
         audioData = await APIs.ytDownload(video.url, 'audio');
       } catch (err) {
-        console.log('YouTube download failed:', err.message);
+        console.error('[song] ytDownload failed:', err.message);
         extra.fail();
-        return await extra.edit(sent.key, `❌ _${voice.openErr()} — failed to download: ${err.message}_`);
+        return await extra.edit(sent.key, `❌ _download service failed: ${err.message}_`);
+      }
+      
+      if (!audioData) {
+        extra.fail();
+        return await extra.edit(sent.key, `❌ _download service returned nothing_`);
       }
       
       const audioUrl = audioData.download;
@@ -80,13 +81,12 @@ module.exports = {
         return await extra.edit(sent.key, `❌ _${voice.openErr()}, no download URL received_`);
       }
       
-      // Download the audio file
       let audioBuffer;
       try {
         const audioResponse = await axios.get(audioUrl, {
           responseType: 'arraybuffer',
           timeout: 120000,
-          maxContentLength: 16 * 1024 * 1024, // 16MB — WhatsApp limit
+          maxContentLength: 16 * 1024 * 1024,
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Accept': '*/*',
@@ -103,7 +103,6 @@ module.exports = {
         return await extra.edit(sent.key, `❌ _download failed hey — ${dlErr.message}_`);
       }
 
-      // Send audio
       await sock.sendMessage(chatId, {
         audio: audioBuffer,
         mimetype: 'audio/mpeg',
@@ -111,7 +110,6 @@ module.exports = {
         ptt: false
       }, { quoted: msg });
       
-      // Edit status to done
       await extra.edit(sent.key, `✅ *Sent!* _${video.title}_`);
       
     } catch (err) {
