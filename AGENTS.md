@@ -23,8 +23,8 @@ WhatsApp bot with 100+ commands — media, games, AI, admin, fun. Built with Bai
 
 - **SFTP**: `fi9.bot-hosting.cloud:2022`
 - **SFTP User**: `b0665152-9b54-4ede-a11f-45c4a6641704.u9mg7ylz`
-- **SFTP Pass**: `hswNZ_VrtM2FiZywg_YPa-1v`
-- **MCP API Key (LIVE box)**: `bhk_b77e82b54bfb19ebe8be6391d3833e514af2614e1478d0e8` → `POST https://bot-hosting.net/api/mcp` (Bearer). Full control: `deployments_logs/searchLogs/shell/power/diagnose/apply`, `files_*`, `env_*`. Key type `bhk_` (dashboard/CLI key) — does NOT work on `control.bot-hosting.net/api/client` (401).
+- **SFTP Pass**: `Pu-2Ym7xDUcvhIndrS9VXW9h` (rotated 2026-10-31 — old `hswNZ_…` is dead)
+- **MCP API Key (LIVE box)**: DEAD as of 2026-10-31 (`bhk_b77e…` returns 401 "Authentication required" — needs a fresh `bhk_` key from the dashboard's Developer/CLI section). Fallback while dead: SFTP for file access; restarts must be done from the dashboard Restart button.
 - **Pterodactyl key**: `ptlc_b2LS7kbmnkfIZCbC6MTRL1RWneTfpftTU531z5sBnLC` + **Server ID** `08b6894d` — STALE box only.
 
 ### Gotchas
