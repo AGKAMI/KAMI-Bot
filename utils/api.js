@@ -124,11 +124,22 @@ const APIs = {
         }
         
         // Check for errors
-        if (progress.success === 0 || progress.text?.includes('error')) {
-          throw new Error(progress.text || 'Download failed');
+        // ----------------- THE BUG ----------------------------------------
+        // The v2 progress API keeps `success: 0` for the WHOLE conversion
+        // (e.g. success=0 progress=50 text="Preparing streaming download"
+        // for ~10-15s), and only flips `success: 1` + `progress: 1000` +
+        // text="Finished" when the download_url is ready. The old check
+        // treated success===0 as a hard failure, so .song/.video aborted
+        // after ~2s with "download service failed: Preparing streaming
+        // download" every single time. Only explicit error text is fatal.
+        const errMsg = String(progress.message || progress.text || '');
+        if (/error|fail|invalid/i.test(errMsg)) {
+          const fatal = new Error(progress.text || 'Download failed');
+          fatal.fatal = true; // mark so the poll catch rethrows (not a network blip)
+          throw fatal;
         }
       } catch (pollErr) {
-        if (pollErr.message === 'Download failed') throw pollErr;
+        if (pollErr.fatal || pollErr.message === 'Download failed') throw pollErr;
         // Continue polling on network errors
       }
     }
