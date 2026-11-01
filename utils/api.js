@@ -66,24 +66,30 @@ const APIs = {
     ]);
   },
   
-  // YouTube Download - uses loader.to
+  // YouTube Download - uses loader.to / video-download-api (savenow) backend
   ytDownload: async (url, type = 'audio') => {
     const format = type === 'video' ? '720' : 'mp3';
     const encodedUrl = encodeURIComponent(url);
-    
+    const apiKey = config.apiKeys?.videoApi || process.env.VIDEO_API_KEY || '';
+
+    // Keyed (server-friendly) endpoint — required for datacenter IPs like bot-hosting
+    const startHost = apiKey ? 'https://p.savenow.to/ajax/download.php' : 'https://loader.to/ajax/download.php';
+    const keyed = apiKey ? `&apikey=${encodeURIComponent(apiKey)}` : '';
+
     // Step 1: Start the download job with proper headers
-    const startRes = await axios.get(`https://loader.to/ajax/download.php?format=${format}&url=${encodedUrl}`, {
+    const startRes = await tryReq(() => axios.get(`${startHost}?format=${format}&url=${encodedUrl}${keyed}`, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': AX_DEFAULTS.headers['User-Agent'],
         'Referer': 'https://loader.to/',
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
       },
       timeout: 15000
-    });
-    
-    if (!startRes.data || !startRes.data.success || !startRes.data.id) {
-      throw new Error('Failed to start download');
+    }), 2);
+
+    if (!startRes.data || (!startRes.data.success && !startRes.data.id)) {
+      const svc = apiKey ? 'video-download-api' : 'loader.to';
+      throw new Error(`Failed to start download (${svc})`);
     }
     
     const jobId = startRes.data.id;

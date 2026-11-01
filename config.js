@@ -91,6 +91,7 @@ welcome: false,
     // API Keys (add your own)
     apiKeys: {
       fastSaver: process.env.FASTSAVER_KEY || 'fs_sk_8n3p7x0j1y2w8d6n9t8e1t3s2i3i',
+      videoApi: process.env.VIDEO_API_KEY || '',
       openai: '',
       deepai: '',
       remove_bg: ''
