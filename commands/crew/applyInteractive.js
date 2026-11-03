@@ -8,12 +8,13 @@
 
 const database = require('../../database');
 const config = require('../../config');
-const { TEAMS, buildAdminNotice } = require('./crewForms');
+const { TEAMS, buildAdminNotice, buildHiredMessage } = require('./crewForms');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { SSRS, KSSPS, KSSMP, KSSMS, shuffle } = require('./questionPools');
 const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
 const { getTeamDisplayName } = require('../../utils/teamName');
+const nameCache = require('../../utils/nameCache');
 
 // ── In-memory session store ──────────────────────────────────
 const sessions = new Map();
@@ -497,10 +498,148 @@ onButton('cwiz:adminreview:', async (sock, msg, from, sender, btnId) => {
   await submitApplication(sock, session, msg);
 });
 
-// Bot review — the ONLY review path. Grades the answers: pass (70%+) =
-// bot auto-approves; skipped-heavy or borderline (50-69%) = too low for
-// the bot to grade, handed to that team's admins with the applicant told
-// their application is under review by them.
+// Auto-finalize a bot-passed application — no human tap required.
+// Mirrors accept.js: add to group, add to crew DB, track as processed,
+// send hired DM with invite link, flush roster.
+async function autoFinalizeAccept(sock, session, teamKey, appUid, teamGroupJid, answers, questions) {
+  const applicantJid = session.applicantJid;
+  const crewTeam = config.crewTeams[teamKey];
+  const tgid = teamGroupJid || (crewTeam ? crewTeam.jid : null);
+
+  // Resolve applicant jid for DMs (LID → PN where possible)
+  const rawJid = applicantJid;
+  const dmJid = (() => {
+    if (!rawJid) return rawJid;
+    if (rawJid.includes('@s.whatsapp.net')) return rawJid;
+    const resolved = normalizeJidWithLid(rawJid);
+    if (resolved && resolved.includes('@s.whatsapp.net')) return resolved;
+    const stripped = rawJid.replace(/:\d+@/, '@');
+    if (stripped.includes('@s.whatsapp.net')) return stripped;
+    return rawJid;
+  })();
+
+  // Default role: lowest custom role
+  let role = 'member';
+  if (tgid) {
+    const validRoles = database.getCustomRoles(tgid);
+    if (validRoles && validRoles.length) role = validRoles[0];
+  }
+
+  // Add to the team WhatsApp group (best-effort; crew DB write happens regardless)
+  let addedToGroup = false;
+  let addErrorMsg = '';
+  if (tgid) {
+    const candidateJids = [];
+    const stripped = dmJid.replace(/:\d+@/, '@');
+    if (stripped !== dmJid) candidateJids.push(stripped);
+    const resolved = normalizeJidWithLid(dmJid);
+    if (resolved && resolved !== dmJid && resolved !== stripped) candidateJids.push(resolved);
+    for (const v of buildComparableIds(dmJid)) {
+      if (!candidateJids.includes(v)) candidateJids.push(v);
+    }
+    candidateJids.push(dmJid);
+
+    for (const jid of candidateJids) {
+      try {
+        const res = await sock.groupParticipantsUpdate(tgid, [jid], 'add');
+        const raw = res && res[0];
+        const code = String((raw && (raw.status ?? raw.code)) ?? '');
+        if (code === '200' || code === '201' || code === '408') {
+          addedToGroup = true;
+          addErrorMsg = '';
+          break;
+        }
+        addErrorMsg = 'status ' + (code || 'unknown');
+      } catch (e) {
+        addErrorMsg = e.message || 'unknown error';
+      }
+    }
+    if (!addedToGroup) {
+      console.error('[AUTO-ACCEPT] group add failed:', addErrorMsg);
+    }
+  }
+
+  // Crew DB write (always — this is what makes them a member)
+  if (tgid) {
+    database.addCrewMember(tgid, dmJid, {
+      role,
+      joined: Date.now(),
+      addedBy: 'bot',
+      accepted: true,
+      inGroup: addedToGroup,
+    });
+    database.trackProcessedApp(tgid, appUid, {
+      action: 'accepted',
+      admin: 'bot',
+      adminName: 'KAMI Bot',
+      role,
+      applicantJid: dmJid,
+      applicantName: nameCache.get(dmJid) || null,
+      team: teamKey,
+    });
+    database.removeApplicant(tgid, appUid);
+    try { database.flushCrew(); } catch (e) {}
+  }
+
+  // Hired DM to the applicant
+  const inviteLink = config.crewTeams[teamKey]?.invite
+    ? 'https://chat.whatsapp.com/' + config.crewTeams[teamKey].invite
+    : null;
+  const hiredText = buildHiredMessage(teamKey, inviteLink);
+  const hiredButtons = [];
+  if (inviteLink) {
+    hiredButtons.push({ text: '🔗 Join the Group', url: inviteLink });
+    hiredButtons.push({ text: '📋 Copy Invite Link', displayText: inviteLink });
+  }
+
+  try {
+    let sent = false;
+    try {
+      const ppUrl = await sock.profilePictureUrl(tgid, 'image');
+      if (ppUrl) {
+        const axios = require('axios');
+        const picRes = await axios.get(ppUrl, { responseType: 'arraybuffer' });
+        await sendButtons(sock, dmJid, {
+          image: Buffer.from(picRes.data),
+          caption: hiredText,
+          text: hiredText,
+          footer: config.botName || 'KAMI Bot',
+          buttons: hiredButtons,
+        });
+        sent = true;
+      }
+    } catch (ppErr) {
+      console.error('[AUTO-ACCEPT] pp fetch failed:', ppErr.message);
+    }
+    if (!sent) {
+      if (hiredButtons.length > 0) {
+        await sendButtons(sock, dmJid, {
+          text: hiredText,
+          footer: config.botName || 'KAMI Bot',
+          buttons: hiredButtons,
+        });
+      } else {
+        await sock.sendMessage(dmJid, { text: hiredText });
+      }
+    }
+  } catch (dmErr) {
+    console.error('[AUTO-ACCEPT] hired DM failed:', dmErr.message);
+  }
+
+  // Announce in the team group so admins see it happened (informational only)
+  if (tgid) {
+    try {
+      await sock.sendMessage(tgid, {
+        text: `🤖 *AUTO-ACCEPTED*\n${mention(dmJid)} joined *${getTeamDisplayName(teamKey)}* via bot review (70%+). Role: *${role}*.`,
+        mentions: dmJid ? [dmJid] : [],
+      });
+    } catch (e) {}
+  }
+
+  return { ok: true, addedToGroup, role };
+}
+
+// ── Bot review — grades answers: pass (70%+) = auto-approve + finalize ──
 async function runBotReview(sock, session, msg) {
   const teamKey = session.teamKey;
   const appUid = session.appUid;
@@ -628,48 +767,23 @@ async function runBotReview(sock, session, msg) {
     database.updateTeam(storeGroupJid, teamData);
   }
 
-  // Notify admins that bot approved
-  if (teamGroupJid) {
-    try {
-      const members = await sock.groupMetadata(teamGroupJid).catch(() => null);
-      const admins = (members && members.participants
-        ? members.participants.filter(p => p.admin).map(p => p.id)
-        : []);
+  // Auto-finalize — no human tap required. Adds to crew + group, sends hired DM.
+  const autoResult = await autoFinalizeAccept(sock, session, teamKey, appUid, teamGroupJid, answers, questions);
 
-      const botNotice =
-        `🤖 *BOT AUTO-APPROVED*\n\n` +
-        `👤 ${mention(session.applicantJid)}\n` +
-        `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
-        `🆔 App ID: *${appUid}*\n\n` +
-        `_Answers passed the checks — tap ✅ to finalise, no typing needed._`;
-
-      const targets = admins.length > 0 ? admins : [teamGroupJid];
-      for (const target of targets) {
-        try {
-          await sendButtons(sock, target, {
-            text: botNotice,
-            footer: `${getTeamDisplayName(teamKey)} Applications`,
-            mentions: [session.applicantJid],
-            buttons: [
-              { id: `crew:accept:${appUid}`, text: `✅ Accept ${appUid}` },
-              { id: `crew:deny:${appUid}`, text: `❌ Deny ${appUid}` },
-              { id: `crew:pending:${teamKey}`, text: '📋 View Pending' },
-            ],
-          });
-        } catch (e) {}
-      }
-    } catch (e) {}
-  }
-
-  // Confirm to applicant
+  // Confirm to applicant — they're hired, invite is in their DMs
   const confirm =
     `━━━━━━━━━━━━━━━━\n` +
-    `✅ *APPLICATION APPROVED*\n` +
+    `✅ *APPLICATION AUTO-APPROVED — HIRED*\n` +
     `━━━━━━━━━━━━━━━━\n\n` +
     `🤖 _I read your answers and you passed!_\n\n` +
     `🏢 Team: *${getTeamDisplayName(teamKey)}*\n` +
-    `🆔 App ID: *${appUid}*\n\n` +
-    `_An admin will pull you into the group now-now_\n\n` +
+    `🆔 App ID: *${appUid}*\n` +
+    `🏷️ Role: *${autoResult.role}*\n\n` +
+    `🎉 *WELCOME TO THE ${getTeamDisplayName(teamKey).toUpperCase()}*\n\n` +
+    (autoResult.addedToGroup
+      ? `✅ You've been added to the group.\n`
+      : `⚠️ Couldn't auto-add you to the group — an invite link is in your DMs.\n`) +
+    `📩 Check your DMs for the hired message + join link.\n\n` +
     `_${voice.greetOpen()}, welcome to the squad!_`;
 
   await sock.sendMessage(session.jid, { text: confirm }, msg ? { quoted: msg } : {});
