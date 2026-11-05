@@ -170,12 +170,12 @@ module.exports = {
 
       // Confirm where they applied from
       const confirmText =
-        `âœ… *APPLICATION STARTED*\n\n` +
-        `ðŸ¢ Team: *${getTeamDisplayName(teamKey)}*\n` +
-        `ðŸ†” *App ID:* ${result.app.appUid}\n\n` +
+        `✅ *APPLICATION STARTED*\n\n` +
+        `🎯 Team: *${getTeamDisplayName(teamKey)}*\n` +
+        `🆔 *App ID:* ${result.app.appUid}\n\n` +
         (applyingForSomeone
-          ? `ðŸ“² Dropped the form in ${mention(applicantJid)}'s DMs.\n\n`
-          : `ðŸ“² Dropped the form in your DMs.\n\n`) +
+          ? `📲 Dropped the form in ${mention(applicantJid)}'s DMs.\n\n`
+          : `📲 Dropped the form in your DMs.\n\n`) +
         `_${voice.greetOpen()}, good luck!_`;
 
       try {
@@ -185,7 +185,7 @@ module.exports = {
         }, { quoted: msg });
       } catch (reportErr) {
         // App already created + form DM delivered â€” don't claim total
-        // failure, but don't end on âœ… either.
+        // failure, but don't end on ✅ either.
         console.error('[CREW APPLY] confirm send failed:', reportErr.message);
         extra.fail && extra.fail('confirm send failed');
       }
@@ -262,9 +262,9 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
     console.log('[APPLY-INVITE] no teams available for', targetJid, 'â€” nothing sent');
     return sock.sendMessage(extra.from, {
       text:
-        `ðŸš« *NOTHING TO APPLY FOR*\n\n` +
+        `📭 *NOTHING TO APPLY FOR*\n\n` +
         `${why}, hey â€” no team cards dropped ${voice.tag('neutral')}\n\n` +
-        `ðŸ’¡ To move them to a different team, remove them from the current one first\n` +
+        `💡 *To move them to a different team, remove them from the current one first\n` +
         `(\`${prefix}crew remove\` in that team's group)`,
       mentions: [targetJid],
     }, { quoted: msg });
@@ -299,7 +299,7 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
             `â€¢ They blocked the bot\n` +
             `â€¢ Privacy settings are stopping DMs\n` +
             `â€¢ The number isn't on WhatsApp\n\n` +
-            `ðŸ’¡ *Try:*\n` +
+            `💡 *Try:*\n` +
             `â€¢ Get them to \`${prefix}start\` first\n` +
             `â€¢ Re-check the number (spaces/plus are fine)\n` +
             `â€¢ Or \`${prefix}apply <team> @user\` so they kick it off themselves`,
@@ -317,17 +317,17 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
     if (extraTeams.length) noteBits.push(`in the *${extraTeams.map(k => getTeamDisplayName(k)).join(', ')}* group(s)`);
   }
   const skipNote = noteBits.length
-    ? `\n\nâš ï¸ _Heads up: they're already ${noteBits.join(' and ')} â€” those cards were left out_`
+    ? `\n\n⚠️ _Heads up: they're already ${noteBits.join(' and ')} â€” those cards were left out_`
     : '';
 
   try {
     await sock.sendMessage(extra.from, {
       text:
-        `ðŸ“¤ *TEAM SELECTION SENT*\n\n` +
-        `ðŸ“² Dropped the team cards in ${mention(targetJid)}'s DMs â€” they pick a team and the form starts ${voice.tag('neutral')}\n\n` +
+        `📤 *TEAM SELECTION SENT*\n\n` +
+        `📲 Dropped the team cards in ${mention(targetJid)}'s DMs â€” they pick a team and the form starts ${voice.tag('neutral')}\n\n` +
         `_Picked up by: ${resolved.method}_${skipNote}` +
         (unblockErr
-          ? `\n\nâš ï¸ *WhatsApp unblock failed:* ${unblockErr}\n_They may still be blocked â€” the cards may not reach them_`
+          ? `\n\n⚠️ *WhatsApp unblock failed:* ${unblockErr}\n_They may still be blocked â€” the cards may not reach them_`
           : ''),
       mentions: [targetJid],
     }, { quoted: msg });
@@ -365,9 +365,9 @@ onButton('crew:deny', async (sock, msg, from, sender, btnId) => {
   const app = getApplicantByUid(uid);
   const processed = getProcessedApp(uid);
   if (!app && processed) {
-    const action = processed.action === 'accepted' ? 'âœ… accepted' : '❌ denied';
+    const action = processed.action === 'accepted' ? '✅ accepted' : '❌ denied';
     await sock.sendMessage(from, {
-      text: `âš ï¸ *${uid}* was already ${action} by an admin.\n\nNothing to do here.`,
+      text: `⚠️ *${uid}* was already ${action} by an admin.\n\nNothing to do here.`,
     }, { quoted: msg });
     return;
   }
