@@ -16,6 +16,7 @@ const { resolveUser, phoneToJid } = require('./crewHelpers');
 const { sendButtons, onButton, isOwnerJid, adminOnlyText } = require('../../utils/buttonHelper');
 const { createApplication } = require('./applyHelper');
 const { getTeamDisplayName } = require('../../utils/teamName');
+const { logCommand, logError, logDbChange } = require('../../utils/botLogger');
 
 module.exports = {
   subName: 'apply',
@@ -29,7 +30,11 @@ module.exports = {
 
   async execute(sock, msg, args, extra) {
 
-  const prefix = config.prefix || '.';
+    const startMs = Date.now();
+    const sender = msg.key.participant || msg.key.remoteJid;
+    const from = extra.from;
+    const rawArgs = args || [];
+    const prefix = config.prefix || '.';
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
@@ -184,14 +189,19 @@ module.exports = {
           mentions: [applicantJid],
         }, { quoted: msg });
       } catch (reportErr) {
-        // App already created + form DM delivered â€” don't claim total
+        // App already created + form DM delivered — don't claim total
         // failure, but don't end on ✅ either.
         console.error('[CREW APPLY] confirm send failed:', reportErr.message);
+        try { logError(reportErr, { command: 'apply', step: 'confirm_send', jid: applicantJid, teamKey, from }); } catch (e) {}
         extra.fail && extra.fail('confirm send failed');
       }
 
+      // Structured agent log — command verdict, duration, outcome
+      try { logCommand('apply', sender, from, rawArgs, { ok: !!result.ok, appUid: result.app?.appUid, teamKey, applyingForSomeone, error: result.error }, Date.now() - startMs); } catch (e) {}
+
     } catch (error) {
       console.error('Crew apply error:', error);
+      try { logError(error, { command: 'apply', step: 'execute', jid: sender, from, inputArgs: JSON.stringify(rawArgs) }); } catch (e) {}
       extra.fail && extra.fail(error.message || error);
       await extra.reply(`❌ ERROR\n\n${voice.openErr()} â€” couldn't kick it off, shame (${error.message || 'unknown'})`);
     }
@@ -281,7 +291,8 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
   }
   try { allowTempDm(dmJid); allowTempDm(targetJid); } catch (e) {}
 
-  console.log('[APPLY-INVITE]', extra.sender, 'â†’', targetJid, `(${resolved.method}) dm=${dmJid}`);
+  console.log('[APPLY-INVITE]', extra.sender, '→', targetJid, `(${resolved.method}) dm=${dmJid}`);
+  try { logDbChange('apply_invite', 'init', targetJid, '', { method: resolved.method, dmJid, sender: extra.sender }, null, 'bot'); } catch (e) {}
 
   // Unblock notice FIRST, then the team cards â€” identical to .start flow.
   // Either send can fail (blocked bot, unreachable number, privacy settings) â€”

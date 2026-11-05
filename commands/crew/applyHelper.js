@@ -33,10 +33,29 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
 
   const matchedMember = database.getCrewMemberAnyVariant(teamGroupJid, applicantJid);
   const matchedKey = matchedMember ? matchedMember.originalJid || applicantJid : null;
+
+  // Diagnostics: which variant matched, and what was stored originally
   if (matchedMember) {
+    const matchedVariant = memberVariants.find(v =>
+      database.getCrewMember(teamGroupJid, v) !== null
+    );
     try { logJidResolution(applicantJid, matchedKey, memberVariants,
-      'variant', 'apply.createApplication.crewCheck'); } catch (e) {}
-    const roleTxt = matchedMember.role ? ` as *${matchedMember.role}*` : '';
+      `variant=${matchedVariant || 'unknown'} storedAs=${matchedMember.originalJid || 'unknown'}`, 'apply.createApplication.crewCheck'); } catch (e) {}
+    try { logError(new Error('CREW_CHECK_FALSE_POSITIVE_RISK'), {
+      command: 'apply.createApplication',
+      step: 'crewCheck',
+      inputJid: applicantJid,
+      matchedVariant,
+      storedOriginalJid: matchedMember.originalJid,
+      matchedMemberRole: matchedMember.role,
+      matchedMemberJoined: matchedMember.joined,
+      teamKey,
+      teamGroupJid,
+      allVariants: memberVariants,
+      note: 'Number may not be on WhatsApp — stale LID/PN variant match possible',
+    }); } catch (e) {}
+  }
+  if (matchedMember) {
     let whenTxt = '';
     if (matchedMember.joined) {
       try {
