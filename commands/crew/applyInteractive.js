@@ -602,7 +602,7 @@ async function autoFinalizeAccept(sock, session, teamKey, appUid, teamGroupJid, 
     try { database.flushCrew(); } catch (e) {}
   }
 
-  // Hired DM to the applicant
+  // Hired DM to the applicant — use configured team image, not group pic
   const inviteLink = config.crewTeams[teamKey]?.invite
     ? 'https://chat.whatsapp.com/' + config.crewTeams[teamKey].invite
     : null;
@@ -615,22 +615,24 @@ async function autoFinalizeAccept(sock, session, teamKey, appUid, teamGroupJid, 
 
   try {
     let sent = false;
-    try {
-      const ppUrl = await sock.profilePictureUrl(tgid, 'image');
-      if (ppUrl) {
-        const axios = require('axios');
-        const picRes = await axios.get(ppUrl, { responseType: 'arraybuffer' });
+    // Use the configured team image file (not the group's profile pic, which
+    // may be set to the wrong team's image by a previous admin)
+    const teamImage = crewTeam?.image;
+    if (teamImage) {
+      try {
+        const fs = require('fs');
+        const imageBuf = fs.readFileSync(teamImage);
         await sendButtons(sock, dmJid, {
-          image: Buffer.from(picRes.data),
+          image: imageBuf,
           caption: hiredText,
           text: hiredText,
           footer: config.botName || 'KAMI Bot',
           buttons: hiredButtons,
         });
         sent = true;
+      } catch (imgErr) {
+        console.error('[AUTO-ACCEPT] team image read failed:', imgErr.message);
       }
-    } catch (ppErr) {
-      console.error('[AUTO-ACCEPT] pp fetch failed:', ppErr.message);
     }
     if (!sent) {
       if (hiredButtons.length > 0) {
@@ -717,7 +719,7 @@ async function runBotReview(sock, session, msg) {
         `🤖 *BOT REVIEW*\n` +
         `━━━━━━━━━━━━━━━━\n\n` +
         `⚠️ You skipped ${skippedCount} questions\n\n` +
-        `_Score too low for me to grade — handing it to the *${getTeamDisplayName(teamKey)}* admins._`,
+        `_Score too low for me to grade — you've been rejected. Run it through me again to retry._`,
     }, msg ? { quoted: msg } : {});
     session.stage = 'done';
     await submitApplication(sock, session, msg);
@@ -746,23 +748,8 @@ async function runBotReview(sock, session, msg) {
     return;
   }
 
-  if (percentage < 70) {
-    // Borderline — too low for the bot to grade confidently
-    await sock.sendMessage(session.jid, {
-      text:
-        `━━━━━━━━━━━━━━━━\n` +
-        `🤖 *BOT REVIEW*\n` +
-        `━━━━━━━━━━━━━━━━\n\n` +
-        `⏳ *Borderline application*\n\n` +
-        `Score: *${totalScore}/${maxScore}* (${percentage}%)\n\n` +
-        `_Too close to call — your application is going to the *${getTeamDisplayName(teamKey)}* admins for a manual look._`,
-    }, msg ? { quoted: msg } : {});
-    session.stage = 'done';
-    await submitApplication(sock, session, msg);
-    return;
-  }
 
-  // ── Passed — auto-approve (70%+) ──
+  // ── Passed — auto-approve (50%+) ──
   session.stage = 'done';
 
   // Format answers
