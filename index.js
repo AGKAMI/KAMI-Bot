@@ -81,6 +81,8 @@ const {
 // run first, libvips keeps its default 50MB cache + full thread pool resident.
 try { require('./utils/imageText'); } catch (e) { /* sharp caps best-effort */ }
 const config = require('./config');
+const { init: initBotLogger } = require('./utils/botLogger');
+initBotLogger();
 const handler = require('./handler');
 const fs = require('fs');
 const path = require('path');
@@ -730,6 +732,14 @@ async function startBot() {
       console.log(`👑 Owner: ${ownerNames}`);
       console.log('');
       console.log('💀 KAMI Bot is ready!\n');
+
+      const { logEvent } = require('./utils/botLogger');
+      logEvent('bot_ready', {
+        number: sock.user.id.split(':')[0],
+        name: config.botName,
+        prefix: config.prefix,
+        owner: ownerNames
+      });
 
       // Set bot status
       if (config.autoBio) {

@@ -15,6 +15,7 @@ const { TEAMS, buildHiredMessage } = require('./crewForms');
 const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
 const nameCache = require('../../utils/nameCache');
 const { fmtDateTime } = require('../../utils/sast');
+const { logDbChange, logError, logJidResolution } = require('../../utils/botLogger');
 
 // Dynamic emoji mapping — first role gets 👤, last gets 👑
 const getRoleEmoji = (role, roles) => {
@@ -196,6 +197,7 @@ module.exports = {
           accepted: true,
           inGroup: addedToGroup,
         });
+        try { logDbChange('crew_member', 'add', applicantJid, teamKey, null, { role, joined: Date.now(), addedBy: extra.sender, accepted: true, inGroup: addedToGroup }, extra.sender || 'bot'); } catch (e) {}
 
         // Track owner-added members for protection
         if (extra.isOwner) {
@@ -217,6 +219,7 @@ module.exports = {
         applicantName: app.name || nameCache.get(applicantJid) || null,
         team: teamKey,
       });
+      try { logDbChange('processed_app', 'accept', app.appUid, teamKey, { status: 'pending' }, { action: 'accepted', admin: extra.sender, role }, extra.sender || 'bot'); } catch (e) {}
 
       // Log admin action for audit trail
       database.logAdminAction({
@@ -290,7 +293,12 @@ module.exports = {
         }
       } catch (dmErr) {
         console.error('[CREW ACCEPT] hired DM failed:', dmErr.message);
+        try { logError(dmErr, { command: 'crew.accept', jid: applicantJid, teamKey, step: 'hired_dm', appUid }); } catch (e) {}
       }
+
+      // Log the final accept outcome for agent tracking
+      try { logDbChange('crew_member', 'accept_finalize', applicantJid, teamKey, { status: 'pending' }, { accepted: true, addedToGroup, role, dmSent: !dmErr }, extra.sender || 'bot'); } catch (e) {}
+      try { logJidResolution(app.jid, applicantJid, buildComparableIds(app.jid), 'exact', 'crew.accept'); } catch (e) {}
 
       const roleEmoji = getRoleEmoji(role, validRoles);
       const ownerVIP = extra.isOwnerMentioned;

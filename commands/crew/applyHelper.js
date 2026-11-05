@@ -8,6 +8,7 @@ const { TEAMS } = require('./crewForms');
 const { buildComparableIds } = require('../../utils/jidHelper');
 const { getTeamDisplayName } = require('../../utils/teamName');
 const { pick, SLANG, mention } = require('../../utils/format');
+const { logJidResolution, logDbChange, logError } = require('../../utils/botLogger');
 
 /**
  * Create a crew application and DM the applicant the form.
@@ -24,14 +25,33 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
   // 1. Already in the crew DB for this team? (checks PN + LID variants so a
   // LID-resolved applicant matches their rostered phone entry too)
   const memberVariants = buildComparableIds(applicantJid);
-  const member = database.getCrewMember(teamGroupJid, applicantJid)
-    || memberVariants.map(v => database.getCrewMember(teamGroupJid, v)).find(Boolean);
-  if (member) {
-    const roleTxt = member.role ? ` as *${member.role}*` : '';
+
+  // Log JID resolution for agent debugging — traces why a JID matched (or
+  // didn't match) a crew member, which is key to debugging false-positive
+  // "already in crew" reports for numbers not on WhatsApp.
+  try { logJidResolution(applicantJid, applicantJid, memberVariants, 'none', 'apply.createApplication.crewCheck'); } catch (e) {}
+
+  const exactMember = database.getCrewMember(teamGroupJid, applicantJid);
+  let matchedVariant = null;
+  let matchedMember = exactMember;
+  if (!matchedMember) {
+    for (const v of memberVariants) {
+      const m = database.getCrewMember(teamGroupJid, v);
+      if (m) {
+        matchedVariant = v;
+        matchedMember = m;
+        break;
+      }
+    }
+  }
+  if (matchedMember) {
+    try { logJidResolution(applicantJid, matchedVariant || applicantJid, memberVariants,
+      matchedVariant ? 'variant' : 'exact', 'apply.createApplication.crewCheck'); } catch (e) {}
+    const roleTxt = matchedMember.role ? ` as *${matchedMember.role}*` : '';
     let whenTxt = '';
-    if (member.joined) {
+    if (matchedMember.joined) {
       try {
-        whenTxt = `, joined ${new Date(member.joined).toLocaleDateString('en-ZA', {
+        whenTxt = `, joined ${new Date(matchedMember.joined).toLocaleDateString('en-ZA', {
           timeZone: config.timezone || 'Africa/Johannesburg',
         })}`;
       } catch (e) { /* date formatting is best-effort */ }
@@ -70,9 +90,12 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
     a.status === 'pending' && buildComparableIds(a.jid).some(v => applicantVariants.includes(v))
   );
   if (dup) {
+    try { logJidResolution(applicantJid, dup.jid, applicantVariants,
+      'variant', 'apply.createApplication.duplicateCheck'); } catch (e) {}
     if (!dup.answers) {
       // Broken app — allow re-apply
       database.removeApplicant(teamGroupJid, dup.appUid);
+      try { logDbChange('applicant', 'remove', dup.appUid, teamKey, { status: 'pending', appUid: dup.appUid }, null, 'bot'); } catch (e) {}
     } else {
       const teamName = getTeamDisplayName(teamKey);
       const msg = applyingForSomeone
@@ -92,6 +115,7 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
     if (replyFn) await replyFn(`❌ ERROR\n\nCouldn't create application`);
     return { ok: false, error: 'db_error' };
   }
+  try { logDbChange('applicant', 'create', applicantJid, teamKey, null, { appUid: app.appUid, team: teamKey, status: 'pending' }, 'bot'); } catch (e) {}
 
   // 5. Unblock applicant so DM lands — PN/LID variants via Safe (a raw call
   // only tries one jid form and can silently miss). A failed unblock means
@@ -120,7 +144,9 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
     await startWizard(sock, applicantJid, teamKey, app.appUid, applicantJid, applyingForSomeone, applicantJid);
   } catch (dmErr) {
     console.error('[CREW APPLY] form DM failed:', dmErr.message);
+    try { logError(dmErr, { command: 'apply.createApplication', jid: applicantJid, teamKey, step: 'form_dm' }); } catch (e) {}
     database.removeApplicant(teamGroupJid, app.appUid);
+    try { logDbChange('applicant', 'remove', app.appUid, teamKey, { status: 'pending', appUid: app.appUid }, null, 'bot'); } catch (e) {}
     const msg = applyingForSomeone
       ? `❌ ERROR\n\nCouldn't DM ${mention(applicantJid)} the form, shame\n\n` +
         `They've probably blocked the bot, or their privacy settings are stopping DMs.\n\n` +
@@ -132,6 +158,8 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
     if (replyFn) await replyFn(msg);
     return { ok: false, error: 'dm_failed' };
   }
+
+  try { logDbChange('applicant', 'status_change', app.appUid, teamKey, { status: 'pending' }, { status: 'pending', appUid: app.appUid, answers: null, team: teamKey }, 'bot'); } catch (e) {}
 
   return { ok: true, app };
 }

@@ -1754,7 +1754,7 @@ const handleMessage = async (sock, msg) => {
       await runWithReactions(command, { sock, from, msg, outcome }, () =>
         command.execute(sock, msg, args, commandExtra)
       );
-      // Log successful command
+      // Log successful command (existing audit + new agent logger)
       database.logCommand({
         command: commandName,
         args: args.join(' '),
@@ -1764,6 +1764,9 @@ const handleMessage = async (sock, msg) => {
         isAdmin: await isAdmin(sock, sender, from, groupMetadata),
         success: true,
       });
+      const { logCommand: logCmd } = require('./utils/botLogger');
+      const startTime = commandExtra._cmdStart || Date.now();
+      logCmd(commandName, sender, from, args, { ok: true }, Date.now() - startTime);
     } catch (cmdErr) {
       // Log failed command
       database.logCommand({
@@ -1776,6 +1779,10 @@ const handleMessage = async (sock, msg) => {
         success: false,
         error: cmdErr.message,
       });
+      const { logCommand: logCmd, logError } = require('./utils/botLogger');
+      const startTime = commandExtra._cmdStart || Date.now();
+      logCmd(commandName, sender, from, args, { ok: false, error: cmdErr.message }, Date.now() - startTime);
+      logError(cmdErr, { command: commandName, sender, from, args: args.join(' ') });
       throw cmdErr;
     }
     
