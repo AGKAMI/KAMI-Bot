@@ -26,6 +26,7 @@ const joinGate = require('./utils/joinGate');
 const { groupAction } = require('./utils/groupActions');
 const { runWithReactions, stageEmoji, classifyReply } = require('./utils/progressReaction');
 const { updateBlockStatusSafe } = require('./utils/jidHelper');
+const { resetFirstSeen } = require('./utils/kickSettings');
 const nameCache = require('./utils/nameCache');
 const { fmtDate, fmtTime } = require('./utils/sast');
 
@@ -1987,6 +1988,18 @@ const handleGroupUpdate = async (sock, update) => {
                 database.updateCrewMember(id, jid, { inGroup: true });
                 console.log(`[CREW SYNC] Updated ${jid.split('@')[0]} inGroup → true in ${id}`);
               }
+            }
+
+            // ── New-member protection reset ──
+            // Someone (re)joined the group — reset their firstSeen so the
+            // 14-day inactiveWindow new-member guard starts fresh. Without
+            // this, a re-added member keeps a stale firstSeen from a previous
+            // stint and can be auto-kicked for inactivity immediately.
+            try {
+              const variantDigits = [...new Set(jidVariants.map(v => digitsOf(v)).filter(Boolean))];
+              if (variantDigits.length) resetFirstSeen(variantDigits);
+            } catch (e) {
+              console.error('[FIRSTSEEN] reset failed for', jid, '—', e.message);
             }
 
             // ── Auto-repromote protected admins on rejoin ────

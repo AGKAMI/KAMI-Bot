@@ -242,6 +242,23 @@ const pruneFirstSeen = (now = Date.now()) => {
   return removed;
 };
 
+// Reset the firstSeen timestamp for a member who (re)joined — so the
+// 14-day new-member protection window starts fresh instead of using a
+// stale timestamp from a previous stint in the group.
+const resetFirstSeen = (digitsList, now = Date.now()) => {
+  if (!Array.isArray(digitsList) || !digitsList.length) return false;
+  const data = _load();
+  let changed = false;
+  for (const d of digitsList) {
+    if (!d || !data.firstSeen[d]) continue;
+    data.firstSeen[d].first = now;
+    data.firstSeen[d].last = now;
+    changed = true;
+  }
+  if (changed) _save(data);
+  return changed;
+};
+
 module.exports = {
   DEFAULTS,
   DAY,
@@ -253,6 +270,7 @@ module.exports = {
   resetGlobal,
   ensureFirstSeen,
   getFirstSeen,
+  resetFirstSeen,
   pruneFirstSeen,
   parseDuration: _parseDuration,
   fmtDuration: _fmtDuration,
