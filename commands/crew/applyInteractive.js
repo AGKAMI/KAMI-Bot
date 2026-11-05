@@ -45,8 +45,29 @@ function hasActiveSession(jid) {
 
 //getSession with expiry feedback
 async function getSessionOrExpired(sock, jid, msg) {
-  const s = sessions.get(jid);
+  // Variant-aware lookup — button taps can arrive from LID jid while
+  // session was stored under PN jid (or vice versa). Try every comparable
+  // form before giving up, otherwise taps silently die.
+  const keys = [String(jid), ...buildComparableIds(jid)];
+  let s = null;
+  let matchedKey = null;
+  for (const k of keys) {
+    const candidate = sessions.get(k);
+    if (!candidate) continue;
+    if (Date.now() - candidate.startedAt > SESSION_TTL) {
+      sessions.delete(k);
+      continue;
+    }
+    s = candidate;
+    matchedKey = k;
+    break;
+  }
   if (!s) return null;
+  if (matchedKey !== String(jid)) {
+    sessions.delete(matchedKey);
+    sessions.set(String(jid), s);
+    s.jid = String(jid);
+  }
   if (Date.now() - s.startedAt > SESSION_TTL) {
     sessions.delete(jid);
     try {
