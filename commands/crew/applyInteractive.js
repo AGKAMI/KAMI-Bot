@@ -436,6 +436,30 @@ async function submitApplication(sock, session, msg) {
 
 // ── Main entry point — called from apply.js ──────────────────
 async function startWizard(sock, jid, teamKey, appUid, applicantJid, applyingForSomeone, originFrom) {
+  // If there's an old incomplete session, tell the user it's been cleared
+  // before starting fresh — so an abandoned application doesn't feel like
+  // it just vanished with no explanation.
+  const oldSession = getSession(jid);
+  if (oldSession && oldSession.stage !== 'done' && oldSession.appUid && oldSession.teamKey) {
+    try {
+      await sock.sendMessage(jid, {
+        text:
+          `━━━━━━━━━━━━━━━━\\n` +
+          `📋 *OLD APPLICATION CLEARED*\\n` +
+          `━━━━━━━━━━━━━━━━\\n\\n` +
+          `Your previous *${getTeamDisplayName(oldSession.teamKey)}* application\\n` +
+          `stopped mid-way (Q${oldSession.currentQ}/${oldSession.totalQ}).\\n\\n` +
+          `It's been wiped — starting you a clean one now.\\n\\n` +
+          `_Just tap through the answers, no admin needed._`,
+        footer: `${TEAMS[teamKey]?.label || teamKey} Application`,
+      });
+    } catch {}
+    // Clean up the orphaned DB record too
+    try {
+      database.removeApplicant(oldSession.teamKey, oldSession.appUid);
+    } catch {}
+  }
+
   createSession(jid, teamKey, appUid, applicantJid, applyingForSomeone, originFrom);
   await sendCurrentQuestion(sock, getSession(jid));
 }
