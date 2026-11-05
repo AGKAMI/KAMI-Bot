@@ -1780,7 +1780,7 @@ const handleMessage = async (sock, msg) => {
         error: cmdErr.message,
       });
       const { logCommand: logCmd, logError } = require('./utils/botLogger');
-      const startTime = commandExtra._cmdStart || Date.now();
+      const startTime = (typeof commandExtra !== 'undefined' && commandExtra._cmdStart) || Date.now();
       logCmd(commandName, sender, from, args, { ok: false, error: cmdErr.message }, Date.now() - startTime);
       logError(cmdErr, { command: commandName, sender, from, args: args.join(' ') });
       throw cmdErr;
