@@ -8,6 +8,7 @@ const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 const { fmtDate } = require('../../utils/sast');
+const { buildComparableIds } = require('../../utils/jidHelper');
 
 const getRoleEmoji = (role, roles) => {
   const idx = roles.indexOf(role);
@@ -88,8 +89,9 @@ module.exports = {
 
       const validRoles = database.getCustomRoles(extra.from);
 
-      // Check if already in crew DB
-      const existing = database.getCrewMember(extra.from, target);
+      // Check if already in crew DB (variant-aware: LID/PN/device-suffix all match)
+      const existing = database.getCrewMember(extra.from, target)
+        || buildComparableIds(target).map(v => database.getCrewMember(extra.from, v)).find(Boolean);
       if (existing) {
         return extra.reply(
           `❌ ERROR\n\n${mention(target)} is already in the crew, hey\n` +
@@ -111,7 +113,7 @@ module.exports = {
       // Honest outcome: Baileys returns per-participant status codes —
       // 200 ok, 408 already-in, 403 privacy-blocked — and the old code
       // counted a 403 return as success.
-      const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
+      const { normalizeJidWithLid } = require('../../utils/jidHelper');
       const { groupAction } = require('../../utils/groupActions');
       const candidateJids = [];
       // Strip device suffix

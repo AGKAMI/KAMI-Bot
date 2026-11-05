@@ -7,6 +7,44 @@ const path = require('path');
 const config = require('./config');
 const { buildComparableIds } = require('./utils/jidHelper');
 
+// Crew DB concurrency lock — one writer per group at a time
+const _crewWriteLocks = new Map();
+const _crewLock = (groupJid) => {
+  if (!_crewWriteLocks.has(groupJid)) _crewWriteLocks.set(groupJid, { locked: false, queue: [] });
+  return _crewWriteLocks.get(groupJid);
+};
+const _withCrewLock = async (groupJid, fn) => {
+  const lock = _crewLock(groupJid);
+  if (lock.locked) {
+    await new Promise((resolve) => lock.queue.push(resolve));
+  }
+  lock.locked = true;
+  try { return await fn(); } finally {
+    lock.locked = false;
+    const next = lock.queue.shift();
+    if (next) next();
+  }
+};
+
+// ── JID normalization helpers ──────────────────────────────────
+// Canonical storage key: digits + @s.whatsapp.net (LID↔PN variants collapse to one key)
+const _jidDigits = (jid) => String(jid || '').split(':')[0].split('@')[0].replace(/\D/g, '');
+const _storageKey = (jid) => {
+  const d = _jidDigits(jid);
+  return d ? `${d}@s.whatsapp.net` : String(jid || '');
+};
+// Validate that a JID looks like a real WhatsApp JID
+const validateJid = (jid) => {
+  if (!jid || typeof jid !== 'string') return false;
+  const s = jid.trim();
+  if (!s.includes('@')) return false;
+  const [, server] = s.split('@');
+  const validServers = ['s.whatsapp.net', 'lid', 'hosted', 'hosted.lid', 'c.us', 'g.us', 'broadcast', 'newsletter'];
+  if (!validServers.includes(server)) return false;
+  const digits = _jidDigits(s);
+  return digits.length >= 7;
+};
+
 const DB_PATH = path.join(__dirname, 'database');
 const GROUPS_DB = path.join(DB_PATH, 'groups.json');
 const USERS_DB = path.join(DB_PATH, 'users.json');
@@ -405,14 +443,13 @@ const getCrew = () => readDB(CREW_DB);
 const updateCrew = (data) => writeDB(CREW_DB, data);
 
 // Get team data for a specific group
-const getTeam = (groupJid) => {
+// `create=true` (internal only) materializes a real team entry; plain lookups
+// no longer pollute crew.json with phantom groups for non-crew chats.
+const getTeam = (groupJid, create = false) => {
   const crew = getCrew();
   if (!crew.groups) crew.groups = {};
   if (!crew.groups[groupJid]) {
-    // In-memory placeholder only — the old writeDB here meant every stray
-    // lookup (wrong team key, bare .event in a non-crew group) permanently
-    // polluted crew.json with phantom groups. Real groups get written by
-    // updateTeam / explicit accept flows.
+    if (!create) return null;
     crew.groups[groupJid] = { members: {}, events: {}, applicants: {} };
   }
   return crew.groups[groupJid];
@@ -425,49 +462,108 @@ const updateTeam = (groupJid, data) => {
   if (!crew.groups[groupJid]) {
     crew.groups[groupJid] = { members: {}, events: {}, applicants: {} };
   }
-  crew.groups[groupJid] = { ...crew.groups[groupJid], ...data };
+  // Deep-merge: nested objects (members, events, applicants, processedApps)
+  // are merged key-by-key instead of replaced wholesale, so a partial write
+  // (e.g. { members: null } or { roles: [...] }) can't wipe sibling data.
+  const existing = crew.groups[groupJid];
+  const merged = { ...existing };
+  for (const [k, v] of Object.entries(data)) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && existing[k] && typeof existing[k] === 'object' && !Array.isArray(existing[k])) {
+      merged[k] = { ...existing[k], ...v };
+    } else {
+      merged[k] = v;
+    }
+  }
+  crew.groups[groupJid] = merged;
   return writeDB(CREW_DB, crew);
 };
 
 // Add member to a specific group's roster
+// Uses canonical storage key so LID↔PN variants of the same person collapse
+// to one entry. Returns { ok, existing, key } so callers can detect dupes.
 const addCrewMember = (groupJid, memberJid, data) => {
-  const team = getTeam(groupJid);
+  if (!validateJid(memberJid)) {
+    throw new Error(`Invalid JID for crew member: ${memberJid}`);
+  }
+  const team = getTeam(groupJid, true);
   if (!team.members) team.members = {};
-  team.members[memberJid] = {
+  const key = _storageKey(memberJid);
+  const existing = team.members[key];
+  if (existing) {
+    // Duplicate — don't silently overwrite; return what's already there
+    return { ok: false, existing, key, error: 'already_in_crew' };
+  }
+  team.members[key] = {
     role: data.role || 'member',
     joined: data.joined || Date.now(),
     addedBy: data.addedBy || '',
+    originalJid: memberJid,
     ...data
   };
-  return updateTeam(groupJid, team);
+  return { ok: true, key, result: updateTeam(groupJid, team) };
 };
 
 // Remove member from a specific group's roster
+// Variant-aware: removes by any comparable JID form (PN, LID, device suffix).
 const removeCrewMember = (groupJid, memberJid) => {
   const team = getTeam(groupJid);
-  if (!team.members || !team.members[memberJid]) return false;
-  delete team.members[memberJid];
+  if (!team || !team.members) return false;
+  const targetKey = _storageKey(memberJid);
+  const variants = buildComparableIds(memberJid).map(_storageKey);
+  let removedKey = null;
+  // Try exact storage key first, then all comparable variants
+  for (const k of [targetKey, ...variants]) {
+    if (team.members[k]) {
+      removedKey = k;
+      delete team.members[k];
+      break;
+    }
+  }
+  if (!removedKey) return false;
   return updateTeam(groupJid, team);
 };
 
-// Update fields on an existing crew member
+// Update fields on an existing crew member (variant-aware)
 const updateCrewMember = (groupJid, memberJid, data) => {
   const team = getTeam(groupJid);
-  if (!team.members || !team.members[memberJid]) return false;
-  Object.assign(team.members[memberJid], data);
+  if (!team || !team.members) return false;
+  const targetKey = _storageKey(memberJid);
+  const variants = buildComparableIds(memberJid).map(_storageKey);
+  let foundKey = null;
+  for (const k of [targetKey, ...variants]) {
+    if (team.members[k]) {
+      foundKey = k;
+      break;
+    }
+  }
+  if (!foundKey) return false;
+  Object.assign(team.members[foundKey], data);
   return updateTeam(groupJid, team);
 };
 
-// Get member from a specific group
+// Get member from a specific group (exact key match)
 const getCrewMember = (groupJid, memberJid) => {
   const team = getTeam(groupJid);
-  return team.members?.[memberJid] || null;
+  if (!team || !team.members) return null;
+  return team.members[_storageKey(memberJid)] || null;
 };
 
-// Get all members in a specific group
+// Get member from a specific group, trying all comparable JID variants
+const getCrewMemberAnyVariant = (groupJid, memberJid) => {
+  const team = getTeam(groupJid);
+  if (!team || !team.members) return null;
+  const targetKey = _storageKey(memberJid);
+  const variants = buildComparableIds(memberJid).map(_storageKey);
+  for (const k of [targetKey, ...variants]) {
+    if (team.members[k]) return team.members[k];
+  }
+  return null;
+};
+
+// Get all members in a specific group (returns copy to prevent cache mutation)
 const getCrewMembers = (groupJid) => {
   const team = getTeam(groupJid);
-  return team.members || {};
+  return team ? { ...team.members } : {};
 };
 
 // Add event to a specific group
@@ -530,13 +626,26 @@ const removeCrewEvent = (groupJid, eventId) => {
 };
 
 // Add applicant to a specific group (keyed by short unique UID)
+// Variant-aware: rejects if the same person already has a pending app.
 const addApplicant = (groupJid, applicantJid, data) => {
-  const team = getTeam(groupJid);
+  if (!validateJid(applicantJid)) {
+    throw new Error(`Invalid applicant JID: ${applicantJid}`);
+  }
+  const team = getTeam(groupJid, true);
   if (!team.applicants) team.applicants = {};
   const uid = data.appUid || generateAppUid();
+  // Duplicate check: same person with pending app already exists?
+  const inputVariants = buildComparableIds(applicantJid).map(_storageKey);
+  const existingDup = Object.values(team.applicants).find(
+    (a) => a.status === 'pending' && buildComparableIds(a.jid).map(_storageKey).some(v => inputVariants.includes(v))
+  );
+  if (existingDup) {
+    return { ok: false, existing: existingDup, error: 'duplicate_pending' };
+  }
   team.applicants[uid] = {
-    jid: applicantJid,
-    groupJid: groupJid,
+    jid: _storageKey(applicantJid),
+    originalJid: applicantJid,
+    groupJid,
     team: data.team,
     answers: data.answers,
     appliedAt: Date.now(),
@@ -544,15 +653,19 @@ const addApplicant = (groupJid, applicantJid, data) => {
     appUid: uid
   };
   updateTeam(groupJid, team);
-  return team.applicants[uid];
+  return { ok: true, app: team.applicants[uid], uid };
 };
 
 // Generate a short unique application ID (e.g. SS-4FK2X)
 const generateAppUid = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 confusion
   let uid;
+  let attempts = 0;
+  const maxAttempts = 1000;
   do {
     uid = 'SS-' + Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    attempts++;
+    if (attempts > maxAttempts) throw new Error('Unable to generate unique App ID after 1000 attempts');
   } while (getApplicantByUid(uid));
   return uid;
 };
@@ -562,15 +675,15 @@ const getApplicantByUid = (uid) => {
   const crew = getCrew();
   const key = uid.toUpperCase();
   for (const [groupJid, team] of Object.entries(crew.groups || {})) {
-    if (team.applicants && team.applicants[key]) return team.applicants[key];
+    if (team.applicants && team.applicants[key]) return { ...team.applicants[key] };
   }
   return null;
 };
 
-// Get applicants for a specific group
+// Get applicants for a specific group (returns copy)
 const getApplicants = (groupJid) => {
   const team = getTeam(groupJid);
-  return team.applicants || {};
+  return team ? { ...team.applicants } : {};
 };
 
 // Remove applicant by key within a group
@@ -599,8 +712,12 @@ const removeApplicant = (groupJid, applicantKey) => {
 
 // Track a processed (accepted/denied) application so we can tell admins what happened
 const trackProcessedApp = (groupJid, appUid, data) => {
-  const team = getTeam(groupJid);
+  const team = getTeam(groupJid, true);
   if (!team.processedApps) team.processedApps = {};
+  // Don't overwrite an existing processed record — preserves audit history
+  if (team.processedApps[appUid]) {
+    return { ok: false, existing: team.processedApps[appUid], error: 'already_processed' };
+  }
   team.processedApps[appUid] = {
     action: data.action,       // 'accepted' or 'denied'
     admin: data.admin,         // JID of admin who processed it
@@ -612,7 +729,7 @@ const trackProcessedApp = (groupJid, appUid, data) => {
     applicantName: data.applicantName || null,
     team: data.team,
   };
-  return updateTeam(groupJid, team);
+  return { ok: true, result: updateTeam(groupJid, team) };
 };
 
 // Look up a processed application by UID across all groups
@@ -651,7 +768,10 @@ const expireOldPendingApps = (maxAgeMs = 7 * 24 * 60 * 60 * 1000) => {
       }
     }
   }
-  if (expired.length > 0) writeDB(CREW_DB, crew);
+  if (expired.length > 0) {
+    writeDB(CREW_DB, crew);
+    flushCrew();
+  }
   return expired;
 };
 
@@ -678,7 +798,42 @@ const hasPendingApplication = (jid) => {
 // Get all teams overview
 const getAllTeams = () => {
   const crew = getCrew();
-  return crew.groups || {};
+  return crew.groups ? { ...crew.groups } : {};
+};
+
+// ── Cross-team member lookup ───────────────────────────────────
+
+// Find which team(s) a member belongs to (variant-aware)
+const getMemberTeams = (memberJid) => {
+  const crew = getCrew();
+  const targetKey = _storageKey(memberJid);
+  const variants = buildComparableIds(memberJid).map(_storageKey);
+  const keys = new Set([targetKey, ...variants]);
+  const teams = [];
+  for (const [groupJid, team] of Object.entries(crew.groups || {})) {
+    if (!team.members) continue;
+    for (const storedKey of Object.keys(team.members)) {
+      if (keys.has(storedKey)) {
+        teams.push({ groupJid, memberKey: storedKey });
+        break;
+      }
+    }
+  }
+  return teams;
+};
+
+// Check if a person is in any crew team (variant-aware)
+const isInCrewAnywhere = (memberJid) => {
+  return getMemberTeams(memberJid).length > 0;
+};
+
+// Find a member's entry across all teams (variant-aware)
+const findMemberAcrossTeams = (memberJid) => {
+  const teams = getMemberTeams(memberJid);
+  if (teams.length === 0) return null;
+  const first = teams[0];
+  const team = getTeam(first.groupJid);
+  return { ...team.members[first.memberKey], groupJid: first.groupJid, memberKey: first.memberKey };
 };
 
 // ==================== Team Mapping Functions ====================
@@ -1484,6 +1639,7 @@ module.exports = {
   removeCrewMember,
   updateCrewMember,
   getCrewMember,
+  getCrewMemberAnyVariant,
   getCrewMembers,
   addCrewEvent,
   getCrewEvents,
@@ -1499,6 +1655,9 @@ module.exports = {
     getAllTeams,
     generateAppUid,
     getApplicantByUid,
+    getMemberTeams,
+    isInCrewAnywhere,
+    findMemberAcrossTeams,
 
   // Custom roles
   getCustomRoles,
@@ -1574,6 +1733,9 @@ module.exports = {
   setOwnerMuted,
   isOwnerMuted,
   clearOwnerMuted,
+
+  // JID validation
+  validateJid,
 
   // Cache management
   flushAll,

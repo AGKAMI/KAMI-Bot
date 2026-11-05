@@ -50,7 +50,12 @@ module.exports = {
       targetJid = mentioned[0];
     } else if (args.length > 0 && args[0].startsWith('@')) {
       const num = args[0].replace(/[^0-9]/g, '');
-      targetJid = `${num}@s.whatsapp.net`;
+      // Add default country code if missing (SA: 08… → 278…)
+      let digits = num;
+      if (digits.startsWith('0') && digits.length >= 10) {
+        digits = (config.defaultCountryCode || '27') + digits.slice(1);
+      }
+      targetJid = `${digits}@s.whatsapp.net`;
     }
 
     // Look up with PN + LID variant handling

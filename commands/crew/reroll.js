@@ -64,6 +64,7 @@ module.exports = {
       if (crew.processedApps && crew.processedApps[uid]) {
         delete crew.processedApps[uid];
         database.updateTeam(teamGroupJid, crew);
+        database.flushCrew();
       }
 
       // Log admin action for audit trail

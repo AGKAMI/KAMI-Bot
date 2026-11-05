@@ -2,7 +2,6 @@ const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, voice, mention } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
-const { buildComparableIds } = require('../../utils/jidHelper');
 
 const getRoleEmoji = (role, roles) => {
   const idx = roles.indexOf(role);
@@ -38,11 +37,8 @@ module.exports = {
 
       const target = resolved.jid;
 
-      // Look up with PN + LID variant handling so a LID-stored
-      // member matches a PN-resolved target (and vice versa)
-      const targetVariants = buildComparableIds(target);
-      const member = database.getCrewMember(extra.from, target)
-        || targetVariants.map(v => database.getCrewMember(extra.from, v)).find(Boolean);
+      // Look up with PN + LID variant handling
+      const member = database.getCrewMemberAnyVariant(extra.from, target);
       if (!member) {
         return extra.reply(`❌ ERROR\n\n${mention(target)} is not in this crew`);
       }
@@ -56,7 +52,7 @@ module.exports = {
       }
 
       const newRole = validRoles[idx - 1];
-      database.addCrewMember(extra.from, target, { ...member, role: newRole });
+      database.updateCrewMember(extra.from, target, { ...member, role: newRole });
       const ownerVIP = extra.isOwnerMentioned;
 
       await sock.sendMessage(extra.from, {

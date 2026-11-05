@@ -72,6 +72,7 @@ module.exports = {
 
       // Remove from crew DB
       database.removeCrewMember(extra.from, target);
+      database.flushCrew();
 
       // Clear protection entries — the owner deliberately removed them,
       // so the bot must not re-add them later

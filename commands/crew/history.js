@@ -47,7 +47,7 @@ module.exports = {
       for (const [teamKey, teamInfo] of Object.entries(crewTeams)) {
         if (filterTeam && teamKey !== filterTeam) continue;
         const crew = database.getTeam(teamInfo.jid);
-        if (!crew.processedApps) continue;
+        if (!crew || !crew.processedApps) continue;
         for (const [uid, app] of Object.entries(crew.processedApps)) {
           allProcessed.push({ uid, app, teamKey });
         }

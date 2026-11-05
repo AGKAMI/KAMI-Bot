@@ -31,22 +31,11 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
   // "already in crew" reports for numbers not on WhatsApp.
   try { logJidResolution(applicantJid, applicantJid, memberVariants, 'none', 'apply.createApplication.crewCheck'); } catch (e) {}
 
-  const exactMember = database.getCrewMember(teamGroupJid, applicantJid);
-  let matchedVariant = null;
-  let matchedMember = exactMember;
-  if (!matchedMember) {
-    for (const v of memberVariants) {
-      const m = database.getCrewMember(teamGroupJid, v);
-      if (m) {
-        matchedVariant = v;
-        matchedMember = m;
-        break;
-      }
-    }
-  }
+  const matchedMember = database.getCrewMemberAnyVariant(teamGroupJid, applicantJid);
+  const matchedKey = matchedMember ? matchedMember.originalJid || applicantJid : null;
   if (matchedMember) {
-    try { logJidResolution(applicantJid, matchedVariant || applicantJid, memberVariants,
-      matchedVariant ? 'variant' : 'exact', 'apply.createApplication.crewCheck'); } catch (e) {}
+    try { logJidResolution(applicantJid, matchedKey, memberVariants,
+      'variant', 'apply.createApplication.crewCheck'); } catch (e) {}
     const roleTxt = matchedMember.role ? ` as *${matchedMember.role}*` : '';
     let whenTxt = '';
     if (matchedMember.joined) {
@@ -107,14 +96,23 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
   }
 
   // 4. Create application in DB
-  const app = database.addApplicant(teamGroupJid, applicantJid, {
+  const appResult = database.addApplicant(teamGroupJid, applicantJid, {
     team: teamKey,
     answers: null,
   });
-  if (!app) {
+  if (!appResult.ok) {
+    if (appResult.error === 'duplicate_pending') {
+      const teamName = getTeamDisplayName(teamKey);
+      const msg = applyingForSomeone
+        ? `❌ ERROR\n\n${mention(applicantJid)} already has a ${teamName} application waiting\nApp ID: *${appResult.existing.appUid}*`
+        : `❌ ERROR\n\nYou've already got a ${teamName} application in\nApp ID: *${appResult.existing.appUid}*`;
+      if (replyFn) await replyFn(msg);
+      return { ok: false, error: 'duplicate_pending' };
+    }
     if (replyFn) await replyFn(`❌ ERROR\n\nCouldn't create application`);
     return { ok: false, error: 'db_error' };
   }
+  const app = appResult.app;
   try { logDbChange('applicant', 'create', applicantJid, teamKey, null, { appUid: app.appUid, team: teamKey, status: 'pending' }, 'bot'); } catch (e) {}
 
   // 5. Unblock applicant so DM lands — PN/LID variants via Safe (a raw call

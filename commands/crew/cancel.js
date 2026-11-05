@@ -73,6 +73,7 @@ module.exports = {
 
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
+      database.flushCrew();
 
       // DM the applicant
       try {
