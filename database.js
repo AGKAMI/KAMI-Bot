@@ -1492,7 +1492,7 @@ const getGroupMemberActivity = (groupJid) => {
       ...activity,
       inactive: activity.lastActive
         ? (Date.now() - activity.lastActive) > (30 * 24 * 60 * 60 * 1000) // 30 days
-        : true,
+        : false, // never sent a message — not inactive yet, just never active
     };
   }
 

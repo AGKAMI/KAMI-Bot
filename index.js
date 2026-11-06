@@ -24,6 +24,8 @@ process.env.PUPPETEER_CACHE_DIR = process.env.PUPPETEER_CACHE_DIR || '/tmp/puppe
 // TZ-independent for those. First line of defense, not the only one.
 process.env.TZ = 'Africa/Johannesburg';
 
+require('./utils/envLoader');
+
 const { initializeTempSystem } = require('./utils/tempManager');
 const { startCleanup } = require('./utils/cleanup');
 console.log('🔧 Initializing KAMI Bot...\n');

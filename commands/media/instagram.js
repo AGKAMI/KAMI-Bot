@@ -90,11 +90,11 @@ module.exports = {
 
       // Check for various Instagram URL formats
       const instagramPatterns = [
-        /https?:\/\/(?:www\.)?instagram\.com\//,
-        /https?:\/\/(?:www\.)?instagr\.am\//,
-        /https?:\/\/(?:www\.)?instagram\.com\/p\//,
-        /https?:\/\/(?:www\.)?instagram\.com\/reel\//,
-        /https?:\/\/(?:www\.)?instagram\.com\/tv\//
+        /https?:\/\/instagram\.com\//,
+        /https?:\/\/instagr\.am\//,
+        /https?:\/\/instagram\.com\/p\//,
+        /https?:\/\/instagram\.com\/reel\//,
+        /https?:\/\/instagram\.com\/tv\//
       ];
 
       const isValidUrl = instagramPatterns.some(pattern => pattern.test(text));
