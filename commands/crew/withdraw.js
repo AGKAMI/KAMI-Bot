@@ -75,6 +75,7 @@ module.exports = {
 
       // Remove the pending application
       database.removeApplicant(teamGroupJid, app.appUid);
+      database.flushCrew();
 
       await extra.reply(
         `✅ APPLICATION WITHDRAWN\n\n` +

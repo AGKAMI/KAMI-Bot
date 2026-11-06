@@ -710,8 +710,16 @@ async function runBotReview(sock, session, msg) {
     const score = selectedOption ? (selectedOption.score || 0) : 0;
 
     // Dynamic maxPossible: scenario correct = 14, else highest option score
-    const highestScore = Math.max(...q.options.map(o => o.score || 0));
+    const optionScores = q.options.map(o => o.score || 0);
+    const highestScore = optionScores.length > 0 ? Math.max(...optionScores) : 0;
     const maxPossible = isScenario ? 14 : highestScore;
+
+    // Guard against zero maxScore (no scored options) — can't grade nothing
+    if (maxPossible === 0) {
+      skippedCount++;
+      issues.push(`Q${i} (${q.label}) — no scored options`);
+      continue;
+    }
 
     maxScore += maxPossible;
 
@@ -734,6 +742,21 @@ async function runBotReview(sock, session, msg) {
   }
 
   const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+
+  // Guard: no scored questions at all — reject
+  if (maxScore === 0) {
+    await sock.sendMessage(session.jid, {
+      text:
+        `━━━━━━━━━━━━━━━━\n` +
+        `🤖 *BOT REVIEW*\n` +
+        `━━━━━━━━━━━━━━━━\n\n` +
+        `⚠️ No scored questions found — cannot grade.\n\n` +
+        `_Run it through me again to retry._`,
+    }, msg ? { quoted: msg } : {});
+    session.stage = 'done';
+    await submitApplication(sock, session, msg);
+    return;
+  }
 
   // Decision thresholds
   if (skippedCount >= 3) {

@@ -6,28 +6,10 @@
 const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
-const { resolveUser } = require('./crewHelpers');
+const { resolveUser, phoneToJid } = require('./crewHelpers');
 const { fmtDate } = require('../../utils/sast');
 const { buildComparableIds } = require('../../utils/jidHelper');
-
-const getRoleEmoji = (role, roles) => {
-  const idx = roles.indexOf(role);
-  if (idx === roles.length - 1) return '👑';
-  if (idx === roles.length - 2) return '⭐';
-  if (idx === 0) return '👤';
-  return '🎖️';
-};
-
-function phoneToJid(phone) {
-  if (!phone) return null;
-  if (phone.includes('@s.whatsapp.net')) return phone;
-  let digits = phone.replace(/\D/g, '');
-  if (digits.startsWith('0') && digits.length >= 10) {
-    digits = (config.defaultCountryCode || '27') + digits.slice(1);
-  }
-  if (digits.length < 10) return null;
-  return digits + '@s.whatsapp.net';
-}
+const { getRoleEmoji } = require('../../utils/teamName');
 
 module.exports = {
   subName: 'add',

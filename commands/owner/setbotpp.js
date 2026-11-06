@@ -57,8 +57,9 @@ module.exports = {
         // Save the image
         fs.writeFileSync(imagePath, buffer);
 
-        // Set the profile picture
-        await sock.updateProfilePicture(sock.user.id.split(':')[0] + '@s.whatsapp.net', { url: imagePath });
+        // Set the profile picture — pass buffer, not a filesystem path
+        const botNum = (sock.user?.id || '').split(':')[0].split('@')[0];
+        await sock.updateProfilePicture(`${botNum}@s.whatsapp.net`, { image: buffer });
 
         await extra.reply(`*✅ PROFILE PIC UPDATED*\n\n✅ ${voice.lead('affirm')}, bot profile pic is sorted`);
       } catch (error) {

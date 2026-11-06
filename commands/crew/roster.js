@@ -6,7 +6,7 @@
 const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG, mention } = require('../../utils/format');
-const { getTeamDisplayName } = require('../../utils/teamName');
+const { getTeamDisplayName, getRoleEmoji } = require('../../utils/teamName');
 
 module.exports = {
   name: 'roster',
@@ -75,14 +75,6 @@ module.exports = {
     const mentions = [];
     let currentRole = null;
 
-    const getRoleEmoji = (role) => {
-      const idx = roles.indexOf(role);
-      if (idx === roles.length - 1) return '👑';
-      if (idx === roles.length - 2) return '⭐';
-      if (idx === 0) return '👤';
-      return '🎖️';
-    };
-
     for (const [jid, data] of memberList) {
       // Show cached display name — never raw jid/lid digits
       const label = mention(jid);
@@ -90,7 +82,7 @@ module.exports = {
       // Role header
       if (data.role !== currentRole) {
         currentRole = data.role;
-        text += `\n${getRoleEmoji(data.role)} *${data.role.toUpperCase()}*\n`;
+        text += `\n${getRoleEmoji(data.role, roles)} *${data.role.toUpperCase()}*\n`;
       }
 
       // Status indicator

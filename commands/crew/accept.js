@@ -8,23 +8,12 @@
 const database = require('../../database');
 const config = require('../../config');
 const axios = require('axios');
-const { getTeamDisplayName } = require('../../utils/teamName');
+const { TEAMS, buildHiredMessage } = require('./crewForms');
 const { sendButtons } = require('../../utils/buttonHelper');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
-const { TEAMS, buildHiredMessage } = require('./crewForms');
-const { buildComparableIds, normalizeJidWithLid } = require('../../utils/jidHelper');
-const nameCache = require('../../utils/nameCache');
 const { fmtDateTime } = require('../../utils/sast');
 const { logDbChange, logError, logJidResolution } = require('../../utils/botLogger');
-
-// Dynamic emoji mapping — first role gets 👤, last gets 👑
-const getRoleEmoji = (role, roles) => {
-  const idx = roles.indexOf(role);
-  if (idx === roles.length - 1) return '👑';
-  if (idx === roles.length - 2) return '⭐';
-  if (idx === 0) return '👤';
-  return '🎖️';
-};
+const { getRoleEmoji, getTeamDisplayName } = require('../../utils/teamName');
 
 module.exports = {
   subName: 'accept',

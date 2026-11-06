@@ -141,18 +141,23 @@ module.exports = {
         ffmpegCommand = `ffmpeg -i "${tempInput}" -vf "crop=min(iw\\,ih):min(iw\\,ih),scale=512:512,format=rgba" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 75 -compression_level 6 "${tempOutput}"`;
       }
 
-      await new Promise((resolve, reject) => {
-        exec(ffmpegCommand, (error, stdout, stderr) => {
-          if (error) {
-            console.error('FFmpeg error:', error);
-            console.error('FFmpeg stderr:', stderr);
-            reject(error);
-          } else {
-            console.log('FFmpeg stdout:', stdout);
-            resolve();
-          }
-        });
-      });
+      const { withTimeout } = require('../../utils/withTimeout');
+      await withTimeout(
+        new Promise((resolve, reject) => {
+          exec(ffmpegCommand, (error, stdout, stderr) => {
+            if (error) {
+              console.error('FFmpeg error:', error);
+              console.error('FFmpeg stderr:', stderr);
+              reject(error);
+            } else {
+              console.log('FFmpeg stdout:', stdout);
+              resolve();
+            }
+          });
+        }),
+        60000,
+        'ffmpeg crop'
+      );
 
       // Check if output file exists and has content
       if (!fs.existsSync(tempOutput)) {

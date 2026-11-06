@@ -25,6 +25,8 @@ const axios = require('axios');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+const fsp = require('fs').promises;
 const { ttdl } = require('ruhend-scraper');
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
@@ -108,40 +110,76 @@ function extractVideoId(url) {
   return match ? match[1] : null;
 }
 
+// Download to size-capped temp file so Baileys never buffers the whole
+// video in RAM (OOM kills on the 256MB box).
+async function downloadToTempFile(remoteUrl) {
+  const tmpPath = path.join(os.tmpdir(), `tt-${Date.now()}-${Math.floor(Math.random() * 1e6)}.mp4`);
+  const res = await axios.get(remoteUrl, {
+    responseType: 'stream',
+    timeout: 120000,
+    maxContentLength: MAX_VIDEO_BYTES,
+    maxBodyLength: MAX_VIDEO_BYTES,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+      'Referer': 'https://www.tiktok.com/'
+    },
+  });
+  const declared = Number(res.headers['content-length']) || 0;
+  if (declared > MAX_VIDEO_BYTES) {
+    res.data.destroy?.();
+    throw new Error(`video too large (${Math.round(declared / 1048576)}MB > 16MB)`);
+  }
+  await new Promise((resolve, reject) => {
+    let written = 0;
+    const out = fs.createWriteStream(tmpPath);
+    res.data.on('data', (chunk) => {
+      written += chunk.length;
+      if (written > MAX_VIDEO_BYTES) {
+        out.destroy();
+        res.data.destroy?.();
+        reject(new Error('video too large (>16MB)'));
+      }
+    });
+    res.data.on('error', (e) => { out.destroy(); reject(e); });
+    out.on('error', (e) => { res.data.destroy?.(); reject(e); });
+    out.on('finish', resolve);
+    res.data.pipe(out);
+  }).catch(async (e) => {
+    await fsp.unlink(tmpPath).catch(() => {});
+    throw e;
+  });
+  return { path: tmpPath, size: written };
+}
+
 async function sendVideo(sock, chatId, videoUrl, title, msg) {
   if (isBlockedHost(videoUrl)) {
     console.error('[TT] refusing to download from promo-clip host:', videoUrl.slice(0, 60));
     return false;
   }
+  let tmpFile = null;
   try {
-    const res = await dlAxios.get(videoUrl);
-    const buf = Buffer.from(res.data);
-    if (buf.length < 1000) throw new Error('Buffer too small');
-    // tikcdn sometimes serves a ~4MB "THIS APP IS OFFLINE — go to ssstik.io"
-    // promo clip instead of the real video. It's a valid mp4, so size/parse
-    // checks pass — only a content hash catches it. Reject → caller falls
-    // through to the next provider instead of delivering the wrong video.
-    if (isPlaceholder(buf)) {
-      console.error('[TT] provider served the tikcdn anti-leech placeholder — rejecting');
-      return false;
-    }
+    tmpFile = await downloadToTempFile(videoUrl);
+    console.log(`[TT] downloaded ${(tmpFile.size / 1048576).toFixed(1)}MB to temp`);
 
     const botName = config.botName.toUpperCase();
     const caption = title
       ? `*DOWNLOADED BY ${botName}*\n\n${title}\n_${voice.lead('affirm')}, enjoy_`
       : `*DOWNLOADED BY ${botName}*\n_${voice.lead('affirm')}, enjoy_`;
 
-    await sock.sendMessage(chatId, {
-      video: buf,
-      mimetype: 'video/mp4',
-      caption
-    }, { quoted: msg });
+    await withTimeout(
+      sock.sendMessage(chatId, {
+        video: { url: tmpFile.path },
+        mimetype: 'video/mp4',
+        caption
+      }, { quoted: msg }),
+      URL_SEND_TIMEOUT_MS,
+      'URL send'
+    );
     return true;
   } catch (e) {
-    console.error('[TT] buffer download failed:', e.message);
-    // Fallback: send via URL directly — Baileys streams it, so no hash
-    // check is possible. Never do this for tikcdn (the promo-clip host):
-    // that's how the "THIS APP IS OFFLINE" clip shipped unchecked.
+    console.error('[TT] download/send failed:', e.message);
+    // Fallback: stream via URL directly — no hash check possible, but
+    // never for tikcdn (the promo-clip host).
     if (isBlockedHost(videoUrl)) return false;
     try {
       const botName = config.botName.toUpperCase();
@@ -163,6 +201,8 @@ async function sendVideo(sock, chatId, videoUrl, title, msg) {
       console.error('[TT] URL send failed:', e2.message);
       return false;
     }
+  } finally {
+    if (tmpFile) await fsp.unlink(tmpFile.path).catch(() => {});
   }
 }
 
@@ -542,7 +582,7 @@ module.exports = {
 
       // Anything that goes wrong after the watchdog took over must stay
       // silent (the timeout reply already went out).
-      run.catch(() => {});
+      run.catch(e => console.error('[TT] run failed after watchdog:', e.message));
 
       // Umbrella watchdog: every step above is bounded, but if some other
       // await stalls (WhatsApp send, Baileys internals) execute() must

@@ -25,7 +25,7 @@ const { renderEventCard } = require('./eventRsvp');
 
 const RENDER_DEBOUNCE = 700; // beats the 500ms interactive cooldown
 const EXPIRY_WINDOW = 48 * 60 * 60 * 1000; // timed events retire endAt + 48h
-const sleep = (ms) => new Promise(r => setTimeout(r => ms));
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const prefix = () => config.prefix || '.';
 
 async function sendStep(sock, s, payload, quoted) {

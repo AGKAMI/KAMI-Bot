@@ -98,5 +98,6 @@ function renderBlinkingVideoWithFfmpeg(text) {
       if (code === 0) return resolve(Buffer.concat(chunks));
       reject(new Error(Buffer.concat(errors).toString() || `ffmpeg exited with code ${code}`));
     });
+    setTimeout(() => { ff.kill('SIGKILL'); reject(new Error('ffmpeg timed out after 60s')); }, 60000);
   });
 }

@@ -29,8 +29,9 @@ module.exports = {
         }
         
         try {
-          const result = new Function(`return (${expression})`)();
-          
+          // Safe math evaluator — only numbers and basic operators allowed
+          const result = evalMath(expression);
+
           let text = `🧮 *calculator*\n\n`;
           text += `📝 Expression: ${expression}\n`;
           text += `✅ Result: ${result}`;
@@ -46,5 +47,47 @@ module.exports = {
         await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
       }
     }
-  };
-  
+};
+
+// Safe math expression evaluator — no eval/Function, only + - * / ( ) .
+function evalMath(expr) {
+  const tokens = expr.match(/[\d.]+|[+\-*/()]/g);
+  if (!tokens) throw new Error('invalid expression');
+  let pos = 0;
+  function peek() { return tokens[pos]; }
+  function consume() { return tokens[pos++]; }
+  function parseExpression() {
+    let left = parseTerm();
+    while (peek() === '+' || peek() === '-') {
+      const op = consume();
+      const right = parseTerm();
+      left = op === '+' ? left + right : left - right;
+    }
+    return left;
+  }
+  function parseTerm() {
+    let left = parseFactor();
+    while (peek() === '*' || peek() === '/') {
+      const op = consume();
+      const right = parseFactor();
+      left = op === '*' ? left * right : left / right;
+    }
+    return left;
+  }
+  function parseFactor() {
+    const tok = peek();
+    if (tok === '(') {
+      consume();
+      const val = parseExpression();
+      if (consume() !== ')') throw new Error('mismatched paren');
+      return val;
+    }
+    const num = Number(consume());
+    if (isNaN(num)) throw new Error('invalid number');
+    return num;
+  }
+  const result = parseExpression();
+  if (pos !== tokens.length) throw new Error('trailing tokens');
+  if (!isFinite(result)) throw new Error('non-finite result');
+  return result;
+}

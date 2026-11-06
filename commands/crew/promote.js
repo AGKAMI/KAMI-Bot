@@ -7,14 +7,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
-
-const getRoleEmoji = (role, roles) => {
-  const idx = roles.indexOf(role);
-  if (idx === roles.length - 1) return '👑';
-  if (idx === roles.length - 2) return '⭐';
-  if (idx === 0) return '👤';
-  return '🎖️';
-};
+const { getRoleEmoji } = require('../../utils/teamName');
 
 module.exports = {
   subName: 'promote',

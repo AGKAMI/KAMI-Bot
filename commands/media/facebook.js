@@ -267,7 +267,7 @@ module.exports = {
       })();
 
       // Late failures after the watchdog took over must stay silent.
-      run.catch(() => {});
+      run.catch(e => console.error('[FB] run failed after watchdog:', e.message));
 
       await Promise.race([
         run,

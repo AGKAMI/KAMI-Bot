@@ -148,7 +148,7 @@ async function sendTeamCards(sock, from, applicantJid) {
     }
     await sock.sendMessage(from, {
       text: `\u{1F4CB} *SECURITY TEAMS*\n\n${why}`,
-    }, { quoted: msg });
+    });
     return;
   }
 

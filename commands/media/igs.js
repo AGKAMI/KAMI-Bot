@@ -603,7 +603,7 @@ async function igsCommand(sock, msg, args, extra, crop = false) {
     })();
 
     // Late failures after the watchdog took over must stay silent.
-    run.catch(() => {});
+    run.catch(e => console.error('[IGS] run failed after watchdog:', e.message));
 
     await Promise.race([
       run,

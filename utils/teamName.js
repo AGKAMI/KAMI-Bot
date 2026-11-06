@@ -15,4 +15,18 @@ const getTeamDisplayName = (teamKeyOrJid, subject = null) => {
   return teamKeyOrJid;
 };
 
-module.exports = { getTeamDisplayName };
+/**
+ * Get emoji for a crew role based on its position in the roles array.
+ * First role = 👤, second-to-last = ⭐, last = 👑, everything else = 🎖️
+ */
+const getRoleEmoji = (role, roles) => {
+  if (!roles || !roles.length) return '🎖️';
+  const idx = roles.indexOf(role);
+  if (idx === -1) return '🎖️';
+  if (idx === roles.length - 1) return '👑';
+  if (idx === roles.length - 2) return '⭐';
+  if (idx === 0) return '👤';
+  return '🎖️';
+};
+
+module.exports = { getTeamDisplayName, getRoleEmoji };

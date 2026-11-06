@@ -5,7 +5,6 @@ const {
   downloadContentFromMessage,
 } = require('@whiskeysockets/baileys');
 const { PassThrough } = require('stream');
-const ffmpeg = require('fluent-ffmpeg');
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 

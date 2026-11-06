@@ -6,12 +6,18 @@ const { igdl } = require('ruhend-scraper');
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { withTimeout } = require('../../utils/withTimeout');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const fsp = require('fs').promises;
 
 // Hard ceilings — see utils/withTimeout.js for why (frozen-⬇️ bug).
 const IGDL_TIMEOUT_MS = 30000;
 const URL_SEND_TIMEOUT_MS = 60000;
 // Umbrella watchdog; the env override is a test seam only.
 const WATCHDOG_MS = Number(process.env.IG_WATCHDOG_MS) || 180000;
+// Cap downloads — Baileys buffers whole video in RAM → OOM on 256MB box.
+const MAX_VIDEO_BYTES = 16 * 1024 * 1024;
 
 // Store processed message IDs to prevent duplicates
 const processedMessages = new Map(); // id → timestamp
@@ -137,19 +143,61 @@ module.exports = {
                           text.includes('/reel/') ||
                           text.includes('/tv/');
 
-            if (isVideo) {
-              await withTimeout(sock.sendMessage(chatId, {
-                video: { url: mediaUrl },
-                mimetype: 'video/mp4',
-                caption: `*DOWNLOADED BY ${config.botName.toUpperCase()}*\n_${voice.lead('affirm')}, enjoy_`
-              }, { quoted: msg }), URL_SEND_TIMEOUT_MS, 'URL send');
-            } else {
-              await withTimeout(sock.sendMessage(chatId, {
-                image: { url: mediaUrl },
-                caption: `*DOWNLOADED BY ${config.botName.toUpperCase()}*\n_${voice.lead('affirm')}, enjoy_`
-              }, { quoted: msg }), URL_SEND_TIMEOUT_MS, 'URL send');
-            }
+            let tmpFile = null;
+            try {
+              if (isVideo) {
+                // Download video to temp file first (size-capped), then send from disk
+                const res = await axios.get(mediaUrl, {
+                  responseType: 'stream',
+                  timeout: 120000,
+                  maxContentLength: MAX_VIDEO_BYTES,
+                  maxBodyLength: MAX_VIDEO_BYTES,
+                  headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                  },
+                });
+                const declared = Number(res.headers['content-length']) || 0;
+                if (declared > MAX_VIDEO_BYTES) {
+                  res.data.destroy?.();
+                  throw new Error(`video too large (${Math.round(declared / 1048576)}MB > 16MB)`);
+                }
+                tmpFile = path.join(os.tmpdir(), `ig-${Date.now()}-${Math.floor(Math.random() * 1e6)}.mp4`);
+                await new Promise((resolve, reject) => {
+                  let written = 0;
+                  const out = fs.createWriteStream(tmpFile);
+                  res.data.on('data', (chunk) => {
+                    written += chunk.length;
+                    if (written > MAX_VIDEO_BYTES) {
+                      out.destroy();
+                      res.data.destroy?.();
+                      reject(new Error('video too large (>16MB)'));
+                    }
+                  });
+                  res.data.on('error', (e) => { out.destroy(); reject(e); });
+                  out.on('error', (e) => { res.data.destroy?.(); reject(e); });
+                  out.on('finish', resolve);
+                  res.data.pipe(out);
+                });
+
+                await withTimeout(sock.sendMessage(chatId, {
+                  video: { url: tmpFile },
+                  mimetype: 'video/mp4',
+                  caption: `*DOWNLOADED BY ${config.botName.toUpperCase()}*\n_${voice.lead('affirm')}, enjoy_`
+                }, { quoted: msg }), URL_SEND_TIMEOUT_MS, 'URL send');
+              } else {
+                await withTimeout(sock.sendMessage(chatId, {
+                  image: { url: mediaUrl },
+                  caption: `*DOWNLOADED BY ${config.botName.toUpperCase()}*\n_${voice.lead('affirm')}, enjoy_`
+                }, { quoted: msg }), URL_SEND_TIMEOUT_MS, 'URL send');
+              }
+              sent++;
             sent++;
+
+            // Cleanup temp file after send
+            if (tmpFile) {
+              await fsp.unlink(tmpFile).catch(() => {});
+              tmpFile = null;
+            }
 
             // Add small delay between downloads to prevent rate limiting
             if (i < mediaToDownload.length - 1 && !aborted) {
@@ -158,8 +206,16 @@ module.exports = {
 
           } catch (mediaError) {
             console.error(`Error downloading media ${i + 1}:`, mediaError);
+            // Cleanup temp file on error too
+            if (tmpFile) {
+              await fsp.unlink(tmpFile).catch(() => {});
+              tmpFile = null;
+            }
             // Continue with next media if one fails
           }
+        } catch (mediaError) {
+          console.error(`Error downloading media batch:`, mediaError);
+        }
         }
 
         // The watchdog already reported this run — don't double-reply.
@@ -172,7 +228,7 @@ module.exports = {
       })();
 
       // Late failures after the watchdog took over must stay silent.
-      run.catch(() => {});
+      run.catch(e => console.error('[IG] run failed after watchdog:', e.message));
 
       await Promise.race([
         run,
