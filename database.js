@@ -1479,13 +1479,28 @@ const getMemberActivity = (groupJid, memberJid) => {
   return { totalMessages, daysActive, lastActive, firstActive, avgPerDay: Number(avgPerDay) };
 };
 
+// ── Owner exclusion helpers ─────────────────────────────────
+// Owner numbers must never appear in activity/inactive checks.
+// Canonicalized once and cached for the lifetime of the process.
+let _ownerDigitSet = null;
+const _getOwnerDigits = () => {
+  if (_ownerDigitSet) return _ownerDigitSet;
+  _ownerDigitSet = new Set(
+    (config.ownerNumber || []).map(n => canonicalNumber(n)).filter(Boolean)
+  );
+  return _ownerDigitSet;
+};
+
 // Get all members with their activity stats for a group
 const getGroupMemberActivity = (groupJid) => {
   const team = getTeam(groupJid);
   const members = team.members || {};
   const result = {};
+  const ownerDigits = _getOwnerDigits();
 
   for (const [memberJid, memberData] of Object.entries(members)) {
+    const digits = canonicalNumber(memberJid);
+    if (digits && ownerDigits.has(digits)) continue; // exclude owner numbers from activity tracking
     const activity = getMemberActivity(groupJid, memberJid);
     result[memberJid] = {
       ...memberData,

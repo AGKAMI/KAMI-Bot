@@ -367,7 +367,19 @@ const _inactiveFromActivity = (groupJid, activity, s, now) => {
   const inactive = {};
   const windowDays = s.inactiveWindow / _dayMs;
   const cutoff = now - s.inactiveWindow;
+  // Exclude owner numbers from inactive checks (defense in depth — already
+  // excluded at the database.getGroupMemberActivity level).
+  const ownerDigits = new Set(
+    (config.ownerNumber || []).map(n => {
+      let d = String(n || '').replace(/\D/g, '');
+      if (!d) return '';
+      if (d.startsWith('0') && d.length >= 8) d = (config.defaultCountryCode || '27') + d.slice(1);
+      return d;
+    }).filter(Boolean)
+  );
   for (const [jid, data] of Object.entries(activity)) {
+    const digits = _digits(jid);
+    if (digits && ownerDigits.has(digits)) continue; // exclude owner numbers
     if (s.minMessages <= 1) {
       if (!data.lastActive || data.lastActive < cutoff) inactive[jid] = data;
     } else {
