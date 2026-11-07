@@ -5,6 +5,7 @@
 
 const config = require('../../config');
 const { getTeamDisplayName } = require('../../utils/teamName');
+const { voice } = require('../../utils/format');
 const nameCache = require('../../utils/nameCache');
 
 // Team metadata: display name + emoji theme. Group JID + invite live in config.crewTeams.
@@ -77,7 +78,7 @@ const buildHiredMessage = (teamKey, inviteLink) => {
     `📲 Report to: *|SS| KAMI*\n` +
     `⚡ Follow all SS rules.\n\n` +
     (inviteLink ? `🔗 *JOIN THE GROUP:*\n${inviteLink}\n\n` : ``) +
-    `_${pickGood()}, stay locked in!_`;
+    `_${voice.tag('affirm')}, stay locked in!_`;
 };
 
 // Build the "not hired" DM message (sent to applicant on deny)

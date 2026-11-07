@@ -64,6 +64,7 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
         })}`;
       } catch (e) { /* date formatting is best-effort */ }
     }
+    const roleTxt = matchedMember.role ? ` as *${matchedMember.role}*` : '';
     const msg = applyingForSomeone
       ? `❌ ERROR\n\n${mention(applicantJid)} is already in ${TEAMS[teamKey].label}${roleTxt}${whenTxt}, hey`
       : `❌ ERROR\n\nYou're already in ${TEAMS[teamKey].label}${roleTxt}${whenTxt}, boet\n\n` +

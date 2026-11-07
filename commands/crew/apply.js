@@ -24,7 +24,7 @@ module.exports = {
   aliases: ['tryout'],
   category: 'crew',
   description: "Start a crew application — or (owner) DM someone the team selection",
-  usage: '.apply <team> [@mention|number]  Â·  owner: .apply <reply|@mention|number>',
+  usage: '.apply <team> [@mention|number] • owner: .apply <reply|@mention|number>',
   groupOnly: false,
   ownerOnly: false,
 
@@ -226,8 +226,8 @@ function applyUsage(prefix) {
     `• \`${prefix}apply <team>\` — apply for yourself\n` +
     `• \`${prefix}apply <team> @user\` — apply for someone\n` +
     `• \`${prefix}apply <team> 082 123 4567\` — apply by number\n` +
-    `• \`${prefix}apply @user\` / reply / number — *(owner)* send them the team selection\n\n` +
-    `Teams: ${Object.keys(TEAMS).join(', ')}`
+    `• \`${prefix}apply @user\` / reply / number — (owner) send them the team selection\n\n` +
+    `*Teams:* ${Object.keys(TEAMS).join(', ')}`
   );
 }
 
