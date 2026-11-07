@@ -14,6 +14,24 @@ const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { fmtDateTime } = require('../../utils/sast');
 const { logDbChange, logError, logJidResolution } = require('../../utils/botLogger');
 const { getRoleEmoji, getTeamDisplayName } = require('../../utils/teamName');
+const { normalizeJidWithLid, buildComparableIds } = require('../../utils/jidHelper');
+
+// ── Group-presence verification ───────────────────────────────
+// Before claiming someone is "already accepted", verify they are actually
+// still in the team's group. A processedApps record can lie if the accept
+// flow crashed mid-way (trackProcessedApp wrote "accepted" but addCrewMember
+// / groupParticipantsUpdate never ran), or if the person was later removed.
+async function isPersonInGroup(sock, groupJid, applicantJid) {
+  if (!groupJid || !applicantJid) return false;
+  try {
+    const meta = await sock.groupMetadata(groupJid).catch(() => null);
+    if (!meta || !meta.participants) return false;
+    const targets = buildComparableIds(applicantJid);
+    return meta.participants.some(p => targets.includes(p.id));
+  } catch (e) {
+    return false;
+  }
+}
 
 module.exports = {
   subName: 'accept',
@@ -42,14 +60,33 @@ module.exports = {
         const processed = database.getProcessedApp(uid);
         if (processed) {
           const time = fmtDateTime(processed.processedAt);
-          // Show the admin's display name — mention() renders a raw lid
-          // with no mentions array, which is unreadable.
           const byWho = processed.adminName || nameCache.who(processed.admin);
+
           if (processed.action === 'accepted') {
-            return extra.reply(
-              `❌ ERROR\n\nEish — *${uid}* was already accepted by ${byWho} on ${time}` +
-              (processed.role ? `\n🏷️ Role given: ${processed.role}` : '')
+            // Verify they are actually still in the team's group before
+            // claiming "already accepted". A processedApps record can lie if
+            // the accept flow crashed mid-way (trackProcessedApp wrote
+            // "accepted" but groupParticipantsUpdate never ran).
+            const stillInGroup = await isPersonInGroup(
+              sock,
+              processed.groupJid,
+              processed.applicantJid
             );
+            if (!stillInGroup) {
+              // Stale record — clear it so the admin can re-accept for real.
+              try {
+                database.removeProcessedApp(processed.groupJid, uid);
+                database.flushCrew();
+              } catch (e) {
+                console.error('[ACCEPT] could not clear stale processed record:', e.message);
+              }
+              // Fall through to fresh accept below.
+            } else {
+              return extra.reply(
+                `❌ ERROR\n\nEish — *${uid}* was already accepted by ${byWho} on ${time}` +
+                (processed.role ? `\n🏷️ Role given: ${processed.role}` : '')
+              );
+            }
           } else {
             return extra.reply(
               `❌ ERROR\n\nEish — *${uid}* was already denied by ${byWho} on ${time}` +

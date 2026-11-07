@@ -744,6 +744,32 @@ const getProcessedApp = (uid) => {
   return null;
 };
 
+// Remove a processed application record — used to clear stale entries
+// (e.g. an accept that wrote processedApps but never added the person to
+// the group, so a manual re-accept can proceed).
+const removeProcessedApp = (groupJid, uid) => {
+  const key = String(uid || '').toUpperCase();
+  if (!key) return false;
+  // If we know the exact group, use it directly
+  if (groupJid) {
+    const team = getTeam(groupJid);
+    if (team && team.processedApps && team.processedApps[key]) {
+      delete team.processedApps[key];
+      return updateTeam(groupJid, team);
+    }
+    return false;
+  }
+  // Otherwise scan all groups to find and remove it
+  const crew = getCrew();
+  for (const [gid, team] of Object.entries(crew.groups || {})) {
+    if (team.processedApps && team.processedApps[key]) {
+      delete team.processedApps[key];
+      return updateTeam(gid, team);
+    }
+  }
+  return false;
+};
+
 // Remove pending applications older than maxAgeMs (default 7 days)
 // Returns list of expired apps for notification
 const expireOldPendingApps = (maxAgeMs = 7 * 24 * 60 * 60 * 1000) => {
@@ -1665,6 +1691,7 @@ module.exports = {
     removeApplicant,
     trackProcessedApp,
     getProcessedApp,
+    removeProcessedApp,
     expireOldPendingApps,
     hasPendingApplication,
     getAllTeams,
