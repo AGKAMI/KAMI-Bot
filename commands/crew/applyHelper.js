@@ -55,22 +55,47 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
       note: 'Number may not be on WhatsApp — stale LID/PN variant match possible',
     }); } catch (e) {}
   }
+  // ── Blocked: already in crew DB ─────────────────────────────────
+  // BUT: verify they're actually still in the WhatsApp group first.
+  // A crew DB entry can be stale if .crew accept wrote to the DB but
+  // groupParticipantsUpdate failed (privacy/403) — the person is in the
+  // roster but NOT in the group. Don't block them from re-applying.
   if (matchedMember) {
-    let whenTxt = '';
-    if (matchedMember.joined) {
+    // Verify actual group presence before claiming "already in crew"
+    const actuallyInGroup = await (async () => {
       try {
-        whenTxt = `, joined ${new Date(matchedMember.joined).toLocaleDateString('en-ZA', {
-          timeZone: config.timezone || 'Africa/Johannesburg',
-        })}`;
-      } catch (e) { /* date formatting is best-effort */ }
+        const meta = await sock.groupMetadata(teamGroupJid).catch(() => null);
+        if (!meta || !meta.participants) return false;
+        return meta.participants.some(p =>
+          buildComparableIds(p.id).some(v => memberVariants.includes(v))
+        );
+      } catch (e) { return false; }
+    })();
+
+    if (!actuallyInGroup) {
+      // Stale roster entry — clear it so they can apply for real
+      console.log(`[APPLY] clearing stale crew entry for ${applicantJid} in ${teamKey} (not in group)`);
+      try { database.removeCrewMember(teamGroupJid, applicantJid); } catch (e) {}
+      try { database.flushCrew(); } catch (e) {}
+      // Fall through to normal application flow below
+    } else {
+      // Genuinely in both crew DB and group — block the application
+      let whenTxt = '';
+      if (matchedMember.joined) {
+        try {
+          whenTxt = `, joined ${new Date(matchedMember.joined).toLocaleDateString('en-ZA', {
+            timeZone: config.timezone || 'Africa/Johannesburg',
+          })}`;
+        } catch (e) { /* date formatting is best-effort */ }
+      }
+      const roleTxt = matchedMember.role ? ` as *${matchedMember.role}*` : '';
+      const msg = applyingForSomeone
+        ? `❌ ERROR\n\n${mention(applicantJid)} is already in ${TEAMS[teamKey].label}${roleTxt}${whenTxt}, hey`
+        : `❌ ERROR\n\nYou're already in ${TEAMS[teamKey].label}${roleTxt}${whenTxt}, boet\n\n` +
+          `_Wrong entry? Ask KAMI to take it off._`;
+      if (replyFn) await replyFn(msg);
+      return { ok: false, error: 'already_in_crew' };
     }
-    const roleTxt = matchedMember.role ? ` as *${matchedMember.role}*` : '';
-    const msg = applyingForSomeone
-      ? `❌ ERROR\n\n${mention(applicantJid)} is already in ${TEAMS[teamKey].label}${roleTxt}${whenTxt}, hey`
-      : `❌ ERROR\n\nYou're already in ${TEAMS[teamKey].label}${roleTxt}${whenTxt}, boet\n\n` +
-        `_Wrong entry? Ask KAMI to take it off._`;
-    if (replyFn) await replyFn(msg);
-    return { ok: false, error: 'already_in_crew' };
   }
 
   // 2. Already a participant in the team's WhatsApp group?
