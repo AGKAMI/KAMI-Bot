@@ -14,9 +14,18 @@ const { sendButtons } = require('../../utils/buttonHelper');
 function phoneToJid(phone) {
   if (!phone) return null;
   if (phone.includes('@s.whatsapp.net')) return phone;
+  // Strip EVERYTHING that isn't a digit — handles +27 79 878 2885,
+  // 083-388-2383, (083) 388 2383, +27 (83) 388-2383, etc.
   let digits = phone.replace(/\D/g, '');
-  if (digits.startsWith('0') && digits.length >= 10) {
+  if (!digits) return null;
+  // Local SA format: leading 0 → prepend country code, drop the 0
+  if (digits.startsWith('0') && digits.length >= 9) {
     digits = (config.defaultCountryCode || '27') + digits.slice(1);
+  }
+  // Already international (starts with country code) — use as-is
+  // Otherwise assume local without leading 0 — prepend country code
+  if (!digits.startsWith(config.defaultCountryCode || '27') && digits.length >= 9) {
+    digits = (config.defaultCountryCode || '27') + digits;
   }
   if (digits.length < 10) return null;
   return digits + '@s.whatsapp.net';
@@ -119,28 +128,38 @@ module.exports = {
         return;
       }
 
-      // FAILED — report the ACTUAL reason. Only a 403 earns the invite-DM
-      // flow below; the old code claimed "privacy settings — I've DM'd them
-      // the invite" for every refusal (rate limits, numbers not on WA…).
+      // FAILED — report the ACTUAL reason, then offer an invite-link DM
+      // as a fallback so the person can still join when direct add is
+      // blocked by privacy, permissions, or any other refusal.
       extra.fail();
       const failCode = String(addOutcome.code || '');
-      if (failCode !== '403') {
-        const why = (failCode === '404' || failCode === '406')
-          ? `${mention(target)} isn't on WhatsApp, hey — check the number ${voice.tag('neutral')}`
-          : failCode === '425'
-            ? `WhatsApp is rate-limiting me — try again in a minute ${voice.tag('neutral')}`
-            : `Couldn't add ${mention(target)} — WhatsApp refused${failCode ? ` (${failCode})` : ''}` +
-              `\n\n_${addOutcome.error || 'unknown reason'}_`;
-        return extra.reply(`❌ ERROR\n\n${why}`);
+      const failReason = addOutcome.error || 'unknown reason';
+
+      // 404/406 — nobody home on WhatsApp; can't DM a number that isn't on WA
+      if (failCode === '404' || failCode === '406') {
+        return extra.reply(
+          `❌ ERROR\n\n` +
+          `${mention(target)} isn't on WhatsApp, hey — check the number ${voice.tag('neutral')}\n\n` +
+          `_${failReason}_`
+        );
       }
-      // 403 — their privacy settings block direct adds (I AM admin here —
-      // botAdminNeeded gate verified that before this command ran).
-      // Group message (Pattern A), then DM them the invite + the group's profile picture.
+      // 425 — rate-limited; wait and retry
+      if (failCode === '425') {
+        return extra.reply(
+          `❌ ERROR\n\n` +
+          `WhatsApp is rate-limiting me — try again in a minute ${voice.tag('neutral')}\n\n` +
+          `_${failReason}_`
+        );
+      }
+
+      // Any other refusal (403 privacy-blocked, permissions, unknown):
+      // report it, then DM them the group invite link as a fallback.
       await sock.sendMessage(extra.from, {
         text:
           `❌ ERROR\n\n` +
-          `Couldn't add ${mention(target)} — their privacy settings block the add\n\n` +
-          `I've DM'd them the group invite instead ${voice.tag('neutral')}`,
+          `Couldn't add ${mention(target)} — WhatsApp refused${failCode ? ` (${failCode})` : ''}\n` +
+          `_${failReason}_\n\n` +
+          `I'll DM them the group invite link instead ${voice.tag('neutral')}`,
         mentions: [target],
       }, { quoted: msg });
 
@@ -153,11 +172,11 @@ module.exports = {
 
       const dmText = inviteLink
         ? `🔗 *KAMI tried adding you*\n\n` +
-          `The add failed because of your privacy settings — here's the link to the group KAMI tried adding you to:\n\n` +
+          `The direct add didn't go through — here's the group link to join manually:\n\n` +
           `${inviteLink}\n\n` +
           `Tap it to join if you want in ${voice.tag('soften')}`
         : `🔗 *KAMI tried adding you*\n\n` +
-          `The add failed because of your privacy settings — ask the admin who added you to send you the group link ${voice.tag('soften')}`;
+          `The direct add didn't go through — ask an admin to send you the group link ${voice.tag('soften')}`;
 
       const dmButtons = inviteLink
         ? [
@@ -196,7 +215,7 @@ module.exports = {
             await sock.sendMessage(target, { text: dmText });
           }
         }
-        console.log(`[ADD] privacy-fail invite DM sent to ${target.split('@')[0]}`);
+        console.log(`[ADD] invite DM sent to ${target.split('@')[0]}`);
       } catch (dmErr) {
         console.error('[ADD] invite DM failed:', dmErr.message);
       }
