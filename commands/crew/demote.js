@@ -3,6 +3,7 @@ const config = require('../../config');
 const { bold, pick, SLANG, voice, mention } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 const { getRoleEmoji } = require('../../utils/teamName');
+const { isPersonInCrewGroup } = require('../../utils/crewGuard');
 
 module.exports = {
   subName: 'demote',
@@ -33,6 +34,22 @@ module.exports = {
       // Look up with PN + LID variant handling
       const member = database.getCrewMemberAnyVariant(extra.from, target);
       if (!member) {
+        // Stale DB entry possible — verify real-time group presence
+        const actuallyInGroup = await isPersonInCrewGroup(sock, extra.from, target);
+        if (!actuallyInGroup) {
+          try { database.removeCrewMember(extra.from, target); } catch (e) {}
+          try { database.flushCrew(); } catch (e) {}
+        }
+        return extra.reply(`❌ ERROR\n\n${mention(target)} is not in this crew`);
+      }
+
+      // Verify they're actually in the WhatsApp group right now — a stale crew
+      // DB entry must not block demotion.
+      const actuallyInGroup = await isPersonInCrewGroup(sock, extra.from, target);
+      if (!actuallyInGroup) {
+        console.log(`[CREW DEMOTE] clearing stale crew entry for ${target} in ${extra.from} (not in group)`);
+        try { database.removeCrewMember(extra.from, target); } catch (e) {}
+        try { database.flushCrew(); } catch (e) {}
         return extra.reply(`❌ ERROR\n\n${mention(target)} is not in this crew`);
       }
 

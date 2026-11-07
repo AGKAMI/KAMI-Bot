@@ -9,6 +9,7 @@ const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { resolveUser, phoneToJid } = require('./crewHelpers');
 const { fmtDate } = require('../../utils/sast');
 const { buildComparableIds } = require('../../utils/jidHelper');
+const { isPersonInCrewGroup } = require('../../utils/crewGuard');
 const { getRoleEmoji } = require('../../utils/teamName');
 
 module.exports = {
@@ -75,10 +76,20 @@ module.exports = {
       const existing = database.getCrewMember(extra.from, target)
         || buildComparableIds(target).map(v => database.getCrewMember(extra.from, v)).find(Boolean);
       if (existing) {
-        return extra.reply(
-          `❌ ERROR\n\n${mention(target)} is already in the crew, hey\n` +
-          `Role: ${getRoleEmoji(existing.role, validRoles)} ${existing.role}`
-        );
+        // Verify they're actually in the WhatsApp group right now — a stale
+        // crew DB entry (added via accept but group add failed) must not
+        // block a real add.
+        const actuallyInGroup = await isPersonInCrewGroup(sock, extra.from, target);
+        if (!actuallyInGroup) {
+          console.log(`[CREW ADD] clearing stale crew entry for ${target} in ${extra.from} (not in group)`);
+          try { database.removeCrewMember(extra.from, target); } catch (e) {}
+          try { database.flushCrew(); } catch (e) {}
+        } else {
+          return extra.reply(
+            `❌ ERROR\n\n${mention(target)} is already in the crew, hey\n` +
+            `Role: ${getRoleEmoji(existing.role, validRoles)} ${existing.role}`
+          );
+        }
       }
 
       // Parse role — find a valid role word from remaining args

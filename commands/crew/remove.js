@@ -9,6 +9,7 @@ const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { resolveUser } = require('./crewHelpers');
 const { buildComparableIds } = require('../../utils/jidHelper');
+const { isPersonInCrewGroup } = require('../../utils/crewGuard');
 
 // Lazy require to avoid circular dependency
 function getHandler() {
@@ -50,6 +51,25 @@ module.exports = {
       const member = database.getCrewMember(extra.from, target)
         || targetVariants.map(v => database.getCrewMember(extra.from, v)).find(Boolean);
       if (!member) {
+        // Stale DB entry possible — verify real-time group presence
+        const actuallyInGroup = await isPersonInCrewGroup(sock, extra.from, target);
+        if (!actuallyInGroup) {
+          try { database.removeCrewMember(extra.from, target); } catch (e) {}
+          try { database.flushCrew(); } catch (e) {}
+        }
+        return extra.reply(
+          `❌ ERROR\n\n` +
+          `${mention(target)} isn't in this crew, hey`
+        );
+      }
+
+      // Verify they're actually in the WhatsApp group right now — a stale crew
+      // DB entry must not block removal.
+      const actuallyInGroup = await isPersonInCrewGroup(sock, extra.from, target);
+      if (!actuallyInGroup) {
+        console.log(`[CREW REMOVE] clearing stale crew entry for ${target} in ${extra.from} (not in group)`);
+        try { database.removeCrewMember(extra.from, target); } catch (e) {}
+        try { database.flushCrew(); } catch (e) {}
         return extra.reply(
           `❌ ERROR\n\n` +
           `${mention(target)} isn't in this crew, hey`

@@ -9,6 +9,7 @@ const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { getTeamDisplayName } = require('../../utils/teamName');
 const { buildComparableIds } = require('../../utils/jidHelper');
 const { fmtDate } = require('../../utils/sast');
+const { isPersonInCrewGroup } = require('../../utils/crewGuard');
 
 module.exports = {
   name: 'stats',
@@ -60,11 +61,25 @@ module.exports = {
 
     // Look up with PN + LID variant handling
     const targetVariants = buildComparableIds(targetJid);
+
+    // Get the team name for error messages
+    const meta = await sock.groupMetadata(from).catch(() => null);
+    const teamName = getTeamDisplayName(teamKey, meta?.subject);
+
     const member = database.getCrewMember(from, targetJid)
       || targetVariants.map(v => database.getCrewMember(from, v)).find(Boolean);
 
-    const meta = await sock.groupMetadata(from).catch(() => null);
-    const teamName = getTeamDisplayName(teamKey, meta?.subject);
+    // Verify they're actually in the WhatsApp group right now — a stale crew
+    // DB entry must not block stats lookup.
+    const actuallyInGroup = await isPersonInCrewGroup(sock, from, targetJid);
+    if (!actuallyInGroup) {
+      try { database.removeCrewMember(from, targetJid); } catch (e) {}
+      try { database.flushCrew(); } catch (e) {}
+      return extra.reply(
+        `❌ ERROR\n\n${mention(targetJid)} isn't part of ${teamName}`,
+        { mentions: [targetJid] }
+      );
+    }
 
     if (!member) {
       return extra.reply(
