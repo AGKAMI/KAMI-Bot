@@ -272,7 +272,9 @@ async function submitApplication(sock, session, msg) {
     teamData.applicants[session.appUid].questions = questions.map(q => ({
       emoji: q.emoji, label: q.label, text: q.text,
     }));
-    database.updateTeam(storeGroupJid, teamData);
+    try { database.updateTeam(storeGroupJid, teamData); } catch (e) {
+      console.error('[SUBMIT] updateTeam failed:', e.message);
+    }
     app = teamData.applicants[session.appUid];
   }
 
@@ -606,24 +608,28 @@ async function autoFinalizeAccept(sock, session, teamKey, appUid, teamGroupJid, 
 
   // Crew DB write (always — this is what makes them a member)
   if (tgid) {
-    database.addCrewMember(tgid, dmJid, {
-      role,
-      joined: Date.now(),
-      addedBy: 'bot',
-      accepted: true,
-      inGroup: addedToGroup,
-    });
-    database.trackProcessedApp(tgid, appUid, {
-      action: 'accepted',
-      admin: 'bot',
-      adminName: 'KAMI Bot',
-      role,
-      applicantJid: dmJid,
-      applicantName: nameCache.get(dmJid) || null,
-      team: teamKey,
-    });
-    database.removeApplicant(tgid, appUid);
-    try { database.flushCrew(); } catch (e) {}
+    try {
+      database.addCrewMember(tgid, dmJid, {
+        role,
+        joined: Date.now(),
+        addedBy: 'bot',
+        accepted: true,
+        inGroup: addedToGroup,
+      });
+      database.trackProcessedApp(tgid, appUid, {
+        action: 'accepted',
+        admin: 'bot',
+        adminName: 'KAMI Bot',
+        role,
+        applicantJid: dmJid,
+        applicantName: nameCache.get(dmJid) || null,
+        team: teamKey,
+      });
+      database.removeApplicant(tgid, appUid);
+      try { database.flushCrew(); } catch (e) {}
+    } catch (e) {
+      console.error('[AUTO-ACCEPT] crew DB write failed:', e.message);
+    }
   }
 
   // Hired DM to the applicant — use configured team image, not group pic
