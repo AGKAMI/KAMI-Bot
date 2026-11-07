@@ -32,6 +32,9 @@ const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { withTimeout } = require('../../utils/withTimeout');
 
+// Hard ceiling — WhatsApp caps video at 16MB; never buffer the whole thing in RAM.
+const MAX_VIDEO_BYTES = 16 * 1024 * 1024;
+
 // ── Optional proxy for TikTok metadata APIs ─────────────────
 // Datacenter IPs get 403/429'd by tikwm and rate-boxed by TikTok's API
 // edge. Set TT_PROXY_URL in the panel env (http://user:pass@host:port)

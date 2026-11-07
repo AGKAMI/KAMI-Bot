@@ -3,6 +3,7 @@
  */
 
 const { igdl } = require('ruhend-scraper');
+const axios = require('axios');
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const { withTimeout } = require('../../utils/withTimeout');
@@ -191,7 +192,6 @@ module.exports = {
                 }, { quoted: msg }), URL_SEND_TIMEOUT_MS, 'URL send');
               }
               sent++;
-            sent++;
 
             // Cleanup temp file after send
             if (tmpFile) {
