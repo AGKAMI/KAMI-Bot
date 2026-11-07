@@ -117,11 +117,15 @@ module.exports = {
       }
 
       // Save to database
-      database.addCrewMember(extra.from, target, {
-        role,
-        joined: Date.now(),
-        addedBy: extra.sender,
-      });
+      try {
+        database.addCrewMember(extra.from, target, {
+          role,
+          joined: Date.now(),
+          addedBy: extra.sender,
+        });
+      } catch (e) {
+        console.error('[CREW ADD] addCrewMember failed:', e.message);
+      }
 
       // Join-gate ledger — !crew add is a bot-sanctioned add (the bot
       // performs the groupParticipantsUpdate, but ledger it explicitly
@@ -137,9 +141,9 @@ module.exports = {
       if (extra.isOwner) {
         const { buildComparableIds } = require('../../utils/jidHelper');
         for (const v of [target, ...buildComparableIds(target)]) {
-          database.unbanMember(extra.from, v);
+          try { database.unbanMember(extra.from, v); } catch (e) {}
         }
-        database.addOwnerAddedMember(extra.from, target, extra.sender);
+        try { database.addOwnerAddedMember(extra.from, target, extra.sender); } catch (e) {}
       }
 
       const roleEmoji = getRoleEmoji(role, validRoles);

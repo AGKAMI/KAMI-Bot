@@ -64,18 +64,24 @@ module.exports = {
       const teamGroupJid = app.groupJid || config.crewTeams[teamKey]?.jid;
 
       // Track as withdrawn
-      database.trackProcessedApp(teamGroupJid, app.appUid, {
+      try { database.trackProcessedApp(teamGroupJid, app.appUid, {
         action: 'withdrawn',
         admin: applicantJid,
         adminName: msg.pushName || extra.pushName || null,
         applicantJid: app.jid,
         applicantName: app.name || null,
         team: teamKey,
-      });
+      }); } catch (e) {
+        console.error('[CREW WITHDRAW] trackProcessedApp failed:', e.message);
+      }
 
       // Remove the pending application
-      database.removeApplicant(teamGroupJid, app.appUid);
-      database.flushCrew();
+      try { database.removeApplicant(teamGroupJid, app.appUid); } catch (e) {
+        console.error('[CREW WITHDRAW] removeApplicant failed:', e.message);
+      }
+      try { database.flushCrew(); } catch (e) {
+        console.error('[CREW WITHDRAW] flushCrew failed:', e.message);
+      }
 
       await extra.reply(
         `✅ APPLICATION WITHDRAWN\n\n` +

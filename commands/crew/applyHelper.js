@@ -102,7 +102,9 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
       'variant', 'apply.createApplication.duplicateCheck'); } catch (e) {}
     if (!dup.answers) {
       // Broken app — allow re-apply
-      database.removeApplicant(teamGroupJid, dup.appUid);
+      try { database.removeApplicant(teamGroupJid, dup.appUid); } catch (e) {
+        console.error('[APPLY] removeApplicant duplicate failed:', e.message);
+      }
       try { logDbChange('applicant', 'remove', dup.appUid, teamKey, { status: 'pending', appUid: dup.appUid }, null, 'bot'); } catch (e) {}
     } else {
       const teamName = getTeamDisplayName(teamKey);
@@ -115,10 +117,17 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
   }
 
   // 4. Create application in DB
-  const appResult = database.addApplicant(teamGroupJid, applicantJid, {
-    team: teamKey,
-    answers: null,
-  });
+  let appResult;
+  try {
+    appResult = database.addApplicant(teamGroupJid, applicantJid, {
+      team: teamKey,
+      answers: null,
+    });
+  } catch (e) {
+    console.error('[APPLY] addApplicant failed:', e.message);
+    if (replyFn) await replyFn(`❌ ERROR\n\nCouldn't create application`);
+    return { ok: false, error: 'db_error' };
+  }
   if (!appResult.ok) {
     if (appResult.error === 'duplicate_pending') {
       const teamName = getTeamDisplayName(teamKey);

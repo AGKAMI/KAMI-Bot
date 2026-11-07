@@ -91,7 +91,7 @@ module.exports = {
       // group-participants event doesn't race and kick them straight back out
       if (isBannedTarget && extra.isOwner) {
         for (const v of [target, ...buildComparableIds(target)]) {
-          database.unbanMember(extra.from, v);
+          try { database.unbanMember(extra.from, v); } catch (e) {}
         }
       }
 
@@ -115,7 +115,7 @@ module.exports = {
       if (added) {
         // Owner add — mark for kick protection (ban already lifted above if any)
         if (extra.isOwner) {
-          database.addOwnerAddedMember(extra.from, target, extra.sender);
+          try { database.addOwnerAddedMember(extra.from, target, extra.sender); } catch (e) {}
         }
         await sock.sendMessage(extra.from, {
           text:

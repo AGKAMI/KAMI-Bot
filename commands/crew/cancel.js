@@ -51,7 +51,7 @@ module.exports = {
       const reason = args.slice(1).join(' ').trim();
 
       // Track as cancelled
-      database.trackProcessedApp(teamGroupJid, app.appUid, {
+      try { database.trackProcessedApp(teamGroupJid, app.appUid, {
         action: 'cancelled',
         admin: extra.sender,
         adminName: msg.pushName || extra.pushName || null,
@@ -59,21 +59,29 @@ module.exports = {
         applicantJid,
         applicantName: app.name || nameCache.get(applicantJid) || null,
         team: teamKey,
-      });
+      }); } catch (e) {
+        console.error('[CREW CANCEL] trackProcessedApp failed:', e.message);
+      }
 
       // Log admin action for audit trail
-      database.logAdminAction({
+      try { database.logAdminAction({
         action: 'cancelled',
         appUid: uid,
         team: teamKey,
         admin: extra.sender,
         applicant: applicantJid,
         reason: reason || null,
-      });
+      }); } catch (e) {
+        console.error('[CREW CANCEL] logAdminAction failed:', e.message);
+      }
 
       // Remove the pending application
-      database.removeApplicant(teamGroupJid, app.appUid);
-      database.flushCrew();
+      try { database.removeApplicant(teamGroupJid, app.appUid); } catch (e) {
+        console.error('[CREW CANCEL] removeApplicant failed:', e.message);
+      }
+      try { database.flushCrew(); } catch (e) {
+        console.error('[CREW CANCEL] flushCrew failed:', e.message);
+      }
 
       // DM the applicant
       try {
