@@ -330,7 +330,7 @@ const MAX_NOTICES_PER_CYCLE = 5;
 // Identity across LID/PN variants — one person, one entry.
 const { buildComparableIds } = require('./jidHelper');
 const { getTeamDisplayName } = require('./teamName');
-const { voice } = require('../utils/format');
+const { voice, mention } = require('../utils/format');
 
 const _digits = (jid) => String(jid || '').split(':')[0].split('@')[0].replace(/\D/g, '');
 const _dayMs = 24 * 60 * 60 * 1000;
@@ -721,18 +721,13 @@ const runInactiveCheck = async (sock) => {
     const lines = teamDue.map(({ entry, info }) => {
       const when = info.days !== null ? `${info.days}d` : 'never';
       const msgs = info.windowMsgs ?? info.totalMessages ?? 0;
-      // Format phone number properly instead of relying on WhatsApp's
-      // @digits auto-formatting, which adds wrong country codes (e.g.
-      // @20403778048191 renders as "+20 0403778048191" — Egypt code on
-      // a non-Egyptian number).
-      const d = _digits(entry.jid);
-      let phone = d || 'unknown';
-      if (d.startsWith('27') && d.length === 11) {
-        phone = `+27 ${d.slice(2, 4)} ${d.slice(4, 7)} ${d.slice(7)}`;
-      } else if (d.length > 8) {
-        phone = `+${d}`;
-      }
-      return `• ${phone} — ${when} — ${msgs} msgs`;
+      // WhatsApp auto-formats @<digits> as phone numbers with country codes.
+      // LID jids (@lid) have user parts that aren't real phone numbers, so
+      // WhatsApp adds wrong country codes (e.g. @20403778048191 → +20 0403778048191).
+      // Use @mention only for @s.whatsapp.net jids; plain digits for @lid jids.
+      const jidStr = String(entry.jid);
+      const display = jidStr.includes('@lid') ? _digits(entry.jid) : mention(entry.jid);
+      return `• ${display} — ${when} — ${msgs} msgs`;
     });
     const mentions = teamDue.map(({ entry }) => entry.jid);
 
