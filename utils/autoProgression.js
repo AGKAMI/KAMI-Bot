@@ -719,10 +719,20 @@ const runInactiveCheck = async (sock) => {
     if (!teamDue.length) continue;
 
     const lines = teamDue.map(({ entry, info }) => {
-      const num = _digits(entry.jid);
       const when = info.days !== null ? `${info.days}d` : 'never';
       const msgs = info.windowMsgs ?? info.totalMessages ?? 0;
-      return `• @${num} — ${when} — ${msgs} msgs`;
+      // Format phone number properly instead of relying on WhatsApp's
+      // @digits auto-formatting, which adds wrong country codes (e.g.
+      // @20403778048191 renders as "+20 0403778048191" — Egypt code on
+      // a non-Egyptian number).
+      const d = _digits(entry.jid);
+      let phone = d || 'unknown';
+      if (d.startsWith('27') && d.length === 11) {
+        phone = `+27 ${d.slice(2, 4)} ${d.slice(4, 7)} ${d.slice(7)}`;
+      } else if (d.length > 8) {
+        phone = `+${d}`;
+      }
+      return `• ${phone} — ${when} — ${msgs} msgs`;
     });
     const mentions = teamDue.map(({ entry }) => entry.jid);
 
@@ -733,7 +743,6 @@ const runInactiveCheck = async (sock) => {
         `*${teamDue.length}* member${teamDue.length === 1 ? '' : 's'} quiet for ${kickSettings.fmtDuration(s.inactiveWindow)}+:\n\n` +
         `${lines.join('\n')}` +
         `\n\n${_noticeTail(s)} ${voice.lead('neutral')}`,
-      mentions,
     });
 
     // Persist: this group's next notice is in noticeCooldown. Members get flagged
