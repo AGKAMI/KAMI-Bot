@@ -648,47 +648,16 @@ async function startBot() {
         logConnEvent({ event: 'session-retry', attempt: sessionRetryCount, statusCode });
 
         if (sessionRetryCount >= 8 && isLoggedOut && !isTransient) {
-          // Only a GENUINE logged-out (401 without conflict semantics) may wipe.
-          // WhatsApp sends code=401 on conflict stream errors too (server's
-          // node.attrs.code overrides Baileys' CODE_MAP — see generics.js:289),
-          // so a 401 whose message mentions conflict is transient: the session
-          // is still valid and deleting it forces an unnecessary re-scan.
-          console.log('\n❌ Session logged out after 8 retries — backing up + clearing session files for fresh QR...');
-          logConnEvent({ event: 'session-cleared', afterRetries: sessionRetryCount });
-          try {
-            const sessionPath = path.join(__dirname, config.sessionName);
-            if (fs.existsSync(sessionPath)) {
-              // Back up first — if the 401 was a false kill, creds can be restored
-              // by hand (rename the .bak-<ts> folder back to <sessionName>)
-              let backedUp = false;
-              try {
-                const bakPath = `${sessionPath}.bak-${Date.now()}`;
-                fs.renameSync(sessionPath, bakPath);
-                backedUp = true;
-                console.log('💾 Session backed up to:', path.basename(bakPath));
-                // Prune old backups, keep newest 2
-                try {
-                  const parent = path.dirname(sessionPath);
-                  const base = path.basename(sessionPath);
-                  const baks = fs.readdirSync(parent)
-                    .filter(d => d.startsWith(base + '.bak-'))
-                    .sort();
-                  while (baks.length > 2) {
-                    fs.rmSync(path.join(parent, baks.shift()), { recursive: true, force: true });
-                  }
-                } catch {}
-              } catch (e) {
-                console.error('Backup failed:', e.message);
-              }
-              if (!backedUp) {
-                fs.rmSync(sessionPath, { recursive: true, force: true });
-              }
-              console.log('🗑️  Session cleared. Restart to get a new QR code.\n');
-            }
-          } catch (e) {
-            console.error('Failed to clear session:', e.message);
-          }
-          process.exit(1);
+          // NEVER auto-wipe the session. 401 doesn't mean the user logged out
+          // — it can be network issues, rate limiting, datacenter IP blocks,
+          // or WhatsApp flakiness. Deleting the session forces an unnecessary
+          // QR re-scan and loses the paired device. Only the user should
+          // decide to re-pair (via panel restart or manual session clear).
+          console.log('\n⚠️ Session issue persisted after 8 retries — keeping session, NOT clearing.');
+          logConnEvent({ event: 'session-retry-exhausted-kept', afterRetries: sessionRetryCount });
+          sessionRetryCount = 0;
+          scheduleReconnect(retryDelay, 'CONFLICT');
+          return;
         }
 
         if (sessionRetryCount >= 8) {
