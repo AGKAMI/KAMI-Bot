@@ -90,6 +90,75 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 const os = require('os');
+const http = require('http');
+
+// ── Vanta webhook receiver ──
+// Vanta Garage storefront POSTs notification events here.
+// The bot broadcasts them to the configured newsletter channel.
+// Auth: Bearer token from env VANTA_WEBHOOK_SECRET (required).
+let sockRef = null;
+function setSockRef(sock) { sockRef = sock; }
+
+const vantaWebhookSecret = process.env.VANTA_WEBHOOK_SECRET || '';
+
+function handleVantaNotify(req, res) {
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
+  req.on('end', async () => {
+    // Auth check
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+    if (!vantaWebhookSecret || token !== vantaWebhookSecret) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'unauthorized' }));
+      return;
+    }
+
+    let payload;
+    try { payload = JSON.parse(body || '{}'); } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'invalid json' }));
+      return;
+    }
+
+    const { message, jid = config.newsletterJid } = payload;
+    if (!message || !jid) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'missing message or jid' }));
+      return;
+    }
+
+    if (!sockRef) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'bot not connected' }));
+      return;
+    }
+
+    try {
+      await sockRef.sendMessage(jid, { text: String(message) });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, sentTo: jid }));
+    } catch (e) {
+      console.error('[VANTA WEBHOOK] send failed:', e.message);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'send failed' }));
+    }
+  });
+}
+
+const webhookServer = http.createServer((req, res) => {
+  if (req.url === '/vanta/notify' && req.method === 'POST') {
+    handleVantaNotify(req, res);
+  } else {
+    res.writeHead(404);
+    res.end('not found');
+  }
+});
+
+const WEBHOOK_PORT = Number(process.env.PORT || process.env.VANTA_WEBHOOK_PORT) || 3001;
+webhookServer.listen(WEBHOOK_PORT, () => {
+  console.log(`🔗 Vanta webhook listening on port ${WEBHOOK_PORT}`);
+});
 
 // Ensure the repo-shipped yt-dlp binary is executable (SFTP uploads lose the exec bit).
 // Must live BELOW the fs/path requires — the old placement hit the temporal dead
@@ -691,6 +760,7 @@ async function startBot() {
       }
     } else if (connection === 'open') {
       try {
+      setSockRef(sock);
       console.log('\n');
       console.log('╔════════════════════════════════════╗');
       console.log('║      💀 KAMI BOT CONNECTED 💀      ║');

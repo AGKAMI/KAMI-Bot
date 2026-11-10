@@ -14,7 +14,7 @@ module.exports = {
     defaultCountryCode: '27', // Used when converting local numbers (e.g., 083... → 2783...)
     sessionName: 'session-business',
     sessionID: process.env.SESSION_ID || '',
-    newsletterJid: '120363399255608558@newsletter', // Newsletter JID for menu forwarding
+    newsletterJid: '0029Vb9MVBOGpLHVobbY3e0s@newsletter', // Newsletter JID for menu forwarding / Vanta notifications
     updateZipUrl: 'https://github.com/AGKAMI/KAMI-Bot/archive/refs/heads/main.zip', // URL to latest code zip for .update command
     
     // Sticker Configuration
