@@ -101,6 +101,24 @@ function setSockRef(sock) { sockRef = sock; }
 
 const vantaWebhookSecret = process.env.VANTA_WEBHOOK_SECRET || '';
 
+/**
+ * Resolve a WhatsApp channel invite code (whatsapp.com/channel/<CODE>) to its
+ * real @newsletter server JID. Invite codes look like JIDs but aren't —
+ * sendMessage to a code-with-suffix resolves without throwing and silently
+ * never delivers. Pass-through for anything already containing '@'.
+ */
+async function resolveNewsletterJid(jid) {
+  if (!jid || jid.includes('@')) return jid;
+  const code = jid.replace(/^https?:\/\/whatsapp\.com\/channel\//, '').trim();
+  if (!sockRef) throw new Error('bot not connected');
+  const meta = await sockRef.newsletterMetadata('invite', code);
+  if (!meta?.id) throw new Error('unresolvable invite code: ' + code);
+  if (meta.id !== jid) {
+    console.log(`[VANTA WEBHOOK] resolved invite ${code} → ${meta.id}`);
+  }
+  return meta.id;
+}
+
 function handleVantaNotify(req, res) {
   let body = '';
   req.on('data', chunk => { body += chunk; });
@@ -121,23 +139,39 @@ function handleVantaNotify(req, res) {
       return;
     }
 
-    const { message, jid = config.newsletterJid } = payload;
-    if (!message || !jid) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'missing message or jid' }));
-      return;
-    }
+    const { message, jid = config.newsletterJid, imageUrl } = payload;
+        if (!message || !jid) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'missing message or jid' }));
+          return;
+        }
 
-    if (!sockRef) {
-      res.writeHead(503, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'bot not connected' }));
-      return;
-    }
+        if (!sockRef) {
+          res.writeHead(503, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'bot not connected' }));
+          return;
+        }
+
+        // Invite codes (whatsapp.com/channel/<CODE>) are NOT server JIDs — resolve
+        // to the real @newsletter JID via newsletterMetadata, else sendMessage
+        // resolves but silently never delivers.
+        let resolvedJid = jid;
+        try {
+          resolvedJid = await resolveNewsletterJid(jid);
+        } catch (e) {
+          console.error('[VANTA WEBHOOK] jid resolve failed:', e.message);
+        }
 
     try {
-      await sockRef.sendMessage(jid, { text: String(message) });
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, sentTo: jid }));
+              let waPayload;
+              if (imageUrl) {
+                waPayload = { image: imageUrl, caption: String(message) };
+              } else {
+                waPayload = { text: String(message) };
+              }
+              await sockRef.sendMessage(resolvedJid, waPayload);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true, sentTo: resolvedJid }));
     } catch (e) {
       console.error('[VANTA WEBHOOK] send failed:', e.message);
       res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -149,6 +183,26 @@ function handleVantaNotify(req, res) {
 const webhookServer = http.createServer((req, res) => {
   if (req.url === '/vanta/notify' && req.method === 'POST') {
     handleVantaNotify(req, res);
+  } else if (req.url?.startsWith('/vanta/resolve?code=') && req.method === 'GET') {
+    const code = decodeURIComponent(req.url.split('code=')[1] || '');
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+    if (!vantaWebhookSecret || token !== vantaWebhookSecret) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'unauthorized' }));
+      return;
+    }
+    (async () => {
+      try {
+        const real = await resolveNewsletterJid(code);
+        const meta = await sockRef.newsletterMetadata('jid', real).catch(() => null);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, jid: real, name: meta?.name || null, followers: meta?.followers ?? null }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    })();
   } else {
     res.writeHead(404);
     res.end('not found');
