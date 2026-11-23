@@ -12,6 +12,7 @@ const config = require('../../config');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { pick, SLANG, voice } = require('../../utils/format');
 const { normalizeJidWithLid } = require('../../utils/jidHelper');
+const { sendCpm2Menu, sendCpm2Item } = require('./cpm2shop');
 
 // Resolve DM JID from sender (redirects group clicks to DM)
 function toDmJid(sender) {
@@ -87,15 +88,25 @@ function getCatalogLink(item) {
 
 function hasImage(item) {
   if (!item?.image) return false;
-  return fs.existsSync(path.join(__dirname, '../../', item.image));
+  if (item.image.startsWith('http')) return true; // app-hosted image (URL)
+  return fs.existsSync(path.join(__dirname, '../../', item.image)); // legacy local
 }
 
 // ── Menu builders ────────────────────────────────────────────
 
 async function sendMainMenu(sock, chatId, quoted) {
-  // All categories in one message (native flow supports up to 10 buttons)
+  // Game split first (native flow supports up to 10 buttons), CPM1 categories below
+  const gameButtons = [
+    { id: 'order:cpm2:0', text: '\u{1F3C1} CPM2 — Live Garage' },
+    { id: 'order:cpm1', text: '\u{1F1FF}\u{1F1E6} CPM1 — Catalogue' },
+  ];
   await sendButtons(sock, chatId, {
-    text: '\u{1F6D2} *MAKE ORDER*\n\nPick a category:',
+    text: '\u{1F6D2} *MAKE ORDER*\n\n_Pick a game:_',
+    buttons: gameButtons,
+  }, quoted);
+  await delay(1200);
+  await sendButtons(sock, chatId, {
+    text: '\u{1F1FF}\u{1F1E6} *CPM1 CATEGORIES*\n\n_Or browse the classic catalogue:_',
     buttons: CATEGORIES.map(c => ({
       id: `order:cat:${c.id}`,
       text: c.label,
@@ -276,15 +287,19 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
   ];
 
   // Send image + buttons (image gets details, button message gets instruction)
+  // URL images (converted catalogue) and legacy local files both supported —
+  // WhatsApp fetches URL images itself, nothing written to bot disk.
+  const imageIsUrl = Boolean(item.image?.startsWith('http'));
   const imgPath = item.image ? path.join(__dirname, '../../', item.image) : null;
-  if (imgPath && fs.existsSync(imgPath)) {
+  const canSendImage = imageIsUrl || (imgPath && fs.existsSync(imgPath));
+  if (canSendImage) {
     try {
-      const imgBuffer = fs.readFileSync(imgPath);
+      const image = imageIsUrl ? { url: item.image } : fs.readFileSync(imgPath);
       await sendButtons(sock, chatId, {
         text,
         buttonText: `\u{1F6CD}\u{FE0F} _Tap below to order from the catalogue_`,
         buttons,
-        image: imgBuffer,
+        image,
       }, quoted);
     } catch (e) {
       await sendButtons(sock, chatId, { text, buttons }, quoted);
@@ -302,6 +317,32 @@ onButton('order:main', async (sock, msg, from, sender, btnId) => {
   const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
   if (!target) return;
   await sendMainMenu(sock, target, msg);
+});
+
+// CPM1 game button — classic catalogue categories
+onButton('order:cpm1', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
+  await sendButtons(sock, target, {
+    text: '\u{1F1FF}\u{1F1E6} *CPM1 CATEGORIES*\n\n_Pick a category:_',
+    buttons: CATEGORIES.map(c => ({ id: `order:cat:${c.id}`, text: c.label })),
+  }, msg);
+});
+
+// CPM2 game buttons — live catalogue from the app (paged)
+onButton('order:cpm2:', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
+  const page = parseInt(btnId.split(':')[2]) || 0;
+  await sendCpm2Menu(sock, target, page, msg);
+});
+
+// CPM2 product rows — detail + order handoff
+onButton('order:cpm2item:', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
+  const productId = btnId.split(':')[2];
+  await sendCpm2Item(sock, target, productId, msg);
 });
 
 // Category menus
