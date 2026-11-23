@@ -1,102 +1,513 @@
 {
   "landingPage": "https://wa.me/c/27683993925",
   "flags": {
-    "flag-cab": { "name": "Flag Cab", "price": "R15", "desc": "Full SA taxi livery", "catalog": "https://wa.me/p/26798546289737044/27683993925", "image": "assets/flags/flag-cab.png" },
-    "flag-siyaya": { "name": "Flag Siyaya", "price": "R15", "desc": "People's favorite minibus", "catalog": "https://wa.me/p/26070096075988386/27683993925", "image": "assets/flags/flag-siyaya.png" },
-    "flag-avanza": { "name": "Flag Avanza", "price": "R15", "desc": "Compact family ride", "catalog": "https://wa.me/p/26187822317537824/27683993925", "image": "assets/flags/flag-avanza.png" },
-    "flag-sprinter": { "name": "Flag Sprinter", "price": "R15", "desc": "Luxury van conversion", "catalog": "https://wa.me/p/26335222992781186/27683993925", "image": "assets/flags/flag-sprinter.png" },
-    "flag-towtruck": { "name": "Flag Tow-Truck", "price": "R15", "desc": "Recovery vehicle with flag wrap", "catalog": "https://wa.me/p/25805289842505802/27683993925", "image": "assets/flags/flag-towtruck.png" }
+    "flag-cab": {
+      "name": "Flag Cab",
+      "price": "R15",
+      "desc": "Full SA taxi livery",
+      "catalog": "https://wa.me/p/26798546289737044/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/1e8f3f37-e22e-4d9e-81a0-e7da50247f69.png"
+    },
+    "flag-siyaya": {
+      "name": "Flag Siyaya",
+      "price": "R15",
+      "desc": "People's favorite minibus",
+      "catalog": "https://wa.me/p/26070096075988386/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/e7de5362-fa6f-4b8a-bec5-4fa0520edbea.png"
+    },
+    "flag-avanza": {
+      "name": "Flag Avanza",
+      "price": "R15",
+      "desc": "Compact family ride",
+      "catalog": "https://wa.me/p/26187822317537824/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/ec02f7ab-90df-487b-b598-1b4da171c010.png"
+    },
+    "flag-sprinter": {
+      "name": "Flag Sprinter",
+      "price": "R15",
+      "desc": "Luxury van conversion",
+      "catalog": "https://wa.me/p/26335222992781186/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/b9f24c31-9260-4143-b82e-10ef2d319873.png"
+    },
+    "flag-towtruck": {
+      "name": "Flag Tow-Truck",
+      "price": "R15",
+      "desc": "Recovery vehicle with flag wrap",
+      "catalog": "https://wa.me/p/25805289842505802/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/e62d8043-c625-49e1-8d16-d4f86291300d.png"
+    }
   },
   "security": {
-    "adt-golf7": { "name": "ADT Golf 7 Escort Vehicle", "price": "R20", "desc": "Full security livery + light bar", "catalog": "https://wa.me/p/26579624104976974/27683993925", "image": "assets/security/adt-golf7.png" },
-    "adt-jeep": { "name": "ADT Jeep Grand Cherokee SRT", "price": "R20", "desc": "High-performance security", "catalog": "https://wa.me/p/26681824641423864/27683993925", "image": "assets/security/adt-jeep.png" },
-    "maganyeni-golf7": { "name": "Maganyeni Golf 7", "price": "R20", "desc": "Slammed Society exclusive", "catalog": "https://wa.me/p/26071206885867951/27683993925", "image": "assets/security/maganyeni-golf7.png" },
-    "ss-7seater": { "name": "SS 7-Seater Escort Vehicle", "price": "R20", "desc": "Meet control security", "catalog": "https://wa.me/p/34808124258801434/27683993925", "image": "assets/security/ss-7seater.png" },
-    "ram-escort": { "name": "Meet Control RAM Escort", "price": "R20", "desc": "RAM escort vehicle", "catalog": "https://wa.me/p/26051538054516265/27683993925", "image": "assets/security/ram-escort.png" },
-    "cadillac-escort": { "name": "Meet Control Cadillac Escalade Escort", "price": "R20", "desc": "Cadillac Escalade escort", "catalog": "https://wa.me/p/26472886442306291/27683993925", "image": "assets/security/cadillac-escort.png" }
+    "adt-golf7": {
+      "name": "ADT Golf 7 Escort Vehicle",
+      "price": "R20",
+      "desc": "Full security livery + light bar",
+      "catalog": "https://wa.me/p/26579624104976974/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/0d79a82b-f0ff-45bf-8ee6-1f953e370592.png"
+    },
+    "adt-jeep": {
+      "name": "ADT Jeep Grand Cherokee SRT",
+      "price": "R20",
+      "desc": "High-performance security",
+      "catalog": "https://wa.me/p/26681824641423864/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/f812c859-3a2f-4587-95ab-56a428906a57.png"
+    },
+    "maganyeni-golf7": {
+      "name": "Maganyeni Golf 7",
+      "price": "R20",
+      "desc": "Slammed Society exclusive",
+      "catalog": "https://wa.me/p/26071206885867951/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/7559225c-be90-4886-b3d8-9f1082ed0b89.png"
+    },
+    "ss-7seater": {
+      "name": "SS 7-Seater Escort Vehicle",
+      "price": "R20",
+      "desc": "Meet control security",
+      "catalog": "https://wa.me/p/34808124258801434/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/361f588c-6a34-4199-b0f5-3d85ae8f3379.png"
+    },
+    "ram-escort": {
+      "name": "Meet Control RAM Escort",
+      "price": "R20",
+      "desc": "RAM escort vehicle",
+      "catalog": "https://wa.me/p/26051538054516265/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/492dd589-9b3a-4570-9dcc-724f4d248877.png"
+    },
+    "cadillac-escort": {
+      "name": "Meet Control Cadillac Escalade Escort",
+      "price": "R20",
+      "desc": "Cadillac Escalade escort",
+      "catalog": "https://wa.me/p/26472886442306291/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/27b790f2-3d22-49ea-958d-4c79e3d8da1e.png"
+    }
   },
   "police": {
-    "jmpd-hilux": { "name": "JMPD Hilux", "price": "R20", "desc": "JMPD patrol vehicle", "catalog": "https://wa.me/p/26248058564829284/27683993925", "image": "assets/police/jmpd-hilux.png" },
-    "jmpd-i8": { "name": "JMPD BMW i8", "price": "R20", "desc": "JMPD high-speed interceptor", "catalog": "https://wa.me/p/35573931782206271/27683993925", "image": "assets/police/jmpd-i8.png" },
-    "jmpd-m5": { "name": "JMPD BMW M5", "price": "R20", "desc": "JMPD pursuit vehicle", "catalog": "https://wa.me/p/26280635224900768/27683993925", "image": "assets/police/jmpd-m5.png" },
-    "jmpd-scirocco": { "name": "JMPD Scirocco", "price": "R20", "desc": "JMPD undercover unit", "catalog": "https://wa.me/p/34148213144825987/27683993925", "image": "assets/police/jmpd-scirocco.png" },
-    "metro-gle": { "name": "Metro Police Mercedes GLE", "price": "R20", "desc": "Metro Police command vehicle", "catalog": "https://wa.me/p/26119228937739052/27683993925", "image": "assets/police/metro-gle.png" },
-    "saps-dodge-charger": { "name": "SAPS Dodge Charger", "price": "R20", "desc": "SAPS highway patrol", "catalog": "https://wa.me/c/27683993925", "image": "assets/police/saps-dodge-charger.png" }
+    "jmpd-hilux": {
+      "name": "JMPD Hilux",
+      "price": "R20",
+      "desc": "JMPD patrol vehicle",
+      "catalog": "https://wa.me/p/26248058564829284/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/fa680dca-53e5-4b4d-80ce-ab3dcdbdd5bc.png"
+    },
+    "jmpd-i8": {
+      "name": "JMPD BMW i8",
+      "price": "R20",
+      "desc": "JMPD high-speed interceptor",
+      "catalog": "https://wa.me/p/35573931782206271/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/61bd644e-a482-4656-9a20-ad3698fcc515.png"
+    },
+    "jmpd-m5": {
+      "name": "JMPD BMW M5",
+      "price": "R20",
+      "desc": "JMPD pursuit vehicle",
+      "catalog": "https://wa.me/p/26280635224900768/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/b921e3b8-6c79-464e-8252-5a40faf22eb2.png"
+    },
+    "jmpd-scirocco": {
+      "name": "JMPD Scirocco",
+      "price": "R20",
+      "desc": "JMPD undercover unit",
+      "catalog": "https://wa.me/p/34148213144825987/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/c956d939-0953-41ea-8d9c-a3379d1cf2e2.png"
+    },
+    "metro-gle": {
+      "name": "Metro Police Mercedes GLE",
+      "price": "R20",
+      "desc": "Metro Police command vehicle",
+      "catalog": "https://wa.me/p/26119228937739052/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/4a75683c-b304-4b90-a633-b97ea930e42a.png"
+    },
+    "saps-dodge-charger": {
+      "name": "SAPS Dodge Charger",
+      "price": "R20",
+      "desc": "SAPS highway patrol",
+      "catalog": "https://wa.me/c/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/e18a1914-0e39-4490-9117-15c1510412c1.png"
+    }
   },
   "premium": {
-    "nissan-350z": { "name": "Nissan 350Z", "price": "R20", "catalog": "" },
-    "nissan-180sx": { "name": "Nissan 180SX", "price": "R20", "catalog": "" },
-    "toyota-camry": { "name": "Toyota Camry", "price": "R20", "catalog": "" },
-    "nissan-skyline-r32": { "name": "Nissan Skyline R32 GT-R", "price": "R20", "catalog": "" },
-    "toyota-ae86": { "name": "Toyota Sprinter Treno AE86", "price": "R20", "catalog": "" },
-    "mazda-mx5": { "name": "Mazda MX-5 NA", "price": "R20", "catalog": "" },
-    "mitsubishi-eclipse": { "name": "Mitsubishi Eclipse", "price": "R20", "catalog": "" },
-    "toyota-mark2": { "name": "Toyota Mark II", "price": "R20", "catalog": "" },
-    "hudson-hornet": { "name": "Hudson Hornet Coupe", "price": "R20", "catalog": "" },
-    "subaru-legacy": { "name": "Subaru Legacy", "price": "R20", "catalog": "" },
-    "mitsubishi-evo-x": { "name": "Mitsubishi Lancer Evolution X", "price": "R20", "catalog": "" },
-    "subaru-wrx": { "name": "Subaru Impreza WRX STI", "price": "R20", "catalog": "" },
-    "kia-stinger": { "name": "Kia Stinger", "price": "R20", "catalog": "" },
-    "bmw-m5-e60": { "name": "BMW M5 E60", "price": "R20", "catalog": "" },
-    "mercedes-g55": { "name": "Mercedes-Benz G55 W461", "price": "R20", "catalog": "" },
-    "infiniti-g37": { "name": "Infiniti G37 Coupe", "price": "R20", "catalog": "" },
-    "dodge-charger": { "name": "Dodge Charger", "price": "R20", "catalog": "" },
-    "mercedes-c63": { "name": "Mercedes-Benz C63 AMG", "price": "R20", "catalog": "" },
-    "mercedes-e63": { "name": "Mercedes-Benz E63 AMG", "price": "R20", "catalog": "" },
-    "vw-golf-mk2": { "name": "Volkswagen Golf MK2", "price": "R20", "catalog": "" },
-    "vw-golf-mk7": { "name": "Volkswagen Golf MK7", "price": "R20", "catalog": "" },
-    "bmw-x5m": { "name": "BMW X5M E70", "price": "R20", "catalog": "" },
-    "bmw-x7m": { "name": "BMW X7M G07 M60i", "price": "R20", "catalog": "" },
-    "ford-explorer": { "name": "Ford Explorer", "price": "R20", "catalog": "" },
-    "dodge-durango": { "name": "Dodge Durango", "price": "R20", "catalog": "" },
-    "nissan-skyline": { "name": "Nissan Skyline (Various)", "price": "R20", "catalog": "" },
-    "bmw-m3": { "name": "BMW M3 (E30/E46/F80)", "price": "R20", "catalog": "" },
-    "bmw-m4": { "name": "BMW M4", "price": "R20", "catalog": "" },
-    "bmw-m5-f90": { "name": "BMW M5 F90", "price": "R20", "catalog": "" },
-    "bmw-m8": { "name": "BMW M8", "price": "R20", "catalog": "" },
-    "mercedes-amg-gt": { "name": "Mercedes-AMG GT", "price": "R20", "catalog": "" },
-    "mercedes-sclass": { "name": "Mercedes-Benz S-Class", "price": "R20", "catalog": "" },
-    "dodge-viper": { "name": "Dodge SRT Viper", "price": "R20", "catalog": "" },
-    "laferrari": { "name": "LaFerrari", "price": "R20", "catalog": "" },
-    "f1-car": { "name": "Formula 1 Car", "price": "R20", "catalog": "" },
-    "ariel-nomad": { "name": "Ariel Nomad / Buggy", "price": "R20", "catalog": "" },
-    "fleetwood": { "name": "Fleetwood (Classic)", "price": "R20", "catalog": "" },
-    "bounder": { "name": "Bounder (RV)", "price": "R20", "catalog": "" },
-    "jeep-gladiator": { "name": "Jeep Gladiator", "price": "R20", "catalog": "" },
-    "lotus": { "name": "Lotus", "price": "R20", "catalog": "" },
-    "silverado": { "name": "Silverado", "price": "R20", "catalog": "" },
-    "mercedes-w124": { "name": "Mercedes W124", "price": "R20", "catalog": "" },
-    "alfa-romeo": { "name": "Alfa Romeo", "price": "R20", "catalog": "" },
-    "bmw-850i": { "name": "BMW 850i", "price": "R20", "catalog": "" },
-    "ford-f650": { "name": "Ford F650", "price": "R20", "catalog": "" },
-    "toyota-fortuner": { "name": "Toyota Fortuner", "price": "R20", "catalog": "" },
-    "bmw-m2": { "name": "BMW M2", "price": "R20", "catalog": "" },
-    "mazda-rx7": { "name": "Mazda RX-7", "price": "R20", "catalog": "" }
+    "nissan-350z": {
+      "name": "Nissan 350Z",
+      "price": "R20",
+      "catalog": ""
+    },
+    "nissan-180sx": {
+      "name": "Nissan 180SX",
+      "price": "R20",
+      "catalog": ""
+    },
+    "toyota-camry": {
+      "name": "Toyota Camry",
+      "price": "R20",
+      "catalog": ""
+    },
+    "nissan-skyline-r32": {
+      "name": "Nissan Skyline R32 GT-R",
+      "price": "R20",
+      "catalog": ""
+    },
+    "toyota-ae86": {
+      "name": "Toyota Sprinter Treno AE86",
+      "price": "R20",
+      "catalog": ""
+    },
+    "mazda-mx5": {
+      "name": "Mazda MX-5 NA",
+      "price": "R20",
+      "catalog": ""
+    },
+    "mitsubishi-eclipse": {
+      "name": "Mitsubishi Eclipse",
+      "price": "R20",
+      "catalog": ""
+    },
+    "toyota-mark2": {
+      "name": "Toyota Mark II",
+      "price": "R20",
+      "catalog": ""
+    },
+    "hudson-hornet": {
+      "name": "Hudson Hornet Coupe",
+      "price": "R20",
+      "catalog": ""
+    },
+    "subaru-legacy": {
+      "name": "Subaru Legacy",
+      "price": "R20",
+      "catalog": ""
+    },
+    "mitsubishi-evo-x": {
+      "name": "Mitsubishi Lancer Evolution X",
+      "price": "R20",
+      "catalog": ""
+    },
+    "subaru-wrx": {
+      "name": "Subaru Impreza WRX STI",
+      "price": "R20",
+      "catalog": ""
+    },
+    "kia-stinger": {
+      "name": "Kia Stinger",
+      "price": "R20",
+      "catalog": ""
+    },
+    "bmw-m5-e60": {
+      "name": "BMW M5 E60",
+      "price": "R20",
+      "catalog": ""
+    },
+    "mercedes-g55": {
+      "name": "Mercedes-Benz G55 W461",
+      "price": "R20",
+      "catalog": ""
+    },
+    "infiniti-g37": {
+      "name": "Infiniti G37 Coupe",
+      "price": "R20",
+      "catalog": ""
+    },
+    "dodge-charger": {
+      "name": "Dodge Charger",
+      "price": "R20",
+      "catalog": ""
+    },
+    "mercedes-c63": {
+      "name": "Mercedes-Benz C63 AMG",
+      "price": "R20",
+      "catalog": ""
+    },
+    "mercedes-e63": {
+      "name": "Mercedes-Benz E63 AMG",
+      "price": "R20",
+      "catalog": ""
+    },
+    "vw-golf-mk2": {
+      "name": "Volkswagen Golf MK2",
+      "price": "R20",
+      "catalog": ""
+    },
+    "vw-golf-mk7": {
+      "name": "Volkswagen Golf MK7",
+      "price": "R20",
+      "catalog": ""
+    },
+    "bmw-x5m": {
+      "name": "BMW X5M E70",
+      "price": "R20",
+      "catalog": ""
+    },
+    "bmw-x7m": {
+      "name": "BMW X7M G07 M60i",
+      "price": "R20",
+      "catalog": ""
+    },
+    "ford-explorer": {
+      "name": "Ford Explorer",
+      "price": "R20",
+      "catalog": ""
+    },
+    "dodge-durango": {
+      "name": "Dodge Durango",
+      "price": "R20",
+      "catalog": ""
+    },
+    "nissan-skyline": {
+      "name": "Nissan Skyline (Various)",
+      "price": "R20",
+      "catalog": ""
+    },
+    "bmw-m3": {
+      "name": "BMW M3 (E30/E46/F80)",
+      "price": "R20",
+      "catalog": ""
+    },
+    "bmw-m4": {
+      "name": "BMW M4",
+      "price": "R20",
+      "catalog": ""
+    },
+    "bmw-m5-f90": {
+      "name": "BMW M5 F90",
+      "price": "R20",
+      "catalog": ""
+    },
+    "bmw-m8": {
+      "name": "BMW M8",
+      "price": "R20",
+      "catalog": ""
+    },
+    "mercedes-amg-gt": {
+      "name": "Mercedes-AMG GT",
+      "price": "R20",
+      "catalog": ""
+    },
+    "mercedes-sclass": {
+      "name": "Mercedes-Benz S-Class",
+      "price": "R20",
+      "catalog": ""
+    },
+    "dodge-viper": {
+      "name": "Dodge SRT Viper",
+      "price": "R20",
+      "catalog": ""
+    },
+    "laferrari": {
+      "name": "LaFerrari",
+      "price": "R20",
+      "catalog": ""
+    },
+    "f1-car": {
+      "name": "Formula 1 Car",
+      "price": "R20",
+      "catalog": ""
+    },
+    "ariel-nomad": {
+      "name": "Ariel Nomad / Buggy",
+      "price": "R20",
+      "catalog": ""
+    },
+    "fleetwood": {
+      "name": "Fleetwood (Classic)",
+      "price": "R20",
+      "catalog": ""
+    },
+    "bounder": {
+      "name": "Bounder (RV)",
+      "price": "R20",
+      "catalog": ""
+    },
+    "jeep-gladiator": {
+      "name": "Jeep Gladiator",
+      "price": "R20",
+      "catalog": ""
+    },
+    "lotus": {
+      "name": "Lotus",
+      "price": "R20",
+      "catalog": ""
+    },
+    "silverado": {
+      "name": "Silverado",
+      "price": "R20",
+      "catalog": ""
+    },
+    "mercedes-w124": {
+      "name": "Mercedes W124",
+      "price": "R20",
+      "catalog": ""
+    },
+    "alfa-romeo": {
+      "name": "Alfa Romeo",
+      "price": "R20",
+      "catalog": ""
+    },
+    "bmw-850i": {
+      "name": "BMW 850i",
+      "price": "R20",
+      "catalog": ""
+    },
+    "ford-f650": {
+      "name": "Ford F650",
+      "price": "R20",
+      "catalog": ""
+    },
+    "toyota-fortuner": {
+      "name": "Toyota Fortuner",
+      "price": "R20",
+      "catalog": ""
+    },
+    "bmw-m2": {
+      "name": "BMW M2",
+      "price": "R20",
+      "catalog": ""
+    },
+    "mazda-rx7": {
+      "name": "Mazda RX-7",
+      "price": "R20",
+      "catalog": ""
+    }
   },
   "mods": {
-    "callipers-red": { "name": "Glowing Callipers — Red", "price": "R5", "catalog": "https://wa.me/p/35459613880304521/27683993925", "image": "assets/mods/callipers-red.png" },
-    "callipers-blue": { "name": "Glowing Callipers — Blue", "price": "R5", "catalog": "https://wa.me/p/26053728997580967/27683993925", "image": "assets/mods/callipers-blue.png" },
-    "callipers-green": { "name": "Glowing Callipers — Green", "price": "R5", "catalog": "https://wa.me/p/26481254404826847/27683993925", "image": "assets/mods/callipers-green.png" },
-    "callipers-yellow": { "name": "Glowing Callipers — Yellow", "price": "R5", "catalog": "https://wa.me/p/26079613561695511/27683993925", "image": "assets/mods/callipers-yellow.png" },
-    "callipers-purple": { "name": "Glowing Callipers — Purple", "price": "R5", "catalog": "https://wa.me/p/26012203595138255/27683993925", "image": "assets/mods/callipers-purple.png" },
-    "callipers-orange": { "name": "Glowing Callipers — Orange", "price": "R5", "catalog": "https://wa.me/p/26310726008592041/27683993925", "image": "assets/mods/callipers-orange.png" },
-    "callipers-cyan": { "name": "Glowing Callipers — Cyan", "price": "R5", "catalog": "https://wa.me/p/25884184691281202/27683993925", "image": "assets/mods/callipers-cyan.png" },
-    "headlights-red": { "name": "Glowing Headlights — Red", "price": "R5", "catalog": "https://wa.me/p/26113968261585540/27683993925", "image": "assets/mods/headlights-red.png" },
-    "headlights-blue": { "name": "Glowing Headlights — Blue", "price": "R5", "catalog": "https://wa.me/p/26670536685872503/27683993925", "image": "assets/mods/headlights-blue.png" },
-    "headlights-green": { "name": "Glowing Headlights — Green", "price": "R5", "catalog": "https://wa.me/p/26274803135511340/27683993925", "image": "assets/mods/headlights-green.png" },
-    "headlights-yellow": { "name": "Glowing Headlights — Yellow", "price": "R5", "catalog": "https://wa.me/p/25633413236338624/27683993925", "image": "assets/mods/headlights-yellow.png" },
-    "headlights-purple": { "name": "Glowing Headlights — Purple", "price": "R5", "catalog": "https://wa.me/p/26405561025776702/27683993925", "image": "assets/mods/headlights-purple.png" },
-    "headlights-orange": { "name": "Glowing Headlights — Orange", "price": "R5", "catalog": "https://wa.me/p/26405561025776702/27683993925", "image": "assets/mods/headlights-orange.png" },
-    "headlights-cyan": { "name": "Glowing Headlights — Cyan", "price": "R5", "catalog": "https://wa.me/p/25722439314123768/27683993925", "image": "assets/mods/headlights-cyan.png" },
-    "headlights-pink": { "name": "Glowing Headlights — Pink", "price": "R5", "catalog": "https://wa.me/p/26093723996987921/27683993925", "image": "assets/mods/headlights-pink.png" },
-    "shiny-rims": { "name": "Shiny Rims Mod", "price": "R5", "desc": "Ultra-reflective finish", "catalog": "https://wa.me/p/26035156802813060/27683993925", "image": "assets/mods/shiny-rims.png" },
-    "roof-rack": { "name": "Roof Rack/Box Mod", "price": "R5", "desc": "Custom roof storage", "catalog": "", "image": "assets/mods/roof-rack.png" }
+    "callipers-red": {
+      "name": "Glowing Callipers — Red",
+      "price": "R5",
+      "catalog": "https://wa.me/p/35459613880304521/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/551627fa-2608-4300-a609-b9720732a826.png"
+    },
+    "callipers-blue": {
+      "name": "Glowing Callipers — Blue",
+      "price": "R5",
+      "catalog": "https://wa.me/p/26053728997580967/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/c79e141d-bd38-4168-b8fd-4be8fe55eff2.png"
+    },
+    "callipers-green": {
+      "name": "Glowing Callipers — Green",
+      "price": "R5",
+      "catalog": "https://wa.me/p/26481254404826847/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/84c15333-6d1f-478a-aad7-b6a865aa323e.png"
+    },
+    "callipers-yellow": {
+      "name": "Glowing Callipers — Yellow",
+      "price": "R5",
+      "catalog": "https://wa.me/p/26079613561695511/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/8b2c0f68-1505-4590-b043-aed1cfc04653.png"
+    },
+    "callipers-purple": {
+      "name": "Glowing Callipers — Purple",
+      "price": "R5",
+      "catalog": "https://wa.me/p/26012203595138255/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/641ab964-e6a1-4ade-ab56-4bd0a86f57b0.png"
+    },
+    "callipers-orange": {
+      "name": "Glowing Callipers — Orange",
+      "price": "R5",
+      "catalog": "https://wa.me/p/26310726008592041/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/824f667e-316c-4533-b1f1-48b2c071f4c4.png"
+    },
+    "callipers-cyan": {
+      "name": "Glowing Callipers — Cyan",
+      "price": "R5",
+      "catalog": "https://wa.me/p/25884184691281202/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/fdd0fac6-425f-432b-978d-0bc44610be4b.png"
+    },
+    "headlights-red": {
+      "name": "Glowing Headlights — Red",
+      "price": "R5",
+      "catalog": "https://wa.me/p/26113968261585540/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/e03e4986-5ec1-42a0-8018-c6f3b9d19e89.png"
+    },
+    "headlights-blue": {
+      "name": "Glowing Headlights — Blue",
+      "price": "R5",
+      "catalog": "https://wa.me/p/26670536685872503/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/71952f90-411a-4c50-a5da-100197b07f8d.png"
+    },
+    "headlights-green": {
+      "name": "Glowing Headlights — Green",
+      "price": "R5",
+      "catalog": "https://wa.me/p/26274803135511340/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/518905bb-c297-42e6-8d20-cd4a639e5c42.png"
+    },
+    "headlights-yellow": {
+      "name": "Glowing Headlights — Yellow",
+      "price": "R5",
+      "catalog": "https://wa.me/p/25633413236338624/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/a29eef22-126c-4c0f-ba4c-cd741afda9e3.png"
+    },
+    "headlights-purple": {
+      "name": "Glowing Headlights — Purple",
+      "price": "R5",
+      "catalog": "https://wa.me/p/26405561025776702/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/f62944bf-a192-4b85-aee1-448cb46cb502.png"
+    },
+    "headlights-orange": {
+      "name": "Glowing Headlights — Orange",
+      "price": "R5",
+      "catalog": "https://wa.me/p/26405561025776702/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/9ca18f99-c718-4efe-a9bc-deb02a54f469.png"
+    },
+    "headlights-cyan": {
+      "name": "Glowing Headlights — Cyan",
+      "price": "R5",
+      "catalog": "https://wa.me/p/25722439314123768/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/56693997-289b-4dc1-80d6-b2b12f2f7314.png"
+    },
+    "headlights-pink": {
+      "name": "Glowing Headlights — Pink",
+      "price": "R5",
+      "catalog": "https://wa.me/p/26093723996987921/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/bfeeb5c6-c1fc-48cb-8629-030fab6cf63f.png"
+    },
+    "shiny-rims": {
+      "name": "Shiny Rims Mod",
+      "price": "R5",
+      "desc": "Ultra-reflective finish",
+      "catalog": "https://wa.me/p/26035156802813060/27683993925",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/64563a2d-e25c-4f16-9b13-de18bd97d826.png"
+    },
+    "roof-rack": {
+      "name": "Roof Rack/Box Mod",
+      "price": "R5",
+      "desc": "Custom roof storage",
+      "catalog": "",
+      "image": "assets/mods/roof-rack.png"
+    }
   },
   "accounts": {
-    "starter": { "name": "Starter Account", "price": "R20", "desc": "10M Cash + 3 Cars", "catalog": "", "image": "assets/accounts/starter.png" },
-    "pro": { "name": "Pro Account", "price": "R35", "desc": "25M Cash + 6 Cars", "catalog": "", "image": "assets/accounts/pro.png" },
-    "elite": { "name": "Elite Account", "price": "R50", "desc": "50M Cash + 9 Cars", "catalog": "", "image": "assets/accounts/elite.png" },
-    "coins-500k": { "name": "500K Coins", "price": "R10", "desc": "Max coin package", "catalog": "", "image": "assets/accounts/coins-500k.png" },
-    "house-3": { "name": "House-3 Unlock", "price": "R10", "desc": "Premium property access", "catalog": "", "image": "assets/accounts/house-3.png" }
+    "starter": {
+      "name": "Starter Account",
+      "price": "R20",
+      "desc": "10M Cash + 3 Cars",
+      "catalog": "",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/440a9e25-7033-4394-9c28-39cd7ba6f5db.png"
+    },
+    "pro": {
+      "name": "Pro Account",
+      "price": "R35",
+      "desc": "25M Cash + 6 Cars",
+      "catalog": "",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/6005e47c-2dd6-4297-993d-c622c981e808.png"
+    },
+    "elite": {
+      "name": "Elite Account",
+      "price": "R50",
+      "desc": "50M Cash + 9 Cars",
+      "catalog": "",
+      "image": "https://cpm2-bay.vercel.app/api/store/admin/uploads/73f6c613-9e04-4e9c-913d-9cdbe08d6f0e.png"
+    },
+    "coins-500k": {
+      "name": "500K Coins",
+      "price": "R10",
+      "desc": "Max coin package",
+      "catalog": "",
+      "image": "assets/accounts/coins-500k.png"
+    },
+    "house-3": {
+      "name": "House-3 Unlock",
+      "price": "R10",
+      "desc": "Premium property access",
+      "catalog": "",
+      "image": "assets/accounts/house-3.png"
+    }
   }
 }
