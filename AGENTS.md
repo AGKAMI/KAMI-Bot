@@ -23,9 +23,9 @@ WhatsApp bot with 100+ commands — media, games, AI, admin, fun. Built with Bai
 
 - **SFTP**: `fi9.bot-hosting.cloud:2022`
 - **SFTP User**: `b0665152-9b54-4ede-a11f-45c4a6641704.u9mg7ylz`
-- **SFTP Pass**: `Pu-2Ym7xDUcvhIndrS9VXW9h` (rotated 2026-10-31 — old `hswNZ_…` is dead)
-- **MCP API Key (LIVE box)**: `bhk_f865a0e5178f408651b0463499875ec94b4e1f627c5f01c0` (`POST https://bot-hosting.net/api/mcp`, JSON-RPC `tools/call` — verified working 2026-10-31: `deployments_power` restart + file/shell tools). Old key `bhk_b77e…` is dead.
-- **Pterodactyl key**: `ptlc_b2LS7kbmnkfIZCbC6MTRL1RWneTfpftTU531z5sBnLC` + **Server ID** `08b6894d` — STALE box only.
+- **SFTP Pass**: rotated 2026-10-31 — NOT stored in this repo (the old `hswNZ_…` value is dead; keep the current one in your password manager / the deploying shell's env)
+- **MCP API Key (LIVE box)**: NOT stored in this repo. Lives in the GitHub Actions secret `BOT_HOSTING_API_KEY`; the deploy workflow uses it. Old `bhk_b77e…` key is dead.
+- **Pterodactyl key**: STALE box only (dead box + `08b6894d`) — not stored here, and not needed for anything current.
 
 ### Gotchas
 
