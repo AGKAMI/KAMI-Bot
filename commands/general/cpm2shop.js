@@ -49,28 +49,53 @@ function stockLabel(p) {
 
 // ── menus ────────────────────────────────────────────────────
 
-async function sendCpm2Menu(sock, chatId, page, quoted) {
+/** CPM2 section picker — same shape as CPM1: accounts / cars. */
+async function sendCpm2Sections(sock, chatId, quoted) {
+  await sendButtons(sock, chatId, {
+    text: '\u{1F3AE} *CPM2 STORE*\n\n_Pick what you\'re shopping for:_',
+    buttons: [
+      { id: 'order:cpm2:accounts:0', text: '\u{1F464} Accounts' },
+      { id: 'order:cpm2:cars:0', text: '\u{1F697} Cars' },
+      { id: 'order:main', text: '\u2B05\u{FE0F} Back' },
+    ],
+  }, quoted);
+}
+
+/** One CPM2 section, live from the app. `section` is 'cars' or 'accounts'. */
+async function sendCpm2Section(sock, chatId, section, page, quoted) {
+  const isAccounts = section === 'accounts';
+  const url = isAccounts
+    ? `${API_BASE}/products?game=cpm2&kind=account`
+    : `${API_BASE}/products?game=cpm2`;
+
   let products;
   try {
-    products = await fetchCpm2Catalogue();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const resp = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const body = await resp.json();
+    products = Array.isArray(body?.products) ? body.products : [];
   } catch (err) {
+    const label = isAccounts ? 'CPM2 ACCOUNTS' : 'CPM2 CARS';
+    const emoji = isAccounts ? '\u{1F464}' : '\u{1F697}';
     return sendButtons(sock, chatId, {
-      text: `❌ *CAN'T REACH THE GARAGE*\n\n_Catalogue unavailable right now — ${voice.tag('err')}_\n\n_Try again in a moment._`,
+      text: `❌ *CAN'T REACH THE STORE*\n\n_${label} unavailable right now — ${voice.tag('err')}_`,
       buttons: [
-        { id: 'order:cpm2:0', text: '🔄 Try Again' },
-        { id: 'order:main', text: '⬅️ Back' },
+        { id: `order:cpm2:${section}:0`, text: '\u{1F504} Try Again' },
+        { id: 'order:cpm2:sections', text: '\u2B05\u{FE0F} Back' },
       ],
     }, quoted);
   }
 
+  const label = isAccounts ? 'CPM2 ACCOUNTS' : 'CPM2 CARS';
+  const emoji = isAccounts ? '\u{1F464}' : '\u{1F697}';
+
   if (products.length === 0) {
-    // No CPM1 shortcut here: the empty CPM2 shelf is not the place to advertise
-    // another game. Back goes to the game picker, where CPM1 is one tap away.
     return sendButtons(sock, chatId, {
-      text: `🏁 *CPM2 STORE*\n\n_No CPM2 builds live yet — check back soon._`,
-      buttons: [
-        { id: 'order:main', text: '⬅️ Back' },
-      ],
+      text: `${emoji} *${label}*\n\n\u23F3 _Nothing listed here yet._`,
+      buttons: [{ id: 'order:cpm2:sections', text: '\u2B05\u{FE0F} Back' }],
     }, quoted);
   }
 
@@ -78,23 +103,22 @@ async function sendCpm2Menu(sock, chatId, page, quoted) {
   const safePage = Math.max(0, Math.min(page, totalPages - 1));
   const start = safePage * PER_PAGE;
   const batch = products.slice(start, start + PER_PAGE);
+  const isLast = start + PER_PAGE >= products.length;
 
-  const buttons = batch.map((p) => ({
+  const itemSlice = isLast && batch.length === PER_PAGE ? batch.slice(0, PER_PAGE - 1) : batch;
+  const buttons = itemSlice.map((p) => ({
     id: `order:cpm2item:${p.id}`,
-    text: `🏁 ${p.name} — ${formatCents(p.basePriceCents, p.currency)}`,
+    text: `${emoji} ${p.name} — ${formatCents(p.basePriceCents, p.currency)}`,
   }));
 
-  // Nav buttons — Prev / Next / Back. No CPM1 button here on purpose: CPM1
-  // dangling off the CPM2 shelf was confusing, and Back reaches the game
-  // picker where CPM1 is a single tap.
-  if (safePage > 0) buttons.push({ id: `order:cpm2:${safePage - 1}`, text: '⬅️ Prev' });
-  if (start + PER_PAGE < products.length) buttons.push({ id: `order:cpm2:${safePage + 1}`, text: 'Next ➡️' });
-  buttons.push({ id: 'order:main', text: '⬅️ Back' });
+  if (safePage > 0) buttons.push({ id: `order:cpm2:${section}:${safePage - 1}`, text: '\u2B05\u{FE0F} Prev' });
+  if (!isLast) buttons.push({ id: `order:cpm2:${section}:${safePage + 1}`, text: 'Next \u{1F51B}' });
+  if (isLast) buttons.push({ id: 'order:cpm2:sections', text: '\u2B05\u{FE0F} Back to CPM2' });
 
   await sendButtons(sock, chatId, {
     text: safePage === 0
-      ? `🏁 *CPM2 STORE*\n\n_${products.length} live builds — pick one:_`
-      : `🏁 *CPM2 STORE* — page ${safePage + 1}/${totalPages}:`,
+      ? `${emoji} *${label}*\n\n_${products.length} available — pick one:_`
+      : `${emoji} *${label}* — page ${safePage + 1}/${totalPages}:`,
     buttons,
   }, quoted);
 }
@@ -106,7 +130,7 @@ async function sendCpm2Item(sock, chatId, productId, quoted) {
   } catch (err) {
     return sendButtons(sock, chatId, {
       text: `❌ *CAN'T REACH THE GARAGE*\n\n_Try again in a moment._`,
-      buttons: [{ id: 'order:cpm2:0', text: '⬅️ Back to CPM2' }],
+      buttons: [{ id: 'order:cpm2:sections', text: '⬅️ Back to CPM2' }],
     }, quoted);
   }
 
@@ -114,7 +138,7 @@ async function sendCpm2Item(sock, chatId, productId, quoted) {
   if (!p) {
     return sendButtons(sock, chatId, {
       text: `❌ *BUILD NOT FOUND*\n\n_It may have sold or been unpublished._`,
-      buttons: [{ id: 'order:cpm2:0', text: '⬅️ Back to CPM2' }],
+      buttons: [{ id: 'order:cpm2:sections', text: '⬅️ Back to CPM2' }],
     }, quoted);
   }
 
@@ -131,7 +155,7 @@ async function sendCpm2Item(sock, chatId, productId, quoted) {
   const buttons = [
     { text: '🛒 Order It Yourself', url: `${WEB_BASE}/store/products/${p.id}` },
     { text: '💬 Chat To The Owner', url: OWNER_WA },
-    { id: 'order:cpm2:0', text: '⬅️ Back to CPM2' },
+    { id: 'order:cpm2:sections', text: '⬅️ Back to CPM2' },
   ];
 
   // Image BY URL — WhatsApp fetches it; nothing is ever written to bot disk.
@@ -152,8 +176,9 @@ module.exports = {
   category: 'general',
   description: 'Browse the live CPM2 catalogue from the VANTA GARAGE app',
   usage: '.cpm2',
-  sendCpm2Menu, // exported for order.js's CPM2 button
-  sendCpm2Item, // exported for order.js's CPM2 product rows
+  sendCpm2Sections, // exported for order.js's CPM2 button
+    sendCpm2Section, // exported for order.js's CPM2 section rows
+    sendCpm2Item, // exported for order.js's CPM2 product rows
 
   async execute(sock, msg, args, extra) {
     try {
@@ -163,7 +188,7 @@ module.exports = {
       if (isGroup) {
         await sock.sendMessage(from, { text: `🏁 _check your DMs for the CPM2 garage._` }, { quoted: msg });
       }
-      await sendCpm2Menu(sock, target, 0, msg);
+      await sendCpm2Sections(sock, target, msg);
     } catch (error) {
       console.error('[CPM2SHOP] command error:', error);
       extra.fail();

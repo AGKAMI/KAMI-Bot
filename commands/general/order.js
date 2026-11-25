@@ -12,7 +12,7 @@ const config = require('../../config');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { pick, SLANG, voice } = require('../../utils/format');
 const { normalizeJidWithLid } = require('../../utils/jidHelper');
-const { sendCpm2Menu, sendCpm2Item } = require('./cpm2shop');
+const { sendCpm2Sections, sendCpm2Section, sendCpm2Item } = require('./cpm2shop');
 
 // Resolve DM JID from sender (redirects group clicks to DM)
 function toDmJid(sender) {
@@ -103,9 +103,9 @@ async function sendMainMenu(sock, chatId, quoted) {
   // No flag emoji on the game buttons: the SA flag is a flag-CAR marker, and
   // CPM1 is not a South African game, so it carried no meaning here.
   const gameButtons = [
-    { id: 'order:cpm2:0', text: 'CPM2 Store' },
-    { id: 'order:cpm1', text: 'CPM1 Store' },
-  ];
+      { id: 'order:cpm2:sections', text: 'CPM2 Store' },
+      { id: 'order:cpm1', text: 'CPM1 Store' },
+    ];
   await sendButtons(sock, chatId, {
     text: '\u{1F6D2} *MAKE ORDER*\n\n_Pick a game:_',
     buttons: gameButtons,
@@ -317,23 +317,142 @@ onButton('order:main', async (sock, msg, from, sender, btnId) => {
   await sendMainMenu(sock, target, msg);
 });
 
-// CPM1 game button — classic catalogue categories
+// ── CPM1 sections (accounts / cars / services) ────────────────
+// Same shape as the app: pick a game, then pick what you're shopping for.
+// Source is the bot's own catalog.json, grouped into the three sections.
+
+const CPM1_CAR_CATS = ['flags', 'security', 'police', 'premium'];
+
+function cpm1CarItems() {
+  const out = [];
+  for (const cat of CPM1_CAR_CATS) {
+    for (const [key, item] of Object.entries(catalog[cat] || {})) {
+      out.push({ key, item, cat });
+    }
+  }
+  return out;
+}
+
+function cpm1AccountItems() {
+  return Object.entries(catalog.accounts || {}).map(([key, item]) => ({ key, item }));
+}
+
+async function sendCpm1Sections(sock, chatId, quoted) {
+  await sendButtons(sock, chatId, {
+    text: '\u{1F3AE} *CPM1 STORE*\n\n_Pick what you\'re shopping for:_',
+    buttons: [
+      { id: 'order:cpm1:accounts', text: '\u{1F464} Accounts' },
+      { id: 'order:cpm1:cars', text: '\u{1F697} Cars' },
+      { id: 'order:cpm1:services', text: '\u{1F527} Services' },
+      { id: 'order:main', text: '\u2B05\u{FE0F} Back' },
+    ],
+  }, quoted);
+}
+
+/** Generic paged list of catalog items, 9 per message, Back on the last. */
+async function sendCpm1List(sock, chatId, title, emoji, entries, page, backId, quoted) {
+  const PER = 9;
+  const totalPages = Math.max(1, Math.ceil(entries.length / PER));
+  const safePage = Math.max(0, Math.min(page, totalPages - 1));
+  const start = safePage * PER;
+  const batch = entries.slice(start, start + PER);
+  const isLast = start + PER >= entries.length;
+
+  const itemSlice = isLast && batch.length === PER ? batch.slice(0, PER - 1) : batch;
+  const buttons = itemSlice.map((e) => ({
+    id: `order:item:${e.key}`,
+    text: `${emoji} ${e.item.name} — ${e.item.price}`,
+  }));
+
+  if (safePage > 0) buttons.push({ id: `${backId}:${safePage - 1}`, text: '\u2B05\u{FE0F} Prev' });
+  if (!isLast) buttons.push({ id: `${backId}:${safePage + 1}`, text: 'Next \u{1F51B}' });
+  if (isLast) buttons.push({ id: 'order:cpm1', text: '\u2B05\u{FE0F} Back to CPM1' });
+
+  await sendButtons(sock, chatId, {
+    text: safePage === 0
+      ? `${emoji} *${title}*\n\n_${entries.length} available — pick one:_`
+      : `${emoji} *${title}* — page ${safePage + 1}/${totalPages}:`,
+    buttons,
+  }, quoted);
+}
+
+// CPM1 game button — section picker (accounts / cars / services)
 onButton('order:cpm1', async (sock, msg, from, sender, btnId) => {
   const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
   if (!target) return;
-  await sendButtons(sock, target, {
-    // No SA flag in the header either -- it only ever marked flag cars.
-    text: '*CPM1 CATEGORIES*\n\n_Pick a category:_',
-    buttons: CATEGORIES.map(c => ({ id: `order:cat:${c.id}`, text: c.label })),
-  }, msg);
+  await sendCpm1Sections(sock, target, msg);
 });
 
-// CPM2 game buttons — live catalogue from the app (paged)
-onButton('order:cpm2:', async (sock, msg, from, sender, btnId) => {
+// CPM1 → Accounts
+onButton('order:cpm1:accounts', async (sock, msg, from, sender, btnId) => {
   const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
   if (!target) return;
-  const page = parseInt(btnId.split(':')[2]) || 0;
-  await sendCpm2Menu(sock, target, page, msg);
+  const items = cpm1AccountItems();
+  if (items.length === 0) {
+    return sendButtons(sock, target, {
+      text: '\u{1F464} *CPM1 ACCOUNTS*\n\n\u23F3 _None yet._',
+      buttons: [{ id: 'order:cpm1', text: '\u2B05\u{FE0F} Back' }],
+    }, msg);
+  }
+  await sendCpm1List(sock, target, 'CPM1 ACCOUNTS', '\u{1F4B0}', items, 0, 'order:cpm1:accounts', msg);
+});
+
+// CPM1 → Cars (flags + security + police + premium, one flat catalogue)
+onButton('order:cpm1:cars', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
+  const items = cpm1CarItems();
+  if (items.length === 0) {
+    return sendButtons(sock, target, {
+      text: '\u{1F697} *CPM1 CARS*\n\n\u23F3 _None yet._',
+      buttons: [{ id: 'order:cpm1', text: '\u2B05\u{FE0F} Back' }],
+    }, msg);
+  }
+  await sendCpm1List(sock, target, 'CPM1 CARS', '\u{1F697}', items, 0, 'order:cpm1:cars', msg);
+});
+
+// CPM1 → Services (mods: headlights / callipers / shiny rims)
+onButton('order:cpm1:services', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
+  await sendModsMenu(sock, target, msg);
+});
+
+// CPM1 section paging
+onButton('order:cpm1:cars:', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
+  const page = parseInt(btnId.split(':')[3]) || 0;
+  await sendCpm1List(sock, target, 'CPM1 CARS', '\u{1F697}', cpm1CarItems(), page, 'order:cpm1:cars', msg);
+});
+
+onButton('order:cpm1:accounts:', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
+  const page = parseInt(btnId.split(':')[3]) || 0;
+  await sendCpm1List(sock, target, 'CPM1 ACCOUNTS', '\u{1F4B0}', cpm1AccountItems(), page, 'order:cpm1:accounts', msg);
+});
+
+// CPM2 game button — section picker (accounts / cars)
+onButton('order:cpm2:sections', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
+  await sendCpm2Sections(sock, target, msg);
+});
+
+// CPM2 section routes — order:cpm2:<section>:<page>, live from the app
+onButton('order:cpm2:cars:', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
+  const page = parseInt(btnId.split(':')[3]) || 0;
+  await sendCpm2Section(sock, target, 'cars', page, msg);
+});
+
+onButton('order:cpm2:accounts:', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
+  const page = parseInt(btnId.split(':')[3]) || 0;
+  await sendCpm2Section(sock, target, 'accounts', page, msg);
 });
 
 // CPM2 product rows — detail + order handoff
