@@ -95,22 +95,20 @@ function hasImage(item) {
 // ── Menu builders ────────────────────────────────────────────
 
 async function sendMainMenu(sock, chatId, quoted) {
-  // Game split first (native flow supports up to 10 buttons), CPM1 categories below
+  // Game picker ONLY. The CPM1 categories menu used to be fired here a second
+  // time after a delay, unconditionally, which dumped the CPM1 menu on the
+  // customer before they had chosen a game. It belongs to the order:cpm1
+  // handler alone -- you only see it if you press CPM1 Store.
+  //
+  // No flag emoji on the game buttons: the SA flag is a flag-CAR marker, and
+  // CPM1 is not a South African game, so it carried no meaning here.
   const gameButtons = [
-    { id: 'order:cpm2:0', text: '\u{1F3C1} CPM2 — Live Garage' },
-    { id: 'order:cpm1', text: '\u{1F1FF}\u{1F1E6} CPM1 — Catalogue' },
+    { id: 'order:cpm2:0', text: 'CPM2 Store' },
+    { id: 'order:cpm1', text: 'CPM1 Store' },
   ];
   await sendButtons(sock, chatId, {
     text: '\u{1F6D2} *MAKE ORDER*\n\n_Pick a game:_',
     buttons: gameButtons,
-  }, quoted);
-  await delay(1200);
-  await sendButtons(sock, chatId, {
-    text: '\u{1F1FF}\u{1F1E6} *CPM1 CATEGORIES*\n\n_Or browse the classic catalogue:_',
-    buttons: CATEGORIES.map(c => ({
-      id: `order:cat:${c.id}`,
-      text: c.label,
-    })),
   }, quoted);
 }
 
@@ -324,7 +322,8 @@ onButton('order:cpm1', async (sock, msg, from, sender, btnId) => {
   const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
   if (!target) return;
   await sendButtons(sock, target, {
-    text: '\u{1F1FF}\u{1F1E6} *CPM1 CATEGORIES*\n\n_Pick a category:_',
+    // No SA flag in the header either -- it only ever marked flag cars.
+    text: '*CPM1 CATEGORIES*\n\n_Pick a category:_',
     buttons: CATEGORIES.map(c => ({ id: `order:cat:${c.id}`, text: c.label })),
   }, msg);
 });

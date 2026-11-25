@@ -64,10 +64,11 @@ async function sendCpm2Menu(sock, chatId, page, quoted) {
   }
 
   if (products.length === 0) {
+    // No CPM1 shortcut here: the empty CPM2 shelf is not the place to advertise
+    // another game. Back goes to the game picker, where CPM1 is one tap away.
     return sendButtons(sock, chatId, {
-      text: `🏁 *CPM2 GARAGE*\n\n_No CPM2 builds live yet — check back soon._`,
+      text: `🏁 *CPM2 STORE*\n\n_No CPM2 builds live yet — check back soon._`,
       buttons: [
-        { id: 'order:cpm1', text: '🇿🇦 Browse CPM1' },
         { id: 'order:main', text: '⬅️ Back' },
       ],
     }, quoted);
@@ -83,16 +84,17 @@ async function sendCpm2Menu(sock, chatId, page, quoted) {
     text: `🏁 ${p.name} — ${formatCents(p.basePriceCents, p.currency)}`,
   }));
 
-  // Nav buttons — Prev / Next / CPM1 / Back (max 10 rows fits)
+  // Nav buttons — Prev / Next / Back. No CPM1 button here on purpose: CPM1
+  // dangling off the CPM2 shelf was confusing, and Back reaches the game
+  // picker where CPM1 is a single tap.
   if (safePage > 0) buttons.push({ id: `order:cpm2:${safePage - 1}`, text: '⬅️ Prev' });
   if (start + PER_PAGE < products.length) buttons.push({ id: `order:cpm2:${safePage + 1}`, text: 'Next ➡️' });
-  buttons.push({ id: 'order:cpm1', text: '🇿🇦 CPM1 Catalogue' });
-  buttons.push({ id: 'order:main', text: '🏠 Main Menu' });
+  buttons.push({ id: 'order:main', text: '⬅️ Back' });
 
   await sendButtons(sock, chatId, {
     text: safePage === 0
-      ? `🏁 *CPM2 GARAGE*\n\n_${products.length} live builds — pick one:_`
-      : `🏁 *CPM2 GARAGE* — page ${safePage + 1}/${totalPages}:`,
+      ? `🏁 *CPM2 STORE*\n\n_${products.length} live builds — pick one:_`
+      : `🏁 *CPM2 STORE* — page ${safePage + 1}/${totalPages}:`,
     buttons,
   }, quoted);
 }
