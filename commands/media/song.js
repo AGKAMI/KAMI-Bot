@@ -1,22 +1,16 @@
 /**
- * Song Downloader - Download audio from YouTube
+ * Song Downloader - Download audio from YouTube via yt-dlp
+ * No API key needed — uses yt-dlp binary directly
  */
 
-const yts = require('yt-search');
+const { execFile } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
-const APIs = require('../../utils/api');
+const yts = require('yt-search');
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
-const AXIOS_DEFAULTS = {
-  timeout: 60000,
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'application/json, text/plain, */*'
-  }
-};
+const YTDL_PATH = '/home/container/.local/bin/yt-dlp';
 
 let activeAudioDownloads = 0;
 
@@ -25,9 +19,9 @@ module.exports = {
   reactions: { received: '🎵', generating: '⬇️', done: '🎶' },
   aliases: ['play', 'music', 'yta'],
   category: 'media',
-  description: 'Download audio from YouTube',
+  description: 'Download audio from YouTube (yt-dlp, no API key needed)',
   usage: '.song <song name or YouTube link>',
-  
+
   async execute(sock, msg, args, extra) {
     const prefix = config.prefix || '.';
     activeAudioDownloads++;
@@ -38,16 +32,16 @@ module.exports = {
       }
       const text = args.join(' ');
       const chatId = msg.key.remoteJid;
-      
+
       if (!text) {
         return await extra.reply(`📝 _${voice.lead('neutral')}, give me a song name or YouTube link_\n\n_Example:_ ${prefix}song Shape of You`);
       }
-      
+
       const sent = await extra.reply(`🔍 _searching for that one..._`);
       if (!sent?.key) { extra.fail(); return extra.reply(`❌ _${voice.openErr()} — failed to send loading message_`); }
-      
+
       let video;
-      
+
       if (text.includes('youtube.com') || text.includes('youtu.be')) {
         video = { url: text, title: text, timestamp: '' };
       } else {
@@ -58,60 +52,41 @@ module.exports = {
         }
         video = search.videos[0];
       }
-      
+
       await extra.edit(sent.key, `🎵 *Downloading:* ${video.title}\n⏱ *Duration:* ${video.timestamp}`);
-      
-      let audioData;
+
+      let audioFile;
       try {
-        audioData = await APIs.ytDownload(video.url, 'audio');
+        audioFile = await downloadAudio(video.url);
       } catch (err) {
-        console.error('[song] ytDownload failed:', err.message);
+        console.error('[song] yt-dlp failed:', err.message);
         extra.fail();
-        return await extra.edit(sent.key, `❌ _download service failed: ${err.message}_`);
+        return await extra.edit(sent.key, `❌ _download failed hey — ${err.message}_`);
       }
-      
-      if (!audioData) {
-        extra.fail();
-        return await extra.edit(sent.key, `❌ _download service returned nothing_`);
-      }
-      
-      const audioUrl = audioData.download;
-      if (!audioUrl) {
-        extra.fail();
-        return await extra.edit(sent.key, `❌ _${voice.openErr()}, no download URL received_`);
-      }
-      
+
       let audioBuffer;
       try {
-        const audioResponse = await axios.get(audioUrl, {
-          responseType: 'arraybuffer',
-          timeout: 120000,
-          maxContentLength: 16 * 1024 * 1024,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': '*/*',
-            'Referer': 'https://loader.to/',
-          }
-        });
-        audioBuffer = Buffer.from(audioResponse.data);
-        
-        if (!audioBuffer || audioBuffer.length === 0) {
-          throw new Error('Empty audio buffer');
-        }
+        audioBuffer = fs.readFileSync(audioFile);
+        fs.unlinkSync(audioFile); // delete temp file after reading
       } catch (dlErr) {
         extra.fail();
-        return await extra.edit(sent.key, `❌ _download failed hey — ${dlErr.message}_`);
+        return await extra.edit(sent.key, `❌ _read failed hey — ${dlErr.message}_`);
+      }
+
+      if (!audioBuffer || audioBuffer.length === 0) {
+        extra.fail();
+        return await extra.edit(sent.key, `❌ _empty audio buffer_`);
       }
 
       await sock.sendMessage(chatId, {
         audio: audioBuffer,
         mimetype: 'audio/mpeg',
-        fileName: `${(audioData.title || video.title || 'song').replace(/[^\w\s-]/g, '')}.mp3`,
+        fileName: `${(video.title || 'song').replace(/[^\w\s-]/g, '')}.mp3`,
         ptt: false
       }, { quoted: msg });
-      
+
       await extra.edit(sent.key, `✅ *Sent!* _${video.title}_`);
-      
+
     } catch (err) {
       console.error('Song command error:', err);
       extra.fail();
@@ -121,3 +96,31 @@ module.exports = {
     }
   }
 };
+
+async function downloadAudio(url) {
+  const tmpFile = path.join(__dirname, `../../temp/song_${Date.now()}.mp3`);
+  return new Promise((resolve, reject) => {
+    execFile(YTDL_PATH, [
+      url,
+      '--extract-audio',
+      '--audio-format', 'mp3',
+      '--audio-quality', '0',
+      '--output', tmpFile,
+      '--no-playlist',
+      '--no-warnings',
+      '--no-check-certificate',
+      '--retries', '3',
+      '--fragment-retries', '3'
+    ], { timeout: 120000, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
+      if (err) {
+        reject(new Error(err.message || stderr || 'yt-dlp failed'));
+        return;
+      }
+      if (!fs.existsSync(tmpFile)) {
+        reject(new Error('yt-dlp did not produce output file'));
+        return;
+      }
+      resolve(tmpFile);
+    });
+  });
+}
