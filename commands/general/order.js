@@ -455,6 +455,16 @@ onButton('order:cpm2:accounts:', async (sock, msg, from, sender, btnId) => {
   await sendCpm2Section(sock, target, 'accounts', page, msg);
 });
 
+// Catch-all for any order:cpm2:<x> that is not a known section. The section
+// Try-Again id is built as a template (order:cpm2:${section}:0), so its static
+// prefix is bare 'order:cpm2:' with no handler of its own; without this the
+// button-audit flags it unroutable and a stale/stray id would dead-end.
+onButton('order:cpm2:', async (sock, msg, from, sender, btnId) => {
+  const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
+  if (!target) return;
+  await sendCpm2Sections(sock, target, msg);
+});
+
 // CPM2 product rows — detail + order handoff
 onButton('order:cpm2item:', async (sock, msg, from, sender, btnId) => {
   const target = from.endsWith('@g.us') ? toDmJid(sender) : from;
