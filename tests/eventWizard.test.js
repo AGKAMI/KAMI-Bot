@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 
 const CREW_DB = path.join(__dirname, '..', 'database', 'crew.json');
-const CREW_SNAPSHOT = fs.existsSync(CREW_DB) ? fs.readFileSync(CREW_DB, 'utf8') : null;
+let CREW_SNAPSHOT = fs.existsSync(CREW_DB) ? fs.readFileSync(CREW_DB, 'utf8') : null;
 
 // Registers requireAdmin('ewiz') + all ewiz:/evrsvp: handlers at boot
 require('../handler');
@@ -25,7 +25,27 @@ const eventCmd = require('../commands/crew/event');
 const database = require('../database');
 const cpmData = require('../commands/crew/cpmData');
 
+// ── Run-history independence ───────────────────────────────────────────────
+// crew.json is untracked, so each run's test events survive into the next one.
+// Snapshotting that residue and restoring it at the end only re-commits the
+// pollution, and `find(e => e.name === 'STANCE MEET')` in the build tests then
+// matched an OLDER run's record (e.g. a 2026-10-15 eventDate, or a pin id from
+// a previous sweep) instead of the one the test had just created — three
+// assertions failed for a reason that had nothing to do with the code under
+// test. Drop the test group's data FIRST, then take the snapshot, so the suite
+// always starts from a clean DB and restores a clean one.
 const GROUP = '120363000000000001@g.us';
+try {
+  // Reset the test group's events, but KEEP the group record: the crew
+  // helpers expect getTeam(GROUP) to resolve, and addCrewEvent writes
+  // team.events after a lookup.
+  const crew = database.getCrew();
+  if (!crew.groups) crew.groups = {};
+  crew.groups[GROUP] = { members: {}, events: {}, applicants: {} };
+  database.flushCrew();
+} catch (e) { /* a missing crew.json is fine — first run on a clean box */ }
+CREW_SNAPSHOT = fs.existsSync(CREW_DB) ? fs.readFileSync(CREW_DB, 'utf8') : null;
+
 const HOST = '27800000001@s.whatsapp.net';
 const OTHER = '27800000002@s.whatsapp.net';
 
@@ -339,7 +359,11 @@ test('unpin sweep: completed event with a pin target gets unpinned once', async 
 
   const sock = mkSock();
   await sweepExpiredPins(sock);
-  const unpinMsg = sock.sent.find(x => x.content && x.content.pin && x.content.type === 2);
+  // Match the pin this test created — the sweep walks every expired event, so
+  // a first-match on any pin message couples this assertion to whatever else
+  // happens to be expired in the DB.
+  const unpinMsg = sock.sent.find(x => x.content && x.content.pin && x.content.type === 2
+    && x.content.pin.id === 'UNPIN-TARGET-1');
   assert.ok(unpinMsg, 'UNPIN_FOR_ALL sent for the pinned card');
   assert.strictEqual(unpinMsg.content.pin.id, 'UNPIN-TARGET-1', 'targets the pinned card');
   assert.strictEqual(unpinMsg.content.pin.remoteJid, GROUP, 'targets the owning group');

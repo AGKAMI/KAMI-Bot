@@ -572,7 +572,10 @@ const getCrewMembers = (groupJid) => {
 // survive the write. The old whitelist silently dropped everything else —
 // it was already eating event.js's `createdAt` today.
 const addCrewEvent = (groupJid, eventId, data) => {
-  const team = getTeam(groupJid);
+  // create=true — a group with no crew record yet returned null here and the
+  // very next line threw `Cannot read properties of null (reading 'events')`,
+  // which killed the first !event ever created in a fresh group.
+  const team = getTeam(groupJid, true);
   if (!team.events) team.events = {};
   team.events[eventId] = {
     name: data.name,
