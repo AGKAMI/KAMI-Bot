@@ -65,7 +65,7 @@ module.exports = {
       } catch (err) {
         console.error('[song] yt-dlp failed:', err.message);
         extra.fail();
-        return await extra.edit(sent.key, `❌ _${voice.openErr()} — download failed: ${err.message}_`);
+        return await extra.edit(sent.key, `❌ _${voice.openErr()} — download failed — try again_`);
       }
 
       let audioBuffer;
@@ -101,7 +101,7 @@ module.exports = {
     } catch (err) {
       console.error('Song command error:', err);
       extra.fail();
-      await extra.reply(`❌ _${voice.openErr()} — something went wrong: ${err.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — something went wrong — try again_`);
     } finally {
       activeAudioDownloads--;
     }

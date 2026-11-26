@@ -52,7 +52,7 @@ module.exports = {
       }, { quoted: msg });
 
     } catch (error) {
-      await extra.reply(`*❌ ERROR*\n\n_${error.message}_`);
+      await extra.reply(`*❌ ERROR*\n\n_Something went wrong — try again_`);
     }
   }
 };

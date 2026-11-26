@@ -36,7 +36,7 @@ module.exports = {
     } catch (error) {
       console.error('SSWeb command error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't screenshot that site: ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't screenshot that site — try again`);
     }
   }
 };

@@ -62,7 +62,7 @@ module.exports = {
       await extra.reply(`*✅ GOODBYE IMAGE UPDATED*\n\n_${voice.lead('affirm')}, members who leave will see this image_`);
     } catch (error) {
       console.error('SetGoodbyeImage error:', error);
-      await extra.reply(`_${voice.openErr()} — ${error.message}_`);
+      await extra.reply(`_${voice.openErr()} — try again_`);
     }
   }
 };

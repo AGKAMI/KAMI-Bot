@@ -149,7 +149,7 @@ async function fetchFromApi(url) {
       if (out?.url) return out;
       failures.push(`${src.name}: no url`);
     } catch (err) {
-      failures.push(`${src.name}: ${err.message}`);
+      failures.push(`${src.name}: unavailable`);
     }
   }
   throw new Error(failures.join(' | ') || 'All APIs returned empty');

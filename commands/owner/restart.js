@@ -44,7 +44,7 @@ module.exports = {
       }, 500);
     } catch (error) {
       console.error('Restart error:', error);
-      await extra.reply(`*❌ ERROR* — couldn't restart bot: ${error.message}`);
+      await extra.reply(`*❌ ERROR* — couldn't restart bot — try again`);
     }
   },
 };

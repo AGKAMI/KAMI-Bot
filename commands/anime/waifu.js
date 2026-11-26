@@ -121,7 +121,7 @@ module.exports = {
         await extra.reply('❌ timed out — try again');
       } else {
         extra.fail();
-        await extra.reply(`❌ Couldn't grab the waifu image: ${error.message}`);
+        await extra.reply(`❌ Couldn't grab the waifu image — try again`);
       }
     }
   }

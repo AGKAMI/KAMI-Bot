@@ -86,7 +86,7 @@ module.exports = {
         } catch (error) {
             console.error('GitHub command error:', error);
             extra.fail();
-            await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — ${error.message}`);
+            await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — try again`);
         }
     }
 };

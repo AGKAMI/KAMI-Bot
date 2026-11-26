@@ -70,7 +70,7 @@ module.exports = {
             videoUrl = videos[0].url;
           } catch (e) {
             extra.fail();
-            return extra.reply(`❌ _${voice.openErr()} — search failed: ${e.message}_`);
+            return extra.reply(`❌ _${voice.openErr()} — search failed — try again_`);
           }
         }
 
@@ -91,7 +91,7 @@ module.exports = {
           videoData = await APIs.ytDownload(videoUrl, 'video');
         } catch (err) {
           extra.fail();
-          return await extra.edit(sent.key, `❌ _${voice.openErr()} — download failed: ${err.message}_`);
+          return await extra.edit(sent.key, `❌ _${voice.openErr()} — download failed — try again_`);
         }
 
         if (!videoData.download) { extra.fail(); return await extra.edit(sent.key, `❌ _${voice.openErr()}, no download URL received_`); }

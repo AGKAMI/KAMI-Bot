@@ -54,7 +54,7 @@ module.exports = {
         console.error('Compliment Error:', error);
         extra.fail();
         await sock.sendMessage(msg.key.remoteJid, {
-          text: `❌ _${voice.openErr()} — ${error.message}_`
+          text: `❌ _${voice.openErr()} — try again_`
         }, { quoted: msg });
       }
     }

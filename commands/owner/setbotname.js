@@ -92,7 +92,7 @@ module.exports = {
       
     } catch (error) {
       console.error('Setbotname command error:', error);
-      await extra.reply(`*❌ ERROR* — ${error.message}`);
+      await extra.reply(`*❌ ERROR* — try again`);
     }
   }
 };

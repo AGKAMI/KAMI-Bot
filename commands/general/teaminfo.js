@@ -168,7 +168,7 @@ module.exports = {
     } catch (error) {
       console.error('[TEAMINFO] Error:', error);
       extra.fail();
-      await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — try again_`);
     }
   },
 };

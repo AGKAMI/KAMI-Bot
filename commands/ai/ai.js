@@ -34,7 +34,7 @@ module.exports = {
       
     } catch (error) {
       extra.fail();
-      await extra.reply(`\u274C _${voice.openErr()} - ai error: ${error.message}_`);
+      await extra.reply(`\u274C _${voice.openErr()} - ai error — try again_`);
     }
   }
 };

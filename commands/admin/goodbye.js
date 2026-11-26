@@ -48,7 +48,7 @@ module.exports = {
       console.error('Goodbye Error:', error);
       extra.fail();
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ ERROR\n\n${error.message}`
+        text: `❌ ERROR\n\nSomething went wrong — try again`
       }, { quoted: msg });
     }
   }

@@ -107,7 +107,7 @@ module.exports = {
       console.error('Team Admin Error:', error);
       extra.fail();
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ *ERROR*\n\n_${voice.openErr()} — ${error.message}_`
+        text: `❌ *ERROR*\n\n_${voice.openErr()} — try again_`
       }, { quoted: msg });
     }
   }

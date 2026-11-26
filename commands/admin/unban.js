@@ -73,7 +73,7 @@ module.exports = {
 
     } catch (error) {
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n_${error.message}_`);
+      await extra.reply(`❌ ERROR\n\n_try again_`);
     }
   }
 };

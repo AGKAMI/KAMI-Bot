@@ -149,13 +149,13 @@ module.exports = {
         } else if (error.message.includes('newsletterMetadata')) {
           await extra.reply(`*❌ ERROR* — the newsletter feature is not available\n\n💡 You need Baileys v7.0.0-rc or higher.`);
         } else {
-          await extra.reply(`*❌ ERROR* — couldn't get the newsletter info: ${error.message}`);
+          await extra.reply(`*❌ ERROR* — couldn't get the newsletter info — try again`);
         }
       }
       
     } catch (error) {
       console.error('Newsletter command error:', error);
-      await extra.reply(`*❌ ERROR* — ${error.message}`);
+      await extra.reply(`*❌ ERROR* — try again`);
     }
   }
 };

@@ -82,7 +82,7 @@ module.exports = {
     } catch (error) {
       console.error('Error in pies command:', error);
       extra.fail();
-      await extra.reply(`❌ _${voice.openErr()} — failed to fetch image: ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — failed to fetch image — try again_`);
     }
   }
 };

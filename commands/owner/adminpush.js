@@ -223,7 +223,7 @@ module.exports = {
           const meta = await sock.groupMetadata(g.jid);
           groupData.push({ ...g, participants: meta.participants || [] });
         } catch (e) {
-          failed.push(`${g.name}: ${e.message}`);
+          failed.push(`${g.name}: unavailable`);
           console.error(`[ADMINPUSH] groupMetadata failed for ${g.name} (${g.jid}):`, e.message);
         }
       }
@@ -338,7 +338,7 @@ module.exports = {
           console.error(`[ADMINPUSH] canary DM failed (${extra.sender}):`, err.message);
           extra.fail();
           return extra.reply(
-            `❌ ERROR\n\nDM path is dead — canary to you failed: ${err.message}\n` +
+            `❌ ERROR\n\nDM path is dead — canary to you failed — try again\n` +
             `Aborted before DMing ${adminList.length} admin(s), ${voice.tag('err')}`
           );
         }
@@ -362,7 +362,7 @@ module.exports = {
           results.push({ ...job, ok: true });
         } catch (err) {
           results.push({ ...job, ok: false, err: err.message });
-          failed.push(`${job.label}: ${err.message}`);
+          failed.push(`${job.label}: unavailable`);
           console.error(`[ADMINPUSH] Failed → ${job.label} (${job.jid}):`, err.message);
         }
         if (i < jobs.length - 1) {
@@ -399,7 +399,7 @@ module.exports = {
     } catch (error) {
       console.error('AdminPush error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — ${error.message}`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — try again`);
     }
   },
 };

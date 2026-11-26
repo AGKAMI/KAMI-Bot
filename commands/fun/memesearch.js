@@ -176,7 +176,7 @@ module.exports = {
       
     } catch (error) {
       extra.fail();
-      await extra.reply(`❌ _${voice.openErr()} — failed to fetch meme: ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — failed to fetch meme — try again_`);
     }
   }
 };

@@ -267,7 +267,7 @@ module.exports = {
     } catch (error) {
       console.error('[START] Error:', error);
       extra.fail();
-      await extra.reply(`\u274C _${voice.openErr()} - ${error.message}_`);
+      await extra.reply(`\u274C _${voice.openErr()} - try again_`);
     }
   },
 };

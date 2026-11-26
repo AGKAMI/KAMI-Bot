@@ -209,7 +209,7 @@ module.exports = {
     } catch (error) {
       console.error('DM Blocker Error:', error);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `_${voice.openErr()} — ${error.message}_`
+        text: `_${voice.openErr()} — try again_`
       }, { quoted: msg });
     }
   }

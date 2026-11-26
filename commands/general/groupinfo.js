@@ -51,7 +51,7 @@ module.exports = {
         
       } catch (error) {
         extra.fail();
-        await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — ${error.message}`);
+        await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — try again`);
       }
     }
   };

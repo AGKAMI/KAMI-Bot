@@ -417,7 +417,7 @@ module.exports = {
     } catch (error) {
       console.error('Announce error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — ${error.message}`);
+      await extra.reply(`❌ ERROR\n\n${voice.openErr()} — try again`);
     }
   },
 };

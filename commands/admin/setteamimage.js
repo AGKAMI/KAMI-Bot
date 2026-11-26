@@ -60,7 +60,7 @@ module.exports = {
     } catch (error) {
       console.error('[SETTEAMIMAGE] Error:', error);
       extra.fail();
-      await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — try again_`);
     }
   },
 
@@ -109,7 +109,7 @@ module.exports = {
       return true;
     } catch (err) {
       console.error('[SETTEAMIMAGE] Save failed:', err.message);
-      await sock.sendMessage(from, { text: `❌ Couldn't save the image: ${err.message}` }, { quoted: msg });
+      await sock.sendMessage(from, { text: `❌ Couldn't save the image — try again` }, { quoted: msg });
       return true;
     }
   },

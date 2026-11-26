@@ -134,7 +134,7 @@ module.exports = {
       
     } catch (error) {
       console.error('SetNewsletter command error:', error);
-      await extra.reply(`*❌ ERROR* — couldn't set the newsletter jid: ${error.message}`);
+      await extra.reply(`*❌ ERROR* — couldn't set the newsletter jid — try again`);
     }
   }
 };

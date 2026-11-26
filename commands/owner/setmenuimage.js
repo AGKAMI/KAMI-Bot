@@ -92,7 +92,7 @@ module.exports = {
       
     } catch (error) {
       console.error('SetMenuImage command error:', error);
-      await extra.reply(`*❌ ERROR* — couldn't set the menu image: ${error.message}`);
+      await extra.reply(`*❌ ERROR* — couldn't set the menu image — try again`);
     }
   }
 };

@@ -48,7 +48,7 @@ module.exports = {
       );
 
     } catch (error) {
-      await extra.reply(`*❌ ERROR* — ${error.message}`);
+      await extra.reply(`*❌ ERROR* — try again`);
     }
   }
 };

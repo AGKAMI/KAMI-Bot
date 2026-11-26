@@ -36,7 +36,7 @@ module.exports = {
       } catch (error) {
         console.error('Flirt Error:', error);
         extra.fail();
-        await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
+        await extra.reply(`❌ _${voice.openErr()} — try again_`);
       }
     }
   };

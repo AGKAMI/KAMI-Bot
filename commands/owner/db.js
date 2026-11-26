@@ -86,7 +86,7 @@ module.exports = {
     } catch (error) {
       console.error('DB command error:', error);
       extra.fail();
-      await extra.reply(`❌ ERROR\n\n${error.message}`);
+      await extra.reply(`❌ ERROR\n\nSomething went wrong — try again`);
     }
   }
 };

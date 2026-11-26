@@ -46,7 +46,7 @@ module.exports = {
         
       } catch (error) {
         extra.fail();
-        await extra.reply(`❌ ERROR\n\n${error.message}`);
+        await extra.reply(`❌ ERROR\n\nSomething went wrong — try again`);
       }
     }
   };

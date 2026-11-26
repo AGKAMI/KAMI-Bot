@@ -44,7 +44,7 @@ module.exports = {
         await extra.reply(`*✅ BROADCAST DONE*\n\n✅ ${voice.openErr()}, out to every group\n\n📊 *Success:* ${success}\n❌ *Failed:* ${failed}`);
         
       } catch (error) {
-        await extra.reply(`*❌ ERROR* — ${error.message}`);
+        await extra.reply(`*❌ ERROR* — try again`);
       }
     }
   };

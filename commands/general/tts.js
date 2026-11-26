@@ -51,7 +51,7 @@ module.exports = {
     } catch (error) {
       console.error('TTS command error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't make the speech: ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't make the speech — try again`);
     }
   }
 };

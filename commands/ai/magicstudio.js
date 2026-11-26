@@ -76,7 +76,7 @@ module.exports = {
         await extra.reply(`❌ _${voice.openErr()} — timed out — try again_`);
       } else {
         extra.fail();
-        await extra.reply(`❌ _${voice.openErr()} — couldn't generate image: ${error.message}_`);
+        await extra.reply(`❌ _${voice.openErr()} — couldn't generate image — try again_`);
       }
     }
   }

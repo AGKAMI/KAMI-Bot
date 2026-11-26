@@ -110,7 +110,7 @@ module.exports = {
         await extra.reply('❌ timed out — try again');
       } else {
         extra.fail();
-        await extra.reply(`❌ Couldn't grab the anime data: ${error.message}`);
+        await extra.reply(`❌ Couldn't grab the anime data — try again`);
       }
     }
   }

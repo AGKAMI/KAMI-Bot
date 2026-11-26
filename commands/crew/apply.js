@@ -251,7 +251,7 @@ async function sendTeamSelection(sock, msg, extra, resolved) {
     console.error('[APPLY-INVITE] toDmJid failed:', e.message);
     extra.fail && extra.fail(e.message);
     return sock.sendMessage(extra.from, {
-      text: `❌ ERROR\n\nCouldn't work out ${mention(targetJid)}'s DM number — ${e.message}\n\n` +
+      text: `❌ ERROR\n\nCouldn't work out ${mention(targetJid)}'s DM number — try again\n\n` +
             `_Check the number and try again, shame_`,
       mentions: [targetJid],
     }, { quoted: msg });

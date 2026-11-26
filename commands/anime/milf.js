@@ -109,7 +109,7 @@ module.exports = {
         await extra.reply('❌ timed out — try again');
       } else {
         extra.fail();
-        await extra.reply(`❌ Couldn't grab the milf image: ${error.message}`);
+        await extra.reply(`❌ Couldn't grab the milf image — try again`);
       }
     }
   }

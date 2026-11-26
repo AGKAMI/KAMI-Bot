@@ -40,7 +40,7 @@ module.exports = {
       console.error('Error in 1917 command:', error);
       extra.fail();
       await sock.sendMessage(msg.key.remoteJid, { 
-        text: `❌ _${voice.openErr()} — ${error.message}_` 
+        text: `❌ _${voice.openErr()} — try again_` 
       }, { quoted: msg });
     }
   }

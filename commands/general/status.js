@@ -45,7 +45,7 @@ module.exports = {
     } catch (error) {
       console.error('[STATUS] Error:', error);
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — try again`);
     }
   }
 };

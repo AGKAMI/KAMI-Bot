@@ -63,7 +63,7 @@ module.exports = {
       await extra.reply(`*✅ WELCOME IMAGE UPDATED*\n\n_${voice.lead('affirm')}, this image now welcomes new members in *every non-crew group*_`);
     } catch (error) {
       console.error('SetWelcomeImage error:', error);
-      await extra.reply(`_${voice.openErr()} — ${error.message}_`);
+      await extra.reply(`_${voice.openErr()} — try again_`);
     }
   }
 };

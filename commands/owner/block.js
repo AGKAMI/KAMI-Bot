@@ -65,7 +65,7 @@ module.exports = {
 
     } catch (error) {
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't block them: ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't block them — try again`);
     }
   }
 };

@@ -153,7 +153,7 @@ module.exports = {
       
     } catch (error) {
       extra.fail();
-      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't unblock them: ${error.message}`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — couldn't unblock them — try again`);
     }
   }
 };

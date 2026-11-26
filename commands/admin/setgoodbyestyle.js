@@ -91,7 +91,7 @@ module.exports = {
     } catch (error) {
       console.error('SetGoodbyeStyle error:', error);
       extra.fail();
-      await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — try again_`);
     }
   }
 };

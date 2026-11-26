@@ -190,7 +190,7 @@ module.exports = {
     } catch (error) {
       console.error('[MENU] Error:', error);
       extra.fail();
-      await extra.reply(`❌ _${voice.openErr()} — ${error.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — try again_`);
     }
   }
 };
