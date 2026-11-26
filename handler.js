@@ -1614,7 +1614,14 @@ const handleMessage = async (sock, msg) => {
     // Owner bypass — owner can run every command, no permission gates, no
     // unblock messages, no DM-blocker restrictions, no group-only limits,
     // no NSFW gates, nothing. Owner is always allowed.
-    if (!extra.isOwner) {
+    //
+    // THIS MUST NOT reference `extra` — the per-command context object
+    // (`commandExtra`) is not built until further down, and the variable
+    // named `extra` does not exist in this scope. Referencing it threw
+    // `ReferenceError: extra is not defined` for EVERY command, which the
+    // outer catch turned into "Something went stukkend — extra is not
+    // defined". Use the same predicate commandExtra.isOwner is built from.
+    if (!(isOwner(sender) || msg.key.fromMe)) {
       // Permission checks — every denial ends on 🚫 (not-allowed verdict).
       if (command.ownerOnly && !isOwner(sender) && !msg.key.fromMe) {
       verdictReact(sock, from, msg, '🚫');
@@ -1803,8 +1810,15 @@ const handleMessage = async (sock, msg) => {
     }
     
     try {
-      await sock.sendMessage(msg.key.remoteJid, { 
-        text: `${config.messages.error}\n_${voice.openErr()} — ${error.message}_`
+      // NEVER leak raw JS internals to the user. "extra is not defined" and
+      // friends are meaningless to them and only make the bot look broken;
+      // the real message goes to the panel log (logError above) where it can
+      // actually be acted on.
+      const detail = (error && error.userMessage) || null;
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: detail
+          ? `${config.messages.error}\n_${detail}_`
+          : config.messages.error
       }, { quoted: msg });
     } catch (e) {
       // Don't log rate limit errors when sending error messages
