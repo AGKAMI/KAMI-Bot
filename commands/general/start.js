@@ -12,7 +12,7 @@ const fs = require('fs');
 const config = require('../../config');
 const database = require('../../database');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
-const { normalizeJidWithLid, buildComparableIds, updateBlockStatusSafe } = require('../../utils/jidHelper');
+const { normalizeJidWithLid, buildComparableIds, updateBlockStatusSafe, inBlocklist } = require('../../utils/jidHelper');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const { TEAMS } = require('../crew/crewForms');
 const { createApplication } = require('../crew/applyHelper');
@@ -340,22 +340,42 @@ onButton('start:order', async (sock, msg, from, sender) => {
   }
   const dmJid = toDmJid(sender);
   // Unblock so DMs land + mark them temp-allowed (orders/apply only)
+  let wasBlocked = false;
   try { await updateBlockStatusSafe(sock, dmJid, 'unblock'); } catch (e) {}
+  try {
+    wasBlocked = inBlocklist(await sock.fetchBlocklist(), dmJid);
+  } catch (e) {
+    console.error('[ORDER] fetchBlocklist failed:', e.message);
+    wasBlocked = true; // assume blocked if we can't check — send message to be safe
+  }
   const { allowTempDm } = require('../../handler');
   allowTempDm(dmJid);
   allowTempDm(sender);
 
-  // The unblock message — BEFORE the order menu
-  await sendButtons(sock, dmJid, {
-    text:
-      `🔓 *UNBLOCKED — FOR NOW*\n\n` +
-      `I've let you through so you can browse the catalog and make your order ${voice.tag('neutral')}\n\n` +
-      `⚠️ *Until your order is done, your number can only:*\n` +
-      `• Make orders\n` +
-      `• Apply for security\n\n` +
-      `DM me for anything else and you're blocked again`,
-    footer: config.botName || 'KAMI Bot',
-  });
+  // Only tell them we unblocked them if they were actually blocked
+  if (wasBlocked) {
+    await sendButtons(sock, dmJid, {
+      text:
+        `🔓 *UNBLOCKED — FOR NOW*\n\n` +
+        `I've let you through so you can browse the catalog and make your order ${voice.tag('neutral')}\n\n` +
+        `⚠️ *Until your order is done, your number can only:*\n` +
+        `• Make orders\n` +
+        `• Apply for security\n\n` +
+        `DM me for anything else and you're blocked again`,
+      footer: config.botName || 'KAMI Bot',
+    });
+  } else {
+    await sendButtons(sock, dmJid, {
+      text:
+        `🔓 *DMs open*\n\n` +
+        `Go ahead — browse the catalog and make your order.\n\n` +
+        `⚠️ *Until your order is done, your number can only:*\n` +
+        `• Make orders\n` +
+        `• Apply for security\n\n` +
+        `DM me for anything else and you're blocked again`,
+      footer: config.botName || 'KAMI Bot',
+    });
+  }
 
   await sendOrderMenu(sock, dmJid, msg);
 });
