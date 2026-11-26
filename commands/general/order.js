@@ -109,7 +109,7 @@ async function sendMainMenu(sock, chatId, quoted) {
   await sendButtons(sock, chatId, {
     text: '\u{1F6D2} *MAKE ORDER*\n\n_Pick a game:_',
     buttons: gameButtons,
-  }, quoted);
+  }, msg);
 }
 
 async function sendCategoryMenu(sock, chatId, catId, quoted) {
