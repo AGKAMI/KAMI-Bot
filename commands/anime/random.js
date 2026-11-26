@@ -34,73 +34,52 @@ module.exports = {
         throw new Error('Invalid API response: missing anime data');
       }
       
-      const animeData = response.data.url;
-      
-      // Download thumbnail image
+      // BASE returns { url: "<image url>" } — the URL itself is the media
+      const imageUrl = response.data.url;
+
+      if (!imageUrl || typeof imageUrl !== 'string') {
+        throw new Error('Invalid image URL in API response');
+      }
+
+      // Download the image
       let imageBuffer = null;
-      if (animeData.thumbnail) {
-        try {
-          const imageResponse = await axios.get(animeData.thumbnail, {
-            responseType: 'arraybuffer',
-            headers: {
-              'User-Agent': 'Mozilla/5.0',
-              'Accept': 'image/*'
-            },
-            timeout: 30000
-          });
-          
-          imageBuffer = Buffer.from(imageResponse.data);
-          
-          if (imageBuffer && imageBuffer.length > 0) {
-            const maxImageSize = 5 * 1024 * 1024;
-            if (imageBuffer.length > maxImageSize) {
-              imageBuffer = null; // Skip image if too large
-            }
-          }
-        } catch (imgError) {
-          console.error('Error downloading thumbnail:', imgError);
+      try {
+        const imageResponse = await axios.get(imageUrl, {
+          responseType: 'arraybuffer',
+          headers: {
+            'User-Agent': 'Mozilla/5.0',
+            'Accept': 'image/*'
+          },
+          timeout: 30000
+        });
+
+        imageBuffer = Buffer.from(imageResponse.data);
+
+        if (!imageBuffer || imageBuffer.length === 0) {
           imageBuffer = null;
+        } else if (imageBuffer.length > 5 * 1024 * 1024) {
+          imageBuffer = null; // Skip image if too large
         }
+      } catch (imgError) {
+        console.error('Error downloading image:', imgError);
+        imageBuffer = null;
       }
-      
-      // Build caption with anime info
-      let caption = `*${animeData.title || 'Unknown'}*\n\n`;
-      
-      if (animeData.episodes) {
-        caption += `📺 Episodes: ${animeData.episodes}\n`;
-      }
-      
-      if (animeData.status) {
-        caption += `📊 Status: ${animeData.status}\n`;
-      }
-      
-      if (animeData.synopsis) {
-        caption += `\n📝 ${animeData.synopsis}\n`;
-      }
-      
-      if (animeData.link) {
-        caption += `\n🔗 ${animeData.link}`;
-      }
-      
+
+      // Build caption
+      let caption = `*Random Anime*\n\n_Enjoy!_`;
+
       // Send with image if available
       if (imageBuffer) {
-        const contentType = 'image/jpeg';
-        let extension = 'jpg';
-        if (animeData.thumbnail.match(/\.(png|jpg|jpeg)$/i)) {
-          const match = animeData.thumbnail.match(/\.(png|jpg|jpeg)$/i);
-          extension = match[1].toLowerCase();
-        }
-        
         const tempDir = getTempDir();
         const timestamp = Date.now();
-        const tempImagePath = path.join(tempDir, `anime_${timestamp}.${extension}`);
-        
+        const tempImagePath = path.join(tempDir, `anime_${timestamp}.jpg`);
+
         try {
           fs.writeFileSync(tempImagePath, imageBuffer);
           const finalBuffer = fs.readFileSync(tempImagePath);
-          
+
           await sendSfw(sock, extra.from, msg, 'random', finalBuffer, caption);
-          
+
         } finally {
           try {
             deleteTempFile(tempImagePath);
@@ -125,7 +104,7 @@ module.exports = {
         await extra.reply('❌ no anime data — try again');
       } else if (error.response?.status === 429) {
         extra.fail();
-        await extra.reply('❌ rate limit — try again later, hey');
+        await extra.reply('❌ rate limit — try again later');
       } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         extra.fail();
         await extra.reply('❌ timed out — try again');

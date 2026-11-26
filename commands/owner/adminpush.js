@@ -372,7 +372,10 @@ module.exports = {
       mediaBuffer = null;
 
       // ── Summary — one line per recipient, so delivery is auditable ──
-      const sent = jobs.length - failed.length;
+      // Count from `results`, not `jobs.length - failed.length`: `failed`
+      // also holds groupMetadata failures whose group never became a job,
+      // so the old subtraction under-counted successful deliveries.
+      const sent = results.filter(r => r.ok).length;
       const teamNames = groups.map(g => g.abbrev).join(', ');
       const dmResults = results.filter(r => !r.group);
       const lidOnly = adminList.filter(a => a.lidOnly);

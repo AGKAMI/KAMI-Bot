@@ -163,7 +163,7 @@ module.exports = {
       console.error('[lyrics] Error:', error.message);
       extra.fail();
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `❌ _${voice.openErr()} — error fetching lyrics hey_`
+        text: `❌ _${voice.openErr()} — error fetching lyrics_`
       }, { quoted: msg });
     }
   }

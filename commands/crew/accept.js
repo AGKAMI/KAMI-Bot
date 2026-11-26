@@ -14,6 +14,7 @@ const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { fmtDateTime } = require('../../utils/sast');
 const { logDbChange, logError, logJidResolution } = require('../../utils/botLogger');
 const { getRoleEmoji, getTeamDisplayName } = require('../../utils/teamName');
+const nameCache = require('../../utils/nameCache');
 const { normalizeJidWithLid, buildComparableIds } = require('../../utils/jidHelper');
 
 // ── Group-presence verification ───────────────────────────────
@@ -100,7 +101,14 @@ module.exports = {
       }
 
       // Atomic: remove app immediately to prevent double-accept race condition
-      database.removeApplicant(app.groupJid || app.team, uid);
+      // (groupJid first; app.team is a team KEY like 'KSSMP', not a group jid —
+      // falling back to it made this remove a silent no-op and left the race
+      // window open. Same resolution as cancel/deny/withdraw.)
+      try {
+        database.removeApplicant(app.groupJid || (config.crewTeams[app.team] || {}).jid, uid);
+      } catch (e) {
+        console.error('[ACCEPT] atomic removeApplicant failed:', e.message);
+      }
 
       // Resolve LID → phone JID for DMs (WhatsApp can't DM LID JIDs)
       const rawJid = app.jid;

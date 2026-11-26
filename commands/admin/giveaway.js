@@ -405,7 +405,10 @@ module.exports = {
             // Second timeout — force end regardless
             sock.ev.off('messages.upsert', newListener);
             activeGiveaways.delete(from);
-            pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuffer, sock, msg);
+            // Fire-and-forget: keep a .catch so a failed announce logs
+            // instead of becoming an unhandled rejection
+            pickAndAnnounceWinners(from, entries, prize, numWinners, mediaBuffer, sock, msg)
+              .catch(e => console.error('[giveaway] extended announce failed:', e.message));
           }, extraMs);
 
           await sock.sendMessage(from, {

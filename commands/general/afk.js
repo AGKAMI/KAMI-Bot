@@ -122,8 +122,11 @@ module.exports = {
                 const historyLines = [];
                 const hist = afkHistory.get(sender);
                 if (hist.length > 0) {
-                    historyLines.push(``, `📋 *Last ${hist.length} AFK session${hist.length > 1 ? 's' : ''}:`);
-                    for (let i = 0; i < Math.min(hist.length, 3); i++) {
+                    // Header must match the rows actually printed (3 max),
+                    // not the stored history (up to MAX_HISTORY)
+                    const shown = Math.min(hist.length, 3);
+                    historyLines.push(``, `📋 *Last ${shown} AFK session${shown > 1 ? 's' : ''}:`);
+                    for (let i = 0; i < shown; i++) {
                         const h = hist[i];
                         const r = h.reason ? ` — ${h.reason}` : '';
                         historyLines.push(`• ${h.duration}${r}`);

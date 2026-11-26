@@ -67,7 +67,7 @@ module.exports = {
         `🔗 *Aliases:* ${aliases}`,
         `📖 *Usage:* ${usageText}`,
         ``,
-        `💡 _Tip: ${prefix}menu has everything, check it shame._`
+        `💡 _Tip: ${prefix}menu has everything_`
       ].join('\n');
 
       await extra.reply(text);

@@ -86,7 +86,7 @@ module.exports = {
           const status = error.response.status;
           if (status === 400) {
             extra.fail();
-            return await extra.reply(`❌ _${voice.openErr()}, that Pinterest link is off — check it hey_`);
+            return await extra.reply(`❌ _${voice.openErr()}, that Pinterest link is off — check it_`);
           } else if (status === 429) {
             extra.fail();
             return await extra.reply(`❌ _${voice.openErr()}, rate limit — try again later_`);

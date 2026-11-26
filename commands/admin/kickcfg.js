@@ -130,7 +130,7 @@ const buildDashboardText = (scope, label) => {
 
   const lines = [
     `⚙️ *AUTO-KICK CONFIG — ${label}*`,
-    `━━━━━━━━━━━━━━━━`,
+    `----------`,
     `Status: ${s.enabled ? '✅ enabled' : '🔕 disabled'}`,
     `⏳ Inactive window: *${kickSettings.fmtDuration(s.inactiveWindow)}*`,
     `⏰ Grace after flag: *${s.gracePeriod ? kickSettings.fmtDuration(s.gracePeriod) : 'instant (next scan)'}*`,
@@ -236,7 +236,7 @@ const sendSubmenu = async (sock, msg, from, key, scopeCode) => {
   return sendButtons(sock, from, {
     text:
       `${KEY_LABELS[key]} — *${label}*\n` +
-      `━━━━━━━━━━━━━━━━\n` +
+      `----------\n` +
       `Current: *${cur}*\n\n` +
       `Pick a preset, or type:\n` +
       `_${prefix}kickcfg set${scopeCode === 'g' ? ' g' : ''} ${key} ${example}_` +
@@ -253,7 +253,7 @@ const sendSubmenu = async (sock, msg, from, key, scopeCode) => {
 const buildGroupScreenText = (name, g, eff) => {
   const lines = [
     `🔍 *${name}*`,
-    `━━━━━━━━━━━━━━━━`,
+    `----------`,
     `Status: ${g.enabled ? '✅ enabled' : '🔕 disabled'}`,
     `⏳ Window *${kickSettings.fmtDuration(eff.inactiveWindow)}* · grace *${eff.gracePeriod ? kickSettings.fmtDuration(eff.gracePeriod) : 'instant'}* · min *${eff.minMessages}* msg · cap *${g.cap}*/cycle`,
     ``,
@@ -337,7 +337,7 @@ const sendGroupPicker = async (sock, msg, to, page = 0, cachedEntries = null, fa
 
   const text =
     `🔍 *AUTO-KICK — PICK A GROUP*\n` +
-    `━━━━━━━━━━━━━━━━\n` +
+    `----------\n` +
     listLines.join('\n') +
     (pages > 1 ? `\n\n_Page ${p + 1} of ${pages}_` : '') +
     `\n\n_Tap a group for its status + quick actions._`;
@@ -494,7 +494,7 @@ onButton('kickcfg:custom', ow(async (sock, msg, from, sender, btnId) => {
   return sendButtons(sock, from, {
     text:
       `✏️ *CUSTOM ${KEY_LABELS[key] || 'VALUE'}*\n` +
-      `━━━━━━━━━━━━━━━━\n` +
+      `----------\n` +
       `Type it as a command:\n\n` +
       `_${prefix}kickcfg set${scopeBit} ${key} ${example}_\n\n` +
       (key === 'msgs'

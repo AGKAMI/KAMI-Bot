@@ -197,7 +197,11 @@ async function createApplication(sock, applicantJid, teamKey, opts = {}) {
   } catch (dmErr) {
     console.error('[CREW APPLY] form DM failed:', dmErr.message);
     try { logError(dmErr, { command: 'apply.createApplication', jid: applicantJid, teamKey, step: 'form_dm' }); } catch (e) {}
-    database.removeApplicant(teamGroupJid, app.appUid);
+    try { database.removeApplicant(teamGroupJid, app.appUid); } catch (e) {
+      // Already in the failure path — a second throw here would mask the
+      // real DM error with a generic "couldn't kick it off".
+      console.error('[APPLY] rollback removeApplicant failed:', e.message);
+    }
     try { logDbChange('applicant', 'remove', app.appUid, teamKey, { status: 'pending', appUid: app.appUid }, null, 'bot'); } catch (e) {}
     const msg = applyingForSomeone
       ? `❌ ERROR\n\nCouldn't DM ${mention(applicantJid)} the form, shame\n\n` +

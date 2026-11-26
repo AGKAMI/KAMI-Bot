@@ -67,7 +67,7 @@ module.exports = {
           `🐢 *SLOWMODE OFF*\n\n` +
           `✅ *Slowmode disabled*\n` +
           `👤 *Changed by:* ${mention(sender)}\n\n` +
-          `_${voice.open()} — free messages for everyone_`,
+          `_${voice.openErr()} — free messages for everyone_`,
           [sender]
         );
       }

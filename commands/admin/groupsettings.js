@@ -30,7 +30,7 @@ function buildDashboardText(settings) {
 
   return (
     `⚙️ *GROUP SETTINGS*\n` +
-    `━━━━━━━━━━━━━━━━\n\n` +
+    `----------\n\n` +
     `Hit a button to flip it:\n\n` +
     (actions.length > 0 ? `🔧 *Active actions:*\n${actions.map(a => `  • ${a}`).join('\n')}\n\n` : '') +
     `_See the extra actions with the individual commands (${config.prefix || '.'}antiflood set <action> etc.)_`

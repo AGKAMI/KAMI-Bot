@@ -95,7 +95,7 @@ module.exports = {
   async setRules(msg, args, extra) {
     const senderId = extra.sender || msg.key.participant || msg.key.remoteJid;
     const groupMeta = extra.groupMetadata;
-    const senderMeta = groupMeta.participants.find(
+    const senderMeta = groupMeta?.participants?.find(
       p => (p.id === senderId || p.lid === senderId)
     );
 
@@ -132,7 +132,7 @@ module.exports = {
   async clearRules(msg, args, extra) {
     const senderId = extra.sender || msg.key.participant || msg.key.remoteJid;
     const groupMeta = extra.groupMetadata;
-    const senderMeta = groupMeta.participants.find(
+    const senderMeta = groupMeta?.participants?.find(
       p => (p.id === senderId || p.lid === senderId)
     );
 

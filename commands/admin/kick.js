@@ -7,6 +7,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { ownerDmTargets } = require('../../utils/jidHelper');
 
 // Lazy require to avoid circular dependency (kick.js ↔ handler.js via commandLoader)
 function getHandler() {
@@ -16,9 +17,11 @@ function getHandler() {
 function getOwnerJid(sock) {
   const botId = sock.user?.id || '';
   const botNum = botId.includes(':') ? botId.split(':')[0] : botId.split('@')[0];
-  const ownerNum = (config.ownerNumber || []).find(n => n !== botNum);
-  if (!ownerNum) return null;
-  return ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
+  // ownerDmTargets() resolves the LOCAL-form config numbers to real jids —
+  // building `${ownerNum}@s.whatsapp.net` produced an invalid jid, so every
+  // one of these protection DMs died silently in the caller's catch.
+  const targets = ownerDmTargets().filter(t => !botNum || !t.startsWith(botNum));
+  return targets[0] || null;
 }
 
 module.exports = {
@@ -129,7 +132,7 @@ module.exports = {
               // without throwing and used to report "got demoted 💀").
               const { groupAction } = require('../../utils/groupActions');
               const violatorDemote = await groupAction(
-                chatId, extra.sender,
+                sock, chatId,
                 [extra.sender, ...buildComparableIds(extra.sender)], 'demote'
               );
               database.resetKickAttempts(chatId, target);
@@ -192,11 +195,9 @@ module.exports = {
               } catch (e) {}
 
               // DM owner
-              const ownerNumbers = config.ownerNumber || [];
-              for (const oNum of ownerNumbers) {
-                try {
-                  const oJid = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
-                  await sock.sendMessage(oJid, {
+              for (const oJid of ownerDmTargets()) {
+              try {
+                await sock.sendMessage(oJid, {
                     text:
                       `🛡️ *KICK PROTECTION* 💀\n\n` +
                       `${mention(extra.sender)} tried kicking ${mention(target)} twice, bru\n` +
@@ -260,10 +261,8 @@ module.exports = {
             });
 
             // DM owner
-            const ownerNumbers = config.ownerNumber || [];
-            for (const oNum of ownerNumbers) {
+            for (const oJid of ownerDmTargets()) {
               try {
-                const oJid = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
                 await sock.sendMessage(oJid, {
                   text:
                     `🛡️ *PROTECTION* 💀\n\n` +
@@ -395,7 +394,7 @@ onButton('admin:readd', async (sock, msg, from, sender, btnId) => {
   // group-participants event doesn't race and kick them straight back out
   if (isBannedTarget && clickerIsOwner) {
     for (const v of [target, ...buildComparableIds(target)]) {
-      database.unbanMember(from, v);
+      try { database.unbanMember(from, v); } catch (e) {}
     }
   }
 

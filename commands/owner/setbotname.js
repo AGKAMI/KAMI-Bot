@@ -51,26 +51,44 @@ module.exports = {
       if (newBotName.length > 50) {
         return extra.reply(`*❌ ERROR* — bot name max 50 characters`);
       }
-      
+
+      // The name is interpolated straight into a JS string literal in
+      // config.js, so a newline/backslash in it would leave config.js
+      // unparseable and the bot dead on the next boot. Single-line it.
+      const safeBotName = newBotName
+        .replace(/[\r\n\t]+/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+      if (!safeBotName) {
+        extra.fail();
+        return extra.reply(`*❌ ERROR* — that name has nothing usable in it`);
+      }
+
       // Update runtime config
-      config.botName = newBotName;
-      
+      config.botName = safeBotName;
+
       // Update config file
       const configPath = path.join(__dirname, '../../config.js');
-      let configContent = fs.readFileSync(configPath, 'utf-8');
-      
-      // Replace botName value (handles both single and double quotes)
-      configContent = configContent.replace(
-        /botName:\s*['"`]([^'"`]*)['"`]/,
-        `botName: '${newBotName.replace(/'/g, "\\'")}'`
+      const configBefore = fs.readFileSync(configPath, 'utf-8');
+      const botNameRe = /botName:\s*['"`]([^'"`]*)['"`]/;
+      if (!botNameRe.test(configBefore)) {
+        extra.fail();
+        return extra.reply(`*❌ ERROR* — no \`botName:\` line in config.js to rewrite`);
+      }
+
+      // JSON.stringify escapes quotes/newlines/backslashes, so the name can
+      // never break out of the config.js string literal
+      const configContent = configBefore.replace(
+        botNameRe,
+        `botName: ${JSON.stringify(safeBotName)}`
       );
-      
+
       fs.writeFileSync(configPath, configContent, 'utf-8');
-      
+
       // Reload config module cache
       delete require.cache[require.resolve('../../config')];
-      
-      await extra.reply(`*✅ NAME UPDATED*\n\n✅ ${voice.lead('affirm')}, bot name is now: *${newBotName}*\n\n🔄 New name will show in menus`);
+
+      await extra.reply(`*✅ NAME UPDATED*\n\n✅ ${voice.lead('affirm')}, bot name is now: *${safeBotName}*\n\n🔄 New name will show in menus`);
       
     } catch (error) {
       console.error('Setbotname command error:', error);

@@ -24,6 +24,17 @@ for (const [abbrev, t] of Object.entries(config.crewTeams || {})) {
 }
 Object.assign(GROUPS, EXTRA_GROUPS);
 
+// Pasted numbers carry invisible junk (LRM/RLM, ZWSP, bidi marks, fullwidth +)
+// that fails a strict token test — the target then resolves to nobody and the
+// command falls through to its "give a number" error. Normalize before testing.
+function cleanPhoneToken(t) {
+  return String(t == null ? '' : t)
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '')
+    .replace(/\uFF0B/g, '+')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function phoneToJid(phone) {
   if (!phone) return null;
   if (phone.includes('@s.whatsapp.net')) return phone;
@@ -74,6 +85,8 @@ module.exports = {
     try {
       const ctx = msg.message?.extendedTextMessage?.contextInfo;
       const mentioned = ctx?.mentionedJid || [];
+      const cleanArgs = (args || []).map(cleanPhoneToken);
+      let specArgs = cleanArgs;
 
       let target = null;
 
@@ -86,12 +99,12 @@ module.exports = {
         target = mentioned[0];
       }
       // Method 3: phone number (any format, may be split across args)
-      else if (args.length > 0 && /^[\d+\s()-]+$/.test(args[0])) {
+      else if (cleanArgs.length > 0 && /^[\d+\s()-]+$/.test(cleanArgs[0])) {
         const phoneParts = [];
         let specIdx = 0;
-        for (let i = 0; i < args.length; i++) {
-          if (/^[\d+\s()-]+$/.test(args[i])) {
-            phoneParts.push(args[i]);
+        for (let i = 0; i < cleanArgs.length; i++) {
+          if (/^[\d+\s()-]+$/.test(cleanArgs[i])) {
+            phoneParts.push(cleanArgs[i]);
             specIdx = i + 1;
           } else {
             break;
@@ -104,6 +117,7 @@ module.exports = {
           return extra.reply(`❌ ERROR\n\nThat phone number looks off: ${fullPhone}`);
         }
         args = args.slice(specIdx);
+        specArgs = specArgs.slice(specIdx);
       }
 
       if (!target) {
@@ -117,7 +131,7 @@ module.exports = {
         );
       }
 
-      const groupSpec = (args || []).join(' ');
+      const groupSpec = specArgs.join(' ');
       const resolved = resolveGroup(groupSpec);
 
       if (groupSpec && resolved && resolved.ambiguous) {
@@ -149,7 +163,7 @@ module.exports = {
       try {
         const meta = await sock.groupMetadata(groupJid).catch(() => null);
         if (meta && meta.participants) {
-          inGroup = meta.participants.some(p => targetVariants.includes(p.id) || p.lid === target);
+          inGroup = meta.participants.some(p => targetVariants.includes(p.id) || targetVariants.includes(p.lid));
         }
       } catch (e) {}
 

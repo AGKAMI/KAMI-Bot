@@ -8,6 +8,15 @@ const { PassThrough } = require('stream');
 const config = require('../../config');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
+// fluent-ffmpeg is OPTIONAL here: a hard require used to crash module load
+// (the package isn't in package.json), and the bare `ffmpeg(...)` calls in
+// toVN()/generateWaveform() then only "worked" because the callers' try/catch
+// swallowed the ReferenceError. Guard it: conversion runs when the package is
+// present, and the audio-status paths fall back (raw buffer / no waveform)
+// cleanly when it isn't.
+let ffmpeg = null;
+try { ffmpeg = require('fluent-ffmpeg'); } catch (e) { /* not installed — audio status falls back */ }
+
 // Single default color for text statuses (purple)
 const PURPLE_COLOR = '#9C27B0';
 

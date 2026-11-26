@@ -35,7 +35,7 @@ module.exports = {
         `🤖 *Node:* ${process.version}`,
         `🌐 *Platform:* ${os.platform()} ${os.arch()}`,
         ``,
-        `👑 *Owner:* ${config.ownerName || 'AG KAMI'}`,
+        `👑 *Owner:* ${Array.isArray(config.ownerName) ? config.ownerName[0] : (config.ownerName || 'AG KAMI')}`,
         `⚡ *Prefix:* ${config.prefix || '.'}`,
         ``,
         `💡 _${config.prefix || '.'}menu for all commands_`

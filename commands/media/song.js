@@ -12,6 +12,10 @@ const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 const YTDL_PATH = '/home/container/.local/bin/yt-dlp';
 
+// Cap the in-RAM audio read — yt-dlp streams to disk, but readFileSync of an
+// unbounded file is the OOM vector left on a 256MB box.
+const MAX_AUDIO_BYTES = 32 * 1024 * 1024;
+
 let activeAudioDownloads = 0;
 
 module.exports = {
@@ -48,7 +52,7 @@ module.exports = {
         const search = await yts(text);
         if (!search || !search.videos.length) {
           extra.fail();
-          return await extra.edit(sent.key, `❌ _${voice.openErr()}, nothing for that one, shame_`);
+          return await extra.edit(sent.key, `❌ _${voice.openErr()}, nothing found for that one_`);
         }
         video = search.videos[0];
       }
@@ -61,16 +65,23 @@ module.exports = {
       } catch (err) {
         console.error('[song] yt-dlp failed:', err.message);
         extra.fail();
-        return await extra.edit(sent.key, `❌ _download failed hey — ${err.message}_`);
+        return await extra.edit(sent.key, `❌ _${voice.openErr()} — download failed: ${err.message}_`);
       }
 
       let audioBuffer;
       try {
+        // Cap the read — the box has 256MB total and a long track at
+        // audio-quality 0 can blow past that if buffered whole.
+        const audioSize = fs.statSync(audioFile).size;
+        if (audioSize > MAX_AUDIO_BYTES) {
+          fs.unlinkSync(audioFile);
+          throw new Error(`audio too large (${Math.round(audioSize / 1048576)}MB > ${MAX_AUDIO_BYTES / 1048576}MB)`);
+        }
         audioBuffer = fs.readFileSync(audioFile);
         fs.unlinkSync(audioFile); // delete temp file after reading
       } catch (dlErr) {
         extra.fail();
-        return await extra.edit(sent.key, `❌ _read failed hey — ${dlErr.message}_`);
+        return await extra.edit(sent.key, `❌ _${voice.openErr()} — read failed: ${dlErr.message}_`);
       }
 
       if (!audioBuffer || audioBuffer.length === 0) {
@@ -90,7 +101,7 @@ module.exports = {
     } catch (err) {
       console.error('Song command error:', err);
       extra.fail();
-      await extra.reply(`❌ _${voice.openErr()} — something went stukkend — ${err.message}_`);
+      await extra.reply(`❌ _${voice.openErr()} — something went wrong: ${err.message}_`);
     } finally {
       activeAudioDownloads--;
     }

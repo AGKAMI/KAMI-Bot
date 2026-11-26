@@ -11,7 +11,10 @@ const { getTeamDisplayName, getRoleEmoji } = require('../../utils/teamName');
 module.exports = {
   name: 'roster',
   reactions: { received: '📋', done: '👥' },
-  aliases: ['members'],
+  // No 'members' alias — general/members.js owns it. Registering it here too
+  // made one of the two commands silently unreachable (commandLoader logs the
+  // override; whichever file loads last wins, so `!members` was a coin flip).
+  aliases: [],
   description: 'Show every crew member with activity stats',
   usage: '.crew roster',
   isCrew: true,

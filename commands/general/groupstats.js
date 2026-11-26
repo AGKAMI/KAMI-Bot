@@ -20,7 +20,7 @@ module.exports = {
             const stats = getStats(from);
 
             if (!stats)
-                return extra.reply(`⚠️ *WARNING*\n💡 Nothing happening today hey`);
+                return extra.reply(`⚠️ *WARNING*\n💡 Nothing happening today`);
 
             const { total, users } = stats;
 
@@ -52,7 +52,7 @@ ${topText}
         } catch (err) {
             console.error('[groupstats cmd] error:', err);
             extra.fail();
-            extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()}, couldn't load stats`);
+            await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()}, couldn't load stats`);
         }
     }
 };

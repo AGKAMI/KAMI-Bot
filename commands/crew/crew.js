@@ -37,7 +37,10 @@ const TEAM_TOKEN_SUBS = new Set(['apply', 'applicants', 'history', 'pending']);
 module.exports = {
   name: 'crew',
   reactions: { received: '👥', done: '🎖️' },
-  aliases: ['ss', 'slammed'],
+  // No 'ss' alias — general/ssweb.js owns it (screenshot). Duplicating it here
+  // made one of the two unreachable: commandLoader logs the override and the
+  // later-loading file wins, so `!ss` depended on directory iteration order.
+  aliases: ['slammed'],
   category: 'crew',
   description: 'Slammed Society crew management',
   usage: '.crew [team] <add|remove|promote|demote|role|event|events|attend|result|apply|accept|deny|applicants|teams|setteam> [args]',

@@ -118,22 +118,23 @@ module.exports = {
 
       const text = buildTeamText(teamKey);
       const imgPath = getTeamImage(teamKey);
+      const hasImage = fs.existsSync(imgPath);
 
       const applicantJid = extra.sender;
       const userTeam = getUserTeam(applicantJid);
       const pendingTeam = getUserPendingTeam(applicantJid);
       const canApply = userTeam !== teamKey && pendingTeam !== teamKey;
 
-      // Send image if available
-      if (fs.existsSync(imgPath)) {
+      // Send image if available — the text rides along as the caption.
+      // When there is NO image the text must go out exactly once: it used
+      // to be sent here AND again inside the buttons message below.
+      if (hasImage) {
         const imageBuffer = fs.readFileSync(imgPath);
         await sock.sendMessage(extra.from, {
           image: imageBuffer,
           caption: text,
           mentions: [applicantJid],
         }, { quoted: msg });
-      } else {
-        await sock.sendMessage(extra.from, { text }, { quoted: msg });
       }
 
       // Delay before buttons to avoid rate limiter
@@ -159,7 +160,7 @@ module.exports = {
       }
 
       await sendButtons(sock, extra.from, {
-        text: fs.existsSync(imgPath) ? 'Tap a button 👇' : text,
+        text: hasImage ? 'Tap a button 👇' : text,
         footer: config.botName || 'KAMI Bot',
         buttons,
       }, msg);
@@ -176,7 +177,7 @@ module.exports = {
 onButton('start:team:', async (sock, msg, from, sender, btnId) => {
   if (btnId === 'start:team:you') {
     await sock.sendMessage(from, {
-      text: `✅ You're already part of this team, ne!`,
+      text: `✅ You're already part of this team`,
     }, { quoted: msg });
   } else if (btnId === 'start:team:pending') {
     await sock.sendMessage(from, {

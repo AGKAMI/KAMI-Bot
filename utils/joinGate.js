@@ -474,7 +474,10 @@ const { onButton } = require('./buttonHelper');
 onButton('joingate:apply:', async (sock, msg, from, sender, btnId) => {
   try {
     const teamKey = btnId.replace('joingate:apply:', '').toUpperCase();
-    if (!config.crewTeams[teamKey]) return;
+    // Guard the lookup itself: a malformed/forged tap id (or a config export
+    // without crewTeams) would otherwise throw TypeError inside the handler
+    // and the applicant gets no reply at all.
+    if (!config.crewTeams || !config.crewTeams[teamKey]) return;
 
     // createApplication validates pending/roster state itself — on success
     // the 48h clock is moot

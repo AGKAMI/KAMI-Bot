@@ -17,20 +17,25 @@ module.exports = {
     async execute(sock, msg, args, extra) {
       try {
         const metadata = extra.groupMetadata;
-        
+
+        if (!metadata || !metadata.participants) {
+          extra.fail();
+          return await extra.reply(`❌ *ERROR*\n\nCouldn't fetch group info, ${voice.tag('err')}`);
+        }
+
         const admins = metadata.participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
         const members = metadata.participants.filter(p => !p.admin);
-        
+
         let text = `✅ *GROUP INFO*\n\n`;
                 text += `🏷️ *Name:* ${metadata.subject}\n`;
                 text += `👥 *Members:* ${metadata.participants.length}\n`;
                 text += `👑 *Admins:* ${admins.length}\n`;
-                text += `💀 *Members:* ${members.length}\n\n`;
+                text += `🧑 *Non-Admins:* ${members.length}\n\n`;
                 text += `📜 *Description*\n${metadata.desc || 'No description'}\n\n`;
                 text += `🔒 *Settings*\n`;
                 text += `🔒 *Restrict:* ${metadata.restrict ? '✅' : '❌'}\n`;
                 text += `📢 *Announce:* ${metadata.announce ? '✅' : '❌'}\n`;
-                text += `📅 *Created:* ${fmtDate(metadata.creation * 1000)}\n\n`;
+                text += `📅 *Created:* ${metadata.creation ? fmtDate(metadata.creation * 1000) : 'Unknown'}\n\n`;
                 text += `👑 *Admins List*\n`;
         
                 admins.forEach((admin, index) => {

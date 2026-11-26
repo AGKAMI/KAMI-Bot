@@ -116,7 +116,7 @@ module.exports = {
         await extra.reply('❌ no image there — try again');
       } else if (error.response?.status === 429) {
         extra.fail();
-        await extra.reply('❌ rate limit — try again later, hey');
+        await extra.reply('❌ rate limit — try again later');
       } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         extra.fail();
         await extra.reply('❌ timed out — try again');

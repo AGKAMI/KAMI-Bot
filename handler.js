@@ -25,7 +25,7 @@ const joinGate = require('./utils/joinGate');
 // Honest group-participant outcomes (status codes — no-throw ≠ success)
 const { groupAction } = require('./utils/groupActions');
 const { runWithReactions, stageEmoji, classifyReply } = require('./utils/progressReaction');
-const { updateBlockStatusSafe } = require('./utils/jidHelper');
+const { updateBlockStatusSafe, ownerDmTargets } = require('./utils/jidHelper');
 const { resetFirstSeen } = require('./utils/kickSettings');
 const nameCache = require('./utils/nameCache');
 const { fmtDate, fmtTime } = require('./utils/sast');
@@ -1947,17 +1947,19 @@ const handleGroupUpdate = async (sock, update) => {
                 } catch {}
 
                 // DM the owner
-                for (const oNum of (config.ownerNumber || [])) {
+                // DM the owner — ownerDmTargets() resolves the LOCAL-form
+                // config numbers to real jids (the raw `${oNum}@s.whatsapp.net`
+                // build produced invalid jids, so this DM never arrived).
+                for (const oJid of ownerDmTargets()) {
                   try {
-                    const oJid = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
                     await sock.sendMessage(oJid, {
                       text: removed
-                        ? `🛡️ *KICK BAN* 💪\n\n` +
+                        ? `dY>��,? *KICK BAN* dY'�\n\n` +
                           `@${bannedNum} tried sneaking back into a group\n\n` +
                           `Kicked them straight back out, ${voice.tag('neutral')}`
-                        : `⚠️ *KICK BAN* 💀\n\n` +
+                        : `�s��,? *KICK BAN* dY'?\n\n` +
                           `@${bannedNum} (banned) got re-added to a group\n\n` +
-                          `I'm not admin there so I couldn't kick them back out — sort me out hey`,
+                          `I'm not admin there so I couldn't kick them back out �?" sort me out hey`,
                       mentions: [jid],
                     });
                   } catch {}
@@ -2152,10 +2154,11 @@ const handleGroupUpdate = async (sock, update) => {
                 } catch (e) {}
                 const authorNum = authorJid.split(':')[0].split('@')[0];
 
-                const ownerNumbers = config.ownerNumber || [];
-                for (const ownerNum of ownerNumbers) {
+                // ownerDmTargets() — config.ownerNumber is LOCAL form
+                // ('0840820712'), so the old `${ownerNum}@s.whatsapp.net`
+                // build produced an invalid jid and this notice never arrived.
+                for (const ownerJid of ownerDmTargets()) {
                   try {
-                    const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
                     await sock.sendMessage(ownerJid, {
                       text:
                         `🛡️ *PROTECTION* 💀\n\n` +
@@ -2177,10 +2180,8 @@ const handleGroupUpdate = async (sock, update) => {
               const memberNum = jid.split(':')[0].split('@')[0];
               let leftGname = '';
               try { leftGname = await protectionDm.groupName(sock, id); } catch (e) {}
-              const ownerNumbers = config.ownerNumber || [];
-              for (const ownerNum of ownerNumbers) {
+              for (const ownerJid of ownerDmTargets()) {
                 try {
-                  const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
                   await sock.sendMessage(ownerJid, {
                     text:
                       `👋 *MEMBER LEFT*\n\n` +
@@ -2277,12 +2278,10 @@ const handleGroupUpdate = async (sock, update) => {
                         } catch (e) {}
                       }
                       const demoterNum = demoterJid ? demoterJid.split(':')[0].split('@')[0] : null;
-                      const ownerNumbers = config.ownerNumber || [];
-                      for (const ownerNum of ownerNumbers) {
+                      for (const ownerJid of ownerDmTargets()) {
                         try {
-                          const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
-                          await sock.sendMessage(ownerJid, {
-                            text:
+                        await sock.sendMessage(ownerJid, {
+                          text:
                               `🛡️ *ADMIN PROTECTION* 💀\n\n` +
                               `@${number} got demoted in *${demoteGname}*${demoterNum ? ` by @${demoterNum}` : ''}\n` +
                               `You promoted them, so they're *protected*\n\n` +
@@ -2971,3 +2970,9 @@ module.exports = {
   allowTempDm,
   isTempAllowed,
 };
+
+
+
+
+
+

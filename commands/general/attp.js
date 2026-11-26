@@ -20,7 +20,7 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply(`⚠️ *WARNING*\n💡 Give me some text, hey\n\n📝 *Example:* ${bold((config.prefix || '.') + 'attp Hello World')}`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Give me some text\n\n📝 *Example:* ${bold((config.prefix || '.') + 'attp Hello World')}`);
       }
       
       const text = args.join(' ');
@@ -58,7 +58,9 @@ function renderBlinkingVideoWithFfmpeg(text) {
       .replace(/'/g, "\\'")
       .replace(/\[/g, '\\[')
       .replace(/\]/g, '\\]')
-      .replace(/%/g, '\\%');
+      .replace(/%/g, '\\%')
+      // A literal newline would split the -vf filter string in half
+      .replace(/\r?\n/g, ' ');
 
     const safeText = escapeDrawtextText(text);
     const safeFontPath = process.platform === 'win32'
@@ -91,13 +93,19 @@ function renderBlinkingVideoWithFfmpeg(text) {
     const ff = spawn('ffmpeg', args);
     const chunks = [];
     const errors = [];
+    // One watchdog per call — it MUST be cleared on every exit path or it
+    // keeps the event loop alive for a full minute after each sticker
+    const watchdog = setTimeout(() => {
+      ff.kill('SIGKILL');
+      reject(new Error('ffmpeg timed out after 60s'));
+    }, 60000);
     ff.stdout.on('data', d => chunks.push(d));
     ff.stderr.on('data', e => errors.push(e));
-    ff.on('error', reject);
+    ff.on('error', (err) => { clearTimeout(watchdog); reject(err); });
     ff.on('close', code => {
+      clearTimeout(watchdog);
       if (code === 0) return resolve(Buffer.concat(chunks));
       reject(new Error(Buffer.concat(errors).toString() || `ffmpeg exited with code ${code}`));
     });
-    setTimeout(() => { ff.kill('SIGKILL'); reject(new Error('ffmpeg timed out after 60s')); }, 60000);
   });
 }

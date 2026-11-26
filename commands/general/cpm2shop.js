@@ -11,6 +11,7 @@
 const config = require('../../config');
 const { sendButtons } = require('../../utils/buttonHelper');
 const { voice } = require('../../utils/format');
+const { normalizeJidWithLid } = require('../../utils/jidHelper');
 
 const API_BASE = (process.env.VANTA_API_URL || 'https://cpm2-bay.vercel.app/api/store').replace(/\/$/, '');
 const WEB_BASE = (process.env.VANTA_WEB_URL || 'https://cpm2-bay.vercel.app').replace(/\/$/, '');
@@ -22,7 +23,21 @@ const FETCH_TIMEOUT_MS = 15000;
 
 function formatCents(cents, currency = 'ZAR') {
   const value = Number(cents || 0) / 100;
-  return new Intl.NumberFormat('en-ZA', { style: 'currency', currency }).format(value);
+  try {
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency }).format(value);
+  } catch {
+    // Unexpected currency code from the API — Intl throws RangeError
+    return `R${value.toFixed(2)}`;
+  }
+}
+
+// Group clicks must be redirected to a real DM jid. A raw sender can be a
+// LID (xxx@lid, digits ≠ phone number) — normalize before building the DM jid.
+function toDmJid(sender) {
+  const resolved = normalizeJidWithLid(sender);
+  if (!resolved) return null;
+  const phone = resolved.split(':')[0].split('@')[0];
+  return phone + '@s.whatsapp.net';
 }
 
 async function fetchCpm2Catalogue() {
@@ -184,10 +199,13 @@ module.exports = {
     try {
       const from = extra.from;
       const isGroup = from.endsWith('@g.us');
-      const target = isGroup ? extra.sender.split(':')[0].split('@')[0] + '@s.whatsapp.net' : from;
+      const target = isGroup ? toDmJid(extra.sender) : from;
       if (isGroup) {
         await sock.sendMessage(from, { text: `🏁 _check your DMs for the CPM2 garage._` }, { quoted: msg });
       }
+      if (!target) return;
+      // Unblock so DMs land (same as .order's group → DM redirect)
+      try { await sock.updateBlockStatus(target, 'unblock'); } catch (e) {}
       await sendCpm2Sections(sock, target, msg);
     } catch (error) {
       console.error('[CPM2SHOP] command error:', error);

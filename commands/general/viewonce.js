@@ -145,8 +145,9 @@ module.exports = {
     } catch (error) {
       console.error('Error in viewonce command:', error);
       extra.fail();
+      // extra.from (not msg.key.remoteJid) — the catch must never throw itself
       await sock.sendMessage(
-        msg.key.remoteJid,
+        extra.from,
         {
           text:
             `❌ *ERROR*\n💡 ${voice.openErr()}, couldn't process view-once — ${(error.message || 'Unknown error')}`

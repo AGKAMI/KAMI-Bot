@@ -35,15 +35,23 @@ module.exports = {
     
     try {
       // Read the current config file
-      let configFile = fs.readFileSync(configPath, 'utf8');
-      
-      // Update the anticall setting
-      if (enabled) {
-        configFile = configFile.replace(/anticall:\s*false/g, 'anticall: true');
-      } else {
-        configFile = configFile.replace(/anticall:\s*true/g, 'anticall: false');
+      const before = fs.readFileSync(configPath, 'utf8');
+
+      // Flip only the anticall boolean literal — never a whole line, and only
+      // after proving the line exists. A no-op replace used to still answer
+      // "ANTICALL ON" while config.js never changed.
+      const probe = enabled ? /anticall:\s*false/ : /anticall:\s*true/;
+      if (!probe.test(before)) {
+        extra.fail();
+        return extra.reply(
+          `*❌ ERROR* — no \`anticall:\` ${enabled ? 'false' : 'true'} line in config.js to flip`
+        );
       }
-      
+      const configFile = before.replace(
+        enabled ? /anticall:\s*false/g : /anticall:\s*true/g,
+        m => m.replace(/false|true/, enabled ? 'true' : 'false')
+      );
+
       // Write the updated config file
       fs.writeFileSync(configPath, configFile);
       

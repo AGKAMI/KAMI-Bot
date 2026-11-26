@@ -33,7 +33,7 @@ module.exports = {
           `⚡ *Response:* ${responseTime}ms`,
           `📊 *Quality:* ${quality}`,
           ``,
-          `⏱️ _Tested just now, lekke — all sweet on my side_`
+          `⏱️ _Tested just now_`
         ].join('\n');
         
         await sock.sendMessage(extra.from, {
@@ -43,7 +43,7 @@ module.exports = {
         
       } catch (error) {
         extra.fail();
-        await extra.reply(`❌ *ERROR*\n💡 Something went stukkend — ${error.message}`);
+        await extra.reply(`❌ *ERROR*\n💡 Something went wrong — ${error.message}`);
       }
     }
   };

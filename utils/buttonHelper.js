@@ -347,9 +347,11 @@ async function handleButtonResponse(sock, msg, isAdmin) {
     // panel log buffer rotates in minutes).
     console.log(`[BTNTAP] id=${btnId} from=${from} sender=${sender} fmt=${m.templateButtonReplyMessage ? 'template' : m.buttonsResponseMessage ? 'buttons' : 'interactive'}`);
 
-    // Admin-only check
+    // Admin-only check. Owner bypasses every gate everywhere — both call
+    // sites OR isOwner in already, but this central gate must not depend on
+    // that: one call site forgetting the OR locks KAMI out of their own bot.
     if (isAdminOnly(btnId)) {
-      const isSenderAdmin = typeof isAdmin === 'function' ? await isAdmin(sender, from) : false;
+      const isSenderAdmin = (typeof isAdmin === 'function' && await isAdmin(sender, from)) || isOwnerJid(msg, sender);
       if (!isSenderAdmin) {
         await sock.sendMessage(from, {
           text: adminOnlyText(),

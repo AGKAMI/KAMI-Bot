@@ -17,7 +17,7 @@ module.exports = {
   async execute(sock, msg, args, extra) {
     try {
       if (args.length === 0) {
-        return extra.reply(`⚠️ *WARNING*\n💡 Give me a website link hey\n\n📝 *Example:* *${config.prefix || '.'}ssweb https://github.com*`);
+        return extra.reply(`⚠️ *WARNING*\n💡 Give me a website link\n\n📝 *Example:* *${config.prefix || '.'}ssweb https://github.com*`);
       }
       
       let url = args.join(' ');

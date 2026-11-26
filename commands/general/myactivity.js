@@ -51,7 +51,7 @@ module.exports = {
         } catch (err) {
             console.error('[myactivity cmd] error:', err);
             extra.fail();
-            extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()}, couldn't pull the your activity`);
+            await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()}, couldn't pull your activity`);
         }
     }
 };

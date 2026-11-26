@@ -138,8 +138,10 @@ module.exports = {
       // Target was explicitly given but couldn't be resolved — never fall
       // through to self-apply. That's what produced "You're already in … ne"
       // about the SENDER when KAMI ran !crew apply <team> <number> with
-      // a junk-laden phone number.
-      if (!resolved.jid) {
+      // a junk-laden phone number. Nothing given at all (bare `.apply <team>`)
+      // is NOT an attempt — that's the self-apply path and must keep working
+      // (this block used to fire for it, making every self-apply reply an error).
+      if (!resolved.jid && ((resolved.args || []).join(' ').trim() || resolved.error)) {
         return extra.reply(
           `❌ ERROR\n\nCouldn't work out who you meant to apply for.\n\n` +
           `Use \`${prefix}apply <team> @user\`, \`${prefix}apply <team> <number>\`, ` +

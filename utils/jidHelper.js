@@ -195,6 +195,34 @@ const mentionJid = (jid) => {
   return jid;
 };
 
+// Owner DM targets — every owner notification in this codebase used to build
+// `${ownerNum}@s.whatsapp.net` straight from config.ownerNumber, which stores
+// SA LOCAL form ('0840820712'). That server part is not a valid jid, so the
+// send threw and the surrounding `catch (e) {}` swallowed it — the owner never
+// received protection-kick notices, bring-me-back confirmations or anything
+// else keyed off those two loops. Returns candidate jids to try in order:
+//   local '0…' number  -> 27…@s.whatsapp.net, 27…@lid
+//   15-digit entry      -> @lid (that's a LID user id, not a phone number)
+//   explicit jid       -> as configured
+const ownerDmTargets = () => {
+  let nums = [];
+  try { nums = require('../config').ownerNumber || []; } catch (e) { return []; }
+  const out = [];
+  const seen = new Set();
+  const push = (jid) => { if (jid && !seen.has(jid)) { seen.add(jid); out.push(jid); } };
+  for (const raw of nums) {
+    if (typeof raw !== 'string') continue;
+    if (raw.includes('@')) { push(raw); continue; }
+    const d = raw.replace(/\D/g, '');
+    if (!d) continue;
+    if (d.length >= 15) { push(`${d}@lid`); continue; }
+    const intl = d.startsWith('0') ? `27${d.slice(1)}` : d;
+    push(`${intl}@s.whatsapp.net`);
+    push(`${intl}@lid`);
+  }
+  return out;
+};
+
 // Membership test for sock.fetchBlocklist() results. List entries may be
 // PN or LID jids — match digits against every known variant of the target
 // so a LID-form entry can't read as "not blocked".
@@ -265,6 +293,7 @@ module.exports = {
   mentionJid,
   inBlocklist,
   updateBlockStatusSafe,
+  ownerDmTargets,
   trackSendAck
 };
 

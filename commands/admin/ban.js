@@ -12,7 +12,15 @@ const parseNumber = (input) => {
   if (!input) return null;
   let digits = input.replace(/\D/g, '');
   if (!digits || digits.length < 8) return null;
-  if (digits.startsWith('0')) digits = (config.defaultCountryCode || '27') + digits.slice(1);
+  // Local SA format: leading 0 → prepend country code, drop the 0
+  if (digits.startsWith('0') && digits.length >= 9) {
+    digits = (config.defaultCountryCode || '27') + digits.slice(1);
+  }
+  // Local number typed WITHOUT the leading 0 (9 digits) → prepend country
+  // code too, otherwise we'd build an invalid JID that matches nobody
+  else if (!digits.startsWith(config.defaultCountryCode || '27') && digits.length >= 9) {
+    digits = (config.defaultCountryCode || '27') + digits;
+  }
   return digits + '@s.whatsapp.net';
 };
 

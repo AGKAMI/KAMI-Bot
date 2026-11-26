@@ -13,7 +13,7 @@ const config = require('../../config');
 const database = require('../../database');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { normalizeJidWithLid, buildComparableIds, updateBlockStatusSafe, inBlocklist } = require('../../utils/jidHelper');
-const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { sendButtons, onButton, isOwnerJid } = require('../../utils/buttonHelper');
 const { TEAMS } = require('../crew/crewForms');
 const { createApplication } = require('../crew/applyHelper');
 const { sendMainMenu: sendOrderMenu } = require('./order');
@@ -312,15 +312,17 @@ onButton('start:apply', async (sock, msg, from, sender) => {
   if (isGroup) {
     // In group: tell user to check DMs (no @mention needed — bot is sending TO them)
     await sock.sendMessage(from, {
-      text: `💬 _DM'd you the form, ${voice.mate()} — check your DMs hey_`,
+      text: `💬 _DM'd you the form, ${voice.mate()} — check your DMs_`,
     }, { quoted: msg });
   }
   
   // Unblock so DMs land + mark them temp-allowed (orders/apply only)
   const dmJid = toDmJid(sender);
 
-  // Owner bypass: owner has full access — no unblock check
-  if (extra.isOwner) {
+  // Owner bypass: owner has full access — no unblock check.
+  // NOTE: button handlers get (sock, msg, from, sender) — there is no `extra`
+  // here, so the owner test must be derived from msg/sender, not extra.isOwner.
+  if (isOwnerJid(msg, sender)) {
     await sendTeamCards(sock, dmJid, sender);
     return;
   }
@@ -343,14 +345,15 @@ onButton('start:order', async (sock, msg, from, sender) => {
   const isGroup = from.endsWith('@g.us');
   if (isGroup) {
     await sock.sendMessage(from, {
-      text: `💬 _DM'd you the catalog, ${voice.mate()} — go have a look hey_`,
+      text: `💬 _DM'd you the catalog, ${voice.mate()} — go have a look_`,
     }, { quoted: msg });
   }
   const dmJid = toDmJid(sender);
 
-  // Owner bypass: owner has full access — no unblock check, no restriction message
-  if (extra.isOwner) {
-    await sendMainMenu(sock, dmJid, msg);
+  // Owner bypass: owner has full access — no unblock check, no restriction message.
+  // Button handlers receive (sock, msg, from, sender) — `extra` does not exist here.
+  if (isOwnerJid(msg, sender)) {
+    await sendOrderMenu(sock, dmJid, msg);
     return;
   }
 

@@ -70,7 +70,7 @@ module.exports = {
             videoUrl = videos[0].url;
           } catch (e) {
             extra.fail();
-            return extra.reply(`❌ _search failed hey — ${e.message}_`);
+            return extra.reply(`❌ _${voice.openErr()} — search failed: ${e.message}_`);
           }
         }
 
@@ -91,7 +91,7 @@ module.exports = {
           videoData = await APIs.ytDownload(videoUrl, 'video');
         } catch (err) {
           extra.fail();
-          return await extra.edit(sent.key, `❌ _download failed hey — ${err.message}_`);
+          return await extra.edit(sent.key, `❌ _${voice.openErr()} — download failed: ${err.message}_`);
         }
 
         if (!videoData.download) { extra.fail(); return await extra.edit(sent.key, `❌ _${voice.openErr()}, no download URL received_`); }
@@ -118,13 +118,13 @@ module.exports = {
             return await extra.edit(sent.key, `❌ _that video is too big — try a shorter one or under 20MB_`);
           }
           extra.fail();
-          return await extra.edit(sent.key, `❌ _download failed hey — ${dlErr.message}_`);
+          return await extra.edit(sent.key, `❌ _${voice.openErr()} — download failed: ${dlErr.message}_`);
         }
 
         const sizeMB = videoBuffer.length / (1024 * 1024);
         if (sizeMB > MAX_SIZE_MB) {
           extra.fail();
-          return await extra.edit(sent.key, `❌ _video too large (${sizeMB.toFixed(1)}MB) — WhatsApp limit's 16MB_`);
+          return await extra.edit(sent.key, `❌ _video too large (${sizeMB.toFixed(1)}MB) — WhatsApp's limit is 16MB_`);
         }
 
         // YouTube downloads are already mp4. Re-encoding every download with

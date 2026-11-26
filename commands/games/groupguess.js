@@ -13,7 +13,7 @@ module.exports = {
     if (sub === 'start' || sub === 'new') {
       const target = Math.floor(Math.random() * 100) + 1;
       games.set(ctx.from, { target, attempts: 0 });
-      return ctx.reply(`🎯 Group Number Guess!\nI'm thinking of 1-100.\nUse ${config.prefix || '.'}gguess <number> to play. Closest wins, hey!`);
+      return ctx.reply(`🎯 Group Number Guess!\nI'm thinking of 1-100.\nUse ${config.prefix || '.'}gguess <number> to play. Closest wins!`);
     }
     if (sub === 'stop') {
       games.delete(ctx.from);

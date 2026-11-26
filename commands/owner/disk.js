@@ -68,7 +68,7 @@ module.exports = {
       await sock.sendMessage(extra.from, {
         text:
           `💾 *DISK USAGE*\n` +
-          `━━━━━━━━━━━━━━━━\n` +
+          `----------\n` +
           `📦 Total: *${total}*\n\n${lines}${gcLine}\n\n` +
           `_${voice.lead('neutral')}_`,
       }, { quoted: msg });

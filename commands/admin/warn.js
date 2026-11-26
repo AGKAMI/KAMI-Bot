@@ -58,8 +58,8 @@ module.exports = {
 
       const reason = args.slice(mentioned.length > 0 ? 1 : 0).join(' ') || 'No reason specified';
 
-      // Cannot warn admins
-      const foundParticipant = extra.groupMetadata.participants.find(
+      // Cannot warn admins — prefer the fresh null-guarded metadata fetch
+      const foundParticipant = (meta || extra.groupMetadata)?.participants?.find(
         p => (p.id === target || p.lid === target) && (p.admin === 'admin' || p.admin === 'superadmin')
       );
 
@@ -80,10 +80,12 @@ module.exports = {
 
       if (warnings.count >= config.maxWarnings) {
         // Owner-protected members can't be warn-kicked — only KAMI kicks them
+        // (independent of isBotAdmin: a protected member must never reach the
+        // "getting removed" path, kick or no kick)
         const { buildComparableIds } = require('../../utils/jidHelper');
         const isProtectedMember = [target, ...buildComparableIds(target)]
           .some(v => database.isOwnerProtected(extra.from, v));
-        if (isProtectedMember && extra.isBotAdmin) {
+        if (isProtectedMember) {
           text += `🛡️ *PROTECTED* — only KAMI kicks them, hey`;
           await sock.sendMessage(extra.from, {
             text,

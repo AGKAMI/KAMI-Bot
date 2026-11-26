@@ -59,9 +59,10 @@ module.exports = {
       const applicantJid = processed.applicantJid;
       const teamGroupJid = processed.groupJid || config.crewTeams[teamKey]?.jid;
 
-      // Remove the processed record
+      // Remove the processed record (getTeam can return null for an unmapped jid —
+      // the old bare `crew.processedApps` threw a TypeError on that)
       const crew = database.getTeam(teamGroupJid);
-      if (crew.processedApps && crew.processedApps[uid]) {
+      if (crew && crew.processedApps && crew.processedApps[uid]) {
         delete crew.processedApps[uid];
         database.updateTeam(teamGroupJid, crew);
         database.flushCrew();

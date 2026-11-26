@@ -9,12 +9,25 @@ const config = require('../../config');
 const { bold, pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
 const store = require('../../utils/reminderStore');
+const { buildComparableIds } = require('../../utils/jidHelper');
 
 const MAX_REMINDERS = 5;
 const SNOOZE_TTL = 60 * 60 * 1000; // snooze button valid 1h after firing
 const firedReminders = new Map(); // reminderId → fired reminder data (in-memory only — snooze is ephemeral)
 
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+// Do two jids point at the same human? Covers PN vs LID — the reminder was
+// addressed to a stored jid (often the PN form) while the button response
+// arrives from the person's LID, so a digits-only compare locked them out
+// of their own snooze/done buttons.
+function jidsMatch(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const av = buildComparableIds(a);
+  const bv = buildComparableIds(b);
+  return av.some(v => bv.includes(v));
+}
 
 const fireReminder = async (sock, r, meta = {}) => {
     firedReminders.set(r.id, {
@@ -129,7 +142,7 @@ module.exports = {
                     extra.fail();
                     return extra.reply(
                         `❌ *ERROR*\n\n` +
-                        `💡 No good: reminder number. Use *${prefix}remind list* to see active reminders`
+                        `💡 That reminder number doesn't exist. Use *${prefix}remind list* to see active reminders`
                     );
                 }
 
@@ -164,7 +177,7 @@ module.exports = {
                 extra.fail();
                 return extra.reply(
                     `❌ *ERROR*\n\n` +
-                    `📋 Max ${MAX_REMINDERS} active reminders per group, hey.\n` +
+                    `📋 Max ${MAX_REMINDERS} active reminders per group.\n` +
                     `Use *${prefix}remind list* or *${prefix}remind cancel <number>*`
                 );
             }
@@ -262,7 +275,7 @@ onButton('remind:again:', async (sock, msg, from, sender, btnId) => {
   if (!fired || fired.groupId !== from) return;
 
   const senderNum = sender.split(':')[0].split('@')[0].replace(/\D/g, '');
-  const isTarget = fired.targetJids.some(j => String(j).split(':')[0].split('@')[0].replace(/\D/g, '') === senderNum);
+  const isTarget = fired.targetJids.some(j => jidsMatch(j, sender));
   const isOwnerBtn = (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === senderNum);
   if (!isTarget && !isOwnerBtn) return;
 
@@ -282,7 +295,7 @@ onButton('remind:done:', async (sock, msg, from, sender, btnId) => {
   if (!fired || fired.groupId !== from) return;
 
   const senderNum = sender.split(':')[0].split('@')[0].replace(/\D/g, '');
-  const isTarget = fired.targetJids.some(j => String(j).split(':')[0].split('@')[0].replace(/\D/g, '') === senderNum);
+  const isTarget = fired.targetJids.some(j => jidsMatch(j, sender));
   const isOwnerBtn = (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === senderNum);
   if (!isTarget && !isOwnerBtn) return;
 

@@ -22,7 +22,7 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config');
 const database = require('../database');
-const { buildComparableIds, normalizeJidWithLid } = require('./jidHelper');
+const { buildComparableIds, normalizeJidWithLid, ownerDmTargets } = require('./jidHelper');
 const { onButton } = require('./buttonHelper');
 
 const OFFERS_PATH = path.join(__dirname, '..', 'database', 'protectionOffers.json');
@@ -112,9 +112,12 @@ async function tryReadd(sock, groupJid, memberJid) {
 }
 
 async function notifyOwner(sock, text, mentionJid) {
-  for (const ownerNum of config.ownerNumber || []) {
+  // ownerDmTargets() resolves config.ownerNumber's LOCAL form ('0840820712')
+  // to real jids — the old `${ownerNum}@s.whatsapp.net` build produced an
+  // invalid jid, so every one of these notices died in the catch below and
+  // KAMI never learned a member accepted/declined a bring-me-back offer.
+  for (const ownerJid of ownerDmTargets()) {
     try {
-      const ownerJid = ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
       await sock.sendMessage(ownerJid, { text, mentions: mentionJid ? [mentionJid] : undefined });
     } catch (e) {}
   }

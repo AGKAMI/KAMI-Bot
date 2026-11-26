@@ -47,7 +47,7 @@ module.exports = {
         const pct = total ? Math.round((p.ok / total) * 100) : 0;
         const bar = pct >= 80 ? '🟢' : pct >= 50 ? '🟡' : '🔴';
         text += `${bar} *${name}*: ${p.ok}✅ / ${p.fail}❌ (${pct}%)\n`;
-        if (p.lastFail) text += `   └ last fail: _${p.lastFail}_\n`;
+        if (p.lastFail) text += `   → last fail: _${p.lastFail}_\n`;
       }
       if (stats.updated) {
         text += `\n_clock updated: ${new Date(stats.updated).toLocaleString('en-ZA', { timeZone: config.timezone || 'Africa/Johannesburg' })}_\n`;

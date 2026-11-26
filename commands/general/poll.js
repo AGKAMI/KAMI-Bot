@@ -9,12 +9,25 @@
 const config = require('../../config');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
+const { buildComparableIds } = require('../../utils/jidHelper');
 
 const POLL_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const MAX_OPTIONS = 8; // buttons limit is 10, keep room for the End button
 
+// Do two jids point at the same human? Covers PN vs LID — a poll creator
+// who set the poll up from their phone jid can still end it when WhatsApp
+// hands the button response over as a LID (and vice versa).
+function jidsMatch(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const av = buildComparableIds(a);
+  const bv = buildComparableIds(b);
+  return av.some(v => bv.includes(v));
+}
+
 const polls = new Map(); // pollId → { question, options, votes(Map jid→idx), groupId, creator, createdAt, timeout }
 
+// Housekeeping only — .unref() so it never holds the process open on its own
 setInterval(() => {
   const now = Date.now();
   for (const [id, poll] of polls) {
@@ -23,7 +36,7 @@ setInterval(() => {
       polls.delete(id);
     }
   }
-}, 60 * 60 * 1000);
+}, 60 * 60 * 1000).unref();
 
 function formatResults(poll) {
   const votes = poll.votes;
@@ -61,7 +74,7 @@ module.exports = {
         const active = [...polls.values()].filter(p => p.groupId === from);
         if (active.length === 0) {
           return extra.reply(
-            `📊 *POLLS*\n\nNo active polls in this group, shame\n\n` +
+            `📊 *POLLS*\n\nNo active polls in this group\n\n` +
             `Create one:\n\`${prefix}poll Pizza night? | Yes | No | Maybe\``
           );
         }
@@ -69,7 +82,7 @@ module.exports = {
         for (const poll of active) {
           await sendButtons(sock, from, {
             text: formatResults(poll),
-            footer: `Poll by ${mention(poll.creator)} — vote below, hey, hey`,
+            footer: `Poll by ${mention(poll.creator)} — vote below`,
             buttons: [
               ...poll.options.map((opt, i) => ({ id: `poll:vote:${poll.id}:${i}`, text: `🗳️ ${opt}` })),
               { id: `poll:results:${poll.id}`, text: '📊 Results' },
@@ -183,11 +196,10 @@ onButton('poll:end:', async (sock, msg, from, sender, btnId) => {
   if (!poll || poll.groupId !== from) return;
 
   const senderNum = sender.split(':')[0].split('@')[0].replace(/\D/g, '');
-  const creatorNum = poll.creator.split(':')[0].split('@')[0].replace(/\D/g, '');
   const isOwnerBtn = (config.ownerNumber || []).some(n => n.replace(/\D/g, '') === senderNum);
-  if (senderNum !== creatorNum && !isOwnerBtn) {
+  if (!jidsMatch(sender, poll.creator) && !isOwnerBtn) {
     return await sock.sendMessage(from, {
-      text: `🚫 *POLL CREATOR ONLY*\n\nOnly ${mention(poll.creator)} or the owner can end this poll, shame, shame`,
+      text: `🚫 *POLL CREATOR ONLY*\n\nOnly ${mention(poll.creator)} or the owner can end this poll`,
       mentions: [poll.creator],
     }, { quoted: msg });
   }

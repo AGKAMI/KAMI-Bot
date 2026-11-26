@@ -76,10 +76,14 @@ module.exports = {
       const currentStyle = groupSettings.goodbyeStyle || {};
       const newStyle = { ...currentStyle };
       if (option === 'position') newStyle.position = value;
-      if (option === 'textcolor') newStyle.textColor = value;
-      if (option === 'bgcolor') newStyle.bgColor = value;
-      if (option === 'fontsize') newStyle.fontSize = parseInt(value);
-      if (option === 'subfontsize') newStyle.subFontSize = parseInt(value);
+      else if (option === 'textcolor') newStyle.textColor = value;
+      else if (option === 'bgcolor') newStyle.bgColor = value;
+      else if (option === 'fontsize') newStyle.fontSize = parseInt(value);
+      else if (option === 'subfontsize') newStyle.subFontSize = parseInt(value);
+      else {
+        extra.fail();
+        return extra.reply(`❌ _unknown option: ${option}_`);
+      }
 
       db.updateGroupSettings(groupId, { goodbyeStyle: newStyle });
 

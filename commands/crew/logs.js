@@ -44,7 +44,32 @@ module.exports = {
     }
 
     const sizeKB = (stats.size / 1024).toFixed(1);
-    const raw = fs.readFileSync(LOG_FILE, 'utf8');
+
+    // Bound the read — bot.log grows forever, and loading the whole file
+    // twice (text + document buffer) is an OOM on a 256MB box. Past the cap
+    // only the tail window is read, and the caption says so.
+    const MAX_READ = 4 * 1024 * 1024;
+    let raw;
+    let truncated = false;
+    try {
+      if (stats.size > MAX_READ) {
+        truncated = true;
+        const fd = fs.openSync(LOG_FILE, 'r');
+        try {
+          const buf = Buffer.alloc(MAX_READ);
+          fs.readSync(fd, buf, 0, MAX_READ, stats.size - MAX_READ);
+          raw = buf.toString('utf8').replace(/^[^\n]*\n/, ''); // drop the partial first line
+        } finally {
+          fs.closeSync(fd);
+        }
+      } else {
+        raw = fs.readFileSync(LOG_FILE, 'utf8');
+      }
+    } catch (e) {
+      console.error('[CREW LOGS] read failed:', e.message);
+      return extra.reply('❌ ERROR\n\nCould not read the log file: ' + e.message);
+    }
+
     const lines = raw.split('\n').filter(Boolean);
     const lineCount = lines.length;
 
@@ -54,7 +79,7 @@ module.exports = {
       '📋 *BOT LOG SNAPSHOT*\n\n' +
       '📄 File: database/bot.log\n' +
       '📏 Size: ' + sizeKB + ' KB\n' +
-      '🔢 Lines: ' + lineCount + ' total (showing last 200)\n\n' +
+      '🔢 Lines: ' + lineCount + (truncated ? '+' : ' total') + ' (showing last 200)\n\n' +
       '_Recent entries:\n';
 
     for (const l of tail) {
@@ -67,7 +92,8 @@ module.exports = {
       }
     }
 
-    const buffer = fs.readFileSync(LOG_FILE);
+    // Same window the summary was built from — no second full-file read
+    const buffer = Buffer.from(raw, 'utf8');
 
     try {
       await sock.sendMessage(extra.from, {
@@ -80,7 +106,8 @@ module.exports = {
       console.error('[CREW LOGS] document send failed:', docErr.message);
       await extra.reply(
         '📋 *BOT LOG (text fallback)*\n\n' + summary + '\n' +
-        'Document send failed — the log file is ' + sizeKB + ' KB.\n' +
+        'Document send failed — the log file is ' + sizeKB + ' KB' +
+        (truncated ? ' (last 4 MB window).' : '.') + '\n' +
         '_Ask KAMI to pull database/bot.log from the server directly._'
       );
     }

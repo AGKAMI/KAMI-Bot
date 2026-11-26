@@ -26,7 +26,7 @@ module.exports = {
       const admins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
 
       if (admins.length === 0) {
-        return await extra.reply(`👥 *ADMINS*\n\nNo admins in this group, shame`);
+        return await extra.reply(`👥 *ADMINS*\n\nNo admins in this group`);
       }
 
       const lines = [

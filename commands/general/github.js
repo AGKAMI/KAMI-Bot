@@ -31,7 +31,8 @@ module.exports = {
                 const response = await axios.get(apiUrl, {
                     headers: {
                         'User-Agent': 'KAMI-Bot'
-                    }
+                    },
+                    timeout: 15000
                 });
                 
                 const repo = response.data;

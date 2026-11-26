@@ -10,7 +10,7 @@ const database = require('../../database');
 const config = require('../../config');
 const { pick, SLANG, mention, voice } = require('../../utils/format');
 const { sendButtons, onButton } = require('../../utils/buttonHelper');
-const { buildComparableIds } = require('../../utils/jidHelper');
+const { buildComparableIds, ownerDmTargets } = require('../../utils/jidHelper');
 
 // Lazy require to avoid circular dependency (demote.js ↔ handler.js)
 function getHandler() {
@@ -20,9 +20,11 @@ function getHandler() {
 function getOwnerJid(sock) {
   const botId = sock.user?.id || '';
   const botNum = botId.includes(':') ? botId.split(':')[0] : botId.split('@')[0];
-  const ownerNum = (config.ownerNumber || []).find(n => n !== botNum);
-  if (!ownerNum) return null;
-  return ownerNum.includes('@') ? ownerNum : `${ownerNum}@s.whatsapp.net`;
+  // ownerDmTargets() resolves the LOCAL-form config numbers to real jids —
+  // building `${ownerNum}@s.whatsapp.net` produced an invalid jid, so every
+  // one of these protection DMs died silently in the caller's catch.
+  const targets = ownerDmTargets().filter(t => !botNum || !t.startsWith(botNum));
+  return targets[0] || null;
 }
 
 module.exports = {
@@ -181,10 +183,8 @@ module.exports = {
             } catch (e) {}
 
             // DM owner
-            const ownerNumbers = config.ownerNumber || [];
-            for (const oNum of ownerNumbers) {
+            for (const oJid of ownerDmTargets()) {
               try {
-                const oJid = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
                 await sock.sendMessage(oJid, {
                   text:
                     `🛡️ *PROTECTION* 💀\n\n` +
@@ -283,16 +283,15 @@ module.exports = {
             }
 
             // DM owner — claims mirror the real op outcomes
-            const ownerNumbers2 = config.ownerNumber || [];
+            
             const ownerDemoteLine = violatorDown.ok
               ? `They got demoted for it\n`
               : `⚠️ I couldn't demote them (${violatorDown.error || 'not allowed'})\n`;
             const ownerBackLine = restoreAdmin.ok
               ? `${mention(target)} back where they belong\n\n`
               : `⚠️ Couldn't restore ${mention(target)}'s admin — check my status hey\n\n`;
-            for (const oNum of ownerNumbers2) {
+            for (const oJid2 of ownerDmTargets()) {
               try {
-                const oJid2 = oNum.includes('@') ? oNum : `${oNum}@s.whatsapp.net`;
                 await sock.sendMessage(oJid2, {
                   text:
                     `🛡️ *ADMIN PROTECTION* 💀\n\n` +

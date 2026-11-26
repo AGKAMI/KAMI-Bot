@@ -128,9 +128,12 @@ module.exports = {
                 quotedMsg.videoMessage?.caption ||
                 '[media message]';
 
-            const reportedBy = quotedMsg.extendedTextMessage?.contextInfo?.participant ||
-                msg.message?.extendedTextMessage?.contextInfo?.participant ||
-                'Unknown';
+            // The reported user is the AUTHOR of the quoted message — that is
+            // the reporter's contextInfo.participant. The old first term read
+            // the quoted message's OWN contextInfo (whoever IT replied to),
+            // which for plain quoted text is absent and fell through to the
+            // reporter themself — reporting the wrong person.
+            const reportedBy = msg.message?.extendedTextMessage?.contextInfo?.participant || 'Unknown';
 
             // Block admin reports
             const isReportedAdmin = metadata.participants.some(p =>

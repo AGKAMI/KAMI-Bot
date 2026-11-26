@@ -76,30 +76,48 @@ module.exports = {
         );
       }
       
-      // Validate JID format (should end with @newsletter)
-      if (!newsletterJid.endsWith('@newsletter')) {
+      // Validate JID format — the digits are a WhatsApp-issued server id.
+      // Anything else (a quote, a newline) is interpolated straight into
+      // config.js below, so it has to be locked down here.
+      if (!/^\d{5,32}(:\d+)?@newsletter$/.test(newsletterJid)) {
         return extra.reply(`*❌ ERROR* — that newsletter jid is the wrong format\n\n💡 The jid must end with @newsletter\n📝 Example: 120363161513685998@newsletter`);
       }
-      
+
       // Update config.js
       const configPath = path.join(__dirname, '../../config.js');
-      let configContent = fs.readFileSync(configPath, 'utf8');
-      
+      const configBefore = fs.readFileSync(configPath, 'utf8');
+      let configContent = configBefore;
+      const NEWSLETTER_RE = /newsletterJid:\s*['"][^'"]*['"]/;
+      const SESSION_RE = /(sessionName:\s*['"][^'"]+['"],)/;
+
       // Check if newsletterJid already exists in config
-      if (configContent.includes('newsletterJid:')) {
-        // Update existing newsletterJid
-        configContent = configContent.replace(
-          /newsletterJid:\s*['"]([^'"]+)['"]/,
-          `newsletterJid: '${newsletterJid}'`
+      if (configBefore.includes('newsletterJid:')) {
+        // Update existing newsletterJid — `[^'"]*` (not `+`) so an empty
+        // `newsletterJid: ''` is rewritten too, instead of silently doing
+        // nothing while the reply claimed success
+        if (!NEWSLETTER_RE.test(configBefore)) {
+          extra.fail();
+          return extra.reply(`*❌ ERROR* — found \`newsletterJid:\` in config.js but not in a form I can rewrite`);
+        }
+        // JSON.stringify keeps the value inside a safe string literal
+        configContent = configBefore.replace(
+          NEWSLETTER_RE,
+          `newsletterJid: ${JSON.stringify(newsletterJid)}`
+        );
+      } else if (SESSION_RE.test(configBefore)) {
+        // Add newsletterJid after sessionName
+        configContent = configBefore.replace(
+          SESSION_RE,
+          `$1\n    newsletterJid: ${JSON.stringify(newsletterJid)}, // Newsletter JID for menu forwarding`
         );
       } else {
-        // Add newsletterJid after sessionName
-        configContent = configContent.replace(
-          /(sessionName:\s*['"][^'"]+['"],)/,
-          `$1\n    newsletterJid: '${newsletterJid}', // Newsletter JID for menu forwarding`
+        extra.fail();
+        return extra.reply(
+          `*❌ ERROR* — no \`newsletterJid:\` line and no \`sessionName:\` anchor in config.js\n\n` +
+          `Add \`newsletterJid: ''\` to config.js by hand, then run this again`
         );
       }
-      
+
       // Write updated config
       fs.writeFileSync(configPath, configContent, 'utf8');
       

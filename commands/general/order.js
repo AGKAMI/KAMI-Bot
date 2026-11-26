@@ -67,8 +67,10 @@ const MOD_SUBS = [
   { id: 'shinnyrims', label: '\u2728 Shinny Rims', type: 'single', itemKey: 'shiny-rims' },
 ];
 
-// ── Premium cars (paginated, 3 per page) ────────────────────
-const PREMIUM_KEYS = Object.keys(catalog.premium);
+// ── Premium cars (paginated, 9 per page) ────────────────────
+// `|| {}` — a catalog.json that parses but has no `premium` block must not
+// throw at module load (that kills the whole command file at boot).
+const PREMIUM_KEYS = Object.keys(catalog.premium || {});
 const PREMIUM_PER_PAGE = 9;
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -246,7 +248,6 @@ async function sendItemDetail(sock, chatId, itemId, quoted) {
   }
 
   const catalogLink = getCatalogLink(item);
-  const botName = config.botName.toUpperCase();
 
   // Find which category this item belongs to for back button
   let backCat = 'main';

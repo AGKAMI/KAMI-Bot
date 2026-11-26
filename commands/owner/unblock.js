@@ -120,9 +120,9 @@ module.exports = {
       try {
         const sent = await sock.sendMessage(shown, {
           text:
-            `━━━━━━━━━━━━━━━━\n` +
+            `----------\n` +
             `*KAMI UNLOCKED YOU* 🔓\n` +
-            `━━━━━━━━━━━━━━━━\n\n` +
+            `----------\n\n` +
             `${voice.greetOpen()}, ${voice.mate()}\n\n` +
             `_You were blocked but you're free now_`
         });

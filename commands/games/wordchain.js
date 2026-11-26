@@ -34,6 +34,6 @@ module.exports = {
     }
     g.last = word.toLowerCase().slice(-1);
     g.count++;
-    return ctx.reply(`✅ ${word}\nNext word must start with the letter "${g.last}", hey`);
+    return ctx.reply(`✅ ${word}\nNext word must start with the letter "${g.last}"`);
   }
 };

@@ -14,7 +14,9 @@ const { isPersonInCrewGroup } = require('../../utils/crewGuard');
 module.exports = {
   name: 'stats',
   reactions: { received: '📊', done: '⭐' },
-  aliases: ['memberstats', 'mystats'],
+  // No 'mystats' alias — general/myactivity.js owns it (crew activity stats
+  // are reachable via `stats` / `memberstats` / `.crew stats @user`).
+  aliases: ['memberstats'],
   description: 'See member activity stats and role progression',
   usage: '.crew stats [@user]',
   isCrew: true,

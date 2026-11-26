@@ -15,7 +15,7 @@ module.exports = {
   aliases: ['magic', 'magicai', 'generate'],
   category: 'ai',
   description: 'Generate AI art from a text prompt',
-  usage: 'magicstudio <prompt>',
+  usage: '.imagine <prompt>',
   execute: async (sock, msg, args, extra) => {
     const prefix = config.prefix || '.';
     try {
@@ -24,7 +24,7 @@ module.exports = {
       if (!prompt) {
         extra.fail();
         return await extra.reply(
-          `❌ _${voice.openErr()} — usage: ${prefix}magicstudio <prompt>_\n\n_Example: ${prefix}magicstudio a cyberpunk city_`
+          `❌ _${voice.openErr()} — usage: ${prefix}imagine <prompt>_\n\n_Example: ${prefix}imagine a cyberpunk city_`
         );
       }
       
@@ -36,7 +36,8 @@ module.exports = {
           'User-Agent': 'Mozilla/5.0',
           'Accept': '*/*'
         },
-        timeout: 120000 // 2 minutes timeout for AI generation
+        timeout: 120000, // 2 minutes timeout for AI generation
+        maxContentLength: 16 * 1024 * 1024 // matches the size check below — don't buffer a runaway response
       });
       
       const imageBuffer = Buffer.from(response.data);

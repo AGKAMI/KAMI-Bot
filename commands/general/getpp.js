@@ -39,7 +39,7 @@ module.exports = {
         
         if (!ppUrl) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic on this oke`);
+          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile picture for this user`);
         }
         
         // Download the profile picture
@@ -60,7 +60,7 @@ module.exports = {
             profileError.output?.statusCode === 500 ||
             profileError.message?.includes('not found')) {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic on this oke`);
+          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile picture for this user`);
         } else if (profileError.output?.statusCode === 401 || 
                    profileError.message?.includes('forbidden') || 
                    profileError.message?.includes('unauthorized')) {
@@ -68,13 +68,13 @@ module.exports = {
           return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — that profile pic is private or gone`);
         } else {
           extra.fail();
-          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic on this oke`);
+          return extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile picture for this user`);
         }
       }
-      
+
     } catch (error) {
       extra.fail();
-      extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile pic on this oke`);
+      await extra.reply(`❌ *ERROR*\n💡 ${voice.openErr()} — no profile picture for this user`);
     }
   }
 };

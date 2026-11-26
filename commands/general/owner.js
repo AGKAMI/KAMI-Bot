@@ -22,7 +22,12 @@ module.exports = {
             // Owner numbers array -> convert each to a vCard.
             // Skip LID-form entries (e.g. xxx@lid) — they're internal identities, not dialable numbers
             const ownerNames = Array.isArray(config.ownerName) ? config.ownerName : [config.ownerName];
-            const dialableNumbers = config.ownerNumber.filter(num => !String(num).includes('@lid'));
+            const ownerNumbers = Array.isArray(config.ownerNumber) ? config.ownerNumber : [];
+            const dialableNumbers = ownerNumbers.filter(num => !String(num).includes('@lid'));
+            if (dialableNumbers.length === 0) {
+              extra.fail();
+              return extra.reply(`❌ *ERROR*\n💡 No owner contact is configured`);
+            }
             const vCards = dialableNumbers.map((num, index) => {
                 const name = ownerNames[index] || ownerNames[0] || 'Bot Owner';
                 return {

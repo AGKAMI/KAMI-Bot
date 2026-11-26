@@ -56,11 +56,16 @@ module.exports = {
         );
       }
 
-      // Collect all phone-like args (handles split formats like +27 83 388 2383)
+      // Collect all phone-like args (handles split formats like +27 83 388 2383).
+      // Pasted numbers carry invisible Unicode (LRM/RLM, ZWSP, bidi marks,
+      // fullwidth ＋) — strip those BEFORE the strict token test, or a
+      // perfectly good number silently fails the regex and nothing resolves.
+      const INVISIBLE_RE = /[\u200B-\u200F\u202A-\u202E\u2066-\u2069\u00AD\uFEFF\uFF0B]/g;
       const phoneParts = [];
       for (const arg of args) {
-        if (/^[\d+\s()-]+$/.test(arg)) {
-          phoneParts.push(arg);
+        const cleaned = String(arg).replace(INVISIBLE_RE, '');
+        if (/^[\d+\s()-]+$/.test(cleaned)) {
+          phoneParts.push(cleaned);
         } else {
           break;
         }

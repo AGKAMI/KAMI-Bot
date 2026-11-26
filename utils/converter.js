@@ -40,12 +40,17 @@ function ffmpeg(buffer, args = [], ext = '', ext2 = '') {
         await fs.promises.unlink(tmp).catch(() => {})
         await fs.promises.unlink(out).catch(() => {})
       }
+      // stdio must be 'ignore', not the default pipes: ffmpeg prints stats to
+      // stderr continuously and nothing here reads them, so the OS pipe buffer
+      // fills after ~64KB and the child BLOCKS on write forever. That showed
+      // up as .ytv/.audio conversions that never resolve (and a wedged event
+      // loop, not just a slow encode) on the memory-capped box.
       spawn(ffmpegPath, [
         '-y',
         '-i', tmp,
         ...args,
         out
-      ])
+      ], { stdio: 'ignore' })
         .on('error', async (e) => { await cleanup(); reject(e) })
         .on('close', async (code) => {
           try {

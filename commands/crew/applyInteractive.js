@@ -90,7 +90,10 @@ function createSession(jid, teamKey, appUid, applicantJid, applyingForSomeone, o
   const oldSession = sessions.get(jid);
   if (oldSession && oldSession.appUid && oldSession.teamKey) {
     try {
-      database.removeApplicant(oldSession.teamKey, oldSession.appUid);
+      // Applicants are keyed by GROUP jid — passing the team key ('KSSMP')
+      // here made this cleanup a silent no-op and orphaned the record
+      const oldGroupJid = (database.resolveTeamWithConfig(oldSession.teamKey) || {}).jid || oldSession.teamKey;
+      database.removeApplicant(oldGroupJid, oldSession.appUid);
     } catch {}
   }
 
@@ -446,19 +449,20 @@ async function startWizard(sock, jid, teamKey, appUid, applicantJid, applyingFor
     try {
       await sock.sendMessage(jid, {
         text:
-          `━━━━━━━━━━━━━━━━\\n` +
-          `📋 *OLD APPLICATION CLEARED*\\n` +
-          `━━━━━━━━━━━━━━━━\\n\\n` +
-          `Your previous *${getTeamDisplayName(oldSession.teamKey)}* application\\n` +
-          `stopped mid-way (Q${oldSession.currentQ}/${oldSession.totalQ}).\\n\\n` +
-          `It's been wiped — starting you a clean one now.\\n\\n` +
+          `━━━━━━━━━━━━━━━━\n` +
+          `📋 *OLD APPLICATION CLEARED*\n` +
+          `━━━━━━━━━━━━━━━━\n\n` +
+          `Your previous *${getTeamDisplayName(oldSession.teamKey)}* application\n` +
+          `stopped mid-way (Q${oldSession.currentQ}/${oldSession.totalQ}).\n\n` +
+          `It's been wiped — starting you a clean one now.\n\n` +
           `_Just tap through the answers, no admin needed._`,
         footer: `${TEAMS[teamKey]?.label || teamKey} Application`,
       });
     } catch {}
-    // Clean up the orphaned DB record too
+    // Clean up the orphaned DB record too (group jid, not the team key)
     try {
-      database.removeApplicant(oldSession.teamKey, oldSession.appUid);
+      const oldGroupJid = (database.resolveTeamWithConfig(oldSession.teamKey) || {}).jid || oldSession.teamKey;
+      database.removeApplicant(oldGroupJid, oldSession.appUid);
     } catch {}
   }
 
@@ -528,21 +532,6 @@ onButton('cwiz:submit:', async (sock, msg, from, sender, btnId) => {
   // their reviewer anymore: admins only take over when the score is too
   // low for the bot to grade (inside runBotReview).
   await runBotReview(sock, session, msg);
-});
-
-// Admin review — current behavior
-onButton('cwiz:adminreview:', async (sock, msg, from, sender, btnId) => {
-  const parts = btnId.replace('cwiz:adminreview:', '').split(':');
-  const teamKey = parts[0];
-  const appUid = parts[1];
-
-  const session = await getSessionOrExpired(sock, from, msg);
-  if (!session) return;
-  if (session.teamKey !== teamKey || session.appUid !== appUid) return;
-  if (session.stage !== 'review') return;
-
-  session.stage = 'done';
-  await submitApplication(sock, session, msg);
 });
 
 // Auto-finalize a bot-passed application — no human tap required.
@@ -825,7 +814,9 @@ async function runBotReview(sock, session, msg) {
     teamData.applicants[appUid].status = 'approved';
     teamData.applicants[appUid].reviewedBy = 'bot';
     teamData.applicants[appUid].reviewedAt = new Date().toISOString();
-    database.updateTeam(storeGroupJid, teamData);
+    try { database.updateTeam(storeGroupJid, teamData); } catch (e) {
+      console.error('[WIZARD] updateTeam (approve) failed:', e.message);
+    }
   }
 
   // Auto-finalize — no human tap required. Adds to crew + group, sends hired DM.
@@ -892,7 +883,9 @@ onButton('cwiz:cancel:', async (sock, msg, from, sender, btnId) => {
   const resolved = database.resolveTeamWithConfig(teamKey);
   const teamGroupJid = (resolved && resolved.jid) || (crewTeam ? crewTeam.jid : null);
   if (teamGroupJid) {
-    database.removeApplicant(teamGroupJid, appUid);
+    try { database.removeApplicant(teamGroupJid, appUid); } catch (e) {
+      console.error('[WIZARD] cancel removeApplicant failed:', e.message);
+    }
   }
 
   // Delete session

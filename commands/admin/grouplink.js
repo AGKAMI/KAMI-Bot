@@ -21,7 +21,7 @@ module.exports = {
         const link = `https://chat.whatsapp.com/${code}`;
         
         let text = `🔗 GROUP INVITE LINK\n\n`;
-        text += `📱 *Group*: ${extra.groupMetadata.subject}\n`;
+        text += `📱 *Group*: ${extra.groupMetadata?.subject || 'This Group'}\n`;
         text += `🔗 *Link*: ${link}\n\n`;
         text += `⚠️ Don't share this publicly, ${voice.tag('neutral')}`;
         

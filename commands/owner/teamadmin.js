@@ -8,6 +8,24 @@ const database = require('../../database');
 const config = require('../../config');
 const { bold, pick, SLANG, voice } = require('../../utils/format');
 
+// Digits stored for a team admin are matched against the sender's phone
+// number later, so a mention that arrives as a @lid jid has to be resolved
+// to its phone digits first — LID digits never match a PN-based check.
+// PN jids keep exactly the behaviour they had before.
+function teamAdminDigits(jid) {
+  const id = String(jid || '');
+  if (id.endsWith('@lid')) {
+    try {
+      const { normalizeJidWithLid } = require('../../utils/jidHelper');
+      const pn = normalizeJidWithLid(id);
+      if (pn && !String(pn).endsWith('@lid')) {
+        return String(pn).split('@')[0].replace(/\D/g, '');
+      }
+    } catch (e) { /* helper unavailable — store the raw digits as before */ }
+  }
+  return id.split('@')[0].replace(/\D/g, '');
+}
+
 function phoneToJid(phone) {
   if (!phone) return null;
   if (phone.includes('@s.whatsapp.net')) return phone;
@@ -60,7 +78,7 @@ module.exports = {
           }, { quoted: msg });
         }
 
-        const digits = (num || target.split('@')[0]);
+        const digits = (num || teamAdminDigits(target));
 
         if (sub === 'approve') {
           const added = database.addTeamAdmin(digits);

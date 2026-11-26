@@ -132,8 +132,8 @@ async function downloadToTempFile(remoteUrl) {
     res.data.destroy?.();
     throw new Error(`video too large (${Math.round(declared / 1048576)}MB > 16MB)`);
   }
+  let written = 0;
   await new Promise((resolve, reject) => {
-    let written = 0;
     const out = fs.createWriteStream(tmpPath);
     res.data.on('data', (chunk) => {
       written += chunk.length;
