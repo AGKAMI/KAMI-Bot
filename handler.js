@@ -1611,8 +1611,12 @@ const handleMessage = async (sock, msg) => {
       }
     }
     
-    // Permission checks — every denial ends on 🚫 (not-allowed verdict).
-    if (command.ownerOnly && !isOwner(sender) && !msg.key.fromMe) {
+    // Owner bypass — owner can run every command, no permission gates, no
+    // unblock messages, no DM-blocker restrictions, no group-only limits,
+    // no NSFW gates, nothing. Owner is always allowed.
+    if (!extra.isOwner) {
+      // Permission checks — every denial ends on 🚫 (not-allowed verdict).
+      if (command.ownerOnly && !isOwner(sender) && !msg.key.fromMe) {
       verdictReact(sock, from, msg, '🚫');
       return sock.sendMessage(from, { text: config.messages.ownerOnly }, { quoted: msg });
     }
@@ -1657,12 +1661,14 @@ const handleMessage = async (sock, msg) => {
         return sock.sendMessage(from, { text: config.messages.botAdminNeeded }, { quoted: msg });
       }
     }
-    
+    } // end: if (!extra.isOwner)
+
     // Auto-typing (fire-and-forget — don't block command execution)
+    // Runs for everyone including owner
     if (config.autoTyping) {
       sock.sendPresenceUpdate('composing', from).catch(() => {});
     }
-    
+
     // Detect owner mentions in the message
     const msgMentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
     const ownerMentioned = msgMentions.some(jid => isOwner(jid));
