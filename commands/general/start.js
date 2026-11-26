@@ -318,6 +318,14 @@ onButton('start:apply', async (sock, msg, from, sender) => {
   
   // Unblock so DMs land + mark them temp-allowed (orders/apply only)
   const dmJid = toDmJid(sender);
+
+  // Owner bypass: owner has full access — no unblock check
+  if (extra.isOwner) {
+    await sendTeamCards(sock, dmJid, sender);
+    return;
+  }
+
+  // Unblock so DMs land + mark them temp-allowed (orders/apply only)
   try { await updateBlockStatusSafe(sock, dmJid, 'unblock'); } catch (e) {}
   const { allowTempDm } = require('../../handler');
   allowTempDm(dmJid);
@@ -339,6 +347,13 @@ onButton('start:order', async (sock, msg, from, sender) => {
     }, { quoted: msg });
   }
   const dmJid = toDmJid(sender);
+
+  // Owner bypass: owner has full access — no unblock check, no restriction message
+  if (extra.isOwner) {
+    await sendMainMenu(sock, dmJid, msg);
+    return;
+  }
+
   // Unblock so DMs land + mark them temp-allowed (orders/apply only)
   let wasBlocked = false;
   try { await updateBlockStatusSafe(sock, dmJid, 'unblock'); } catch (e) {}
