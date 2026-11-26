@@ -18,25 +18,36 @@ module.exports = {
     async execute(sock, msg, args, extra) {
       try {
         const message = args.join(' ') || 'Everyone!';
-        
-        const participants = extra.groupMetadata.participants.map(p => p.id);
-        
+
+        // groupMetadata can be null (the owner bypasses groupOnly and can
+        // run this from a DM; a 403/forbidden group also yields null) —
+        // dereferencing .participants on it threw "Cannot read properties
+        // of null" straight at the user.
+        const participants = (extra.groupMetadata?.participants || []).map(p => p.id);
+
+        if (participants.length === 0) {
+          extra.fail();
+          return extra.reply(`❌ *ERROR*\n\nCouldn't read this group's member list`);
+        }
+
         let text = `📢 *GROUP ANNOUNCEMENT*\n\n`;
         text += `${message}\n\n`;
         text += `👥 *Tagged Members*:\n`;
-        
+
         participants.forEach((participant, index) => {
           text += `${index + 1}. ${mention(participant)}\n`;
         });
-        
+
         await sock.sendMessage(extra.from, {
           text,
           mentions: participants
         }, { quoted: msg });
-        
+
       } catch (error) {
         extra.fail();
-        await extra.reply(`❌ ERROR\n\n${error.message}`);
+        // Never surface a raw JS message ("Cannot read properties of …").
+        // Command-local error text, or nothing at all.
+        extra.reply(`❌ *ERROR*\n\nCouldn't tag the group — try again`);
       }
     }
   };
