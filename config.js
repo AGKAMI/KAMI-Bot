@@ -93,7 +93,7 @@ welcome: false,
     
     // API Keys (add your own)
     apiKeys: {
-      fastSaver: process.env.FASTSAVER_KEY || 'fs_sk_8n3p7x0j1y2w8d6n9t8e1t3s2i3i',
+      fastSaver: process.env.FASTSAVER_KEY || '',
       videoApi: process.env.VIDEO_API_KEY || '',
       openai: '',
       deepai: '',
@@ -133,7 +133,7 @@ welcome: false,
       // accepting KSSPS applicants DM'd them the Metro Police invite.
       'KSSPS': {
         name: 'Private Security',
-        jid: '120363409819775730@g.us',
+        jid: '120363421626159074@g.us',
         invite: 'Ls0VolQePSk1kSlV5scXpD',
         image: './utils/team_images/kssps.jpeg',
         description: 'Close Protection — our people stay safe, that\'s the whole job, boet',
@@ -142,7 +142,7 @@ welcome: false,
       },
       'KSSMP': {
         name: 'Metro Police',
-        jid: '120363421626159074@g.us',
+        jid: '120363409819775730@g.us',
         invite: 'D6LGiNbZaSEAm4KS2kErwx',
         image: './utils/team_images/kssmp.jpeg',
         description: 'Patrol Unit — order on the streets, that\'s what we do',
