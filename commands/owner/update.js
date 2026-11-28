@@ -3,7 +3,7 @@
  * Preserves runtime/state dirs: node_modules, session, tmp, temp, database, config.js
  */
 
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
@@ -13,9 +13,9 @@ const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 
 const MAX_REDIRECTS = 5;
 
-function run(cmd) {
+function run(cmd, args = []) {
   return new Promise((resolve, reject) => {
-    exec(cmd, { windowsHide: true }, (err, stdout, stderr) => {
+    execFile(cmd, args, { windowsHide: true }, (err, stdout, stderr) => {
       if (err) return reject(new Error((stderr || stdout || err.message || '').toString()));
       resolve((stdout || '').toString());
     });
@@ -24,24 +24,20 @@ function run(cmd) {
 
 async function extractZip(zipPath, outDir) {
   if (process.platform === 'win32') {
-    const cmd = `powershell -NoProfile -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${outDir.replace(/\\\\/g, '/')}' -Force"`;
-    await run(cmd);
+    await run('powershell', ['-NoProfile', '-Command', `Expand-Archive -Path '${zipPath.replace(/'/g, "''")}' -DestinationPath '${outDir.replace(/\\\\/g, '/').replace(/'/g, "''")}' -Force`]);
     return;
   }
   // Try unzip, then 7z, then busybox unzip
   try {
-    await run('command -v unzip');
-    await run(`unzip -o '${zipPath}' -d '${outDir}'`);
+    await run('unzip', ['-o', zipPath, '-d', outDir]);
     return;
   } catch {}
   try {
-    await run('command -v 7z');
-    await run(`7z x -y '${zipPath}' -o'${outDir}'`);
+    await run('7z', ['x', '-y', zipPath, `-o${outDir}`]);
     return;
   } catch {}
   try {
-    await run('busybox unzip -h');
-    await run(`busybox unzip -o '${zipPath}' -d '${outDir}'`);
+    await run('busybox', ['unzip', '-o', zipPath, '-d', outDir]);
     return;
   } catch {}
   throw new Error('No unzip tool found (unzip/7z/busybox). Please install one or use a panel with unzip support.');
@@ -173,7 +169,7 @@ module.exports = {
 
       // Attempt restart via pm2 if available, else exit to allow panel auto-restart
       try {
-        await run('pm2 restart all');
+        await run('pm2', ['restart', 'all']);
         return;
       } catch {}
 

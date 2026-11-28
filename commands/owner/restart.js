@@ -2,7 +2,7 @@
  * Restart Command - Restart bot (Owner Only)
  */
 
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const { bold, italic, pick, SLANG, voice } = require('../../utils/format');
 const database = require('../../database');
 
@@ -22,9 +22,9 @@ module.exports = {
       // Flush pending DB writes before restart
       try { database.flushAll(); } catch (e) {}
 
-      const run = (cmd) =>
+      const run = (cmd, cmdArgs) =>
         new Promise((resolve, reject) => {
-          exec(cmd, (error, stdout, stderr) => {
+          execFile(cmd, cmdArgs, (error, stdout, stderr) => {
             if (error) reject(error);
             else resolve(stdout || stderr);
           });
@@ -32,7 +32,7 @@ module.exports = {
 
       try {
         // If running under PM2, this will restart it
-        await run('pm2 restart all');
+        await run('pm2', ['restart', 'all']);
         return;
       } catch (e) {
         console.log('PM2 not available, falling back to process.exit');

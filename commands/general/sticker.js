@@ -5,7 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const crypto = require('crypto');
 const webp = require('node-webpmux');
 const ffmpegPath = require('ffmpeg-static');
@@ -95,28 +95,28 @@ module.exports = {
         mediaMessage.mimetype?.includes('video') ||
         (mediaMessage.seconds || 0) > 0;
       
-      const baseFfmpegCmd = isAnimated
-        ? `"${ffmpegPath}" -i "${tempInput}" -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=15,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 75 -compression_level 6 "${tempOutput}"`
-        : `"${ffmpegPath}" -i "${tempInput}" -vf "scale=512:512:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 75 -compression_level 6 "${tempOutput}"`;
-      
-      const execPromise = (cmd) =>
-        new Promise((resolve, reject) => exec(cmd, (err) => (err ? reject(err) : resolve())));
-      
-      await execPromise(baseFfmpegCmd);
-      
+      const baseFfmpegArgs = isAnimated
+        ? ['-i', tempInput, '-vf', 'scale=512:512:force_original_aspect_ratio=decrease,fps=15,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000', '-c:v', 'libwebp', '-preset', 'default', '-loop', '0', '-vsync', '0', '-pix_fmt', 'yuva420p', '-quality', '75', '-compression_level', '6', tempOutput]
+        : ['-i', tempInput, '-vf', 'scale=512:512:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000', '-c:v', 'libwebp', '-preset', 'default', '-loop', '0', '-vsync', '0', '-pix_fmt', 'yuva420p', '-quality', '75', '-compression_level', '6', tempOutput];
+
+      const execFfmpeg = (ffmpegArgs) =>
+        new Promise((resolve, reject) => execFile(ffmpegPath, ffmpegArgs, (err) => (err ? reject(err) : resolve())));
+
+      await execFfmpeg(baseFfmpegArgs);
+
       let webpBuffer = fs.readFileSync(tempOutput);
-      
+
       if (isAnimated && webpBuffer.length > 1000 * 1024) {
         const tempOutput2 = path.join(tempDir, `out_fallback_${Date.now()}.webp`);
         tempFiles.push(tempOutput2);
         const fileSizeKB = mediaBuffer.length / 1024;
         const isLargeFile = fileSizeKB > 5000;
-        
-        const fallbackCmd = isLargeFile
-          ? `"${ffmpegPath}" -y -i "${tempInput}" -t 2 -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=8,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 30 -compression_level 6 -b:v 100k -max_muxing_queue_size 1024 "${tempOutput2}"`
-          : `"${ffmpegPath}" -y -i "${tempInput}" -t 3 -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=12,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 45 -compression_level 6 -b:v 150k -max_muxing_queue_size 1024 "${tempOutput2}"`;
-        
-        await execPromise(fallbackCmd);
+
+        const fallbackArgs = isLargeFile
+          ? ['-y', '-i', tempInput, '-t', '2', '-vf', 'scale=512:512:force_original_aspect_ratio=decrease,fps=8,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000', '-c:v', 'libwebp', '-preset', 'default', '-loop', '0', '-vsync', '0', '-pix_fmt', 'yuva420p', '-quality', '30', '-compression_level', '6', '-b:v', '100k', '-max_muxing_queue_size', '1024', tempOutput2]
+          : ['-y', '-i', tempInput, '-t', '3', '-vf', 'scale=512:512:force_original_aspect_ratio=decrease,fps=12,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000', '-c:v', 'libwebp', '-preset', 'default', '-loop', '0', '-vsync', '0', '-pix_fmt', 'yuva420p', '-quality', '45', '-compression_level', '6', '-b:v', '150k', '-max_muxing_queue_size', '1024', tempOutput2];
+
+        await execFfmpeg(fallbackArgs);
         
         if (fs.existsSync(tempOutput2)) {
           webpBuffer = fs.readFileSync(tempOutput2);
