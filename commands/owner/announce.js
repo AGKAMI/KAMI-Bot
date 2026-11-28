@@ -270,11 +270,11 @@ module.exports = {
 
   const prefix = config.prefix || '.';
     try {
-      // ── Permission: owner or team admin ────────────────────
-      if (!extra.isOwner && !database.isTeamAdmin(extra.sender)) {
+      // ── Permission: owner only ─────────────────────────────
+      if (!extra.isOwner) {
         extra.fail();
         return extra.reply(
-          `❌ ERROR\n\nOnly the owner or team admins can use this, hey`
+          `❌ ERROR\n\nThis command is for the owner only, chommie`
         );
       }
 
